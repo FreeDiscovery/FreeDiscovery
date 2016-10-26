@@ -1,6 +1,6 @@
 # Examples
 
-The examples of use for FreeDiscovery can be found in the `FreeDiscovery_examples.zip` attached. 
+The examples of use for FreeDiscovery can be found in the [`FreeDiscovery/examples`](https://github.com/FreeDiscovery/examples) repository. 
 
 These are Python scripts executed in [Jupyter notebooks](https://jupyter.org/) that illustrate the use of the FreeDiscovery REST API on the 37,000 documents subset of the TREC 2009 legal collection. 
 

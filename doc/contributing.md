@@ -7,7 +7,7 @@ This section aims to regroup useful information for contributing to FreeDiscover
 
 The direct install using Anaconda Python distribution is recommended for development (particularly on Windows), as described in the corresponding [documentation section](./installation_instructions.html). However, it is also possible to use e.g. system Python, and install the list of dependencies (split between `script/requirements_conda.txt` and `scripts/requirements_pip_*.txt` under `build_tools/`) with `pip`. 
 
-The issue tracker is located at: [https://github.com/dagr1234/FreeDiscoveryBeta](https://github.com/dagr1234/FreeDiscoveryBeta).
+The issue tracker is located at: [https://github.com/FreeDiscovery/FreeDiscovery](https://github.com/FreeDiscovery/FreeDiscovery).
 
 The [scikit learn's developper guide](http://scikit-learn.org/stable/developers/index.html) is also worth reading.
 
