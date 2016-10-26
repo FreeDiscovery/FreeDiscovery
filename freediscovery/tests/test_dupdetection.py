@@ -67,12 +67,12 @@ def fd_setup():
 
 def test_simhash():
 
-    from sklearn.feature_extraction.text import HashingVectorizer
     try:
-        from freediscovery.simhash import SimhashDuplicates
         from simhash import num_differing_bits
     except ImportError:
         raise SkipTest
+    from sklearn.feature_extraction.text import HashingVectorizer
+    from freediscovery.simhash import SimhashDuplicates
 
     DISTANCE = 4
 
@@ -109,9 +109,10 @@ def test_simhash():
 
 def test_dup_detection():
     try:
-        from freediscovery.simhash import DuplicateDetection
+        import simhash
     except ImportError:
         raise SkipTest
+    from freediscovery.simhash import DuplicateDetection
     cache_dir, uuid, filenames, fe = fd_setup()
 
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)

@@ -295,6 +295,11 @@ def test_api_clustering(app, model):
 
 def test_api_dupdetection(app):
 
+    try:
+        import simhash
+    except ImportError:
+        raise SkipTest
+
     dsid = features_non_hashed(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
