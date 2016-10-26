@@ -1,0 +1,35 @@
+language: python
+sudo: required # this is necessary to get gcc-4.8 for some reason (otherwise gcc-4.6 is used)
+dist: trusty
+matrix:
+    include:
+    - python: "3.5"
+      env: SKLEARN="0.17.1"
+    - python: "3.4"                                                                                         
+      env: SKLEARN="0.17.1"
+    - python: "2.7"                                                                                         
+      env: SKLEARN="0.17.1"
+
+# setup adapted from https://github.com/soft-matter/trackpy/blob/master/.travis.yml
+before_install:
+    - wget http://repo.continuum.io/miniconda/Miniconda${TRAVIS_PYTHON_VERSION:0:1}-latest-Linux-x86_64.sh -O miniconda.sh
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b
+    - export PATH=/home/travis/miniconda${TRAVIS_PYTHON_VERSION:0:1}/bin:$PATH
+    - conda update --yes conda
+    - conda info -a
+
+install: 
+    - conda install --yes --file ./build_tools/requirements_conda.txt python=${TRAVIS_PYTHON_VERSION}
+    - pip install -r ./build_tools/requirements_pip_unix.txt
+    - python setup.py install
+    - cd ..
+
+
+script: 
+    - cd /
+    - python -c "import freediscovery.tests as ft; ft.run()"
+
+#after_success:
+#    coveralls
+
