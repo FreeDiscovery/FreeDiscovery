@@ -43,4 +43,4 @@ install:
 test_script:
   - activate freediscovery-env # activate the virtualenv
   - "cd C:\\"
-  - python -c "import freediscovery.tests as ft; ft.run()"
+  - python -c "import freediscovery.tests as ft; ft.run_cli()"

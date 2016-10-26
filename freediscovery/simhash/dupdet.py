@@ -38,8 +38,7 @@ class DuplicateDetection(BaseEstimator):
         """
 
         if dsid is None and mid is not None:
-            self.dsid = dsid =  DuplicateDetection.get_dsid(
-                                      DuplicateDetection, cache_dir, mid)
+            self.dsid = dsid =  self.get_dsid(cache_dir, mid)
             self.mid = mid
         elif dsid is not None:
             self.dsid  = dsid

@@ -172,7 +172,7 @@ class Clustering(BaseEstimator):
         """
 
         if dsid is None and mid is not None:
-            self.dsid = dsid =  Clustering.get_dsid(Clustering, cache_dir, mid)
+            self.dsid = dsid = self.get_dsid(cache_dir, mid)
             self.mid = mid
         elif dsid is not None:
             self.dsid  = dsid
