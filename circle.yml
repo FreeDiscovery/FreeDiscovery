@@ -1,0 +1,22 @@
+dependencies:
+
+  # Various dependencies
+  pre:
+    - sudo apt-get update
+    - sudo apt-get install libatlas-dev libatlas3gf-base
+    - sudo apt-get install build-essential python-dev python-setuptools wget
+    - cd /home/ubuntu/FreeDiscovery
+    # install numpy first as it is a compile time dependency for other packages
+    - pip install --upgrade pip
+    - pip install --upgrade numpy
+    - pip install -r ./build_tools/requirements_conda.txt
+    - pip install -r ./build_tools/requirements_pip_unix.txt
+
+  override:
+    - cd /home/ubuntu/FreeDiscovery
+    - python setup.py clean
+    - python setup.py develop
+test:
+  override:
+    - python -c "import freediscovery.tests as ft; ft.run()"
+

@@ -1,0 +1,46 @@
+# Adapted from https://github.com/bsmurphy/PyKrige/blob/master/appveyor.yml
+build: false
+
+environment:
+  global:
+    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
+    # /E:ON and /V:ON options are not enabled in the batch script intepreter
+    # See: http://stackoverflow.com/a/13751649/163740
+    WITH_COMPILER: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_compiler.cmd"
+  matrix:
+    - PYTHON_VERSION: 3.5
+      PYTHON_ARCH: "64"
+      MINICONDA: C:\Miniconda3-x64
+    # not running the other tests at the moment
+    # as AppVeyor is just too slow
+    #- PYTHON_VERSION: 2.7
+    #- PYTHON_ARCH: "64"
+    #- MINICONDA: C:\Miniconda-x64
+    #- PYTHON_VERSION: 2.7
+    #  PYTHON_ARCH: "32"
+    #  MINICONDA: C:\Miniconda
+    #- PYTHON_VERSION: 3.5
+    #  PYTHON_ARCH: "32"
+    #  MINICONDA: C:\Miniconda3
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH% %MINICONDA%"
+
+install:
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  # create a conda virtual environement 
+  - "cd C:\\projects\\FreeDiscovery"
+  - "conda create -n freediscovery-env --yes --file .\\build_tools\\requirements_conda.txt python=%PYTHON_VERSION%"
+  - activate freediscovery-env
+  - "pip install -r .\\build_tools\\requirements_pip_win.txt"
+  - python setup.py develop 
+
+
+
+test_script:
+  - activate freediscovery-env # activate the virtualenv
+  - "cd C:\\"
+  - python -c "import freediscovery.tests as ft; ft.run()"

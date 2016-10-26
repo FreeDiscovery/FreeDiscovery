@@ -1,0 +1,6 @@
+include README.md
+recursive-include scripts *.py
+recursive-include freediscovery *.py
+prune freediscovery/tests/.hypothesis
+recursive-include freediscovery *.txt
+recursive-include examples *.py

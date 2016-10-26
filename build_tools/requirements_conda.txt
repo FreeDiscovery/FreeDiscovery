@@ -1,0 +1,8 @@
+pip
+future
+pytest
+setuptools
+numpy==1.11.1
+scipy==0.18
+pandas==0.18.1
+flask==0.11
