@@ -83,7 +83,7 @@ def test_categorization(method, cv):
         return
     assert_allclose(scores['precision'], 1, rtol=0.5)
     assert_allclose(scores['recall'], 1, rtol=0.5)
-    assert_equal(Categorizer.get_dsid(Categorizer, cache_dir, cat.mid), uuid )
+    assert_equal(cat.get_dsid(cache_dir, cat.mid), uuid )
     cat.delete()
 
 

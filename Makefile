@@ -5,9 +5,9 @@ stamp:
 	sed -i '$$ d' freediscovery/__init__.py ; sed -i '$$ d' freediscovery/__init__.py ; echo '__version_date__ = "'`git log --pretty=format:'%cd' -n 1`'"' >> freediscovery/__init__.py; echo '__version_hash__ = "'`git log --pretty=format:'%h' -n 1`'"' >> freediscovery/__init__.py
 
 test2: 
-	cd ..; python2 -c "import freediscovery.tests as ft; ft.run()"
+	cd ..; python2 -c "import freediscovery.tests as ft; ft.run_cli()"
 test3: 
-	cd ..; python3 -c "import freediscovery.tests as ft; ft.run()"
+	cd ..; python3 -c "import freediscovery.tests as ft; ft.run_cli()"
 
 test: test3
 
