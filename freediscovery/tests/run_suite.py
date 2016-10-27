@@ -11,7 +11,7 @@ def run(coverage=False):
     if coverage:
         argv += ["--cov=freediscovery"]
     result = pytest.main(argv)
-    status = int(not result)
+    status = int(result)
     return status
 
 

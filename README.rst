@@ -4,8 +4,8 @@ FreeDiscovery
 .. image:: https://travis-ci.org/FreeDiscovery/FreeDiscovery.svg?branch=master
     :target: https://travis-ci.org/FreeDiscovery/FreeDiscovery
 
-.. image:: https://ci.appveyor.com/api/projects/status/uu56e5cp672d2f0m/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/rth/freediscovery-lc2fo/branch/master
+.. image:: https://ci.appveyor.com/api/projects/status/w5kjscmqlrlehp5t/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/FreeDiscovery/freediscovery/branch/master
 
 
 Open Source Software for E-Discovery and Information Retrieval
