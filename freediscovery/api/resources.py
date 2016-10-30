@@ -379,7 +379,7 @@ class DupDetectionApi(Resource):
     @use_args(_dup_detection_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
-        from ..simhash import DuplicateDetection
+        from ..dupdet import DuplicateDetection
 
         model = DuplicateDetection(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
@@ -400,7 +400,7 @@ class DupDetectionApiElement(Resource):
     @use_args(_dupdet_api_get_args)
     @marshal_with(DuplicateDetectionSchema())
     def get(self, mid, **args):
-        from ..simhash import DuplicateDetection
+        from ..dupdet import DuplicateDetection
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
         model.fit()
@@ -409,7 +409,7 @@ class DupDetectionApiElement(Resource):
                 'dup_pairs': dup_pairs}
 
     def delete(self, mid):
-        from ..simhash import DuplicateDetection
+        from ..dupdet import DuplicateDetection
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
         model.delete()

@@ -64,7 +64,7 @@ def test_simhash():
     except ImportError:
         raise SkipTest
     from sklearn.feature_extraction.text import HashingVectorizer
-    from freediscovery.simhash import SimhashDuplicates
+    from freediscovery.dupdet import SimhashDuplicates
 
     DISTANCE = 4
 
@@ -104,7 +104,7 @@ def test_dup_detection():
         import simhash
     except ImportError:
         raise SkipTest
-    from freediscovery.simhash import DuplicateDetection
+    from freediscovery.dupdet import DuplicateDetection
     cache_dir, uuid, filenames, fe = fd_setup()
 
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
