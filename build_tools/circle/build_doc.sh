@@ -21,7 +21,7 @@ sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes \
     install dvipng texlive-latex-base texlive-latex-extra
 
 sudo -E apt-get -yq install libatlas-dev libatlas3gf-base
-sudo -E apt-get -yq install build-essential python-dev python-setuptools wget
+sudo -E apt-get -yq install build-essential wget
 # deactivate circleci virtualenv and setup a miniconda env instead
 if [[ `type -t deactivate` ]]; then
   deactivate
@@ -50,7 +50,6 @@ popd
 conda create -n testenv --yes --quiet python \
   cython nose coverage matplotlib sphinx pillow
 
-source activate testenv
 pip install -r ./build_tools/requirements_conda.txt
 pip install -r ./build_tools/requirements_pip_unix.txt
 pip install -r ./build_tools/requirements_extra_pip.txt
