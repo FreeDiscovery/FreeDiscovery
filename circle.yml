@@ -1,22 +1,21 @@
+# adapted from https://github.com/scikit-learn/scikit-learn/blob/master/circle.yml
 dependencies:
 
-  # Various dependencies
-  pre:
-    - sudo apt-get update
-    - sudo apt-get install libatlas-dev libatlas3gf-base
-    - sudo apt-get install build-essential python-dev python-setuptools wget
-    - cd /home/ubuntu/FreeDiscovery
-    # install numpy first as it is a compile time dependency for other packages
-    - pip install --upgrade pip
-    - pip install --upgrade numpy
-    - pip install -r ./build_tools/requirements_conda.txt
-    - pip install -r ./build_tools/requirements_pip_unix.txt
-
+  # Check whether the doc build is required, install build dependencies and
+  # run sphinx to build the doc.
   override:
-    - cd /home/ubuntu/FreeDiscovery
-    - python setup.py clean
-    - python setup.py develop
+    - ./build_tools/circle/build_doc.sh
 test:
+  # Grep error on the documentation
   override:
-    - python -c "import freediscovery.tests as ft; ft.run()"
-
+    - cat ~/log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt; then false; else true; fi
+deployment:
+ push:
+   branch: /^master$|^[0-9]+\.[0-9]+\.X$/
+   commands:
+     - bash build_tools/circle/push_doc.sh
+general:
+  # Open the doc to the API
+  artifacts:
+    - "doc/_build/html"
+    - "~/log.txt"
