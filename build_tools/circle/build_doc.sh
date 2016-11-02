@@ -22,37 +22,21 @@ sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes \
 
 sudo -E apt-get -yq install libatlas-dev libatlas3gf-base
 sudo -E apt-get -yq install build-essential wget
+sudo -E apt-get -yq install build-essential python-dev python-setuptools wget
 # deactivate circleci virtualenv and setup a miniconda env instead
 if [[ `type -t deactivate` ]]; then
   deactivate
 fi
 
-# Install dependencies with miniconda
 pushd .
-cd
-mkdir -p download
-cd download
-echo "Cached in $HOME/download :"
-ls -l
-if [[ ! -f miniconda.sh ]]
-then
-   wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh \
-   -O miniconda.sh
-fi
-chmod +x miniconda.sh && ./miniconda.sh -b -p $HOME/miniconda
-cd ..
-export PATH="$HOME/miniconda/bin:$PATH"
-conda update --yes --quiet conda
-popd
+# Install dependencies
 
-# Configure the conda environment and put it in the path using the
-# provided versions
-conda create -n testenv --yes --quiet python \
-  cython nose coverage matplotlib sphinx pillow
-
+pip install --upgrade pip
+pip install --upgrade numpy
 pip install -r ./build_tools/requirements_conda.txt
 pip install -r ./build_tools/requirements_pip_unix.txt
 pip install -r ./build_tools/requirements_extra_pip.txt
+pip install mock
 
 # Build and install scikit-learn in dev mode
 python setup.py develop
