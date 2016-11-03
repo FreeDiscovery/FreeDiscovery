@@ -26,7 +26,7 @@ install:
     - cd ..
 
 script: 
-    - cd /
+    - cd /home/travis/miniconda${TRAVIS_PYTHON_VERSION:0:1}/lib/
     - python -c "import freediscovery.tests as ft; ft.run_cli()"
 
 #after_success:

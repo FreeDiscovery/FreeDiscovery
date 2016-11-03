@@ -11,11 +11,11 @@ environment:
     - PYTHON_VERSION: 3.5
       PYTHON_ARCH: "64"
       MINICONDA: C:\Miniconda3-x64
+    - PYTHON_VERSION: 2.7
+      PYTHON_ARCH: "64"
+      MINICONDA: C:\Miniconda-x64
     # not running the other tests at the moment
     # as AppVeyor is just too slow
-    #- PYTHON_VERSION: 2.7
-    #- PYTHON_ARCH: "64"
-    #- MINICONDA: C:\Miniconda-x64
     #- PYTHON_VERSION: 2.7
     #  PYTHON_ARCH: "32"
     #  MINICONDA: C:\Miniconda
@@ -42,5 +42,5 @@ install:
 
 test_script:
   - activate freediscovery-env # activate the virtualenv
-  - "cd C:\\"
+  - "cd C:\\projects\\freediscovery\\freediscovery\\tests" # just to avoid full relative path in py.test
   - python -c "import freediscovery.tests as ft; ft.run_cli()"
