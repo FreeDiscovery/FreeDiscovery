@@ -9,9 +9,7 @@ from glob import glob
 
 from flask_restful import abort, Resource
 from webargs import fields as wfields
-#from webargs.flaskparser import use_args
 from flask_apispec import marshal_with, use_kwargs as use_args
-from marshmallow import Schema, pprint, fields
 
 from ..text import FeatureVectorizer
 from ..lsi import LSI
@@ -19,20 +17,17 @@ from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
 from ..utils import classification_score
 from ..clustering import Clustering
-from ..exceptions import (DatasetNotFound, ModelNotFound, InitException, 
-                            NotFound, WrongParameter)
-from .schemas import (IDSchema, FeaturesParsSchema, 
-                        FeaturesSchema,
-                        LsiParsSchema, LsiPostSchema, LsiPredictSchema,
-                        ClassificationScoresSchema,
-                        CategorizationParsSchema, CategorizationPostSchema,
-                        CategorizationPredictSchema, ClusteringSchema,
-                        ErrorSchema, DuplicateDetectionSchema
-                        )
+from .schemas import (IDSchema, FeaturesParsSchema,
+                      FeaturesSchema,
+                      LsiParsSchema, LsiPostSchema, LsiPredictSchema,
+                      ClassificationScoresSchema,
+                      CategorizationParsSchema, CategorizationPostSchema,
+                      CategorizationPredictSchema, ClusteringSchema,
+                      ErrorSchema, DuplicateDetectionSchema
+                      )
 
 
 # Definine the response formatting schemas
-
 id_schema = IDSchema()
 features_schema = FeaturesSchema()
 error_schema = ErrorSchema()
@@ -41,15 +36,12 @@ error_schema = ErrorSchema()
 #                      Features extraction                                     #
 # ============================================================================ # 
 
-
-
 class FeaturesApi(Resource):
 
     @marshal_with(FeaturesSchema(many=True))
     def get(self):
         fe = FeatureVectorizer(self._cache_dir)
         return fe.list_datasets()
-
 
     @use_args(FeaturesParsSchema(strict=True))
     @marshal_with(FeaturesSchema())
@@ -86,40 +78,32 @@ class FeaturesApiElement(Resource):
         dsid, _ = fe.transform()
         return {'id': dsid}
 
-
     def delete(self, dsid):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         fe.delete()
-
 
 
 # ============================================================================ # 
 #                  Categorization (LSI)
 # ============================================================================ # 
 
-
 _lsi_api_get_args  = {'dataset_id': wfields.Str(required=True) }
 _lsi_api_post_args = {'dataset_id': wfields.Str(required=True),
                       'n_components': wfields.Int(default=100) }
-
 class LsiApi(Resource):
 
     @use_args(_lsi_api_get_args)
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
         dsid = args['dataset_id']
-
         lsi = LSI(cache_dir=self._cache_dir, dsid=dsid)
-
         return lsi.list_models()
-
 
     @use_args(_lsi_api_post_args)
     @marshal_with(LsiPostSchema())
     def post(self, **args):
         dsid = args['dataset_id']
         del args['dataset_id']
-
         lsi = LSI(cache_dir=self._cache_dir, dsid=dsid)
         _, explained_variance = lsi.transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
@@ -142,13 +126,12 @@ _lsi_api_element_predict_post_args = {
         'non_relevant_filenames': wfields.List(wfields.Str(), required=True),
         }
 
+
 class LsiApiElementPredict(Resource):
     @use_args(_lsi_api_element_predict_post_args)
     @marshal_with(LsiPredictSchema())
     def post(self, mid, **args):
-
         lsi = LSI(self._cache_dir, mid=mid)
-
         _, X_train, Y_train, Y_train_res, X_test, Y_test_res, res  = lsi.predict(
                 accumulate='nearest-max', **args) 
         res_scores = classification_score(X_train, Y_train, X_train, Y_train_res)
@@ -168,13 +151,12 @@ _lsi_api_element_test_post_args = {
         'ground_truth_filename': wfields.Str(required=True)
         }
 
+
 class LsiApiElementTest(Resource):
     @use_args(_lsi_api_element_test_post_args)
     @marshal_with(ClassificationScoresSchema())
     def post(self, mid, **args):
-
         lsi = LSI(self._cache_dir, mid=mid)
-
         d_ref = parse_ground_truth_file(os.path.join(lsi.fe.dsid_dir, args["ground_truth_filename"]))
         del args['ground_truth_filename']
         lsi_m, X_train, Y_train, Y_train_res, X_test, Y_test_res, res  = lsi.predict(
@@ -207,7 +189,6 @@ class ModelsApi(Resource):
 
         return cat.list_models()
 
-
     @use_args(_models_api_post_args)
     @marshal_with(CategorizationPostSchema())
     def post(self, **args):
@@ -218,12 +199,9 @@ class ModelsApi(Resource):
             cv = 'fast'
         else:
             cv = None
-
         for key in ['dataset_id', 'cv', 'training_scores']:
             del args[key]
-
         cat = Categorizer(self._cache_dir, dsid=dsid)
-
         _, X_train, Y_train = cat.train(cv=cv, **args)
         if training_scores:
             Y_res = cat.predict()
@@ -239,11 +217,9 @@ class ModelsApi(Resource):
 class ModelsApiElement(Resource):
     @marshal_with(CategorizationParsSchema())
     def get(self, mid):
-
         cat = Categorizer(self._cache_dir, mid=mid)
         pars = cat.get_params()
         return pars
-
 
     def delete(self, mid):
         cat = Categorizer(self._cache_dir, mid=mid)
@@ -263,6 +239,7 @@ class ModelsApiPredict(Resource):
 
 _models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}
 
+
 class ModelsApiTest(Resource):
 
     @use_args(_models_api_test)
@@ -279,7 +256,6 @@ class ModelsApiTest(Resource):
         return res
 
 
-
 # ============================================================================ # 
 #                              Clustering
 # ============================================================================ # 
@@ -289,6 +265,7 @@ _k_mean_clustering_api_post_args = {
         'n_clusters': wfields.Int(required=True),
         'lsi_components': wfields.Int(missing=-1),
         }
+
 
 class KmeanClusteringApi(Resource):
 
@@ -303,7 +280,7 @@ class KmeanClusteringApi(Resource):
 
         del args['dataset_id']
 
-        labels = cl.k_means(**args)
+        labels = cl.k_means(**args)  # TODO unused variable. Remove?
         return {'id': cl.mid}
 
 
@@ -314,6 +291,7 @@ _birch_clustering_api_post_args = {
         'threshold': wfields.Number(),
         }
 
+
 class BirchClusteringApi(Resource):
 
     @use_args(_birch_clustering_api_post_args)
@@ -322,14 +300,10 @@ class BirchClusteringApi(Resource):
 
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
-
         cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
-
         del args['dataset_id']
-
         cl.birch(**args)
         return {'id': cl.mid}
-
 
 
 _wardhc_clustering_api_post_args = {
@@ -338,6 +312,7 @@ _wardhc_clustering_api_post_args = {
         'lsi_components': wfields.Int(missing=-1),
         'n_neighbors': wfields.Int(missing=5),
         }
+
 
 class WardHCClusteringApi(Resource):
 
@@ -360,11 +335,12 @@ _clustering_api_get_args = {
         'n_top_words': wfields.Int(missing=5)
         }
 
+
 class ClusteringApiElement(Resource):
 
     @use_args(_clustering_api_get_args)
     @marshal_with(ClusteringSchema())
-    def get(self, method, mid, **args):
+    def get(self, method, mid, **args):  # TODO unused parameter 'method'
 
         cl = Clustering(cache_dir=self._cache_dir, mid=mid)
 
@@ -380,7 +356,7 @@ class ClusteringApiElement(Resource):
                   'htree': htree, 'pars': pars}
 
 
-    def delete(self, method, mid):
+    def delete(self, method, mid):  # TODO unused parameter 'method'
         cl = Clustering(cache_dir=self._cache_dir, mid=mid)
         cl.delete()
 
@@ -392,6 +368,7 @@ _dup_detection_api_post_args = {
         'dataset_id': wfields.Str(required=True),
         "method": wfields.Str(required=False, missing='simhash')
         }
+
 
 class DupDetectionApi(Resource):
 
@@ -413,6 +390,7 @@ _dupdet_api_get_args = {
         'distance': wfields.Int(missing=2)
         }
 
+
 class DupDetectionApiElement(Resource):
 
     @use_args(_dupdet_api_get_args)
@@ -425,7 +403,6 @@ class DupDetectionApiElement(Resource):
         simhash, cluster_id, dup_pairs = model.query(**args)
         return {'simhash': simhash, 'cluster_id': cluster_id,
                 'dup_pairs': dup_pairs}
-
 
     def delete(self, mid):
         from ..simhash import DuplicateDetection

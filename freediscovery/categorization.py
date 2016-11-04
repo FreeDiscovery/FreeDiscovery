@@ -6,20 +6,15 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import os.path
-
 import numpy as np
 import scipy
 from scipy.special import logit
-
 from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
 from .utils import filter_rel_nrel, setup_model, _rename_main_thread
-from .exceptions import (DatasetNotFound, ModelNotFound, InitException,
-                            WrongParameter, NotImplementedFD, OptionalDependencyMissing)
-
+from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
 
 class Categorizer(BaseEstimator):
@@ -80,7 +75,7 @@ class Categorizer(BaseEstimator):
         if cv:
             #from sklearn.cross_validation import StratifiedKFold
             #cv_obj = StratifiedKFold(n_splits=cv_n_folds, shuffle=False)
-            cv_obj = cv_n_folds # temporary hack (due to piclking issues otherwise, this needs to be fixed)
+            cv_obj = cv_n_folds  # temporary hack (due to piclking issues otherwise, this needs to be fixed)
         else:
             cv_obj = None
 
@@ -111,7 +106,6 @@ class Categorizer(BaseEstimator):
                 import xgboost as xgb
             except ImportError:
                 raise OptionalDependencyMissing('xgboost')
-
             if cv is None:
                 try:
                     from freediscovery_extra import make_xgboost_model
@@ -124,20 +118,17 @@ class Categorizer(BaseEstimator):
                 except ImportError:
                     raise OptionalDependencyMissing('freediscovery_extra')
                 cmod = make_xgboost_cv_model(cv, cv_obj, cv_scoring, **options)
-
         elif method == 'MLPClassifier':
             if cv is not None:
                 raise NotImplementedFD('CV not supported with MLPClassifier')
             from sklearn.neural_network import MLPClassifier
             cmod = MLPClassifier(solver='adam', hidden_layer_sizes=10,
-                     max_iter=200, activation='identity', verbose=0)
+                                 max_iter=200, activation='identity', verbose=0)
         else:
             raise WrongParameter('Method {} not implemented!'.format(method))
         return cmod
 
-
-
-    def train(self, relevant_filenames, non_relevant_filenames, method='LinearSVC', cv=None, **options):
+    def train(self, relevant_filenames, non_relevant_filenames, method='LinearSVC', cv=None):
         """
         Train the categorization model
 
@@ -151,8 +142,6 @@ class Categorizer(BaseEstimator):
               the ML algorithm to use (one of "LogisticRegression", "LinearSVC", 'xgboost')
            cv: str
               use cross-validation
-           options: dict
-               method specific ML agorithm options
         Returns
         -------
         dict
@@ -175,14 +164,11 @@ class Categorizer(BaseEstimator):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        d_all, _, _, d_rel, d_nrel = filter_rel_nrel(self, relevant_filenames,
-                                                non_relevant_filenames)
+        d_all, _, _, d_rel, d_nrel = filter_rel_nrel(self, relevant_filenames, non_relevant_filenames)
 
         X_train = scipy.sparse.vstack((d_rel, d_nrel))
-        X_train_str = np.hstack((np.asarray(relevant_filenames),
-                                    np.asarray(non_relevant_filenames)))
-        Y_train = np.concatenate((np.ones((d_rel.shape[0])),
-                                np.zeros((d_nrel.shape[0]))), axis=0).astype(np.int)
+        X_train_str = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))
+        Y_train = np.concatenate((np.ones((d_rel.shape[0])), np.zeros((d_nrel.shape[0]))), axis=0).astype(np.int)
 
         if method != 'ensemble-stacking':
             cmod = self._build_estimator(Y_train, method, cv, self.cv_scoring, self.cv_n_folds)
@@ -196,11 +182,10 @@ class Categorizer(BaseEstimator):
             cmod_xgboost = self._build_estimator(Y_train, 'xgboost', None,
                                              self.cv_scoring, self.cv_n_folds)
             cmod_xgboost.transform = cmod_xgboost.predict
-            cmod = _EnsembleStacking([  ('logregr', cmod_logregr),
-                                       ('svm', cmod_svm),
-                                       ('xgboost', cmod_xgboost)
-                                    ])
-
+            cmod = _EnsembleStacking([('logregr', cmod_logregr),
+                                      ('svm', cmod_svm),
+                                      ('xgboost', cmod_xgboost)
+                                      ])
 
         mid, mid_dir = setup_model(self.model_dir)
 
@@ -211,8 +196,11 @@ class Categorizer(BaseEstimator):
 
         joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
 
-        pars = {'method': method, 'relevant_filenames': relevant_filenames,
-                'non_relevant_filenames': non_relevant_filenames}
+        pars = {
+            'method': method,
+            'relevant_filenames': relevant_filenames,
+            'non_relevant_filenames': non_relevant_filenames
+        }
         pars['options'] = cmod.get_params()
         self._pars = pars
         joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
@@ -220,7 +208,6 @@ class Categorizer(BaseEstimator):
         self.mid = mid
         self.cmod = cmod
         return cmod, X_train_str, Y_train
-
 
     def predict(self, chunk_size=5000):
         """
@@ -244,22 +231,17 @@ class Categorizer(BaseEstimator):
 
         #    cmod = joblib.load(os.path.join(mid_dir, 'model'))
 
-        ds = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))#, mmap_mode='r')
-
+        ds = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))  #, mmap_mode='r')
         n_samples = ds.shape[0]
 
         def _predict_chunk(cmod, ds, k, chunk_size):
             n_samples = ds.shape[0]
-
             mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
-
             ds_sl = ds[mslice, :]
-
             if hasattr(cmod, 'decision_function'):
                 res = cmod.decision_function(ds_sl)
-            else: # gradient boosting define the decision function by analogy
-
-                tmp = cmod.predict_proba(ds_sl)[:,1]
+            else:  # gradient boosting define the decision function by analogy
+                tmp = cmod.predict_proba(ds_sl)[:, 1]
                 res = logit(tmp)
             return res
 
@@ -267,27 +249,20 @@ class Categorizer(BaseEstimator):
         for k in range(n_samples//chunk_size + 1):
             pred = _predict_chunk(cmod, ds, k, chunk_size)
             res.append(pred)
-
         res = np.concatenate(res, axis=0)
         return res
-
 
     def get_params(self):
         """ Get model parameters """
         return self._pars
 
-
     def _load_pars(self):
         """ Load the parameters specified by a mid """
-
         mid = self.mid
         mid_dir = os.path.join(self.model_dir, mid)
         if not os.path.exists(mid_dir):
             raise ModelNotFound('Model id {} not found in the cache!'.format(mid))
-
         pars = joblib.load(os.path.join(mid_dir, 'pars'))
         cmod = joblib.load(os.path.join(mid_dir, 'model'))
-
         pars['options'] = cmod.get_params()
-
         return pars, cmod

@@ -81,10 +81,12 @@ class CategorizationParsSchema(Schema):
     non_relevant_filenames = fields.List(fields.Str(), required=True)
     options = fields.Str(required=True)
 
+
 class _HTreeSchema(Schema):
     n_leaves = fields.Int(required=True)
     n_components = fields.Int(required=True)
     children = fields.List(fields.List(fields.Int), required=True)
+
 
 class ClusteringSchema(Schema):
     labels = fields.List(fields.Int(), required=True)
@@ -92,10 +94,12 @@ class ClusteringSchema(Schema):
     htree = fields.Nested(_HTreeSchema()) 
     pars = fields.Str(required=True)
 
+
 class DuplicateDetectionSchema(Schema):
     simhash = fields.List(fields.Int(), required=True)
     cluster_id = fields.List(fields.Int(), required=True)
     dup_pairs = fields.List(fields.List(fields.Int()), required=True)
+
 
 class ErrorSchema(Schema):
     message = fields.Str(required=True)

@@ -3,15 +3,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
 
-import sys
-import os
 import os.path
-from unittest import SkipTest
-
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_equal
 import scipy.sparse
 import itertools
 import pytest
@@ -28,6 +23,7 @@ fe_cases = list(itertools.product(['word', 'char'], ['None', 'english'], [[1,1],
                 [True, False], [True, False], [True, False], [True, False]))
 fe_names = 'analyzer, stop_words, ngram_range, use_idf, sublinear_tf, binary, use_hashing'
 
+
 def filter_fe_cases(x):
     key_list = fe_names.split(', ')
     res = dict(zip(key_list, x))
@@ -42,12 +38,11 @@ def filter_fe_cases(x):
 def test_feature_extraction(analyzer, stop_words, ngram_range, use_idf, sublinear_tf, binary, use_hashing):
     cache_dir = check_cache()
 
-
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt', n_features=n_features,
             analyzer=analyzer, stop_words=stop_words, ngram_range=ngram_range,
-            use_idf=use_idf, binary=binary, use_hashing=use_hashing, sublinear_tf=sublinear_tf)
-    uuid, filenames  = fe.transform()
+            use_idf=use_idf, binary=binary, use_hashing=use_hashing, sublinear_tf=sublinear_tf)  # TODO unused (overwritten on the next line)
+    uuid, filenames = fe.transform()
 
     filenames2, res2 = fe.load(uuid)
     assert_equal(filenames2, filenames)

@@ -3,14 +3,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
 
 import os.path
-from unittest import SkipTest
-
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-import itertools
+from numpy.testing import assert_allclose
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import LSI, TruncatedSVD_LSI
@@ -22,20 +18,19 @@ from .run_suite import check_cache
 def test_lsi():
     basename = os.path.dirname(__file__)
 
-
     cache_dir = check_cache()
     data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
-
     n_features = 110000
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt', n_features=n_features)
-    uuid, filenames  = fe.transform()
+    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+                         n_features=n_features)  # TODO unused variable (overwritten on the next line)
+    uuid, filenames = fe.transform()
     ground_truth = parse_ground_truth_file(
                         os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
     lsi = LSI(cache_dir=cache_dir, dsid=uuid)
-    lsi_res, exp_var = lsi.transform(n_components=100)
+    lsi_res, exp_var = lsi.transform(n_components=100)  # TODO unused variables
     lsi_id = lsi.mid
     assert lsi.get_dsid(fe.cache_dir, lsi_id) == uuid
     assert lsi.get_path(lsi_id) is not None
@@ -52,14 +47,13 @@ def test_lsi():
                                 accumulate=accumulate)
         scores = classification_score(ground_truth.index.values,
                             ground_truth.is_relevant.values,
-                            X_pred, Y_pred)
+                            X_pred, Y_pred)  # TODO unused variable
         #yield assert_allclose, scores['precision_score'], 1
         #yield assert_allclose, scores['recall_score'], 1
         
-
     lsi.list_models()
-
     lsi.delete()
+
 
 def test_lsi_book_example():
     """ LSI example taken from the "Information retrieval" (2004) book by Grossman & Ophir
@@ -91,7 +85,6 @@ def test_lsi_book_example():
     lsi.fit(X)
     X_p = lsi.transform_lsi(X)
     q_p = lsi.transform_lsi(q)
-
 
     U, s, Vh = scipy.linalg.svd(X.todense().T, full_matrices=False)
     #print(' ')

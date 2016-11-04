@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
@@ -21,8 +20,7 @@ class SimhashDuplicates(BaseEstimator):
         self._fit_X = None
         self._fit_shash_dict = {}
 
-
-    def fit(self, X, y=None):
+    def fit(self, X, y=None):  # TODO parameter 'y' is unused
         """
         Parameters
         ----------
@@ -34,7 +32,7 @@ class SimhashDuplicates(BaseEstimator):
         self : object
             Returns self.
         """
-        from simhash import compute
+        from simhash import compute  # TODO resolve reference
         self._fit_X = X = check_array(X, accept_sparse='csr')
 
         n_features = X.shape[1]
@@ -48,7 +46,6 @@ class SimhashDuplicates(BaseEstimator):
             shash.append(compute(mhash))
         self._fit_shash = np.asarray(shash, dtype='uint64')
         self._fit_shash_dict = {val: key for key, val in enumerate(self._fit_shash)}
-
 
     def get_index_by_hash(self, shash):
         """ Get document index by hash
@@ -64,7 +61,6 @@ class SimhashDuplicates(BaseEstimator):
            a document index
         """
         return self._fit_shash_dict[shash]
-
 
     def query(self, distance=2, blocks='auto'):
         """ Find all the nearests neighbours for the dataset
@@ -88,11 +84,11 @@ class SimhashDuplicates(BaseEstimator):
         dup_pairs : list
             list of tuples for the near-duplicates
         """
-        from simhash import find_all
+        from simhash import find_all  # TODO resolve reference
 
         if distance >= 64:
             raise ValueError('Wrong input parameter for distance = {}'.format(distance)
-                            +'Must be less than 64!')
+                            + 'Must be less than 64!')
 
         _, cluster_id = np.unique(self._fit_shash, return_inverse=True)
 

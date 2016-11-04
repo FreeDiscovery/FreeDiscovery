@@ -5,12 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from contextlib import contextmanager
-import os
-import sys
-
-from flask import jsonify
-
 
 class _BaseException(Exception):
     status_code = -1
@@ -55,6 +49,7 @@ class WrongParameter(_BaseException):
 class NotImplementedFD(_BaseException):
     status_code = 500
     message = 'Not implemented'
+
 
 class OptionalDependencyMissing(_BaseException):
     status_code = 500

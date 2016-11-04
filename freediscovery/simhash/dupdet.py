@@ -7,14 +7,13 @@ from __future__ import unicode_literals
 
 import os
 from sklearn.externals import joblib
-import numpy as np
 
 from ..base import BaseEstimator
 from ..text import FeatureVectorizer
-from ..utils import setup_model, _rename_main_thread
-from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
-                            WrongParameter)
+from ..utils import setup_model
+from ..exceptions import WrongParameter
 from .base import SimhashDuplicates
+
 
 class DuplicateDetection(BaseEstimator):
 
@@ -76,7 +75,6 @@ class DuplicateDetection(BaseEstimator):
 
         self.mid = mid
 
-
         X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
         shash.fit(X)
         
@@ -104,35 +102,25 @@ class DuplicateDetection(BaseEstimator):
         dup_pairs : list
             list of tuples for the near-duplicates
         """
-
-
         shash = self.model
 
         _fit_shash, cluster_id, matches = shash.query(distance=distance,
-                                          blocks=blocks)
+                                                      blocks=blocks)
         return _fit_shash, cluster_id, matches
-
 
     def _load_pars(self):
         """ Load parameters from cache specified by a mid """
-
         mid = self.mid
-
         mid_dir = os.path.join(self.model_dir, mid)
         if not os.path.exists(mid_dir):
             raise ValueError('Model id {} not found in the cache!'.format(mid))
-
         pars = joblib.load(os.path.join(mid_dir, 'pars'))
-
         return pars
-
 
     def load(self, mid):
         """ Load results from cache specified by a mid """
-
         mid_dir = os.path.join(self.model_dir, mid)
         if not os.path.exists(mid_dir):
             raise ValueError('Model id {} not found in the cache!'.format(mid))
-
         shash = joblib.load(os.path.join(mid_dir, 'model'))
         return shash
