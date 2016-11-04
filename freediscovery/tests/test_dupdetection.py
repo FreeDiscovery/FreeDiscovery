@@ -6,6 +6,8 @@ from __future__ import print_function
 
 import os.path
 from unittest import SkipTest
+import numpy as np
+from numpy.testing import assert_equal
 
 from freediscovery.text import FeatureVectorizer
 from .run_suite import check_cache
@@ -99,6 +101,42 @@ def test_simhash():
         assert num_differing_bits(*pairs) <= DISTANCE
 
 
+@pytest.mark.parametrize('n_rand_lexicons, ', [1, 5])#, 5, 10])
+def test_imatch(n_rand_lexicons):
+
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from freediscovery.dupdet import IMatchDuplicates
+
+    DISTANCE = 4
+
+    fe = TfidfVectorizer(ngram_range=(4,4), analyzer='word',
+                         min_df=0.25, max_df=0.75)
+
+    X = fe.fit_transform([jabberwocky,
+                          jabberwocky + jabberwocky_author,
+                          jabberwocky_author,
+                          jabberwocky])
+    #print(fe.get_feature_names())
+
+    sh = IMatchDuplicates(n_rand_lexicons=n_rand_lexicons)
+    sh.fit(X)
+
+    if n_rand_lexicons > 4:
+        return
+        # make sure small changes in the text produce the same hash
+        assert sh.labels_[0] == sh.labels_[1]
+
+    assert sh.labels_.shape[0] == X.shape[0]
+    assert sh.hash_.shape[0] == X.shape[0]
+    assert sh.hash_is_dup_.shape[0] == X.shape[0]
+
+    # different documents produce different hash
+    assert sh.labels_[0] != sh.labels_[2]
+
+    # same text produces same hash
+    assert sh.labels_[0] == sh.labels_[-1]
+
+
 def test_dup_detection():
     try:
         import simhash
@@ -110,3 +148,23 @@ def test_dup_detection():
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
     dd.fit()
     simhash, cluster_id, dup_pairs = dd.query(distance=3)  # TODO unused variables
+
+
+def test_merge_clusters():
+    from freediscovery.dupdet.imatch import _merge_clusters
+
+    X = np.array([[1, 2, 7, 9, 7, 8]]).T
+
+    y = _merge_clusters(X)
+    assert_equal(X, y[:,None])
+
+    X_new = np.concatenate((X, X, X, X), axis=1)
+    y = _merge_clusters(X_new)
+    assert_equal(X, y[:,None])
+
+
+    X = np.array([[1, 1, 2, 2, 3, 1, 3],
+                  [2, 4, 2, 5, 1, 1, 3]]).T
+    y = _merge_clusters(X)
+    assert_equal(y, [1, 1, 1, 1, 3, 1, 3])
+
