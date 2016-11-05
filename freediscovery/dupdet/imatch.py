@@ -117,8 +117,17 @@ class IMatchDuplicates(BaseEstimator):
                 ihash.append(hash_res)
             ihash_all.append(ihash)
 
+        # an array (n_samples, n_lexicons) with the document hashes for
+        # each lexicon
         self.hash_ = np.array(ihash_all).T
-        self.hash_is_dup_ =  np.array([ counts > 0 for _, counts in 
-                                           [np.unique(col, return_counts=True)
-                                               for col in self.hash_.T]]).T
+
+        unique_gen = (np.unique(col, return_counts=True, return_inverse=True)
+                                                for col in self.hash_.T)
+        # this is an integer array (n_samples, n_lexicons) with the size
+        # of the cluster for each element
+        # subsequently (self.hash_is_dup_ > 1).sum(axis=1) yields the
+        # numeber of lexicons that suggest each document is a duplicate
+        self.hash_is_dup_ =  np.array([
+                   counts[indices] for _, indices, counts in unique_gen]).T
+
         self.labels_ = _merge_clusters(self.hash_)

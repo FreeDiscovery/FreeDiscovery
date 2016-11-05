@@ -101,7 +101,7 @@ def test_simhash():
         assert num_differing_bits(*pairs) <= DISTANCE
 
 
-@pytest.mark.parametrize('n_rand_lexicons, ', [1, 5])#, 5, 10])
+@pytest.mark.parametrize('n_rand_lexicons, ', [1, 5, 100])
 def test_imatch(n_rand_lexicons):
 
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -121,11 +121,6 @@ def test_imatch(n_rand_lexicons):
     sh = IMatchDuplicates(n_rand_lexicons=n_rand_lexicons)
     sh.fit(X)
 
-    if n_rand_lexicons > 4:
-        return
-        # make sure small changes in the text produce the same hash
-        assert sh.labels_[0] == sh.labels_[1]
-
     assert sh.labels_.shape[0] == X.shape[0]
     assert sh.hash_.shape[0] == X.shape[0]
     assert sh.hash_is_dup_.shape[0] == X.shape[0]
@@ -135,6 +130,8 @@ def test_imatch(n_rand_lexicons):
 
     # same text produces same hash
     assert sh.labels_[0] == sh.labels_[-1]
+
+    # RY: not sure what other tests could be run for I-Match
 
 
 def test_dup_detection():
