@@ -8,43 +8,10 @@ from __future__ import unicode_literals
 
 import numpy as np
 from sklearn.base import BaseEstimator
+from freediscovery.clustering.utils import _merge_clusters
 from sklearn.utils.validation import check_array
 
 
-def _merge_clusters(X):
-    """
-    Compute a union of all clusters
-
-    Used to determine which cluster_id a document should belong to if at least one of it's
-    lexicons suggest that it's a duplicate
-
-    Approximate time complexity O(n_samples*n_features)
-
-    Parameters
-    ----------
-     X: array (n_samples, n_features)
-    """
-    X = check_array(X, ensure_2d=True)
-
-    n_samples, n_features = X.shape
-
-    y = np.zeros(n_samples, dtype=X.dtype)
-
-    out = {}
-
-    for (i_idx, X_row) in enumerate(X):
-        for j_idx, X_el in enumerate(X_row):
-            if (j_idx, X_el) in out:
-                res = out[(j_idx, X_el)]
-                break
-        else:
-            res = X_row[0] # use the 1st columnt index for this cluster id
-
-        for (j_idx, X_el) in enumerate(X_row):
-            out[(j_idx, X_el)] = res
-
-        y[i_idx] = res
-    return y
 
 
 class IMatchDuplicates(BaseEstimator):

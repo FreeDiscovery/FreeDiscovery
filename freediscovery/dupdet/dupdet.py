@@ -13,6 +13,7 @@ from ..text import FeatureVectorizer
 from ..utils import setup_model
 from ..exceptions import WrongParameter
 from .base import SimhashDuplicates
+from .imatch import IMatchDuplicates
 
 
 class DuplicateDetection(BaseEstimator):
@@ -25,6 +26,8 @@ class DuplicateDetection(BaseEstimator):
 
         Currently supported backends are:
           - simhash-py
+          - i-match
+          - DBSCAN
 
         Parameters
         ----------
@@ -67,7 +70,7 @@ class DuplicateDetection(BaseEstimator):
         """
 
         pars = {'method': method}
-        if method != 'simhash':
+        if method not in ['simhash', 'i-match']:
             raise WrongParameter('Dup. detection method {} not implemented!'.format(method))
         self.model = shash = SimhashDuplicates()
         self._pars = pars
@@ -77,11 +80,13 @@ class DuplicateDetection(BaseEstimator):
 
         X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
         shash.fit(X)
+
+        self._fit_X = X
         
         joblib.dump(shash, os.path.join(self.model_dir, mid,  'model'), compress=9)
         joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'), compress=9)
 
-    def query(self, distance=2, blocks='auto'):
+    def query(self, **args):
         """ Find all the nearests neighbours for the dataset
 
         Parameters
@@ -104,8 +109,8 @@ class DuplicateDetection(BaseEstimator):
         """
         shash = self.model
 
-        _fit_shash, cluster_id, matches = shash.query(distance=distance,
-                                                      blocks=blocks)
+        _fit_shash, cluster_id, matches = shash.query(**args)
+
         return _fit_shash, cluster_id, matches
 
     def _load_pars(self):

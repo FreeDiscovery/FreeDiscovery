@@ -36,7 +36,7 @@ Python API reference
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: freediscovery.clustering.dendogram
+.. automodule:: freediscovery.clustering.dendrogram
     :members:
     :undoc-members:
     :show-inheritance:

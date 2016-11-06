@@ -122,6 +122,41 @@ def test_dbscan_noisy_utils():
     assert v_measure_score(y, y_ref) == 1
 
 
+def test_binary_linkage2clusters():
+    from freediscovery.clustering.utils import _binary_linkage2clusters
+    from sklearn.metrics import v_measure_score
+    n_samples = 10
+    linkage = np.array([[1, 2],
+                        [2, 3],
+                        [5, 7],
+                        [6, 9]])
+
+    cluster_id = _binary_linkage2clusters(linkage, n_samples)
+
+    cluster_id_ref = np.array([0, 1, 1, 1, 2, 3, 4, 3, 5, 4])
+
+    assert cluster_id.shape == cluster_id_ref.shape
+    assert v_measure_score(cluster_id, cluster_id_ref) == 1.0 # i.e. same clusters
+
+
+def test_merge_clusters():
+    from freediscovery.clustering.utils import _merge_clusters
+
+    X = np.array([[1, 2, 7, 9, 7, 8]]).T
+
+    y = _merge_clusters(X)
+    assert_equal(X, y[:,None])
+
+    X_new = np.concatenate((X, X, X, X), axis=1)
+    y = _merge_clusters(X_new)
+    assert_equal(X, y[:,None])
+
+
+    X = np.array([[1, 1, 2, 2, 3, 1, 3],
+                  [2, 4, 2, 5, 1, 1, 3]]).T
+    y = _merge_clusters(X)
+    assert_equal(y, [1, 1, 1, 1, 3, 1, 3])
+
 def test_select_top_words():
     words_list = ['apple', 'apples', 'test', 'go']
     n_words = 2

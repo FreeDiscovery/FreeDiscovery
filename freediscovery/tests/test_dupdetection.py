@@ -147,21 +147,4 @@ def test_dup_detection():
     simhash, cluster_id, dup_pairs = dd.query(distance=3)  # TODO unused variables
 
 
-def test_merge_clusters():
-    from freediscovery.dupdet.imatch import _merge_clusters
-
-    X = np.array([[1, 2, 7, 9, 7, 8]]).T
-
-    y = _merge_clusters(X)
-    assert_equal(X, y[:,None])
-
-    X_new = np.concatenate((X, X, X, X), axis=1)
-    y = _merge_clusters(X_new)
-    assert_equal(X, y[:,None])
-
-
-    X = np.array([[1, 1, 2, 2, 3, 1, 3],
-                  [2, 4, 2, 5, 1, 1, 3]]).T
-    y = _merge_clusters(X)
-    assert_equal(y, [1, 1, 1, 1, 3, 1, 3])
 
