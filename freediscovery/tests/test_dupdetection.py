@@ -101,7 +101,7 @@ def test_simhash():
         assert num_differing_bits(*pairs) <= DISTANCE
 
 
-@pytest.mark.parametrize('n_rand_lexicons, ', [1, 5, 100])
+@pytest.mark.parametrize('n_rand_lexicons,', [1, 5, 100])
 def test_imatch(n_rand_lexicons):
 
     from sklearn.feature_extraction.text import TfidfVectorizer

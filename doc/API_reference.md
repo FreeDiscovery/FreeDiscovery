@@ -31,6 +31,8 @@ Initialize the feature extraction on a document collection.
     - `use_idf`: Enable inverse-document-frequency reweighting (default: False).
     - `sublinear_tf`: Apply sublinear tf scaling, i.e. replace tf with log(1 + tf) (default: False).
     - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True) 
+    - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
+    - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
 
 
 

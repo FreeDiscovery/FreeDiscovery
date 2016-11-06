@@ -19,6 +19,7 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 n_features = 1100000
 
 
+# generate all possible combinations of options
 fe_cases = list(itertools.product(['word', 'char'], ['None', 'english'], [[1,1], [1, 2], [4,4]],
                 [True, False], [True, False], [True, False], [True, False]))
 fe_names = 'analyzer, stop_words, ngram_range, use_idf, sublinear_tf, binary, use_hashing'
@@ -57,5 +58,31 @@ def test_feature_extraction(analyzer, stop_words, ngram_range, use_idf, sublinea
         n_top_words = 5
         terms = fe.query_features([2, 3, 5], n_top_words=n_top_words)
         assert len(terms) == n_top_words
+
+    fe.delete()
+
+@pytest.mark.parametrize('use_hashing, min_df, max_df', [[False, 0.4, 0.6],
+                                                         [True,  0.4, 0.6]])
+def test_df_filtering(use_hashing, min_df, max_df):
+    cache_dir = check_cache()
+
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir, use_hashing=use_hashing, min_df=min_df, max_df=max_df)
+    uuid, filenames = fe.transform()
+
+    _, X = fe.load(uuid)
+
+    fe2 = FeatureVectorizer(cache_dir=cache_dir)
+    uuid2 = fe2.preprocess(data_dir, use_hashing=use_hashing)
+    uuid2, filenames = fe2.transform()
+
+    _, X2 = fe2.load(uuid2)
+
+    if use_hashing:
+        assert X.shape[1] == X2.shape[1] # min/max_df does not affect the number of features
+    else:
+        assert X.shape[1] < X2.shape[1] # min/max_df removes some features
+
 
     fe.delete()

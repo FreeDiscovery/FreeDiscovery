@@ -336,7 +336,8 @@ def test_get_feature_extraction_all(app):
                  sorted(['analyzer', 'ngram_range', 'stop_words',
                      'n_jobs', 'chunk_size', 'norm',
                      'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
-                     'binary', 'sublinear_tf', 'use_hashing'])
+                     'binary', 'sublinear_tf', 'use_hashing',
+                     'max_df', 'min_df'])
 
 
 def test_get_feature_extraction(app):
@@ -349,7 +350,8 @@ def test_get_feature_extraction(app):
              sorted(['data_dir', 'filenames', 'n_samples', 'norm',
                  'n_samples_processed', 'n_features', 'n_jobs', 'chunk_size',
                  'analyzer', 'ngram_range', 'stop_words', 'use_idf',
-                 'binary', 'sublinear_tf', 'use_hashing'])
+                 'binary', 'sublinear_tf', 'use_hashing',
+                 'max_df', 'min_df'])
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])

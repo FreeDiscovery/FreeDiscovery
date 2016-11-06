@@ -82,9 +82,12 @@ class FeatureVectorizer(object):
         self.dsid_dir = dsid_dir
         self._pars = pars
 
-    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*', n_features=11000000,
-                   chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
-                   n_jobs=1, use_idf=False, sublinear_tf=False, binary=True, use_hashing=True, norm=None):
+
+
+    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=11000000,
+            chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
+            n_jobs=1, use_idf=False, sublinear_tf=False, binary=True, use_hashing=True,
+            norm=None, min_df=0.0, max_df=1.0):
         """ Initalize the features extraction. See sklearn.feature_extraction.text for a
         detailed description of the input parameters """
         data_dir = os.path.normpath(data_dir)
@@ -128,8 +131,8 @@ class FeatureVectorizer(object):
                 'analyzer': analyzer, 'ngram_range': ngram_range,
                 'n_jobs': n_jobs, 'use_idf': use_idf, 'sublinear_tf': sublinear_tf,
                 'binary': binary, 'use_hashing': use_hashing,
-                'norm': norm
-                }
+                'norm': norm, 'min_df': float(min_df), 'max_df': float(max_df)
+               }
         self._pars = pars
         joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
         return dsid
@@ -182,7 +185,7 @@ class FeatureVectorizer(object):
 
         try:
             if use_hashing:
-                _rename_main_thread()
+                _rename_main_thread() # fixed in https://github.com/joblib/joblib/pull/414
                 Parallel(n_jobs=n_jobs)(delayed(_vectorize_chunk)(dsid_dir, k, pars)\
                             for k in range(n_samples//chunk_size + 1))
 
@@ -195,14 +198,11 @@ class FeatureVectorizer(object):
                 self.vect = None
             else:
                 opts_tfidf = {key: val for key, val in pars.items() \
-                        if key in ['stop_words', 'use_idf', 'ngram_range', 'analyzer']}
-                if len(pars['filenames']) > 100:
-                    min_df = 5
-                else:
-                    min_df = 2
+                        if key in ['stop_words', 'use_idf', 'ngram_range', 'analyzer',
+                                   'min_df', 'max_df']}
 
-                tfidf = TfidfVectorizer(input='filename', max_df=0.6,
-                            min_df=min_df, max_features=pars['n_features'],
+                tfidf = TfidfVectorizer(input='filename',
+                            max_features=pars['n_features'],
                             norm=pars['norm'],
                             decode_error='ignore', **opts_tfidf)
                 res = tfidf.fit_transform(pars['filenames'])

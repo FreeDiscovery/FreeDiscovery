@@ -33,7 +33,7 @@ features_schema = FeaturesSchema()
 error_schema = ErrorSchema()
 
 # ============================================================================ # 
-#                      Features extraction                                     #
+#                      Feature extraction                                      #
 # ============================================================================ # 
 
 class FeaturesApi(Resource):
@@ -49,6 +49,10 @@ class FeaturesApi(Resource):
         args['use_idf'] = args['use_idf'] > 0
         if args['norm'] == 'None':
             args['norm'] = None
+        if args['use_hashing']:
+            for key in ['min_df', 'max_df']:
+                if key in args:
+                    del args[key] # the above parameters are ignored with caching
         fe = FeatureVectorizer(self._cache_dir)
         dsid = fe.preprocess(**args)
         pars = fe.get_params()
