@@ -134,17 +134,21 @@ def test_imatch(n_rand_lexicons):
     # RY: not sure what other tests could be run for I-Match
 
 
-def test_dup_detection():
-    try:
-        import simhash
-    except ImportError:
-        raise SkipTest
+@pytest.mark.parametrize('method, options', [['simhash', {'distance': 3}],
+                                             ['i-match', {}]])
+def test_dup_detection(method, options):
+    if method == 'simhash':
+        try:
+            import simhash
+        except ImportError:
+            raise SkipTest
     from freediscovery.dupdet import DuplicateDetection
     cache_dir, uuid, filenames, fe = fd_setup()
 
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
-    dd.fit()
-    simhash, cluster_id, dup_pairs = dd.query(distance=3)  # TODO unused variables
+    dd.fit(method=method)
+    cluster_id = dd.query(**options)
+    assert len(np.unique(filenames)) <= len(np.unique(cluster_id))
 
 
 

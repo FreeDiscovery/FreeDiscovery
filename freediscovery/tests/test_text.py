@@ -20,7 +20,7 @@ n_features = 1100000
 
 
 # generate all possible combinations of options
-fe_cases = list(itertools.product(['word', 'char'], ['None', 'english'], [[1,1], [1, 2], [4,4]],
+fe_cases = list(itertools.product(['word', 'char'], ['None', 'english'], [[1,1], [1, 2]],
                 [True, False], [True, False], [True, False], [True, False]))
 fe_names = 'analyzer, stop_words, ngram_range, use_idf, sublinear_tf, binary, use_hashing'
 

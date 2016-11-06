@@ -278,12 +278,14 @@ Predict document categorization with a previously trained model
 
 ## 5. Duplicate detection
 
-### 5.a Compute duplicates (simhash)
+### 5.a Compute duplicates
 
  * **URL**: `/api/v0/duplicate-detection/simhash`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
     - `dataset_id`: dataset id
+    - `method`: str, default='simhash'
+         Method used for duplicate detection. One of "simhash", "i-match"
 
  * **Success Response**: `HTTP 200`
     
@@ -291,14 +293,15 @@ Predict document categorization with a previously trained model
 
 ### 5.b Query duplicates
 
- * **URL**: `/api/v0/duplicate-detection/simhash/<model-id>` 
+ * **URL**: `/api/v0/duplicate-detection/<model-id>` 
  * **Method**: `GET` **URL Params**: None
  * **Data Params**: 
     - distance : int, default=2
-              Maximum number of differnet bits in the simhash
-    - blocks : int or 'auto', default='auto'
-                  number of blocks into which the simhash is split
-                  when searching for duplicates, see  https://github.com/seomoz/simhash-py
+              Maximum number of differnet bits in the simhash (Simhash method only)
+    - n_rand_lexicons : int, default=1
+              number of random lexicons used for duplicate detection (I-Match method only)
+    - rand_lexicon_ratio: float, default=0.7
+              ratio of the vocabulary used in random lexicons (I-Match method only)
 
 
  * **Success Response**: `HTTP 200`

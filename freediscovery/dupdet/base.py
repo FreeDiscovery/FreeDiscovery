@@ -95,6 +95,7 @@ class SimhashDuplicates(BaseEstimator):
         if blocks == 'auto':
             blocks = min(distance*2, 64)
         matches = find_all(self._fit_shash, blocks, distance)
+        matches = np.array(matches)
         return self._fit_shash, cluster_id, matches
 
 

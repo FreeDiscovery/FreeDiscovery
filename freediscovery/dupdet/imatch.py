@@ -27,7 +27,7 @@ class IMatchDuplicates(BaseEstimator):
         number of random lexicons used for duplicate detection
         If equal to 1 no lexicon randomization is used which is equivalent
         to the original I-Match implementation by Chowdhury & Grossman (2002)
-     - rand_lexicon_ratio: float, defualt=0.7
+     - rand_lexicon_ratio: float, default=0.7
         ratio of the vocabulary used in random lexicons
 
     References
@@ -97,4 +97,4 @@ class IMatchDuplicates(BaseEstimator):
         self.hash_is_dup_ =  np.array([
                    counts[indices] for _, indices, counts in unique_gen]).T
 
-        self.labels_ = _merge_clusters(self.hash_)
+        self.labels_ = _merge_clusters(self.hash_, rename=True)

@@ -54,8 +54,8 @@ def fd_app(cache_dir):
                              (BirchClusteringApi,   '/clustering/birch'),
                              (WardHCClusteringApi,  '/clustering/ward_hc'),
                              (ClusteringApiElement, '/clustering/<method>/<mid>'),
-                             (DupDetectionApi,      '/duplicate-detection/simhash'),
-                             (DupDetectionApiElement,'/duplicate-detection/simhash/<mid>'),
+                             (DupDetectionApi,      '/duplicate-detection/'),
+                             (DupDetectionApiElement,'/duplicate-detection/<mid>'),
                              #(CatchAll, "/<url>")
                              ]:
         # monkeypatching, not great

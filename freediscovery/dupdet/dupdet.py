@@ -6,14 +6,13 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import numpy as np
 from sklearn.externals import joblib
 
 from ..base import BaseEstimator
 from ..text import FeatureVectorizer
 from ..utils import setup_model
-from ..exceptions import WrongParameter
-from .base import SimhashDuplicates
-from .imatch import IMatchDuplicates
+from ..exceptions import (WrongParameter)
 
 
 class DuplicateDetection(BaseEstimator):
@@ -27,7 +26,6 @@ class DuplicateDetection(BaseEstimator):
         Currently supported backends are:
           - simhash-py
           - i-match
-          - DBSCAN
 
         Parameters
         ----------
@@ -72,19 +70,25 @@ class DuplicateDetection(BaseEstimator):
         pars = {'method': method}
         if method not in ['simhash', 'i-match']:
             raise WrongParameter('Dup. detection method {} not implemented!'.format(method))
-        self.model = shash = SimhashDuplicates()
+        if method == 'simhash':
+            from .base import SimhashDuplicates
+            self.model = shash = SimhashDuplicates()
+        else:
+            self.model = None
         self._pars = pars
         mid, mid_dir = setup_model(self.model_dir)
 
         self.mid = mid
 
         X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
-        shash.fit(X)
+        if method == 'simhash':
+            shash.fit(X)
 
         self._fit_X = X
         
-        joblib.dump(shash, os.path.join(self.model_dir, mid,  'model'), compress=9)
+        joblib.dump(self.model, os.path.join(self.model_dir, mid,  'model'), compress=9)
         joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'), compress=9)
+
 
     def query(self, **args):
         """ Find all the nearests neighbours for the dataset
@@ -99,19 +103,43 @@ class DuplicateDetection(BaseEstimator):
                 see  https://github.com/seomoz/simhash-py
         Returns
         -------
-        simhash : array
-            the simhash value for all documents in the collection
         cluster_id : array
             the exact duplicates (documents with the same simhash)
             are grouped by in cluster_id
-        dup_pairs : list
-            list of tuples for the near-duplicates
         """
-        shash = self.model
 
-        _fit_shash, cluster_id, matches = shash.query(**args)
+        if self._pars['method'] == 'simhash':
+            from ..clustering.utils import (_binary_linkage2clusters, 
+                                    _merge_clusters)
 
-        return _fit_shash, cluster_id, matches
+            shash = self.model
+
+            _fit_shash, cluster_id_exactdup, matches = shash.query(**args)
+
+            if matches.shape[0] > 0:
+                matches_idx = np.zeros(matches.shape, dtype=np.int)
+                for idx, val in np.nditer(matches):
+                    matches_idx[idx] = shash.get_index_by_hash(val)
+            else:
+                matches_idx = matches
+            # compute cluster_id for near duplicates
+            cluster_id_dnup = _binary_linkage2clusters(matches_idx, len(_fit_shash))
+            # merge near duplicates and exact duplicates clusters
+            cluster_id = _merge_clusters(
+                     np.concatenate((cluster_id_exactdup[:, None],
+                                     cluster_id_dnup[:, None]), axis=1),
+                     rename=True)
+        elif self._pars['method'] == 'i-match':
+            from .imatch import IMatchDuplicates
+            model = IMatchDuplicates(**args)
+            model.fit(self._fit_X)
+            cluster_id = model.labels_
+
+        else:
+            raise ValueError
+
+
+        return cluster_id
 
     def _load_pars(self):
         """ Load parameters from cache specified by a mid """

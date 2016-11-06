@@ -395,7 +395,9 @@ class DupDetectionApi(Resource):
         return {'id': model.mid}
 
 _dupdet_api_get_args = {
-        'distance': wfields.Int(missing=2)
+        'distance': wfields.Int(),
+        'n_rand_lexicons': wfields.Int(),
+        'rand_lexicon_ratio': wfields.Number()
         }
 
 
@@ -408,9 +410,8 @@ class DupDetectionApiElement(Resource):
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
         model.fit()
-        simhash, cluster_id, dup_pairs = model.query(**args)
-        return {'simhash': simhash, 'cluster_id': cluster_id,
-                'dup_pairs': dup_pairs}
+        cluster_id = model.query(**args)
+        return {'cluster_id': cluster_id}
 
     def delete(self, mid):
         from ..dupdet import DuplicateDetection
