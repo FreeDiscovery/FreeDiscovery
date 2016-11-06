@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import os.path
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 
 from freediscovery.text import FeatureVectorizer
@@ -66,11 +66,13 @@ def test_clustering(method, lsi_components, args, cl_args):
     # load the model saved to disk
     km = cat.load(mid)
     assert_allclose(labels, km.labels_)
-    assert len(terms) == NCLUSTERS
+    if method != 'dbscan':
+        # DBSCAN does not take the number of clusters as input
+        assert len(terms) == NCLUSTERS
+        assert len(np.unique(labels)) == NCLUSTERS
 
     for el in terms:
         assert len(el) == n_top_words
-    assert len(np.unique(labels)) == NCLUSTERS
     cluster_indices = np.nonzero(labels == 0)
     if lsi_components is not None:
         # not supported for now otherwise

@@ -41,15 +41,25 @@ Python API reference
     :undoc-members:
     :show-inheritance:
 
-5. Duplicates detection
------------------------
-
-.. automodule:: freediscovery.simhash.base
+.. automodule:: freediscovery.clustering.utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: freediscovery.simhash.dupdet
+5. Duplicates detection
+-----------------------
+
+.. automodule:: freediscovery.dupdet.base
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: freediscovery.dupdet.simhash
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: freediscovery.dupdet.imatch
     :members:
     :undoc-members:
     :show-inheritance:

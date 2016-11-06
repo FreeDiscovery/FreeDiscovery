@@ -285,11 +285,11 @@ def test_api_clustering(app, model):
     assert res.status_code == 200
 
 
-@pytest.mark.parametrize('method, options', [['simhash', {'distance': 3}],
+@pytest.mark.parametrize('kind, options', [['simhash', {'distance': 3}],
                                              ['i-match', {}]])
-def test_api_dupdetection(app, method, options):
+def test_api_dupdetection(app, kind, options):
 
-    if method == 'simhash':
+    if kind == 'simhash':
         try:
             import simhash
         except ImportError:
@@ -304,7 +304,8 @@ def test_api_dupdetection(app, method, options):
 
     url = V01 + "/duplicate-detection" 
     pars = { 'dataset_id': dsid,
-             'method': method}
+             'method': kind}
+    print(pars)
     res = app.post(url, data=pars)
     assert res.status_code == 200
     data = parse_res(res)

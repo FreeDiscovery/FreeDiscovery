@@ -8,6 +8,7 @@ import os.path
 from unittest import SkipTest
 import numpy as np
 from numpy.testing import assert_equal
+import pytest
 
 from freediscovery.text import FeatureVectorizer
 from .run_suite import check_cache
@@ -70,7 +71,7 @@ def test_simhash():
 
     DISTANCE = 4
 
-    fe = HashingVectorizer(ngram_range=(4,4), analyzer='word', n_features=2**30)
+    fe = HashingVectorizer(ngram_range=(4,4), analyzer='word')
 
     X = fe.fit_transform([jabberwocky,
                           jabberwocky + jabberwocky_author,
@@ -81,9 +82,9 @@ def test_simhash():
     sh.fit(X)
 
     # make sure small changes in the text results in a small number of different bytes
-    assert num_differing_bits(*sh._fit_shash[:2]) <= 2
+    assert num_differing_bits(*sh._fit_shash[:2]) <= 3
     # different text produces a large number of different bytes
-    assert num_differing_bits(*sh._fit_shash[1:3]) >= 30
+    assert num_differing_bits(*sh._fit_shash[1:3]) >= 20
 
     # same text produces a zero bit difference
     assert num_differing_bits(*sh._fit_shash[[0,-1]]) == 0

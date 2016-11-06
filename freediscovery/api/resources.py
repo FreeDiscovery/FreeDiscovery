@@ -390,7 +390,7 @@ class DupDetectionApi(Resource):
         del args['dataset_id']
 
 
-        model.fit()
+        model.fit(args['method'])
 
         return {'id': model.mid}
 
@@ -409,7 +409,6 @@ class DupDetectionApiElement(Resource):
         from ..dupdet import DuplicateDetection
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
-        model.fit()
         cluster_id = model.query(**args)
         return {'cluster_id': cluster_id}
 
