@@ -348,7 +348,11 @@ class ClusteringApiElement(Resource):
         htree = cl._get_htree(km)
         if 'children' in htree:
             htree['children'] = htree['children'].tolist()
-        terms = cl.compute_labels(**args)
+        if args['n_top_words'] > 0:
+            terms = cl.compute_labels(**args)
+        else:
+            terms = []
+
         pars = cl._load_pars()
         if pars['lsi']:
             pars['lsi'] = True

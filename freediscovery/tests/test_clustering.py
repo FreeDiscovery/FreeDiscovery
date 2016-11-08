@@ -41,6 +41,8 @@ def check_cluster_consistency(labels, terms):
                            ['k_means', 20,   {}, {}],
                            ['birch', 20, {'threshold': 0.5}, {}],
                            ['ward_hc', 20, {'n_neighbors': 5}, {}],
+                           ['dbscan', None, {'eps':0.5, 'min_samples': 2}, {}],
+                           ['dbscan', 20,   {'eps':0.5, 'min_samples': 2}, {}],
                           ])
 def test_clustering(method, lsi_components, args, cl_args):
     cache_dir, uuid, filenames = fd_setup()
@@ -74,7 +76,8 @@ def test_clustering(method, lsi_components, args, cl_args):
         # not supported for now otherwise
         terms2 = cat.compute_labels(cluster_indices=cluster_indices, **cl_args)
         # 70% of the terms at least should match
-        assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
+        if method != 'dbscan':
+            assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
 
     cat2 = Clustering(cache_dir=cache_dir, mid=mid) # make sure we can load it  # TODO unused variable
     cat.delete()
@@ -106,6 +109,17 @@ def test_denrogram_children():
     # last level node should encompass all samples
     assert len(node_children) == X.shape[0]
     assert_allclose(sorted(node_children), np.arange(X.shape[0]))
+
+
+def test_dbscan_noisy_utils():
+    from freediscovery.clustering.base import _dbscan_noisy2unique
+    from sklearn.metrics import v_measure_score
+
+    x = np.array([-1, 0, -1,  1, -1,  0])
+    y_ref = np.array([2, 0, 3, 1, 4, 0])
+
+    y = _dbscan_noisy2unique(x)
+    assert v_measure_score(y, y_ref) == 1
 
 
 def test_select_top_words():
