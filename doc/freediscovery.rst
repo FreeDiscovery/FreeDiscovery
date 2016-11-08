@@ -31,17 +31,17 @@ Python API reference
 4. Document clustering
 -------------------------------
 
-.. automodule:: freediscovery.clustering.base
+.. automodule:: freediscovery.cluster.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: freediscovery.clustering.dendrogram
+.. automodule:: freediscovery.cluster.dendrogram
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: freediscovery.clustering.utils
+.. automodule:: freediscovery.cluster.utils
     :members:
     :undoc-members:
     :show-inheritance:

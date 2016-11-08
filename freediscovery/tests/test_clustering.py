@@ -10,7 +10,7 @@ from numpy.testing import assert_allclose, assert_equal
 import pytest
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.clustering import Clustering, select_top_words
+from freediscovery.cluster import Clustering, select_top_words
 from .run_suite import check_cache
 
 
@@ -89,7 +89,7 @@ def test_denrogram_children():
     # temporary solution for https://stackoverflow.com/questions/40239956/node-indexing-in-hierarachical-clustering-dendrograms
     import numpy as np
     from scipy.cluster.hierarchy import dendrogram, linkage
-    from freediscovery.clustering import _DendrogramChildren
+    from freediscovery.cluster import _DendrogramChildren
 
     # generate two clusters: a with 10 points, b with 5:
     np.random.seed(1)
@@ -114,7 +114,7 @@ def test_denrogram_children():
 
 
 def test_dbscan_noisy_utils():
-    from freediscovery.clustering.base import _dbscan_noisy2unique
+    from freediscovery.cluster.base import _dbscan_noisy2unique
     from sklearn.metrics import v_measure_score
 
     x = np.array([-1, 0, -1,  1, -1,  0])
@@ -125,7 +125,7 @@ def test_dbscan_noisy_utils():
 
 
 def test_binary_linkage2clusters():
-    from freediscovery.clustering.utils import _binary_linkage2clusters
+    from freediscovery.cluster.utils import _binary_linkage2clusters
     from sklearn.metrics import v_measure_score
     n_samples = 10
     linkage = np.array([[1, 2],
@@ -142,7 +142,7 @@ def test_binary_linkage2clusters():
 
 
 def test_merge_clusters():
-    from freediscovery.clustering.utils import _merge_clusters
+    from freediscovery.cluster.utils import _merge_clusters
 
     X = np.array([[1, 2, 7, 9, 7, 8]]).T
 

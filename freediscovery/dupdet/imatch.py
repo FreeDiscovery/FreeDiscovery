@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 
 import numpy as np
 from sklearn.base import BaseEstimator
-from freediscovery.clustering.utils import _merge_clusters
+from freediscovery.cluster.utils import _merge_clusters
 from sklearn.utils.validation import check_array
 
 

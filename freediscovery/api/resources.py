@@ -16,7 +16,7 @@ from ..lsi import LSI
 from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
 from ..utils import classification_score
-from ..clustering import Clustering
+from ..cluster import Clustering
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema,
                       LsiParsSchema, LsiPostSchema, LsiPredictSchema,

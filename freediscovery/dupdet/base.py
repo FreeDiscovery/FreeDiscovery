@@ -112,7 +112,7 @@ class DuplicateDetection(BaseEstimator):
 
         if self._pars['method'] == 'simhash':
             from simhash import find_all  # TODO resolve reference
-            from ..clustering.utils import (_binary_linkage2clusters, 
+            from ..cluster.utils import (_binary_linkage2clusters, 
                                     _merge_clusters)
 
             shash = self.model

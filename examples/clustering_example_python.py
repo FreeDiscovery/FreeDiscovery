@@ -6,7 +6,7 @@
 import pandas as pd
 from IPython.display import display
 from freediscovery.text import FeatureVectorizer
-from freediscovery.clustering import Clustering
+from freediscovery.cluster import Clustering
 from freediscovery.utils import _silent
 from time import time
 
