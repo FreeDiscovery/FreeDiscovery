@@ -64,6 +64,21 @@ def _generate_lsi(lsi_components=None):
     return lsi
 
 
+def _dbscan_noisy2unique(labels_):
+    """
+    Take labels_ given by DBSCAN and replace each "noisy"
+    point specified by -1, to a unique cluster id
+    """
+    labels_ = np.asarray(labels_).copy()
+    mask = labels_ == -1
+    indices = np.arange(mask.sum(), dtype=np.int)
+    indices += labels_.max()+1
+    labels_[mask] = indices
+    return labels_
+
+
+
+
 class ClusterLabels(object):
     def __init__(self, vect, model, pars, lsi=None, cluster_indices=None):
         """ Calculate the cluster labels.
@@ -88,7 +103,7 @@ class ClusterLabels(object):
         if cluster_indices is None:
             method_name = type(model).__name__
             if method_name not in ['MiniBatchKMeans', 'AgglomerativeClustering',
-                                        'Birch']:
+                                        'Birch', 'DBSCAN']:
                 raise NotImplementedError('Method name: {} not implented!'.format(method_name))
 
             centroids = self.model.cluster_centers_ # centroids were previously computed
@@ -153,6 +168,8 @@ class Clustering(BaseEstimator):
         """
         Document clustering
 
+        The algorithms are adapted from scikit learn
+
         Parameters
         ----------
           cache_dir : str
@@ -197,7 +214,6 @@ class Clustering(BaseEstimator):
         if pars is None:
             pars = {}
         pars.update(km.get_params(deep=True))
-        pars['n_clusters'] = n_clusters
         X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
 
         mid, mid_dir = setup_model(self.model_dir)
@@ -208,15 +224,24 @@ class Clustering(BaseEstimator):
             pars['lsi'] = lsi
 
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            if type(km).__name__ != "DBSCAN":
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
             km.fit(X)
         pars['lsi'] = lsi
         self.mid = mid
         self.mid_dir = mid_dir
 
+        labels_ = km.labels_
+        if type(km).__name__ != "DBSCAN":
+            labels_ = _dbscan_noisy2unique(labels_)
+            n_clusters = len(np.unique(labels_))
+
+
         if not hasattr(km, 'cluster_centers_'):
             # i.e. model is not MiniBatchKMeans => compute centroids
             km.cluster_centers_ = NearestCentroid().fit(X, km.labels_).centroids_
+
+        pars['n_clusters'] = n_clusters
 
         joblib.dump(km, os.path.join(self.model_dir, mid,  'model'), compress=9)
         joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'), compress=9)
@@ -317,7 +342,7 @@ class Clustering(BaseEstimator):
             birch threshold
         """
         from sklearn.cluster import Birch
-        pars = None
+        pars = {'threshold': threshold}
         if lsi_components is None:
             raise ValueError("lsi_components=None detected. You must use LSI with Birch \
                     clustering for scaling reasons.")
@@ -344,7 +369,7 @@ class Clustering(BaseEstimator):
         """
         from sklearn.cluster import AgglomerativeClustering
         from sklearn.neighbors import kneighbors_graph
-        pars = None
+        pars = {'n_neighbors': n_neighbors}
         if lsi_components is None:
             raise ValueError("lsi_components=None detected. You must use LSI with Birch \
                     clustering for scaling reasons.")
@@ -359,6 +384,36 @@ class Clustering(BaseEstimator):
 
         km = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward',
                                      connectivity=connectivity)
+
+        return self._cluster_func(n_clusters, km, pars, lsi=lsi)
+
+    def dbscan(self, n_clusters=None, eps=0.5, min_samples=10, algorithm='auto',
+               leaf_size=30, lsi_components=None):
+        """
+        Perform DBSCAN clustering
+
+        This can also be used for Duplicate Detection (when ep
+
+        Parameters
+        ----------
+        n_clusters: int
+            number of clusters # not used just present for compatibility
+        lsi_components: int
+            apply LSA before the clustering algorithm
+        eps: float
+            The maximum distance between two samples for them to be considered
+             as in the same neighborhood.
+        min_samples: int
+            The number of samples (or total weight) in a neighborhood for a point
+            to be considered as a core point. This includes the point itself.
+        """
+        from sklearn.cluster import DBSCAN
+        pars = None
+
+        lsi = _generate_lsi(lsi_components)
+
+        km = DBSCAN(eps=eps, min_samples=min_samples, algorithm=algorithm,
+                    leaf_size=leaf_size)
 
         return self._cluster_func(n_clusters, km, pars, lsi=lsi)
 
