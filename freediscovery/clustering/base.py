@@ -13,40 +13,38 @@ from sklearn.externals import joblib
 
 from ..base import BaseEstimator
 from ..text import FeatureVectorizer
-from ..utils import setup_model, _rename_main_thread
+from ..utils import setup_model
 from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
-from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
-                            WrongParameter)
 
 
 ### Clustering methods for FreeDiscovery
 ### This is highly inspired by the scikit example
 
-
 MAX_N_TOP_WORDS = 1000
+
 
 def select_top_words(word_list, n=10):
     """ Filter out cluster term names"""
     import re
     from nltk.stem.porter import PorterStemmer
     st = PorterStemmer()
-    out_st  = []
+    out_st = []
     out = []
     for word in word_list:
         word_st = st.stem(word)
         if len(word_st) <= 2 or\
-               re.match('\d+', word_st) or \
-               re.match('[^a-zA-Z0-9]', word_st) or\
-               word    in COMMON_FIRST_NAMES or \
-               word    in CUSTOM_STOP_WORDS or\
-               word_st in out_st: # ignore stemming duplicate
+                re.match('\d+', word_st) or \
+                re.match('[^a-zA-Z0-9]', word_st) or\
+                        word in COMMON_FIRST_NAMES or \
+                        word in CUSTOM_STOP_WORDS or\
+                        word_st in out_st: # ignore stemming duplicate
             continue
         out_st.append(word_st)
         out.append(word)
         if len(out) >= n:
             break
-
     return out
+
 
 def _generate_lsi(lsi_components=None):
     from sklearn.pipeline import make_pipeline
@@ -63,7 +61,6 @@ def _generate_lsi(lsi_components=None):
         lsi = make_pipeline(svd, normalizer)
     else:
         lsi = None
-
     return lsi
 
 
@@ -85,7 +82,6 @@ class ClusterLabels(object):
         self.lsi = lsi
         self._compute_centroids(cluster_indices)
 
-
     def _compute_centroids(self, cluster_indices=None):
         model = self.model
         lsi = self.lsi
@@ -99,7 +95,7 @@ class ClusterLabels(object):
         else:
             centroids = cluster_indices['centroids']
 
-        self.n_clusters = centroids.shape[0] # might happen that a cluster has 0 data points points
+        self.n_clusters = centroids.shape[0]  # might happen that a cluster has 0 data points points
                                          # in which case n_clusters = centroids.shape[0]
         if lsi is None:
             order_centroids = centroids.argsort()[:, ::-1]
@@ -108,7 +104,6 @@ class ClusterLabels(object):
             original_space_centroids = svd.inverse_transform(centroids)
             order_centroids = original_space_centroids.argsort()[:, ::-1]
         self._order_centroids = order_centroids
-
 
     def predict(self, method='centroid-frequency', n_top_words=6):
         """ Compute the cluster labels
@@ -134,7 +129,6 @@ class ClusterLabels(object):
         else:
             raise ValueError
 
-
     def _predict_centroid_freq(self):
         """ Return cluster labels based on the most frequent words (tfidf) at cluster centroids """
         terms = self.vect.get_feature_names()
@@ -145,12 +139,10 @@ class ClusterLabels(object):
             cluster_terms.append(terms_i)
         return cluster_terms
 
-
         #"if lsi is not None:
         #"    silhouette_score_res = silhouette_score(X, cluster_labels)
         #"else:
         #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
-
 
 
 class Clustering(BaseEstimator):
@@ -197,8 +189,6 @@ class Clustering(BaseEstimator):
             self._pars = None
 
 
-
-
     def _cluster_func(self, n_clusters, km, pars=None, lsi=None):
         """ A helper function for clustering, includes base method used by
         all clustering implementations """
@@ -237,7 +227,6 @@ class Clustering(BaseEstimator):
         htree = self._get_htree(km)
 
         return km.labels_, htree
-
 
     @staticmethod
     def _get_htree(km):
@@ -309,10 +298,8 @@ class Clustering(BaseEstimator):
         from sklearn.cluster import MiniBatchKMeans
         pars = {"batch_size": batch_size}
         lsi = _generate_lsi(lsi_components)
-
         km = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', n_init=10,
                     init_size=batch_size, batch_size=batch_size)
-
         return self._cluster_func(n_clusters, km, pars, lsi=lsi)
 
 
@@ -368,10 +355,10 @@ class Clustering(BaseEstimator):
         X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
         X_lsi = lsi.fit_transform(X)
         connectivity = kneighbors_graph(X_lsi, n_neighbors=n_neighbors,
-                                   include_self=False)
+                                        include_self=False)
 
         km = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward',
-                                       connectivity=connectivity)
+                                     connectivity=connectivity)
 
         return self._cluster_func(n_clusters, km, pars, lsi=lsi)
 
@@ -418,5 +405,3 @@ class Clustering(BaseEstimator):
 
         km = joblib.load(os.path.join(mid_dir, 'model'))
         return km
-
-

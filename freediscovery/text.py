@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
 
 import os.path
 import re
@@ -15,8 +14,7 @@ from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
 from .utils import generate_uuid, _rename_main_thread
-from .exceptions import (DatasetNotFound, ModelNotFound, InitException, NotFound,
-                            WrongParameter)
+from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
 
 def _touch(filename):
@@ -54,23 +52,20 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
 
 class FeatureVectorizer(object):
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
-        """ 
-
+        """
         Parameters
         ----------
           cache_dir: str, default='/tmp/'
             directory where to save temporary and regression files
-	  dsid: str
+        dsid: str
             load an exising dataset
-	  verbose: bool
+        verbose: bool
             pring progress messages
         """
-
         self.data_dir = None
         self.verbose = verbose
         if cache_dir is not None:
             self.cache_dir = cache_dir = os.path.join(cache_dir, 'ediscovery_cache')
-
             if not os.path.exists(cache_dir):
                 os.mkdir(cache_dir)
         else:
@@ -87,15 +82,11 @@ class FeatureVectorizer(object):
         self.dsid_dir = dsid_dir
         self._pars = pars
 
-
-
-    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=11000000,
-            chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
-            n_jobs=1, use_idf=False, sublinear_tf=False, binary=True, use_hashing=True,
-            norm=None):
+    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*', n_features=11000000,
+                   chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
+                   n_jobs=1, use_idf=False, sublinear_tf=False, binary=True, use_hashing=True, norm=None):
         """ Initalize the features extraction. See sklearn.feature_extraction.text for a
         detailed description of the input parameters """
-
         data_dir = os.path.normpath(data_dir)
 
         if not os.path.exists(data_dir):
@@ -113,7 +104,6 @@ class FeatureVectorizer(object):
 
         if not filenames: # no files were found
             raise WrongParameter('No files to process were found!')
-
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
         if not isinstance(ngram_range, tuple) and not isinstance(ngram_range, list):
@@ -123,10 +113,8 @@ class FeatureVectorizer(object):
         if stop_words not in ['None', 'english', 'english_alphanumeric']:
             raise WrongParameter('stop_words')
 
-
         filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
         self.dsid = dsid = generate_uuid()
-
         self.dsid_dir = dsid_dir = os.path.join(self.cache_dir, dsid)
 
         # hash collision, should not happen
@@ -141,7 +129,7 @@ class FeatureVectorizer(object):
                 'n_jobs': n_jobs, 'use_idf': use_idf, 'sublinear_tf': sublinear_tf,
                 'binary': binary, 'use_hashing': use_hashing,
                 'norm': norm
-               }
+                }
         self._pars = pars
         joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
         return dsid
@@ -167,7 +155,6 @@ class FeatureVectorizer(object):
         """
         Run the feature extraction
         """
-
         from glob import glob
 
         dsid = self.dsid
@@ -184,7 +171,6 @@ class FeatureVectorizer(object):
         n_jobs = pars['n_jobs']
         use_hashing = pars['use_hashing']
 
-
         if use_hashing:
             # just make sure that we can initialize the vectorizer
             # (easier outside of the paralel loop
@@ -192,11 +178,9 @@ class FeatureVectorizer(object):
 
         processing_lock =  os.path.join(dsid_dir, 'processing')
         _touch(processing_lock)
-
         pars['stop_words'] = self._generate_stop_words(pars['stop_words'])
 
         try:
-
             if use_hashing:
                 _rename_main_thread()
                 Parallel(n_jobs=n_jobs)(delayed(_vectorize_chunk)(dsid_dir, k, pars)\
@@ -225,7 +209,6 @@ class FeatureVectorizer(object):
                 joblib.dump(tfidf, os.path.join(dsid_dir, 'vectorizer'))
                 self.vect = tfidf
 
-
             if pars['norm'] is not None:
                 res = normalize(res, norm=pars['norm'], copy=False)
             else:
@@ -233,7 +216,6 @@ class FeatureVectorizer(object):
                 # this is necessary e.g. by SVM
                 # and does not hurt anyway
                 res /= res.max()
-
 
             joblib.dump(res, os.path.join(dsid_dir, 'features'))
             # remove all identical files
@@ -247,11 +229,8 @@ class FeatureVectorizer(object):
         # remove processing lock if finished or if error
         if os.path.exists(processing_lock):
             os.remove(processing_lock)
-
         _touch(os.path.join(dsid_dir, 'processing_finished'))
-
         return dsid, filenames_base
-
 
     def query_features(self, indices, n_top_words=10):
         """ Query the features with most weight"""
@@ -271,20 +250,16 @@ class FeatureVectorizer(object):
             out.append(terms[idx])
         return out
 
-
-
     def delete(self):
         """ Delete the current dataset """
         import shutil
         shutil.rmtree(self.dsid_dir, ignore_errors=True)
-
 
     def __contains__(self, dsid):
         """ This is a somewhat non standard call that checks if a dsid
         exist on disk (in general)"""
         dsid_dir = os.path.join(self.cache_dir, dsid)
         return os.path.exists(dsid_dir)
-
 
     def list_datasets(self):
         """ List all datasets in the working directory """
@@ -297,12 +272,11 @@ class FeatureVectorizer(object):
                                     'n_jobs', 'chunk_size', 'norm',
                                     'analyzer', 'ngram_range', 'stop_words',
                                     'use_idf', 'sublinear_tf', 'binary', 'use_hashing']:
-                    row[key] =  pars[key]
+                    row[key] = pars[key]
                 out.append(row)
             except:
                 pass
         return out
-
 
     def _aggregate_features(self):
         """ Agregate features loaded as separate files features-<number>
@@ -313,44 +287,34 @@ class FeatureVectorizer(object):
         for filename in sorted(glob(os.path.join(self.dsid_dir, 'features-*[0-9]'))):
             ds = joblib.load(filename)
             out.append(ds)
-
         res = scipy.sparse.vstack(out)
         return res
 
-
     def load(self, dsid):
         """ Load a computed features from disk"""
-
         if self.cache_dir is None:
             raise InitException('cache_dir is None: cannot load from cache!')
         dsid_dir = os.path.join(self.cache_dir, dsid)
         if not os.path.exists(dsid_dir):
             raise DatasetNotFound('dsid not found!')
-
         pars = joblib.load(os.path.join(dsid_dir, 'pars'))
         fset_new = joblib.load(os.path.join(dsid_dir, 'features'))
         return pars['filenames'], fset_new
-
 
     def get_params(self):
         """ Get the vectorizer parameters """
         return self._pars
 
-
     def _load_pars(self):
         """ Load parameters from disk"""
-
         dsid = self.dsid
-
         if self.cache_dir is None:
             raise InitException('cache_dir is None: cannot load from cache!')
         dsid_dir = os.path.join(self.cache_dir, dsid)
         if not os.path.exists(dsid_dir):
             raise DatasetNotFound('dsid {} not found!'.format(dsid))
-
         pars = joblib.load(os.path.join(dsid_dir, 'pars'))
         return pars
-
 
     def search(self, filenames):
         """ Given a dsid return the features that correspond to the provided filenames """
@@ -363,7 +327,7 @@ class FeatureVectorizer(object):
         if len(filenames) == len(indices):
             return indices
         elif len(indices) == 0:
-            return None #np.zeros(len(filenames)).astype(bool)
+            return None  # np.zeros(len(filenames)).astype(bool)
         elif len(filenames) != len(indices):
             # this is not supposed to happen, we should do something
             raise ValueError("unconsistant indices, the results may be wrong!")

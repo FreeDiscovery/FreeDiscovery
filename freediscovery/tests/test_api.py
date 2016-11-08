@@ -6,8 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import sys
-import unittest
 import pytest
 import json
 import itertools
@@ -24,6 +22,7 @@ V01 = '/api/v0'
 data_dir = os.path.dirname(__file__)
 data_dir = os.path.join(data_dir, "..", "data", "ds_001", "raw")
 
+
 def parse_res(res):
     return json.loads(res.data.decode('utf-8'))
 
@@ -38,6 +37,7 @@ def app():
     tapp.config['TESTING'] = True
     return tapp.test_client()
 
+
 @pytest.fixture
 def app_notest():
     cache_dir = check_cache()
@@ -45,6 +45,7 @@ def app_notest():
     tapp.config['TESTING'] = False
 
     return tapp.test_client()
+
 
 def features_hashed(app):
     method = V01 + "/feature-extraction/"
@@ -58,14 +59,13 @@ def features_hashed(app):
     assert sorted(data.keys()) ==  ['filenames', 'id']
     dsid = data['id']
 
-
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.post(method)
     assert res.status_code == 200, method
     data = parse_res(res)
     assert sorted(data.keys()) == ['id']
-
     return dsid, pars
+
 
 def test_features_hashed(app):
     dsid, pars = features_hashed(app)
@@ -74,7 +74,6 @@ def test_features_hashed(app):
     res = app.get(method)
     assert res.status_code == 200, method
     data = parse_res(res)
-
     for key, val in pars.items():
         if key in ['data_dir']:
             continue
@@ -93,7 +92,6 @@ def features_non_hashed(app):
     assert sorted(data.keys()) == ['filenames', 'id']
     dsid = data['id']
 
-
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.post(method)
     assert res.status_code == 200, method
@@ -103,14 +101,11 @@ def features_non_hashed(app):
 
 
 def test_api_lsi(app):
-
     dsid, _ = features_hashed(app)
-
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
     data = parse_res(res)
-
     method = V01 + "/lsi/"
     res = app.get(method,
             data=dict(
@@ -140,7 +135,7 @@ def test_api_lsi(app):
                 )
             )
     assert res.status_code == 200
-    data = parse_res(res)
+    data = parse_res(res)  # TODO unused variable
 
     method = V01 + "/lsi/{}".format(lid)
     res = app.get(method)
@@ -168,14 +163,13 @@ def test_api_lsi(app):
             data={
               'relevant_filenames': relevant_files,
               'non_relevant_filenames': non_relevant_files,
-              'ground_truth_filename':
-                os.path.join(data_dir, '..', 'ground_truth_file.txt')
+              'ground_truth_filename': os.path.join(data_dir, '..', 'ground_truth_file.txt')
               })
 
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == sorted(['precision', 'recall',
-                        'f1', 'roc_auc', 'average_precision'])
+                                          'f1', 'roc_auc', 'average_precision'])
 
 
 @pytest.mark.parametrize("solver,cv", itertools.product(
@@ -198,7 +192,6 @@ def test_api_categorization(app, solver, cv):
     relevant_files = filenames[:3]
     non_relevant_files = filenames[3:]
 
-
     pars = {
           'dataset_id': dsid,
           'non_relevant_filenames': non_relevant_files,
@@ -215,7 +208,7 @@ def test_api_categorization(app, solver, cv):
     data = parse_res(res)
     assert res.status_code == 200, method
     assert sorted(data.keys()) == sorted(['id', 'recall',
-                'f1', 'precision', 'roc_auc', 'average_precision'])
+                                          'f1', 'precision', 'roc_auc', 'average_precision'])
     mid = data['id']
 
     method = V01 + "/categorization/{}".format(mid)
@@ -226,8 +219,7 @@ def test_api_categorization(app, solver, cv):
             sorted(["relevant_filenames", "non_relevant_filenames",
                     "method", "options"])
 
-    for key in ["relevant_filenames", "non_relevant_filenames",
-                  "method"]:
+    for key in ["relevant_filenames", "non_relevant_filenames", "method"]:
         if 'filenames' in key:
             assert len(pars[key]) == len(data[key])
         else:
@@ -237,7 +229,6 @@ def test_api_categorization(app, solver, cv):
     res = app.get(method)
     data = parse_res(res)
     assert sorted(data.keys()) == ['prediction']
-
 
     method = V01 + "/categorization/{}/test".format(mid)
     res = app.post(method,
@@ -260,7 +251,7 @@ def test_api_clustering(app, model):
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
-    data = parse_res(res)
+    data = parse_res(res)  # TODO unused variable
 
     for lsi_components in [4, -1]:
         if lsi_components == -1 and (model == 'birch' or model == "ward_hc"):
@@ -293,6 +284,7 @@ def test_api_clustering(app, model):
     res = app.delete(method)
     assert res.status_code == 200
 
+
 def test_api_dupdetection(app):
 
     try:
@@ -305,10 +297,10 @@ def test_api_dupdetection(app):
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
-    data = parse_res(res)
+    data = parse_res(res)  # TODO unused variable
 
     url = V01 + "/duplicate-detection/simhash" 
-    pars = { 'dataset_id': dsid}
+    pars = {'dataset_id': dsid}
     res = app.post(url, data=pars)
     assert res.status_code == 200
     data = parse_res(res)
@@ -324,6 +316,7 @@ def test_api_dupdetection(app):
 
     res = app.delete(method)
     assert res.status_code == 200
+
 
 def test_delete_feature_extraction(app):
     dsid, _ = features_hashed(app)
@@ -345,10 +338,9 @@ def test_get_feature_extraction_all(app):
                      'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
                      'binary', 'sublinear_tf', 'use_hashing'])
 
+
 def test_get_feature_extraction(app):
-
     dsid, _ = features_hashed(app)
-
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
@@ -366,14 +358,12 @@ def test_get_model_404(app_notest, method):
     with _silent('stderr'):
         res = app_notest.get(method)
 
-
     data = parse_res(res)
     assert res.status_code in [500, 404] # depends on the url
     #assert '500' in data['message']
 
     assert sorted(data.keys()) == \
                     sorted(['message'])
-
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
@@ -402,7 +392,7 @@ def test_get_model_predict_404(app_notest, method):
 
 
 def test_exception_handling(app_notest):
-    dsid, _  = features_hashed(app_notest)
+    dsid, _ = features_hashed(app_notest)
 
     method = V01 + "/categorization/"
     with _silent('stderr'):
@@ -415,7 +405,6 @@ def test_exception_handling(app_notest):
                               'cv': 0,
                               })
     data = parse_res(res)
-
     assert res.status_code == 500
     assert sorted(data.keys()) == \
                     sorted(['message'])

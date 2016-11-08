@@ -96,7 +96,7 @@ def test_unique_label():
                         is_relevant,
                         ground_truth.index.values,
                         np.random.rand(*Nshape))
-
+    # TODO unused variable 'scores'
 
 
 def test_ensemble_stacking():

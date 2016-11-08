@@ -11,18 +11,20 @@ from flask_restful import Api, Resource
 from flask import jsonify
 
 from .resources import (FeaturesApi, FeaturesApiElement, LsiApi, ModelsApi,
-                            ModelsApiElement, ModelsApiPredict,
-                            ModelsApiTest, LsiApiElement,
-                            LsiApiElementTest, LsiApiElementPredict,
-                            ClusteringApiElement, KmeanClusteringApi,
-                            BirchClusteringApi, WardHCClusteringApi,
-                            DupDetectionApi, DupDetectionApiElement
-                            )
+                        ModelsApiElement, ModelsApiPredict,
+                        ModelsApiTest, LsiApiElement,
+                        LsiApiElementTest, LsiApiElementPredict,
+                        ClusteringApiElement, KmeanClusteringApi,
+                        BirchClusteringApi, WardHCClusteringApi,
+                        DupDetectionApi, DupDetectionApiElement
+                        )
 
 
 class CatchAll(Resource):
+
     def get(self, url):
         print("accessing", url)
+
     def post(self, url):
         print("accessing", url)
 
@@ -38,7 +40,6 @@ def fd_app(cache_dir):
 
 
     ## Actually setup the Api resource routing here
-
     for resource_el, url in [(FeaturesApi,          "/feature-extraction"),
                              (FeaturesApiElement,   '/feature-extraction/<dsid>'),
                              (ModelsApi,            '/categorization/'),
@@ -81,4 +82,3 @@ def fd_app(cache_dir):
         return response
 
     return app
-

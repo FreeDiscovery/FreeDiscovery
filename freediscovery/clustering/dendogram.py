@@ -12,7 +12,7 @@ class _DendrogramChildren(object):
     def __init__(self, ddata):
         """Initialize using the data produced by the scipy.cluster.hierarchy.dendrogram function"""
         self.icoord = np.array(ddata['icoord'])[:, 1:3]
-        self.dcoord = np.array(ddata['dcoord'])[:,1]
+        self.dcoord = np.array(ddata['dcoord'])[:, 1]
         self.icoord_min = self.icoord.min()
         self.icoord_max = self.icoord.max()
         self.leaves = np.array(ddata['leaves'])
@@ -27,7 +27,7 @@ class _DendrogramChildren(object):
         # essentially intersection of lines from all children nodes
         sort_idx = np.argsort(self.dcoord[mask])[::-1]
         left, right = list(self.icoord[node_id])
-        for ileft, iright in self.icoord[mask,:][sort_idx]:
+        for ileft, iright in self.icoord[mask, :][sort_idx]:
             if _interval_intersect(ileft, iright, left, right):
                 left = min(left, ileft)
                 right = max(right, iright)
@@ -37,4 +37,3 @@ class _DendrogramChildren(object):
         extent = extent.astype(int)
         extent = slice(extent[0], extent[1]+1)
         return self.leaves[extent]
-

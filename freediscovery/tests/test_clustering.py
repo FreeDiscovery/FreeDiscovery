@@ -3,38 +3,32 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
 
 import os.path
-from unittest import SkipTest
-
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 import pytest
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.clustering import Clustering, select_top_words
-from freediscovery.io import parse_ground_truth_file
 from .run_suite import check_cache
 
 
 NCLUSTERS = 2
 
+
 def fd_setup():
     basename = os.path.dirname(__file__)
-
     cache_dir = check_cache()
-
     data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
-
     n_features = 110000
-
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features, use_hashing=False,
-            stop_words='english')
-    uuid, filenames  = fe.transform()
+                         stop_words='english')  # TODO unused variable 'uuid' (overwritten on the next line)
+    uuid, filenames = fe.transform()
     return cache_dir, uuid, filenames
+
 
 def check_cluster_consistency(labels, terms):
     assert isinstance(labels, (list, np.ndarray))
@@ -51,12 +45,10 @@ def check_cluster_consistency(labels, terms):
 def test_clustering(method, lsi_components, args, cl_args):
     cache_dir, uuid, filenames = fd_setup()
     np.random.seed(1)
-    n_top_words=9
+    n_top_words = 9
 
     cat = Clustering(cache_dir=cache_dir, dsid=uuid)
-
     cm = getattr(cat, method)
-
     labels, htree = cm(NCLUSTERS, lsi_components=lsi_components, **args)
 
     terms = cat.compute_labels(n_top_words=n_top_words, **cl_args)
@@ -77,16 +69,16 @@ def test_clustering(method, lsi_components, args, cl_args):
     for el in terms:
         assert len(el) == n_top_words
     assert len(np.unique(labels)) == NCLUSTERS
-    cluster_indices = np.nonzero(labels==0)
+    cluster_indices = np.nonzero(labels == 0)
     if lsi_components is not None:
         # not supported for now otherwise
-        terms2 = cat.compute_labels(cluster_indices=cluster_indices, **cl_args )
+        terms2 = cat.compute_labels(cluster_indices=cluster_indices, **cl_args)
         # 70% of the terms at least should match
         assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
 
-    cat2 = Clustering(cache_dir=cache_dir, mid=mid) # make sure we can load it
-
+    cat2 = Clustering(cache_dir=cache_dir, mid=mid) # make sure we can load it  # TODO unused variable
     cat.delete()
+
 
 def test_denrogram_children():
     # temporary solution for https://stackoverflow.com/questions/40239956/node-indexing-in-hierarachical-clustering-dendrograms
@@ -102,11 +94,9 @@ def test_denrogram_children():
     Z = linkage(X, 'ward')
     # make distances between pairs of children uniform 
     # (re-scales the horizontal (distance) axis when plotting)
-    Z[:,2] = np.arange(Z.shape[0])+1 
-
+    Z[:, 2] = np.arange(Z.shape[0])+1
 
     ddata = dendrogram(Z, no_plot=True)
-
     dc = _DendrogramChildren(ddata)
     idx = 0
     # check that we can compute children for all nodes
@@ -116,8 +106,6 @@ def test_denrogram_children():
     # last level node should encompass all samples
     assert len(node_children) == X.shape[0]
     assert_allclose(sorted(node_children), np.arange(X.shape[0]))
-
-
 
 
 def test_select_top_words():

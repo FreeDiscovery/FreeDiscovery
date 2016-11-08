@@ -12,17 +12,17 @@ from __future__ import print_function
 from time import time, sleep
 import os
 from multiprocessing import Process
-
 import requests
 import pandas as pd
 
 
 def _parent_dir(path, n=0):
     path = os.path.abspath(path)
-    if n==0:
+    if n == 0:
         return path
     else:
         return os.path.dirname(_parent_dir(path, n=n-1))
+
 
 def _print_url(op, url):
     print(' '*1, op, url) 
@@ -80,7 +80,7 @@ while True:
                 data['n_samples_processed']//1000, data['n_samples']//1000, (time() - t0)/60.))
     sleep(15.0)
 
-p.terminate() # just in case, should not be necessary
+p.terminate()  # just in case, should not be necessary
 
 
 print("\n1.d. check the parameters of the extracted features")
@@ -118,15 +118,15 @@ url = BASE_URL + '/categorization/'
 _print_url("POST", url)
 
 res = requests.post(url,
-        json={'relevant_filenames': relevant_files,
-              'non_relevant_filenames': non_relevant_files,
-              'dataset_id': dsid,
-              'method': 'LogisticRegression', # one of "LinearSVC", "LogisticRegression", 'xgboost'
-              'cv': 0, # use cross validation (recommended)
-              }) 
+                    json={'relevant_filenames': relevant_files,
+                          'non_relevant_filenames': non_relevant_files,
+                          'dataset_id': dsid,
+                          'method': 'LogisticRegression',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
+                          'cv': 0  # use cross validation (recommended)
+                          })
 
 data = res.json()
-mid  = data['id']
+mid = data['id']
 print("     => model id = {}".format(mid))
 print('    => Training scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data))
 
@@ -155,7 +155,7 @@ print("         using {}".format(gtfile))
 url = BASE_URL + '/categorization/{}/test'.format(mid)
 _print_url("POST", url)
 res = requests.post(url,
-        json={'ground_truth_filename': gtfile})
+                    json={'ground_truth_filename': gtfile})
                
 data2 = res.json()
 print('    => Test scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data2))
@@ -170,12 +170,12 @@ _print_url("POST", url)
 
 n_components = 100
 res = requests.post(url,
-        json={ 'n_components': n_components,
-              'dataset_id': dsid,
-              }) 
+                    json={'n_components': n_components,
+                          'dataset_id': dsid
+                          })
 
 data = res.json()
-lid  = data['id']
+lid = data['id']
 print('  => LSI model id = {}'.format(lid))
 print('  => SVD decomposition with {} dimensions explaining {:.2f} % variabilty of the data'.format(
                         n_components, data['explained_variance']*100))
@@ -184,9 +184,9 @@ print("\n4.b. Predict categorization with LSI")
 url = BASE_URL + '/lsi/{}/predict'.format(lid)
 _print_url("POST", url)
 res = requests.post(url,
-        json={'relevant_filenames': relevant_files,
-              'non_relevant_filenames': non_relevant_files,
-              }) 
+                    json={'relevant_filenames': relevant_files,
+                          'non_relevant_filenames': non_relevant_files
+                          })
 data = res.json()
 print(data.keys())
 prediction = data['prediction']
@@ -199,10 +199,10 @@ url = BASE_URL + '/lsi/{}/test'.format(lid)
 _print_url("POST", url)
 
 res = requests.post(url,
-        json={'relevant_filenames': relevant_files,
-              'non_relevant_filenames': non_relevant_files,
-              'ground_truth_filename': gtfile
-              }) 
+                    json={'relevant_filenames': relevant_files,
+                          'non_relevant_filenames': non_relevant_files,
+                          'ground_truth_filename': gtfile
+                          })
 data2 = res.json()
 print('    => Test scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data2))
 

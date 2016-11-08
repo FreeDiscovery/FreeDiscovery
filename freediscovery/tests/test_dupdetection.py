@@ -3,14 +3,9 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
 
 import os.path
 from unittest import SkipTest
-
-import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-import pytest
 
 from freediscovery.text import FeatureVectorizer
 from .run_suite import check_cache
@@ -48,19 +43,16 @@ jabberwocky = '''
       And the mome raths outgrabe.'''
 jabberwocky_author = ' - Lewis Carroll (Alice in Wonderland)'
 
+
 def fd_setup():
     basename = os.path.dirname(__file__)
-
     cache_dir = check_cache()
-
     data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
-
     n_features = 110000
-
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features, use_hashing=True,
-            stop_words='english')
+                         stop_words='english')  # TODO unused variable (overwritten on the next line)
     uuid, filenames  = fe.transform()
     return cache_dir, uuid, filenames, fe
 
@@ -117,4 +109,4 @@ def test_dup_detection():
 
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
     dd.fit()
-    simhash, cluster_id, dup_pairs = dd.query(distance=3)
+    simhash, cluster_id, dup_pairs = dd.query(distance=3)  # TODO unused variables

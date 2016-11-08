@@ -7,8 +7,7 @@ from __future__ import unicode_literals
 
 import os
 
-from .exceptions import (DatasetNotFound, ModelNotFound, InitException,
-                            WrongParameter)
+from .exceptions import ModelNotFound
 
 
 class BaseEstimator(object):
@@ -17,7 +16,7 @@ class BaseEstimator(object):
         return os.path.join(self.fe.cache_dir, dsid, self._DIRREF, mid)
 
     def get_dsid(self, cache_dir, mid):
-        if not 'ediscovery_cache' in cache_dir: # not very pretty
+        if 'ediscovery_cache' not in cache_dir:  # not very pretty
             cache_dir = os.path.join(cache_dir, "ediscovery_cache")
         for dsid in os.listdir(cache_dir):
             mid_path = os.path.join(cache_dir, dsid, self._DIRREF)
@@ -26,8 +25,7 @@ class BaseEstimator(object):
             for mid_el in os.listdir(mid_path):
                 if mid_el == mid:
                     return dsid
-        raise ModelNotFound('Model id {} not found in {}/*/{}!'.format(mid,
-                                    cache_dir, self._DIRREF))
+        raise ModelNotFound('Model id {} not found in {}/*/{}!'.format(mid, cache_dir, self._DIRREF))
 
     def delete(self):
         """ Delete a trained model"""
@@ -35,21 +33,17 @@ class BaseEstimator(object):
         mid_dir = os.path.join(self.model_dir, self.mid)
         shutil.rmtree(mid_dir, ignore_errors=True)
 
-
     def __contains__(self, mid):
         mid_dir = os.path.join(self.model_dir, mid)
         return os.path.exists(mid_dir)
-
 
     def list_models(self):
         out = []
         for mid in os.listdir(self.model_dir):
             try:
                 pars = self.load_pars(mid)
-                pars['id'] =  mid
+                pars['id'] = mid
                 out.append(pars)
             except:
                 pass
         return out
-
-
