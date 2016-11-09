@@ -1,6 +1,9 @@
-# coding: utf-8
+"""
+Document Clustering example
+---------------------------
 
-# # Document Clustering example
+Find duplicates in a text collection
+"""
 
 import os
 import re

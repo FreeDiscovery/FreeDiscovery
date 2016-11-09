@@ -1,7 +1,9 @@
+"""
+Document Clustering example (Python)
+------------------------------------
 
-# coding: utf-8
-
-# # Document Clustering example (Python)
+An example of clustering using Python API
+"""
 
 import pandas as pd
 from IPython.display import display

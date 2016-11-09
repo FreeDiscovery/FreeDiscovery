@@ -37,3 +37,6 @@ newsgroup_data/
 .ipynb_checkpoints/
 .cache/
 *.coverage*
+doc/modules/
+doc/auto_examples/
+
