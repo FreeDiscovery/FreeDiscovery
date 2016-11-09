@@ -15,6 +15,7 @@ from ..base import BaseEstimator
 from ..text import FeatureVectorizer
 from ..utils import setup_model
 from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
+from .utils import _dbscan_noisy2unique
 
 
 ### Clustering methods for FreeDiscovery
@@ -64,17 +65,6 @@ def _generate_lsi(lsi_components=None):
     return lsi
 
 
-def _dbscan_noisy2unique(labels_):
-    """
-    Take labels_ given by DBSCAN and replace each "noisy"
-    point specified by -1, to a unique cluster id
-    """
-    labels_ = np.asarray(labels_).copy()
-    mask = labels_ == -1
-    indices = np.arange(mask.sum(), dtype=np.int)
-    indices += labels_.max()+1
-    labels_[mask] = indices
-    return labels_
 
 
 

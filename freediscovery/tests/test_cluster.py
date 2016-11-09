@@ -119,14 +119,20 @@ def test_denrogram_children():
 
 
 def test_dbscan_noisy_utils():
-    from freediscovery.cluster.base import _dbscan_noisy2unique
+    from freediscovery.cluster.utils import (_dbscan_noisy2unique,
+                                             _dbscan_unique2noisy)
     from sklearn.metrics import v_measure_score
 
-    x = np.array([-1, 0, -1,  1, -1,  0])
-    y_ref = np.array([2, 0, 3, 1, 4, 0])
+    x_ref = np.array([-1, 0, -1,  1, 1, -1,  0])
+    y_ref = np.array([2, 0, 3, 1, 1, 4, 0])
 
-    y = _dbscan_noisy2unique(x)
+    y = _dbscan_noisy2unique(x_ref)
     assert v_measure_score(y, y_ref) == 1
+
+    # check inverse transform
+    x = _dbscan_unique2noisy(y_ref)
+    assert v_measure_score(x, x_ref) == 1
+
 
 
 def test_binary_linkage2clusters():
