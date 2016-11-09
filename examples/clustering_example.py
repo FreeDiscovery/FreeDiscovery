@@ -15,7 +15,7 @@ pd.options.display.float_format = '{:,.3f}'.format
 
 def _parent_dir(path, n=0):
     path = os.path.abspath(path)
-    if n==0:
+    if n == 0:
         return path
     else:
         return os.path.dirname(_parent_dir(path, n=n-1))
@@ -33,15 +33,16 @@ def repr_clustering(labels, terms):
     return out
 
 use_docker = False
+
+dataset_name = "treclegal09_2k_subset"
     
 if use_docker:
-    data_dir = "/freediscovery_shared/tar_fd_benchmark"
+    data_dir = "/freediscovery_shared/{}".format(dataset_name)
 else:
-    data_dir = "../freediscovery_shared/tar_fd_benchmark"
-rel_data_dir = os.path.abspath("../../freediscovery_shared/tar_fd_benchmark") # relative path between this file and the FreeDiscovery source folder
+    data_dir = "../freediscovery_shared/{}".format(dataset_name)
+rel_data_dir = os.path.abspath("../../freediscovery_shared/{}".format(dataset_name)) # relative path between this file and the FreeDiscovery source folder
 
-
-BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery local server URL
+BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
 
 # # 1. Feature extraction (non hashed)
@@ -75,8 +76,8 @@ res = requests.get(url)
 
 data = res.json()
 for key, val in data.items():
-    if key != 'filenames':
-        print('     - {}: {}'.format(key, val))
+    if key!='filenames':
+           print('     - {}: {}'.format(key, val))
 
 
 # # 2. Document Clustering (LSI + K-Means)

@@ -16,7 +16,7 @@ pd.options.display.float_format = '{:,.3f}'.format
 
 def _parent_dir(path, n=0):
     path = os.path.abspath(path)
-    if n==0:
+    if n == 0:
         return path
     else:
         return os.path.dirname(_parent_dir(path, n=n-1))
@@ -25,12 +25,14 @@ def _print_url(op, url):
     print(' '*1, op, url) 
 
 use_docker = False
-    
+
+dataset_name = "treclegal09_2k_subset"
+
 if use_docker:
-    data_dir = "/freediscovery_shared/tar_fd_benchmark"
+    data_dir = "/freediscovery_shared/{}".format(dataset_name)
 else:
-    data_dir = "../freediscovery_shared/tar_fd_benchmark"
-rel_data_dir = os.path.abspath("../../freediscovery_shared/tar_fd_benchmark") # relative path between this file and the FreeDiscovery source folder
+    data_dir = "../freediscovery_shared/{}".format(dataset_name)
+rel_data_dir = os.path.abspath("../../freediscovery_shared/{}".format(dataset_name)) # relative path between this file and the FreeDiscovery source folder
 
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery local server URL
@@ -46,7 +48,7 @@ fe_opts = {'data_dir': os.path.join(data_dir, 'data'),
            'use_idf': 1, 'sublinear_tf': 0, 'binary': 0, 'n_features': 30001,
            'analyzer': 'word', 'ngram_range': (1, 1), "norm": "l2",
            'use_hashing': False,  # hashing should be disabled for clustering
-           #'min_df': 0.2, #'max_df': 0.8
+           #'min_df': 0.2, 'max_df': 0.8
           }
 res = requests.post(url, json=fe_opts)
 
