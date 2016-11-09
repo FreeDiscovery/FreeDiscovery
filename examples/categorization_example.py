@@ -23,19 +23,34 @@ def _parent_dir(path, n=0):
     else:
         return os.path.dirname(_parent_dir(path, n=n-1))
 
-
 def _print_url(op, url):
     print(' '*1, op, url) 
 
 use_docker = False
 
+dataset_name = "treclegal09_2k_subset"
+
 if use_docker:
-    data_dir = "/freediscovery_shared/tar_fd_benchmark"
+    data_dir = "/freediscovery_shared/{}".format(dataset_name)
 else:
-    data_dir = "../freediscovery_shared/tar_fd_benchmark"
-rel_data_dir = os.path.abspath("../../freediscovery_shared/tar_fd_benchmark") # relative path between this file and the FreeDiscovery source folder
+    data_dir = "../freediscovery_shared/{}".format(dataset_name)
+rel_data_dir = os.path.abspath("../../freediscovery_shared/{}".format(dataset_name)) # relative path between this file and the FreeDiscovery source folder
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
+
+# 0. Load relevant and non relevant seed file list
+
+with open(os.path.join(rel_data_dir,'seed_relevant.txt'), 'rt') as fh:
+    relevant_files = [el.strip() for el in fh.readlines()]
+
+with open(os.path.join(rel_data_dir,'seed_non_relevant.txt'), 'rt') as fh:
+    non_relevant_files = [el.strip() for el in fh.readlines()]
+
+# Load ground truth file
+if use_docker:
+    gtfile = os.path.join(data_dir, "ground_truth_file.txt")  
+else:
+    gtfile = os.path.join(rel_data_dir, "ground_truth_file.txt") 
 
 
 # 1. Feature extraction
@@ -94,24 +109,9 @@ for key, val in data.items():
            print('     - {}: {}'.format(key, val))
 
 
-# 2. Load relevant and non relevant seed file list
+# 2. Document categorization with ML algorithms
 
-with open(os.path.join(rel_data_dir,'seed_relevant.txt'), 'rt') as fh:
-    relevant_files = [el.strip() for el in fh.readlines()]
-
-with open(os.path.join(rel_data_dir,'seed_non_relevant.txt'), 'rt') as fh:
-    non_relevant_files = [el.strip() for el in fh.readlines()]
-
-# Load ground truth file
-if use_docker:
-    gtfile = os.path.join(data_dir, "ground_truth_file.txt")  
-else:
-    gtfile = os.path.join(rel_data_dir, "ground_truth_file.txt") 
-
-
-# 3. Document categorization with ML algorithms
-
-print("\n3.b. Train the ML categorization model")
+print("\n2.a. Train the ML categorization model")
 print("       {} relevant, {} non-relevant files".format(
     len(relevant_files), len(non_relevant_files)))
 url = BASE_URL + '/categorization/'
@@ -130,7 +130,7 @@ mid = data['id']
 print("     => model id = {}".format(mid))
 print('    => Training scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data))
 
-print("\n3.c. Check the parameters used in the categorization model")
+print("\n2.b. Check the parameters used in the categorization model")
 url = BASE_URL + '/categorization/{}'.format(mid)
 _print_url("GET", url)
 res = requests.get(url)
@@ -140,7 +140,7 @@ for key, val in data.items():
     if "filenames" not in key:
         print('     - {}: {}'.format(key, val))
 
-print("\n3.d Categorize the complete dataset with this model")
+print("\n2.c Categorize the complete dataset with this model")
 url = BASE_URL + '/categorization/{}/predict'.format(mid)
 _print_url("GET", url)
 res = requests.get(url)
@@ -150,7 +150,7 @@ print("    => Predicting {} relevant and {} non relevant documents".format(
     len(list(filter(lambda x: x>0, prediction))),
     len(list(filter(lambda x: x<0, prediction)))))
 
-print("\n3.e Test categorization accuracy")
+print("\n2.d Test categorization accuracy")
 print("         using {}".format(gtfile))  
 url = BASE_URL + '/categorization/{}/test'.format(mid)
 _print_url("POST", url)
@@ -161,9 +161,9 @@ data2 = res.json()
 print('    => Test scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data2))
 
 
-# 4. Document categorization with LSI
+# 3. Document categorization with LSI
 
-print("\n4.a. Calculate LSI")
+print("\n3.a. Calculate LSI")
 
 url = BASE_URL + '/lsi/'
 _print_url("POST", url)
@@ -179,7 +179,7 @@ lid = data['id']
 print('  => LSI model id = {}'.format(lid))
 print('  => SVD decomposition with {} dimensions explaining {:.2f} % variabilty of the data'.format(
                         n_components, data['explained_variance']*100))
-print("\n4.b. Predict categorization with LSI")
+print("\n3.b. Predict categorization with LSI")
 
 url = BASE_URL + '/lsi/{}/predict'.format(lid)
 _print_url("POST", url)
@@ -188,13 +188,13 @@ res = requests.post(url,
                           'non_relevant_filenames': non_relevant_files
                           })
 data = res.json()
-print(data.keys())
+
 prediction = data['prediction']
 
 print('    => Training scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data))
 
 
-print("\n4.c. Test categorization with LSI")
+print("\n3.c. Test categorization with LSI")
 url = BASE_URL + '/lsi/{}/test'.format(lid)
 _print_url("POST", url)
 
@@ -209,6 +209,6 @@ print('    => Test scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f
 pd.DataFrame({key: data[key] for key in data if 'prediction' in key or 'nearest' in key})
 
 
-print("\n5.a Delete the extracted features")
+print("\n4.a Delete the extracted features")
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
 _print_url("DELETE", url)

@@ -93,6 +93,10 @@ Initialize the feature extraction on a document collection.
 
 ### 2.a Build the LSI model 
 
+The option `use_hashing=True` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+The recommended value for the `n_components` (dimensions of the SVD decompositions) is in the [100, 200] range.
+
  * **URL**: `/api/v0/lsi/` 
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
@@ -143,6 +147,8 @@ Initialize the feature extraction on a document collection.
 ## 3. Document categorization
 
 ### 3.a Build the categorization model
+
+The option `use_hashing=True` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
  * **URL**: `/api/v0/categorization/` 
  * **Method**: `POST` **URL Params**: None
@@ -214,6 +220,8 @@ Predict document categorization with a previously trained model
 
 ### 4.a Compute clustering (K-mean)
 
+The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
  * **URL**: `/api/v0/clustering/k-mean`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
@@ -227,6 +235,8 @@ Predict document categorization with a previously trained model
         {"id": <str>}
 
 ### 4.b Compute clustering (Birch)
+
+The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
  * **URL**: `/api/v0/clustering/birch`
  * **Method**: `POST` **URL Params**: None
@@ -243,6 +253,13 @@ Predict document categorization with a previously trained model
         {"id": <str>}
 ### 4.c Compute clustering (Ward hierarchical)
 
+The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+The Ward Hierarchical clustering is generally slower that K-mean, however the run time can be reduced by decreasing the following parameters,
+
+   - `lsi_components`: the number of dimensions used for the Latent Semantic Indexing decomposition (e.g. from 150 to 50)
+   - `n_neighbors`:  the number of neighbors used to construct the connectivity (e.g. from 10 to 5)
+
  * **URL**: `/api/v0/clustering/ward_hc`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
@@ -256,6 +273,8 @@ Predict document categorization with a previously trained model
     
         {"id": <str>}
 ### 4.c Compute clustering (DBSCAN)
+
+The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
  * **URL**: `/api/v0/clustering/dbscan`
  * **Method**: `POST` **URL Params**: None
@@ -296,6 +315,8 @@ Predict document categorization with a previously trained model
 ## 5. Duplicate detection
 
 ### 5.a Compute duplicates
+
+The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
  * **URL**: `/api/v0/duplicate-detection/simhash`
  * **Method**: `POST` **URL Params**: None

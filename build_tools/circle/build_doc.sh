@@ -21,8 +21,7 @@ sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes \
     install dvipng texlive-latex-base texlive-latex-extra
 
 sudo -E apt-get -yq install libatlas-dev libatlas3gf-base
-sudo -E apt-get -yq install build-essential wget
-sudo -E apt-get -yq install build-essential python-dev python-setuptools wget
+sudo -E apt-get -yq install build-essential python-dev python-setuptools wget curl
 # deactivate circleci virtualenv and setup a miniconda env instead
 if [[ `type -t deactivate` ]]; then
   deactivate
@@ -37,9 +36,15 @@ pip install -r ./build_tools/requirements_conda.txt
 pip install -r ./build_tools/requirements_pip_unix.txt
 pip install -r ./build_tools/requirements_extra_pip.txt
 pip install mock
+pip install sphinx-gallery pillow
 
 # Build and install scikit-learn in dev mode
 python setup.py develop
 
-# The pipefail is requested to propagate exit code
-set -o pipefail && cd doc && make html 2>&1 | tee ~/log.txt
+# start the FreeDiscovery server in the background
+mkdir -p ../freediscovery_shared
+
+if [ ! -f "../freediscovery_shared/treclegal09_2k_subset.tar.gz" ]; then
+    curl "http://r0h.eu/d/treclegal09_2k_subset.tar.gz" -L -o "../freediscovery_shared/treclegal09_2k_subset.tar.gz"
+    cd ../freediscovery_shared && tar xzf treclegal09_2k_subset.tar.gz && cd -
+fi

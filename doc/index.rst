@@ -16,9 +16,8 @@ Contents:
    installation_instructions
    API_reference
    freediscovery
-   examples
+   examples/index
    deployment
-   faq
    contributing
 
 ..

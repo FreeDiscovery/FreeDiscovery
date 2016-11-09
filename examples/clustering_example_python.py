@@ -1,7 +1,9 @@
+"""
+Document Clustering example (Python)
+------------------------------------
 
-# coding: utf-8
-
-# # Document Clustering example (Python)
+An example of clustering using Python API
+"""
 
 import pandas as pd
 from IPython.display import display
@@ -12,7 +14,9 @@ from time import time
 
 pd.options.display.float_format = '{:,.3f}'.format
 
-data_dir = "../freediscovery_shared/tar_fd_benchmark"
+dataset_name = "treclegal09_2k_subset"
+
+data_dir = "../freediscovery_shared/{}".format(dataset_name)
 examples_to_server_path = "../" # relative path between this file and the FreeDiscovery source folder
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL

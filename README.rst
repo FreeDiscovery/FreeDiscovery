@@ -15,7 +15,6 @@ FreeDiscovery provides a REST web services tier on top of existing, open source 
 
 FreeDiscovery should be done January 1, 2017, but we would very much appreciate feedback on existing categorization and clustering.  Feel free to submit encountered issues to the issue tracker and send any comments to grossman@ir.cs.georgetown.edu.  
 
-For more information see,
+For more information see the `documentation and API Reference <https://freediscovery.github.io/doc/dev/>`_.
 
-- The `documentation and API Reference <https://freediscovery.github.io/doc/dev/>`_
-- The `examples of use <https://github.com/FreeDiscovery/examples>`_
+FreeDiscovery is released under the 3-clause BSD licence.

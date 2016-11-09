@@ -25,6 +25,9 @@ class Categorizer(BaseEstimator):
             cv_scoring='roc_auc', cv_n_folds=3):
         """ Document categrorization model
 
+        The option `use_hashing=True` must be set for the feature extraction.
+        Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
         Parameters
         ----------
           cache_dir : str

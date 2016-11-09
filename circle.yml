@@ -6,6 +6,13 @@ dependencies:
   override:
     - ./build_tools/circle/build_doc.sh:
        timeout: 3600 # seconds
+    - python scripts/run_api.py ../freediscovery_shared:
+       background: true
+    - sleep 20
+    - cat nohup.out
+    # The pipefail is requested to propagate exit code
+    - set -o pipefail && cd doc && make html 2>&1 | tee ~/log.txt
+
 test:
   # Grep error on the documentation
   override:
