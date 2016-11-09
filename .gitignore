@@ -38,5 +38,5 @@ newsgroup_data/
 .cache/
 *.coverage*
 doc/modules/
-doc/auto_examples/
+doc/examples/
 

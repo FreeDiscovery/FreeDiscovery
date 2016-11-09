@@ -23,11 +23,25 @@ install:
     - conda install --yes --file ./build_tools/requirements_conda.txt python=${TRAVIS_PYTHON_VERSION}
     - pip install -r ./build_tools/requirements_pip_unix.txt
     - python setup.py install
-    - cd ..
+    - pwd
 
 script: 
-    - cd /home/travis/miniconda${TRAVIS_PYTHON_VERSION:0:1}/lib/
     - python -c "import freediscovery.tests as ft; ft.run_cli()"
+    # now start the server and run the examples
+    - | 
+        mkdir -p ../freediscovery_shared;
+        if [ ! -f "../freediscovery_shared/treclegal09_2k_subset.tar.gz" ]; then
+            curl "http://r0h.eu/d/treclegal09_2k_subset.tar.gz" -L -o "../freediscovery_shared/treclegal09_2k_subset.tar.gz"
+            cd ../freediscovery_shared && tar xzf treclegal09_2k_subset.tar.gz && cd -
+        fi
+    - |
+        python scripts/run_api.py ../freediscovery_shared &
+        FDSERVER_PID=$!
+        sleep 20  
+    - | 
+        cd examples/
+        for f in ./*example*.py; do python $f ; done
+
 
 #after_success:
 #    coveralls
