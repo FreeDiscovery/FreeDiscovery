@@ -136,6 +136,7 @@ def test_imatch(n_rand_lexicons):
 
 
 @pytest.mark.parametrize('method, options', [['simhash', {'distance': 3}],
+                                             ['simhash', {'distance': 10}],
                                              ['i-match', {}]])
 def test_dup_detection(method, options):
     if method == 'simhash':

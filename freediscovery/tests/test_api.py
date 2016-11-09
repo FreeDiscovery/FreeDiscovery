@@ -243,7 +243,7 @@ def test_api_categorization(app, solver, cv):
     assert res.status_code == 200
 
 
-@pytest.mark.parametrize("model", ['k-mean', 'birch', 'ward_hc'])
+@pytest.mark.parametrize("model", ['k-mean', 'birch', 'ward_hc', 'dbscan'])
 def test_api_clustering(app, model):
 
     dsid = features_non_hashed(app)
@@ -257,12 +257,13 @@ def test_api_clustering(app, model):
         if lsi_components == -1 and (model == 'birch' or model == "ward_hc"):
             continue
         url = V01 + "/clustering/" + model
-        pars = {
-                          'dataset_id': dsid,
-                          'n_clusters': 2,
-                          }
+        pars = { 'dataset_id': dsid, }
+        if model != 'dbscan':
+            pars['n_clusters'] = 2
         if model != "k-mean":
            pars["lsi_components"] = lsi_components 
+        if model == 'dbscan':
+            pars.update({'eps': 0.1, "min_samples": 2})
         res = app.post(url, data=pars)
 
         assert res.status_code == 200

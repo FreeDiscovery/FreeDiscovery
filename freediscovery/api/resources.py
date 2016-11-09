@@ -334,6 +334,30 @@ class WardHCClusteringApi(Resource):
         cl.ward_hc(**args)
         return {'id': cl.mid}
 
+_dbscan_clustering_api_post_args = {
+        'dataset_id': wfields.Str(required=True),
+        'lsi_components': wfields.Int(missing=-1),
+        'eps': wfields.Number(missing=0.1),
+        'min_samples': wfields.Int(missing=10)
+        }
+
+
+class DBSCANClusteringApi(Resource):
+
+    @use_args(_dbscan_clustering_api_post_args)
+    @marshal_with(IDSchema())
+    def post(self, **args):
+
+        if args['lsi_components'] < 0:
+            args['lsi_components'] = None
+
+        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+
+        del args['dataset_id']
+
+        cl.dbscan(**args)
+        return {'id': cl.mid}
+
 
 _clustering_api_get_args = {
         'n_top_words': wfields.Int(missing=5)

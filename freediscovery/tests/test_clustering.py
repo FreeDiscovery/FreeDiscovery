@@ -25,7 +25,8 @@ def fd_setup():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features, use_hashing=False,
-                         stop_words='english')  # TODO unused variable 'uuid' (overwritten on the next line)
+                         stop_words='english',
+                         min_df=0.1, max_df=0.9)  # TODO unused variable 'uuid' (overwritten on the next line)
     uuid, filenames = fe.transform()
     return cache_dir, uuid, filenames
 
@@ -61,6 +62,9 @@ def test_clustering(method, lsi_components, args, cl_args):
     else:
         assert htree == {}
 
+    if method == 'dbscan':
+        assert (labels != -1).all()
+
     check_cluster_consistency(labels, terms)
     cat.scores(np.random.randint(0, NCLUSTERS-1, size=len(labels)), labels)
     # load the model saved to disk
@@ -80,6 +84,7 @@ def test_clustering(method, lsi_components, args, cl_args):
         # 70% of the terms at least should match
         if method != 'dbscan':
             assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
+
 
     cat2 = Clustering(cache_dir=cache_dir, mid=mid) # make sure we can load it  # TODO unused variable
     cat.delete()

@@ -232,14 +232,14 @@ class Clustering(BaseEstimator):
         self.mid_dir = mid_dir
 
         labels_ = km.labels_
-        if type(km).__name__ != "DBSCAN":
+        if type(km).__name__ == "DBSCAN":
             labels_ = _dbscan_noisy2unique(labels_)
             n_clusters = len(np.unique(labels_))
-
+            km.labels_ = labels_
 
         if not hasattr(km, 'cluster_centers_'):
             # i.e. model is not MiniBatchKMeans => compute centroids
-            km.cluster_centers_ = NearestCentroid().fit(X, km.labels_).centroids_
+            km.cluster_centers_ = NearestCentroid().fit(X, labels_).centroids_
 
         pars['n_clusters'] = n_clusters
 
@@ -251,7 +251,7 @@ class Clustering(BaseEstimator):
 
         htree = self._get_htree(km)
 
-        return km.labels_, htree
+        return labels_, htree
 
     @staticmethod
     def _get_htree(km):
