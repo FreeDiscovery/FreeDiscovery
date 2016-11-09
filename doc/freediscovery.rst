@@ -31,12 +31,17 @@ Python API reference
 4. Document clustering
 -------------------------------
 
-.. automodule:: freediscovery.clustering.base
+.. automodule:: freediscovery.cluster.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: freediscovery.clustering.dendogram
+.. automodule:: freediscovery.cluster.dendrogram
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: freediscovery.cluster.utils
     :members:
     :undoc-members:
     :show-inheritance:
@@ -44,12 +49,17 @@ Python API reference
 5. Duplicates detection
 -----------------------
 
-.. automodule:: freediscovery.simhash.base
+.. automodule:: freediscovery.dupdet.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: freediscovery.simhash.dupdet
+.. automodule:: freediscovery.dupdet.simhash
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: freediscovery.dupdet.imatch
     :members:
     :undoc-members:
     :show-inheritance:

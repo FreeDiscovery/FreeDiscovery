@@ -32,6 +32,8 @@ class FeaturesParsSchema(Schema):
     norm = fields.Str(missing='None')
     n_samples = fields.Int(dump_only=True)
     n_samples_processed = fields.Int(dump_only=True)
+    min_df = fields.Number(required=False)
+    max_df = fields.Number(required=False)
 
     class Meta:
         strict = True

@@ -7,13 +7,13 @@ from __future__ import unicode_literals
 
 import os
 from sklearn.externals import joblib
+import numpy as np
 
 from ..base import BaseEstimator
 from ..text import FeatureVectorizer
-from ..utils import setup_model
-from ..exceptions import WrongParameter
-from .base import SimhashDuplicates
-
+from ..utils import setup_model, _rename_main_thread
+from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
+                            WrongParameter)
 
 class DuplicateDetection(BaseEstimator):
 
@@ -25,6 +25,7 @@ class DuplicateDetection(BaseEstimator):
 
         Currently supported backends are:
           - simhash-py
+          - i-match
 
         Parameters
         ----------
@@ -67,21 +68,30 @@ class DuplicateDetection(BaseEstimator):
         """
 
         pars = {'method': method}
-        if method != 'simhash':
+        if method not in ['simhash', 'i-match']:
             raise WrongParameter('Dup. detection method {} not implemented!'.format(method))
-        self.model = shash = SimhashDuplicates()
+        if method == 'simhash':
+            from .simhash import SimhashDuplicates
+            self.model = shash = SimhashDuplicates()
+        else:
+            self.model = None
         self._pars = pars
         mid, mid_dir = setup_model(self.model_dir)
 
         self.mid = mid
 
+
         X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
-        shash.fit(X)
+        if method == 'simhash':
+            shash.fit(X)
+
+        self._fit_X = X
         
-        joblib.dump(shash, os.path.join(self.model_dir, mid,  'model'), compress=9)
+        joblib.dump(self.model, os.path.join(self.model_dir, mid,  'model'), compress=9)
         joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'), compress=9)
 
-    def query(self, distance=2, blocks='auto'):
+
+    def query(self, **args):
         """ Find all the nearests neighbours for the dataset
 
         Parameters
@@ -94,33 +104,71 @@ class DuplicateDetection(BaseEstimator):
                 see  https://github.com/seomoz/simhash-py
         Returns
         -------
-        simhash : array
-            the simhash value for all documents in the collection
         cluster_id : array
             the exact duplicates (documents with the same simhash)
             are grouped by in cluster_id
-        dup_pairs : list
-            list of tuples for the near-duplicates
         """
-        shash = self.model
 
-        _fit_shash, cluster_id, matches = shash.query(distance=distance,
-                                                      blocks=blocks)
-        return _fit_shash, cluster_id, matches
+
+        if self._pars['method'] == 'simhash':
+            from simhash import find_all  # TODO resolve reference
+            from ..cluster.utils import (_binary_linkage2clusters, 
+                                    _merge_clusters)
+
+            shash = self.model
+
+            _fit_shash, cluster_id_exactdup, matches = shash.query(**args)
+
+            if matches.shape[0] > 0:
+                # found some near duplicates
+                matches_idx = np.zeros(matches.shape, dtype=np.int)
+                # match the hash value to the document index
+                for (i, j), value in np.ndenumerate(matches):
+                    matches_idx[i, j] = shash.get_index_by_hash(value)
+            else:
+                matches_idx = matches
+            # compute cluster_id for near duplicates
+            cluster_id_dnup = _binary_linkage2clusters(matches_idx, len(_fit_shash))
+            # merge near duplicates and exact duplicates clusters
+            cluster_id = _merge_clusters(
+                     np.concatenate((cluster_id_exactdup[:, None],
+                                     cluster_id_dnup[:, None]), axis=1),
+                     rename=True)
+        elif self._pars['method'] == 'i-match':
+            from .imatch import IMatchDuplicates
+            if not hasattr(self, '_fit_X'):
+                self._fit_X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
+            model = IMatchDuplicates(**args)
+            model.fit(self._fit_X)
+            cluster_id = model.labels_
+
+        else:
+            raise ValueError
+
+
+        return cluster_id
+
 
     def _load_pars(self):
         """ Load parameters from cache specified by a mid """
+
         mid = self.mid
+
         mid_dir = os.path.join(self.model_dir, mid)
         if not os.path.exists(mid_dir):
             raise ValueError('Model id {} not found in the cache!'.format(mid))
+
         pars = joblib.load(os.path.join(mid_dir, 'pars'))
+
         return pars
+
 
     def load(self, mid):
         """ Load results from cache specified by a mid """
+
         mid_dir = os.path.join(self.model_dir, mid)
         if not os.path.exists(mid_dir):
             raise ValueError('Model id {} not found in the cache!'.format(mid))
+
         shash = joblib.load(os.path.join(mid_dir, 'model'))
         return shash

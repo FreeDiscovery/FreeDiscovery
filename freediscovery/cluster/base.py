@@ -15,6 +15,7 @@ from ..base import BaseEstimator
 from ..text import FeatureVectorizer
 from ..utils import setup_model
 from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
+from .utils import _dbscan_noisy2unique
 
 
 ### Clustering methods for FreeDiscovery
@@ -64,17 +65,6 @@ def _generate_lsi(lsi_components=None):
     return lsi
 
 
-def _dbscan_noisy2unique(labels_):
-    """
-    Take labels_ given by DBSCAN and replace each "noisy"
-    point specified by -1, to a unique cluster id
-    """
-    labels_ = np.asarray(labels_).copy()
-    mask = labels_ == -1
-    indices = np.arange(mask.sum(), dtype=np.int)
-    indices += labels_.max()+1
-    labels_[mask] = indices
-    return labels_
 
 
 
@@ -232,14 +222,14 @@ class Clustering(BaseEstimator):
         self.mid_dir = mid_dir
 
         labels_ = km.labels_
-        if type(km).__name__ != "DBSCAN":
+        if type(km).__name__ == "DBSCAN":
             labels_ = _dbscan_noisy2unique(labels_)
             n_clusters = len(np.unique(labels_))
-
+            km.labels_ = labels_
 
         if not hasattr(km, 'cluster_centers_'):
             # i.e. model is not MiniBatchKMeans => compute centroids
-            km.cluster_centers_ = NearestCentroid().fit(X, km.labels_).centroids_
+            km.cluster_centers_ = NearestCentroid().fit(X, labels_).centroids_
 
         pars['n_clusters'] = n_clusters
 
@@ -251,7 +241,7 @@ class Clustering(BaseEstimator):
 
         htree = self._get_htree(km)
 
-        return km.labels_, htree
+        return labels_, htree
 
     @staticmethod
     def _get_htree(km):

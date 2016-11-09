@@ -16,6 +16,7 @@ from .resources import (FeaturesApi, FeaturesApiElement, LsiApi, ModelsApi,
                         LsiApiElementTest, LsiApiElementPredict,
                         ClusteringApiElement, KmeanClusteringApi,
                         BirchClusteringApi, WardHCClusteringApi,
+                        DBSCANClusteringApi,
                         DupDetectionApi, DupDetectionApiElement
                         )
 
@@ -53,9 +54,10 @@ def fd_app(cache_dir):
                              (KmeanClusteringApi,   '/clustering/k-mean/'),
                              (BirchClusteringApi,   '/clustering/birch'),
                              (WardHCClusteringApi,  '/clustering/ward_hc'),
+                             (DBSCANClusteringApi,  '/clustering/dbscan'),
                              (ClusteringApiElement, '/clustering/<method>/<mid>'),
-                             (DupDetectionApi,      '/duplicate-detection/simhash'),
-                             (DupDetectionApiElement,'/duplicate-detection/simhash/<mid>'),
+                             (DupDetectionApi,      '/duplicate-detection/'),
+                             (DupDetectionApiElement,'/duplicate-detection/<mid>'),
                              #(CatchAll, "/<url>")
                              ]:
         # monkeypatching, not great

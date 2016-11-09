@@ -243,7 +243,7 @@ def test_api_categorization(app, solver, cv):
     assert res.status_code == 200
 
 
-@pytest.mark.parametrize("model", ['k-mean', 'birch', 'ward_hc'])
+@pytest.mark.parametrize("model", ['k-mean', 'birch', 'ward_hc', 'dbscan'])
 def test_api_clustering(app, model):
 
     dsid = features_non_hashed(app)
@@ -257,12 +257,13 @@ def test_api_clustering(app, model):
         if lsi_components == -1 and (model == 'birch' or model == "ward_hc"):
             continue
         url = V01 + "/clustering/" + model
-        pars = {
-                          'dataset_id': dsid,
-                          'n_clusters': 2,
-                          }
+        pars = { 'dataset_id': dsid, }
+        if model != 'dbscan':
+            pars['n_clusters'] = 2
         if model != "k-mean":
            pars["lsi_components"] = lsi_components 
+        if model == 'dbscan':
+            pars.update({'eps': 0.1, "min_samples": 2})
         res = app.post(url, data=pars)
 
         assert res.status_code == 200
@@ -285,12 +286,15 @@ def test_api_clustering(app, model):
     assert res.status_code == 200
 
 
-def test_api_dupdetection(app):
+@pytest.mark.parametrize('kind, options', [['simhash', {'distance': 3}],
+                                             ['i-match', {}]])
+def test_api_dupdetection(app, kind, options):
 
-    try:
-        import simhash
-    except ImportError:
-        raise SkipTest
+    if kind == 'simhash':
+        try:
+            import simhash
+        except ImportError:
+            raise SkipTest
 
     dsid = features_non_hashed(app)
 
@@ -299,8 +303,10 @@ def test_api_dupdetection(app):
     assert res.status_code == 200
     data = parse_res(res)  # TODO unused variable
 
-    url = V01 + "/duplicate-detection/simhash" 
-    pars = {'dataset_id': dsid}
+    url = V01 + "/duplicate-detection" 
+    pars = { 'dataset_id': dsid,
+             'method': kind}
+    print(pars)
     res = app.post(url, data=pars)
     assert res.status_code == 200
     data = parse_res(res)
@@ -308,11 +314,11 @@ def test_api_dupdetection(app):
     mid = data['id']
 
     url += '/{}'.format(mid)
-    res = app.get(url)
+    res = app.get(url, data=options)
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == \
-            sorted(['simhash', 'cluster_id', 'dup_pairs'])
+            sorted(['cluster_id'])
 
     res = app.delete(method)
     assert res.status_code == 200
@@ -336,7 +342,8 @@ def test_get_feature_extraction_all(app):
                  sorted(['analyzer', 'ngram_range', 'stop_words',
                      'n_jobs', 'chunk_size', 'norm',
                      'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
-                     'binary', 'sublinear_tf', 'use_hashing'])
+                     'binary', 'sublinear_tf', 'use_hashing',
+                     'max_df', 'min_df'])
 
 
 def test_get_feature_extraction(app):
@@ -349,7 +356,8 @@ def test_get_feature_extraction(app):
              sorted(['data_dir', 'filenames', 'n_samples', 'norm',
                  'n_samples_processed', 'n_features', 'n_jobs', 'chunk_size',
                  'analyzer', 'ngram_range', 'stop_words', 'use_idf',
-                 'binary', 'sublinear_tf', 'use_hashing'])
+                 'binary', 'sublinear_tf', 'use_hashing',
+                 'max_df', 'min_df'])
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])

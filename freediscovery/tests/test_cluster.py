@@ -6,11 +6,11 @@ from __future__ import print_function
 
 import os.path
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.clustering import Clustering, select_top_words
+from freediscovery.cluster import Clustering, select_top_words
 from .run_suite import check_cache
 
 
@@ -25,7 +25,8 @@ def fd_setup():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features, use_hashing=False,
-                         stop_words='english')  # TODO unused variable 'uuid' (overwritten on the next line)
+                         stop_words='english',
+                         min_df=0.1, max_df=0.9)  # TODO unused variable 'uuid' (overwritten on the next line)
     uuid, filenames = fe.transform()
     return cache_dir, uuid, filenames
 
@@ -61,16 +62,21 @@ def test_clustering(method, lsi_components, args, cl_args):
     else:
         assert htree == {}
 
+    if method == 'dbscan':
+        assert (labels != -1).all()
+
     check_cluster_consistency(labels, terms)
     cat.scores(np.random.randint(0, NCLUSTERS-1, size=len(labels)), labels)
     # load the model saved to disk
     km = cat.load(mid)
     assert_allclose(labels, km.labels_)
-    assert len(terms) == NCLUSTERS
+    if method != 'dbscan':
+        # DBSCAN does not take the number of clusters as input
+        assert len(terms) == NCLUSTERS
+        assert len(np.unique(labels)) == NCLUSTERS
 
     for el in terms:
         assert len(el) == n_top_words
-    assert len(np.unique(labels)) == NCLUSTERS
     cluster_indices = np.nonzero(labels == 0)
     if lsi_components is not None:
         # not supported for now otherwise
@@ -78,6 +84,7 @@ def test_clustering(method, lsi_components, args, cl_args):
         # 70% of the terms at least should match
         if method != 'dbscan':
             assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
+
 
     cat2 = Clustering(cache_dir=cache_dir, mid=mid) # make sure we can load it  # TODO unused variable
     cat.delete()
@@ -87,7 +94,7 @@ def test_denrogram_children():
     # temporary solution for https://stackoverflow.com/questions/40239956/node-indexing-in-hierarachical-clustering-dendrograms
     import numpy as np
     from scipy.cluster.hierarchy import dendrogram, linkage
-    from freediscovery.clustering import _DendrogramChildren
+    from freediscovery.cluster import _DendrogramChildren
 
     # generate two clusters: a with 10 points, b with 5:
     np.random.seed(1)
@@ -112,15 +119,56 @@ def test_denrogram_children():
 
 
 def test_dbscan_noisy_utils():
-    from freediscovery.clustering.base import _dbscan_noisy2unique
+    from freediscovery.cluster.utils import (_dbscan_noisy2unique,
+                                             _dbscan_unique2noisy)
     from sklearn.metrics import v_measure_score
 
-    x = np.array([-1, 0, -1,  1, -1,  0])
-    y_ref = np.array([2, 0, 3, 1, 4, 0])
+    x_ref = np.array([-1, 0, -1,  1, 1, -1,  0])
+    y_ref = np.array([2, 0, 3, 1, 1, 4, 0])
 
-    y = _dbscan_noisy2unique(x)
+    y = _dbscan_noisy2unique(x_ref)
     assert v_measure_score(y, y_ref) == 1
 
+    # check inverse transform
+    x = _dbscan_unique2noisy(y_ref)
+    assert v_measure_score(x, x_ref) == 1
+
+
+
+def test_binary_linkage2clusters():
+    from freediscovery.cluster.utils import _binary_linkage2clusters
+    from sklearn.metrics import v_measure_score
+    n_samples = 10
+    linkage = np.array([[1, 2],
+                        [2, 3],
+                        [5, 7],
+                        [6, 9]])
+
+    cluster_id = _binary_linkage2clusters(linkage, n_samples)
+
+    cluster_id_ref = np.array([0, 1, 1, 1, 2, 3, 4, 3, 5, 4])
+
+    assert cluster_id.shape == cluster_id_ref.shape
+    assert v_measure_score(cluster_id, cluster_id_ref) == 1.0 # i.e. same clusters
+
+
+def test_merge_clusters():
+    from freediscovery.cluster.utils import _merge_clusters
+
+    X = np.array([[1, 2, 7, 9, 7, 8]]).T
+
+    y = _merge_clusters(X)
+    assert_equal(X, y[:,None])
+
+    X_new = np.concatenate((X, X, X, X), axis=1)
+    y = _merge_clusters(X_new)
+    assert_equal(X, y[:,None])
+
+
+    X = np.array([[1, 1, 2, 2, 3, 1, 3],
+                  [2, 4, 2, 5, 1, 1, 3]]).T
+    y = _merge_clusters(X)
+    assert_equal(y, [1, 1, 1, 1, 3, 1, 3])
 
 def test_select_top_words():
     words_list = ['apple', 'apples', 'test', 'go']

@@ -17,6 +17,9 @@ try:  # sklearn v0.17
 except ImportError:  # v0.18
     from sklearn.metrics.base import UndefinedMetricWarning
 
+from .exceptions import (DatasetNotFound, ModelNotFound, InitException,
+                            WrongParameter)
+
 @contextmanager
 def _silent(stream='stderr'):
     stderr = getattr(sys, stream)
@@ -37,7 +40,11 @@ def classification_score(X_ref, Y_ref, X, Y):
     X_ref = np.asarray(X_ref)
     X = np.asarray(X)
 
-    d_pred = pd.DataFrame({'is_relevant_p': Y > threshold, 'is_relevant_score': Y}, index=X)
+    # this merge operation should not be necessary anymore once we move to the
+    # numeric indexing (issue #4)
+
+    d_pred = pd.DataFrame({'is_relevant_p': Y > threshold,
+                           'is_relevant_score': Y}, index=X)
     d_ref = pd.DataFrame({'is_relevant': Y_ref}, index=X_ref)
     d_out = pd.merge(d_ref, d_pred, how='inner', left_index=True, right_index=True)
     if d_out.shape[0] == 0:

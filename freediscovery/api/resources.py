@@ -16,7 +16,7 @@ from ..lsi import LSI
 from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
 from ..utils import classification_score
-from ..clustering import Clustering
+from ..cluster import Clustering
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema,
                       LsiParsSchema, LsiPostSchema, LsiPredictSchema,
@@ -33,7 +33,7 @@ features_schema = FeaturesSchema()
 error_schema = ErrorSchema()
 
 # ============================================================================ # 
-#                      Features extraction                                     #
+#                      Feature extraction                                      #
 # ============================================================================ # 
 
 class FeaturesApi(Resource):
@@ -49,6 +49,10 @@ class FeaturesApi(Resource):
         args['use_idf'] = args['use_idf'] > 0
         if args['norm'] == 'None':
             args['norm'] = None
+        if args['use_hashing']:
+            for key in ['min_df', 'max_df']:
+                if key in args:
+                    del args[key] # the above parameters are ignored with caching
         fe = FeatureVectorizer(self._cache_dir)
         dsid = fe.preprocess(**args)
         pars = fe.get_params()
@@ -330,6 +334,30 @@ class WardHCClusteringApi(Resource):
         cl.ward_hc(**args)
         return {'id': cl.mid}
 
+_dbscan_clustering_api_post_args = {
+        'dataset_id': wfields.Str(required=True),
+        'lsi_components': wfields.Int(missing=-1),
+        'eps': wfields.Number(missing=0.1),
+        'min_samples': wfields.Int(missing=10)
+        }
+
+
+class DBSCANClusteringApi(Resource):
+
+    @use_args(_dbscan_clustering_api_post_args)
+    @marshal_with(IDSchema())
+    def post(self, **args):
+
+        if args['lsi_components'] < 0:
+            args['lsi_components'] = None
+
+        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+
+        del args['dataset_id']
+
+        cl.dbscan(**args)
+        return {'id': cl.mid}
+
 
 _clustering_api_get_args = {
         'n_top_words': wfields.Int(missing=5)
@@ -379,19 +407,21 @@ class DupDetectionApi(Resource):
     @use_args(_dup_detection_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
-        from ..simhash import DuplicateDetection
+        from ..dupdet import DuplicateDetection
 
         model = DuplicateDetection(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
         del args['dataset_id']
 
 
-        model.fit()
+        model.fit(args['method'])
 
         return {'id': model.mid}
 
 _dupdet_api_get_args = {
-        'distance': wfields.Int(missing=2)
+        'distance': wfields.Int(),
+        'n_rand_lexicons': wfields.Int(),
+        'rand_lexicon_ratio': wfields.Number()
         }
 
 
@@ -400,16 +430,14 @@ class DupDetectionApiElement(Resource):
     @use_args(_dupdet_api_get_args)
     @marshal_with(DuplicateDetectionSchema())
     def get(self, mid, **args):
-        from ..simhash import DuplicateDetection
+        from ..dupdet import DuplicateDetection
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
-        model.fit()
-        simhash, cluster_id, dup_pairs = model.query(**args)
-        return {'simhash': simhash, 'cluster_id': cluster_id,
-                'dup_pairs': dup_pairs}
+        cluster_id = model.query(**args)
+        return {'cluster_id': cluster_id}
 
     def delete(self, mid):
-        from ..simhash import DuplicateDetection
+        from ..dupdet import DuplicateDetection
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
         model.delete()

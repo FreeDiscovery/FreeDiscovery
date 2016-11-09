@@ -31,6 +31,8 @@ Initialize the feature extraction on a document collection.
     - `use_idf`: Enable inverse-document-frequency reweighting (default: False).
     - `sublinear_tf`: Apply sublinear tf scaling, i.e. replace tf with log(1 + tf) (default: False).
     - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True) 
+    - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
+    - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
 
 
 
@@ -253,6 +255,23 @@ Predict document categorization with a previously trained model
  * **Success Response**: `HTTP 200`
     
         {"id": <str>}
+### 4.c Compute clustering (DBSCAN)
+
+ * **URL**: `/api/v0/clustering/dbscan`
+ * **Method**: `POST` **URL Params**: None
+ * **Data Params**: 
+    - `dataset_id`: dataset id
+    - `lsi_components`: (optional) apply LSI with `lsi_components` before clustering (default None)
+    - `eps`: (optional) float
+            The maximum distance between two samples for them to be considered
+             as in the same neighborhood.
+    - `min_samples`: (optional) int
+            The number of samples (or total weight) in a neighborhood for a point
+            to be considered as a core point. This includes the point itself.
+
+ * **Success Response**: `HTTP 200`
+    
+        {"id": <str>}
 
 ### 4.d Load results
 
@@ -276,12 +295,14 @@ Predict document categorization with a previously trained model
 
 ## 5. Duplicate detection
 
-### 5.a Compute duplicates (simhash)
+### 5.a Compute duplicates
 
  * **URL**: `/api/v0/duplicate-detection/simhash`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
     - `dataset_id`: dataset id
+    - `method`: str, default='simhash'
+         Method used for duplicate detection. One of "simhash", "i-match"
 
  * **Success Response**: `HTTP 200`
     
@@ -289,14 +310,15 @@ Predict document categorization with a previously trained model
 
 ### 5.b Query duplicates
 
- * **URL**: `/api/v0/duplicate-detection/simhash/<model-id>` 
+ * **URL**: `/api/v0/duplicate-detection/<model-id>` 
  * **Method**: `GET` **URL Params**: None
  * **Data Params**: 
     - distance : int, default=2
-              Maximum number of differnet bits in the simhash
-    - blocks : int or 'auto', default='auto'
-                  number of blocks into which the simhash is split
-                  when searching for duplicates, see  https://github.com/seomoz/simhash-py
+              Maximum number of differnet bits in the simhash (Simhash method only)
+    - n_rand_lexicons : int, default=1
+              number of random lexicons used for duplicate detection (I-Match method only)
+    - rand_lexicon_ratio: float, default=0.7
+              ratio of the vocabulary used in random lexicons (I-Match method only)
 
 
  * **Success Response**: `HTTP 200`

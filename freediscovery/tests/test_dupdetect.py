@@ -6,6 +6,9 @@ from __future__ import print_function
 
 import os.path
 from unittest import SkipTest
+import numpy as np
+from numpy.testing import assert_equal
+import pytest
 
 from freediscovery.text import FeatureVectorizer
 from .run_suite import check_cache
@@ -64,11 +67,11 @@ def test_simhash():
     except ImportError:
         raise SkipTest
     from sklearn.feature_extraction.text import HashingVectorizer
-    from freediscovery.simhash import SimhashDuplicates
+    from freediscovery.dupdet import SimhashDuplicates
 
     DISTANCE = 4
 
-    fe = HashingVectorizer(ngram_range=(4,4), analyzer='word', n_features=2**30)
+    fe = HashingVectorizer(ngram_range=(4,4), analyzer='word')
 
     X = fe.fit_transform([jabberwocky,
                           jabberwocky + jabberwocky_author,
@@ -79,14 +82,17 @@ def test_simhash():
     sh.fit(X)
 
     # make sure small changes in the text results in a small number of different bytes
-    assert num_differing_bits(*sh._fit_shash[:2]) <= 2
+    assert num_differing_bits(*sh._fit_shash[:2]) <= 3
     # different text produces a large number of different bytes
-    assert num_differing_bits(*sh._fit_shash[1:3]) >= 30
+    assert num_differing_bits(*sh._fit_shash[1:3]) >= 20
 
     # same text produces a zero bit difference
     assert num_differing_bits(*sh._fit_shash[[0,-1]]) == 0
 
     simhash, cluster_id, dup_pairs = sh.query(distance=DISTANCE, blocks=42)
+    assert str(dup_pairs.dtype) == 'uint64'
+    assert str(cluster_id.dtype) == 'int64'
+    assert str(dup_pairs.dtype) == 'uint64'
 
     assert simhash[0] == simhash[-1]       # duplicate documents have the same simhash
     assert cluster_id[0] == cluster_id[-1] # and belong to the same cluster
@@ -99,14 +105,56 @@ def test_simhash():
         assert num_differing_bits(*pairs) <= DISTANCE
 
 
-def test_dup_detection():
-    try:
-        import simhash
-    except ImportError:
-        raise SkipTest
-    from freediscovery.simhash import DuplicateDetection
+@pytest.mark.parametrize('n_rand_lexicons,', [1, 5, 100])
+def test_imatch(n_rand_lexicons):
+
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from freediscovery.dupdet import IMatchDuplicates
+
+    DISTANCE = 4
+
+    fe = TfidfVectorizer(ngram_range=(4,4), analyzer='word',
+                         min_df=0.25, max_df=0.75)
+
+    X = fe.fit_transform([jabberwocky,
+                          jabberwocky + jabberwocky_author,
+                          jabberwocky_author,
+                          jabberwocky])
+    #print(fe.get_feature_names())
+
+    sh = IMatchDuplicates(n_rand_lexicons=n_rand_lexicons)
+    sh.fit(X)
+
+    assert sh.labels_.shape[0] == X.shape[0]
+    assert sh.hash_.shape[0] == X.shape[0]
+    assert sh.hash_is_dup_.shape[0] == X.shape[0]
+
+    # different documents produce different hash
+    assert sh.labels_[0] != sh.labels_[2]
+
+    # same text produces same hash
+    assert sh.labels_[0] == sh.labels_[-1]
+
+    # RY: not sure what other tests could be run for I-Match
+
+
+@pytest.mark.parametrize('method, options', [['simhash', {'distance': 3}],
+                                             ['simhash', {'distance': 10}],
+                                             ['i-match', {}]])
+def test_dup_detection(method, options):
+    if method == 'simhash':
+        try:
+            import simhash
+        except ImportError:
+            raise SkipTest
+    from freediscovery.dupdet import DuplicateDetection
     cache_dir, uuid, filenames, fe = fd_setup()
 
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
-    dd.fit()
-    simhash, cluster_id, dup_pairs = dd.query(distance=3)  # TODO unused variables
+    dd.fit(method=method)
+    cluster_id = dd.query(**options)
+    # cannot have more cluster_id than elements in the dataset
+    assert len(np.unique(cluster_id)) <= len(np.unique(filenames))
+
+
+
