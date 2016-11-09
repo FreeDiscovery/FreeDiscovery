@@ -4,13 +4,12 @@ export FD_CACHE_DIR="$(cd "../$(dirname .)"; pwd)/freediscovery_shared/"
 mkdir -p ../freediscovery_shared
 
 
-
 echo "
     Download the benchmark TAR dataset (only the first time)
     "
-if [ ! -f "${FD_CACHE_DIR}tar_fd_benchmark.tar.gz" ]; then
-    curl "http://r0h.eu/d/tar_fd_benchmark.tar.gz" -L -o "${FD_CACHE_DIR}/tar_fd_benchmark.tar.gz"
-    cd ${FD_CACHE_DIR} && tar xzf tar_fd_benchmark.tar.gz && cd -
+if [ ! -f "${FD_CACHE_DIR}treclegal09_2k_subset.tar.gz" ]; then
+    curl "http://r0h.eu/d/treclegal09_2k_subset.tar.gz" -L -o "${FD_CACHE_DIR}/treclegal09_2k_subset.tar.gz"
+    cd ${FD_CACHE_DIR} && tar xzf treclegal09_2k_subset.tar.gz && cd -
 fi
 
 echo "
