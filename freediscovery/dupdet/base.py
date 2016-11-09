@@ -27,6 +27,9 @@ class DuplicateDetection(BaseEstimator):
           - simhash-py
           - i-match
 
+        The option `use_hashing=False` must be set for the feature extraction.
+        Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
         Parameters
         ----------
           cache_dir : str
