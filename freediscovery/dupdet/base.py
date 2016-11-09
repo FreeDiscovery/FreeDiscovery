@@ -120,9 +120,12 @@ class DuplicateDetection(BaseEstimator):
             _fit_shash, cluster_id_exactdup, matches = shash.query(**args)
 
             if matches.shape[0] > 0:
+                # found some near duplicates
                 matches_idx = np.zeros(matches.shape, dtype=np.int)
-                for idx, val in np.nditer(matches):
-                    matches_idx[idx] = shash.get_index_by_hash(val)
+                # match the hash value to the document index
+                for i, row in enumerate(matches):
+                    for j, value in enumerate(row):
+                        matches_idx[i, j] = shash.get_index_by_hash(value)
             else:
                 matches_idx = matches
             # compute cluster_id for near duplicates

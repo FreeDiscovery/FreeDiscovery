@@ -90,6 +90,9 @@ def test_simhash():
     assert num_differing_bits(*sh._fit_shash[[0,-1]]) == 0
 
     simhash, cluster_id, dup_pairs = sh.query(distance=DISTANCE, blocks=42)
+    assert str(dup_pairs.dtype) == 'uint64'
+    assert str(cluster_id.dtype) == 'int64'
+    assert str(dup_pairs.dtype) == 'uint64'
 
     assert simhash[0] == simhash[-1]       # duplicate documents have the same simhash
     assert cluster_id[0] == cluster_id[-1] # and belong to the same cluster
@@ -150,7 +153,8 @@ def test_dup_detection(method, options):
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
     dd.fit(method=method)
     cluster_id = dd.query(**options)
-    assert len(np.unique(filenames)) <= len(np.unique(cluster_id))
+    # cannot have more cluster_id than elements in the dataset
+    assert len(np.unique(cluster_id)) <= len(np.unique(filenames))
 
 
 
