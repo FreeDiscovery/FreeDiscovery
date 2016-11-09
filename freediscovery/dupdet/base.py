@@ -123,9 +123,8 @@ class DuplicateDetection(BaseEstimator):
                 # found some near duplicates
                 matches_idx = np.zeros(matches.shape, dtype=np.int)
                 # match the hash value to the document index
-                for i, row in enumerate(matches):
-                    for j, value in enumerate(row):
-                        matches_idx[i, j] = shash.get_index_by_hash(value)
+                for (i, j), value in np.ndenumerate(matches):
+                    matches_idx[i, j] = shash.get_index_by_hash(value)
             else:
                 matches_idx = matches
             # compute cluster_id for near duplicates
