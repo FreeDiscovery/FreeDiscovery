@@ -17,7 +17,8 @@ from .resources import (FeaturesApi, FeaturesApiElement, LsiApi, ModelsApi,
                         ClusteringApiElement, KmeanClusteringApi,
                         BirchClusteringApi, WardHCClusteringApi,
                         DBSCANClusteringApi,
-                        DupDetectionApi, DupDetectionApiElement
+                        DupDetectionApi, DupDetectionApiElement,
+                        DatasetsApiElement
                         )
 
 
@@ -42,6 +43,7 @@ def fd_app(cache_dir):
 
     ## Actually setup the Api resource routing here
     for resource_el, url in [(FeaturesApi,          "/feature-extraction"),
+                             (DatasetsApiElement,   "/datasets/<name>"),
                              (FeaturesApiElement,   '/feature-extraction/<dsid>'),
                              (ModelsApi,            '/categorization/'),
                              (ModelsApiElement,     '/categorization/<mid>'),

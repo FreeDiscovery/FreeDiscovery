@@ -18,13 +18,26 @@ from ..io import parse_ground_truth_file
 from ..utils import classification_score
 from ..cluster import Clustering
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema,
+                      FeaturesSchema, DatasetSchema,
                       LsiParsSchema, LsiPostSchema, LsiPredictSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       ErrorSchema, DuplicateDetectionSchema
                       )
+
+# ============================================================================ # 
+#                         Datasets download                                    #
+# ============================================================================ # 
+
+class DatasetsApiElement(Resource):
+
+    @marshal_with(DatasetSchema())
+    def get(self, name):
+        from ..datasets import load_dataset
+        res = load_dataset(name, self._cache_dir, verbose=True,
+                load_ground_truth=True, verify_checksum=False)
+        return res
 
 
 # Definine the response formatting schemas

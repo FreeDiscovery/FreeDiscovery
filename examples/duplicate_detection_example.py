@@ -1,5 +1,5 @@
 """
-Document Clustering example
+Duplicate Detection Example
 ---------------------------
 
 Find duplicates in a text collection

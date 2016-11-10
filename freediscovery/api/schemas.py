@@ -12,6 +12,13 @@ from marshmallow import Schema, fields
 # Occasionally the same class can be used for input validation
 # As webargs (used for input validation) is just a wrapper around marshmallow
 
+class DatasetSchema(Schema):
+    base_dir = fields.Str(required=True)
+    data_dir = fields.Str(required=True)
+    ground_truth_file = fields.Str()
+    seed_relevant_files = fields.List(fields.Str())
+    seed_non_relevant_files = fields.List(fields.Str())
+
 class IDSchema(Schema):
     id = fields.Str(required=True)
 
