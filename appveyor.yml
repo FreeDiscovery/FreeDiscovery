@@ -38,8 +38,6 @@ install:
   - "pip install -r .\\build_tools\\requirements_pip_win.txt"
   - python setup.py develop 
 
-
-
 test_script:
   - activate freediscovery-env # activate the virtualenv
   - "cd C:\\projects\\freediscovery\\freediscovery\\tests" # just to avoid full relative path in py.test
@@ -50,14 +48,6 @@ test_script:
 #  - ps: |
 #        if (!(Test-Path -Path "freediscovery_shared")) {
 #            New-Item -ItemType directory -Path "freediscovery_shared"
-#        }
-#        conda install -c anaconda curl=7.49.0
-#        if (!(Test-Path -Path "freediscovery_shared\\treclegal09_2k_subset.tar.gz")) {
-#            Remove-item alias:curl # https://stackoverflow.com/questions/25044010/running-curl-on-64-bit-windows
-#            cd "freediscovery_shared"
-#            curl "http://r0h.eu/d/treclegal09_2k_subset.tar.gz" -L -o "treclegal09_2k_subset.tar.gz"
-#            tar xzf treclegal09_2k_subset.tar.gz
-#            cd -
 #        }
 #  - START /B python scripts/run_api.py "freediscovery_shared"
 #  - ps: |
