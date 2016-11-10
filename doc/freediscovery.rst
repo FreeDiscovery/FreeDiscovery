@@ -1,7 +1,11 @@
 Python API reference
 ====================
 
-**Note:** the Python API reference will change in future releases (i.e. it is not considered stable until v1.0).
+**Note:** the Python API reference will change in future releases (i.e. it is not considered stable).
+
+Two types of classes can be found in FreeDiscovery,
+  - scikit-learn compatible estimators that inherit from `sklearn.base.BaseEstimator`
+  - freediscovery specific classes that add a persistance layer and are designed to function together with the REST API.
 
 1. Feature extraction
 ---------------------
@@ -82,7 +86,23 @@ Python API reference
     :undoc-members:
     :show-inheritance:
 
-6. Exceptions
+6. Datasets
+-----------
+
+.. automodule:: freediscovery.datasets
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+7. Metrics
+----------
+
+.. automodule:: freediscovery.metrics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+8. Exceptions
 -------------
 .. automodule:: freediscovery.exceptions
     :members:

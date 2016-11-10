@@ -23,21 +23,19 @@ class DuplicateDetection(BaseEstimator):
         """
         Find near duplicates in a document collection.
 
-        Currently supported backends are:
-          - simhash-py
-          - i-match
+        Currently supported backends are simhash-py and i-match.
 
         The option `use_hashing=False` must be set for the feature extraction.
         Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
         Parameters
         ----------
-          cache_dir : str
-             directory where to save temporary and regression files
-          dsid : str, optional
-             dataset id
-          mid : str, optional
-             model id
+        cache_dir : str
+           directory where to save temporary and regression files
+        dsid : str, optional
+           dataset id
+        mid : str, optional
+           model id
         """
 
         if dsid is None and mid is not None:
@@ -102,9 +100,9 @@ class DuplicateDetection(BaseEstimator):
         distance : int, default=2
             Maximum number of differnet bits in the simhash
         blocks : int or 'auto', default='auto'
-                number of blocks into which the simhash is split
-                when searching for duplicates,
-                see  https://github.com/seomoz/simhash-py
+            number of blocks into which the simhash is split
+            when searching for duplicates,
+            see  https://github.com/seomoz/simhash-py
         Returns
         -------
         cluster_id : array

@@ -1,6 +1,9 @@
 # Deployment options
 
 
+![FreeDiscovery deployment](_static/FreeDiscovery_infra.png)
+
+
 ## 1. Development server
 
 The options used to start the FreeDiscovery server are defined in `scripts/run_api.py`. By default, the options `processes=1, threaded=True` are used, which allows to run on all platforms, but disables parallel processing in FreeDiscovery.
@@ -17,13 +20,11 @@ This section illustrates how to run a FreeDiscovery Docker images on AWS EC2 wit
  3. A prebuild Docker image of FreeDiscovery can be downloaded with,
     * [only once] `docker login`  # using your [hub.docker.com](https://hub.docker.com) credentials
     * [only once, optional] requesting permission to access the `freediscovery/freediscovery` image for your `userid`
-    * `docker pull freediscovery/freediscovery`
+    * `docker pull freediscovery/freediscovery:<tag>` # where <tag> is one of the stable tags on http://github.com/FreeDiscovery/FreeDiscovery
 
  3. Create or choose a folder where the data to process will be copied and that can be used to store temporary files.
  4. Run Docker and mount the above folder under `/freediscovery_shared` inside the container,
 
         docker run -t -i -v /<shared_folder>:/freediscovery_shared -p 5001:5001 freediscovery/freediscovery
-
- For instance to run the examples, included with the 0.5.0 release, the variable `docker=True` must be set in the first cell of jupyter notebooks (this just changes the absolute path scheme), and the test dataset, available from [this link](http://r0h.eu/d/tar_fd_benchmark.tar.gz) must be downloaded and extracted in the shared directory, so that when the volume is mounted `/freediscovery_shared/tar_fd_benchmark/` is a valid path.
 
 

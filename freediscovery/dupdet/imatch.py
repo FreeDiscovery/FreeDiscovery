@@ -23,18 +23,19 @@ class IMatchDuplicates(BaseEstimator):
 
     Parameters
     ----------
-     - n_rand_lexicons: int, default=1
+     - n_rand_lexicons : int, default=1
         number of random lexicons used for duplicate detection
         If equal to 1 no lexicon randomization is used which is equivalent
         to the original I-Match implementation by Chowdhury & Grossman (2002)
-     - rand_lexicon_ratio: float, default=0.7
+     - rand_lexicon_ratio : float, default=0.7
         ratio of the vocabulary used in random lexicons
 
     References
     ----------
      - Kołcz & Chowdhury (2008) - Lexicon randomization for
-       near-duplicate detection with I-Match
-     - Chowdhury et al. (2002) - 
+       near-duplicate detection with I-Match.
+     - Chowdhury et al. (2002) - Collection statistics for fast
+       duplicate document detection.
 
     """
     def __init__(self, n_rand_lexicons=1, rand_lexicon_ratio=0.7):

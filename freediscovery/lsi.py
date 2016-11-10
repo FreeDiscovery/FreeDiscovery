@@ -35,7 +35,7 @@ class LSI(BaseEstimator):
 
         Parameters
         ----------
-          cache_dir: 
+          cache_dir: str
              folder where the model will be saved
           dsid: str
              dataset id
@@ -129,7 +129,7 @@ class LSI(BaseEstimator):
              a list of relevant documents filenames
           non_relevant_filenames: list
              a list of not relevant documents filenames
-          accumulate: str, optional, default='centroid-max'
+          accumulate: str, optional, default='nearest-max'
              if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
              otherwise if `accumulate=="centroid-max"` the centroid of relevant documents is used as the query vector.
 
@@ -239,6 +239,9 @@ class LSI(BaseEstimator):
 # the only reason is the we need to save the Sigma matrix when performing this transform!
 
 class TruncatedSVD_LSI(TruncatedSVD):
+    """
+    A patch of `sklearn.decomposition.TruncatedSVD` to include whitening (`scikit-learn/scikit-learn#7832)`
+    """
 
     def transform_lsi(self, X):
         """ LSI transform, normalized by the inverse of the eigen values"""

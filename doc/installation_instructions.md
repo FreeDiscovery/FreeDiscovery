@@ -2,16 +2,21 @@
 
 There are two ways of installing FreeDiscovery,
 
-1. A direct installation into a Python virtual environment (recommended for development and testing)
-2. In a docker container (recommended in production)
+1. An installation into a Python virtual environment (recommended for development and testing)
+2. Using a Docker container (recommended in production)
 
 ## 1. Downloading FreeDiscovery
 
-  The source code of FreeDiscovery should be downloaded and extracted into a folder named `FreeDiscovery`.
+The latest development version of FreeDiscovery can be obtained from [Github](https://github.com/FreeDiscovery/FreeDiscovery) with,
+      
+    git clone https://github.com/FreeDiscovery/FreeDiscovery.git
+
+or by downloading the latest stable version from the [Github releases page](https://github.com/FreeDiscovery/FreeDiscovery/releases).
+
 
 ## 2. Installing the dependencies
 
-### 2.a. Direct install
+### 2.a. Python install
 
  1. Download and install [Miniconda](http://conda.pydata.org/miniconda.html) 64 bit for Python 3.5 (a cross-platform package manager for Python & R)
  
@@ -38,12 +43,10 @@ There are two ways of installing FreeDiscovery,
 
           bash build_tools/conda_setup.sh
 
-- on Windows:
+- on Windows by double-clicking on `build_tools/conda_setup.bat` in files explorer, or running,
 
           cd build_tools
           conda_setup.bat
-
-  or by double-clicking conda_setup.bat in files explorer
 
 
 ### 2.b. Docker container
@@ -52,7 +55,7 @@ There are two ways of installing FreeDiscovery,
 2. Build the container locally (from the `FreeDiscovery` folder),
    
         cd FreeDiscovery
-        docker build -t "freediscovery:latest" .     
+        docker build -t "freediscovery/freediscovery:latest" .     
 
       
 ## 3. Starting the FreeDiscovery server
@@ -62,9 +65,9 @@ There are two ways of installing FreeDiscovery,
 The FreeDiscovery server can be started with,
    
     bash conda_run.sh
-for the direct install, or with
+for the Python install, or with
 
-    bash docker_run.sh
+    bash docker_run.sh freediscovery/freediscovery:latest
 for the docker container, respectively.
 
 ### 3.2. On Windows
@@ -72,12 +75,11 @@ for the docker container, respectively.
 The server initialization is not currently fully scripted on Windows, and the following actions are necessary,
 
 1. [only once] Create a `FreeDiscovery\..\freediscovery_shared` folder
-2. [only once] [Download the test dataset](http://r0h.eu/d/tar_fd_benchmark.tar.gz) and extract it into the `freediscovery_shared` folder, where files should appear under `freediscovery_shared\tar_fd_benchmark\`
-3. The server can then be started with,
+2. The server can then be started with,
 
         python scripts\run_api.py ..\freediscovery_shared 
-   for the direct install, or with,
+   for the Python install, or with,
 
-        docker run -t -i -v ../tar_fd_benchmark:/freediscovery_shared -p 5001:5001 freediscovery
+        docker run -t -i -v ../tar_fd_benchmark:/freediscovery_shared -p 5001:5001 freediscovery/freediscovery:latest
 
    for the docker install.
