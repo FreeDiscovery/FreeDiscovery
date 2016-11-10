@@ -35,7 +35,11 @@ script:
         sleep 20  
     - | 
         cd examples/
-        for f in ./*example*.py; do python $f ; done
+        set -o pipefail
+        for f in ./*example*.py; do 
+           python $f >> log.txt
+        done
+        cat log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt; then false; else true; fi
 
 #after_success:
 #    coveralls

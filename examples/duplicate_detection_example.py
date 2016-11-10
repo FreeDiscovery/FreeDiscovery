@@ -4,11 +4,14 @@ Duplicate Detection Example [REST API]
 
 Find near-duplicates in a text collection
 """
+from __future__ import print_function
+
+from time import time
+import sys
+import platform
 
 import numpy as np
-
 import pandas as pd
-from time import time
 import requests
 
 pd.options.display.float_format = '{:,.3f}'.format
@@ -124,6 +127,10 @@ labels_ = data['cluster_id']
 
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
+
+if platform.system() == 'Windows':
+    print('Simhash-py is currently not installed on Windows')
+    sys.exit()
 
 print("\n3. Duplicate detection by Simhash")
 

@@ -20,7 +20,7 @@ cache_dir = '.'
 
 print("0. Load Dataset")
 
-ds = load_dataset(dataset_name)
+ds = load_dataset(dataset_name, cache_dir=cache_dir)
 
 
 print("\n1. Feature extraction (non hashed)\n")

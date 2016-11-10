@@ -10,6 +10,7 @@ import os
 import sys
 import shutil
 import hashlib
+import platform
 
 
 def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
@@ -114,17 +115,27 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
             if verbose:
                 print('Archive extracted!'.format(fname))
 
+
+
     results = {'base_dir': outdir, 'data_dir': os.path.join(outdir, 'data')}
+
 
     if load_ground_truth:
         with open(os.path.join(outdir,'seed_relevant.txt'), 'rt') as fh:
             relevant_files = [el.strip() for el in fh.readlines()]
-        results['seed_relevant_files'] = relevant_files
 
         with open(os.path.join(outdir,'seed_non_relevant.txt'), 'rt') as fh:
             non_relevant_files = [el.strip() for el in fh.readlines()]
+
+        ground_truth_file = os.path.join(outdir, "ground_truth_file.txt")  
+
+        if platform.system() == 'Windows':
+            relevant_files = [el.replace('/', '\\') for el in relevant_files]
+            non_relevant_files = [el.replace('/', '\\') for el in non_relevant_files]
+
         results['seed_non_relevant_files'] = non_relevant_files
-        results['ground_truth_file'] = os.path.join(outdir, "ground_truth_file.txt")  
+        results['seed_relevant_files'] = relevant_files
+        results['ground_truth_file'] = ground_truth_file
 
     return results
 

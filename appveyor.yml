@@ -52,5 +52,6 @@ test_script:
         cd ".\\examples"
         Get-ChildItem ".\\" -Filter *.py | 
         Foreach-Object {
-            python $_.FullName
+            python $_.FullName 2>&1 | Tee-Object -Append -FilePath "log.txt"
         }
+
