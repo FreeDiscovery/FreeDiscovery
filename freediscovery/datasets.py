@@ -14,16 +14,16 @@ import hashlib
 
 def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
                  force=False, verbose=True,
-                 load_ground_truth=False, verify_checksum=True):
+                 load_ground_truth=False, verify_checksum=False):
     """
     Download a benchmark dataset.
 
     Currently the following datasets based on TREC 2009 legal collection
     are suported:
        - treclegal09_2k_subset  :   2 400 documents,   2 MB
-       - treclegal09_20k_subset :  20 000 documents,  20 MB
-       - treclegal09_37k_subset :  37 000 documents,  50 MB
-       - treclegal09            : 700 000 documents, 1.2 GB (not available for now)
+       - treclegal09_20k_subset :  20 000 documents,  30 MB
+       - treclegal09_37k_subset :  37 000 documents,  55 MB
+       - treclegal09            : 700 000 documents, 1.2 GB
     The ground truth files for categorization are adapted from TAR Toolkit.
 
     If you encounter any issues for downloads with this function,
@@ -63,8 +63,8 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
                     'treclegal09_37k_subset': '9fb6b7505871bbaee5a438de3b0f497c'}
 
     DATASET_SIZE = {'treclegal09_2k_subset' : 2.8,
-                    'treclegal09_20k_subset': 20,
-                    'treclegal09_37k_subset': 50}
+                    'treclegal09_20k_subset': 30,
+                    'treclegal09_37k_subset': 55}
 
     if name not in VALID_MD5SUM:
         raise ValueError('Dataset name {} not known!'.format(name))
@@ -82,7 +82,7 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
     if not os.path.exists(outdir):
 
         if verbose:
-            print('\nWaring: downloading dataset {} ({} MB) !'.format(name,
+            print('\nWarning: downloading dataset {} ({} MB) !'.format(name,
                                         DATASET_SIZE[name]))
         response = requests.get(base_url, stream=False, allow_redirects=True)
         with open(fname, "wb") as fh:
