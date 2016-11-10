@@ -3,15 +3,6 @@
 export FD_CACHE_DIR="$(cd "../$(dirname .)"; pwd)/freediscovery_shared/"
 mkdir -p ../freediscovery_shared
 
-
-echo "
-    Download the benchmark TAR dataset (only the first time)
-    "
-if [ ! -f "${FD_CACHE_DIR}treclegal09_2k_subset.tar.gz" ]; then
-    curl "http://r0h.eu/d/treclegal09_2k_subset.tar.gz" -L -o "${FD_CACHE_DIR}/treclegal09_2k_subset.tar.gz"
-    cd ${FD_CACHE_DIR} && tar xzf treclegal09_2k_subset.tar.gz && cd -
-fi
-
 echo "
 Starting FREEDiscovery Server $(tail -n 1 freediscovery/_version.py |  cut -d "=" -f2 ) ($(date))
     shared folder set to ${FD_CACHE_DIR}

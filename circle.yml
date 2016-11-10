@@ -9,7 +9,6 @@ dependencies:
     - python scripts/run_api.py ../freediscovery_shared:
        background: true
     - sleep 20
-    - cat nohup.out
     # The pipefail is requested to propagate exit code
     - set -o pipefail && cd doc && make html 2>&1 | tee ~/log.txt
 

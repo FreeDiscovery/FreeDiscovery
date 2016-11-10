@@ -30,18 +30,16 @@ script:
     # now start the server and run the examples
     - | 
         mkdir -p ../freediscovery_shared;
-        if [ ! -f "../freediscovery_shared/treclegal09_2k_subset.tar.gz" ]; then
-            curl "http://r0h.eu/d/treclegal09_2k_subset.tar.gz" -L -o "../freediscovery_shared/treclegal09_2k_subset.tar.gz"
-            cd ../freediscovery_shared && tar xzf treclegal09_2k_subset.tar.gz && cd -
-        fi
-    - |
         python scripts/run_api.py ../freediscovery_shared &
         FDSERVER_PID=$!
         sleep 20  
     - | 
         cd examples/
-        for f in ./*example*.py; do python $f ; done
-
+        set -o pipefail
+        for f in ./*example*.py; do 
+           python $f >> log.txt
+        done
+        cat log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt; then false; else true; fi
 
 #after_success:
 #    coveralls

@@ -19,7 +19,6 @@ from freediscovery.categorization import Categorizer
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import classification_score
 from freediscovery.exceptions import OptionalDependencyMissing
-from ..utils import _silent
 from .run_suite import check_cache
 
 

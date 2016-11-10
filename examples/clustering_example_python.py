@@ -1,40 +1,39 @@
 """
-Document Clustering example (Python)
-------------------------------------
+Clustering Example [Python API]
+-------------------------------
 
-An example of clustering using Python API
+An example of clustering using the Python API
 """
 
 import pandas as pd
-from IPython.display import display
 from freediscovery.text import FeatureVectorizer
 from freediscovery.cluster import Clustering
 from freediscovery.utils import _silent
+from freediscovery.datasets import load_dataset
 from time import time
 
 pd.options.display.float_format = '{:,.3f}'.format
 
 dataset_name = "treclegal09_2k_subset"
-
-data_dir = "../freediscovery_shared/{}".format(dataset_name)
-examples_to_server_path = "../" # relative path between this file and the FreeDiscovery source folder
-
-BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
+cache_dir = '.'
 
 
-# # 1. Feature extraction (non hashed)
+print("0. Load Dataset")
+
+ds = load_dataset(dataset_name, cache_dir=cache_dir)
+
+
+print("\n1. Feature extraction (non hashed)\n")
 
 n_features = 30000
-cache_dir = '/tmp/'
-
 fe = FeatureVectorizer(cache_dir=cache_dir)
-uuid = fe.preprocess("../"+data_dir+'/data',
+uuid = fe.preprocess(ds['data_dir'],
                      n_features=n_features, use_hashing=False,
                      use_idf=True, stop_words='english')
 uuid, filenames = fe.transform()
 
 
-# # 2. Document Clustering (LSI + K-Means)
+print("\n2. Document Clustering (LSI + K-Means)\n")
 
 cat = Clustering(cache_dir=cache_dir, dsid=uuid)
 
@@ -58,10 +57,10 @@ with _silent('stderr'): # ignore some deprecation warnings
 t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
-display(repr_clustering(labels, terms))
+print(repr_clustering(labels, terms))
 
 
-# # 3. Document Clustering (LSI + Ward Hierarchical Clustering)
+print('\n3. Document Clustering (LSI + Ward Hierarchical Clustering)\n')
 
 t0 = time()
 with _silent('stderr'): # ignore some deprecation warnings
@@ -73,4 +72,4 @@ with _silent('stderr'): # ignore some deprecation warnings
 t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
-display(repr_clustering(labels, terms))
+print(repr_clustering(labels, terms))

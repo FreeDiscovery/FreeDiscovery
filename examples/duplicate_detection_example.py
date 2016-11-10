@@ -1,52 +1,40 @@
 """
-Document Clustering example
----------------------------
+Duplicate Detection Example [REST API]
+--------------------------------------
 
-Find duplicates in a text collection
+Find near-duplicates in a text collection
 """
+from __future__ import print_function
 
-import os
-import re
-import numpy as np
-
-import pandas as pd
-import sys
-import shutil
 from time import time
+import sys
+import platform
+
+import numpy as np
+import pandas as pd
 import requests
 
 pd.options.display.float_format = '{:,.3f}'.format
 
-def _parent_dir(path, n=0):
-    path = os.path.abspath(path)
-    if n == 0:
-        return path
-    else:
-        return os.path.dirname(_parent_dir(path, n=n-1))
 
-def _print_url(op, url):
-    print(' '*1, op, url) 
+dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 
-use_docker = False
+BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
-dataset_name = "treclegal09_2k_subset"
+print(" 0. Load the test dataset")
+url = BASE_URL + '/datasets/{}'.format(dataset_name)
+print(" POST", url)
+res = requests.get(url)
+res = res.json()
 
-if use_docker:
-    data_dir = "/freediscovery_shared/{}".format(dataset_name)
-else:
-    data_dir = "../freediscovery_shared/{}".format(dataset_name)
-rel_data_dir = os.path.abspath("../../freediscovery_shared/{}".format(dataset_name)) # relative path between this file and the FreeDiscovery source folder
-
-
-BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery local server URL
-
-
+# To use a custom dataset, simply specify the following variables
+data_dir = res['data_dir']
 # # 1. Feature extraction (non hashed)
 
 print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
-_print_url("POST", url)
-fe_opts = {'data_dir': os.path.join(data_dir, 'data'),
+print(" POST", url)
+fe_opts = {'data_dir': data_dir,
            'stop_words': 'english', 'chunk_size': 2000, 'n_jobs': -1,
            'use_idf': 1, 'sublinear_tf': 0, 'binary': 0, 'n_features': 30001,
            'analyzer': 'word', 'ngram_range': (1, 1), "norm": "l2",
@@ -63,26 +51,25 @@ print("   => dsid = {}".format(dsid))
 print("\n1.b Run feature extraction")
 # progress status is available for the hashed version only
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
-_print_url("POST", url)
+print(" POST", url)
 res = requests.post(url)
 
 print("\n1.d. check the parameters of the extracted features")
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
-_print_url('GET', url)
+print(' GET', url)
 res = requests.get(url)
 
 data = res.json()
-for key, val in data.items():
-    if key!='filenames':
-           print('     - {}: {}'.format(key, val))
+print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
+                                                  if "filenames" not in key]))
 
 
 # # 2. Duplicate detection by cosine similarity (DBSCAN)
 
-print("\n2.a. Duplicate detection by cosine similarity (DBSCAN)")
+print("\n2. Duplicate detection by cosine similarity (DBSCAN)")
 
 url = BASE_URL + '/clustering/dbscan/'
-_print_url("POST", url)
+print(" POST", url)
 t0 = time()
 res = requests.post(url,
         json={'dataset_id': dsid,
@@ -95,9 +82,8 @@ data = res.json()
 mid  = data['id']
 print("     => model id = {}".format(mid))
 
-print("\n2.b. Computing cluster labels")
 url = BASE_URL + '/clustering/k-mean/{}'.format(mid)
-_print_url("POST", url)
+print(" POST", url)
 res = requests.get(url,
         json={'n_top_words': 0, # don't compute cluster labels
               }) 
@@ -110,13 +96,46 @@ labels_ = data['labels']
 
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
+print("\n3. Duplicate detection by I-Match")
 
-# # 3. Duplicate detection by Simhash
+url = BASE_URL + '/duplicate-detection/'
+print(" POST", url)
+t0 = time()
+res = requests.post(url,
+        json={'dataset_id': dsid,
+              'method': 'i-match',
+              }) 
+
+data = res.json()
+mid  = data['id']
+print("     => model id = {}".format(mid))
+
+print('    .. computed in {:.1f}s'.format(time() - t0))
+
+
+url = BASE_URL + '/duplicate-detection/{}'.format(mid)
+print("GET", url)
+t0 = time()
+res = requests.get(url,
+        json={'n_rand_lexicons': 10,
+              'rand_lexicon_ratio': 0.9}) 
+data = res.json()
+t1 = time()
+print('    .. computed in {:.1f}s'.format(time() - t0))
+
+labels_ = data['cluster_id']
+
+print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+
+
+if platform.system() == 'Windows':
+    print('Simhash-py is currently not installed on Windows')
+    sys.exit()
 
 print("\n3. Duplicate detection by Simhash")
 
 url = BASE_URL + '/duplicate-detection/'
-_print_url("POST", url)
+print(" POST", url)
 t0 = time()
 res = requests.post(url,
         json={'dataset_id': dsid,
@@ -132,7 +151,7 @@ print('    .. computed in {:.1f}s'.format(time() - t0))
 
 
 url = BASE_URL + '/duplicate-detection/{}'.format(mid)
-_print_url("GET", url)
+print(" GET", url)
 t0 = time()
 res = requests.get(url,
         json={'distance': 1 }) 
@@ -144,34 +163,4 @@ labels_ = data['cluster_id']
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
 
-print("\n3. Duplicate detection by I-Match")
-
-url = BASE_URL + '/duplicate-detection/'
-_print_url("POST", url)
-t0 = time()
-res = requests.post(url,
-        json={'dataset_id': dsid,
-              'method': 'i-match',
-              }) 
-
-data = res.json()
-mid  = data['id']
-print("     => model id = {}".format(mid))
-
-print('    .. computed in {:.1f}s'.format(time() - t0))
-
-
-url = BASE_URL + '/duplicate-detection/{}'.format(mid)
-_print_url("GET", url)
-t0 = time()
-res = requests.get(url,
-        json={'n_rand_lexicons': 10,
-              'rand_lexicon_ratio': 0.9}) 
-data = res.json()
-t1 = time()
-print('    .. computed in {:.1f}s'.format(time() - t0))
-
-labels_ = data['cluster_id']
-
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 

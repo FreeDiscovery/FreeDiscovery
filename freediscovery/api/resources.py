@@ -18,13 +18,26 @@ from ..io import parse_ground_truth_file
 from ..utils import classification_score
 from ..cluster import Clustering
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema,
+                      FeaturesSchema, DatasetSchema,
                       LsiParsSchema, LsiPostSchema, LsiPredictSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       ErrorSchema, DuplicateDetectionSchema
                       )
+
+# ============================================================================ # 
+#                         Datasets download                                    #
+# ============================================================================ # 
+
+class DatasetsApiElement(Resource):
+
+    @marshal_with(DatasetSchema())
+    def get(self, name):
+        from ..datasets import load_dataset
+        res = load_dataset(name, self._cache_dir, verbose=True,
+                load_ground_truth=True, verify_checksum=False)
+        return res
 
 
 # Definine the response formatting schemas
@@ -161,7 +174,7 @@ class LsiApiElementTest(Resource):
     @marshal_with(ClassificationScoresSchema())
     def post(self, mid, **args):
         lsi = LSI(self._cache_dir, mid=mid)
-        d_ref = parse_ground_truth_file(os.path.join(lsi.fe.dsid_dir, args["ground_truth_filename"]))
+        d_ref = parse_ground_truth_file(args["ground_truth_filename"])
         del args['ground_truth_filename']
         lsi_m, X_train, Y_train, Y_train_res, X_test, Y_test_res, res  = lsi.predict(
                 accumulate='nearest-max', **args) 
@@ -252,8 +265,7 @@ class ModelsApiTest(Resource):
         cat = Categorizer(self._cache_dir, mid=mid)
 
         y_res = cat.predict()
-        d_ref = parse_ground_truth_file(os.path.join(cat.fe.dsid_dir,
-                                                     args["ground_truth_filename"]))
+        d_ref = parse_ground_truth_file( args["ground_truth_filename"])
         res = classification_score(d_ref.index.values,
                                    d_ref.is_relevant.values,
                                    cat.fe._pars['filenames'], y_res)

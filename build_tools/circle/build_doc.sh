@@ -43,8 +43,3 @@ python setup.py develop
 
 # start the FreeDiscovery server in the background
 mkdir -p ../freediscovery_shared
-
-if [ ! -f "../freediscovery_shared/treclegal09_2k_subset.tar.gz" ]; then
-    curl "http://r0h.eu/d/treclegal09_2k_subset.tar.gz" -L -o "../freediscovery_shared/treclegal09_2k_subset.tar.gz"
-    cd ../freediscovery_shared && tar xzf treclegal09_2k_subset.tar.gz && cd -
-fi

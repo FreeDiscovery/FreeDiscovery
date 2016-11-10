@@ -1,8 +1,5 @@
-requests
 matplotlib
-jupyter
 sphinx
 recommonmark
 sphinxcontrib-napoleon
 sphinx_rtd_theme
-

@@ -1,10 +1,10 @@
 """
-Document Clustering Example
----------------------------
+Clustering Example [REST API]
+-----------------------------
 
+Cluster documents into clusters
 """
 
-import os
 import numpy as np
 import pandas as pd
 from time import time
@@ -13,18 +13,6 @@ import requests
 pd.options.display.float_format = '{:,.3f}'.format
 
 
-def _parent_dir(path, n=0):
-    path = os.path.abspath(path)
-    if n == 0:
-        return path
-    else:
-        return os.path.dirname(_parent_dir(path, n=n-1))
-
-
-def _print_url(op, url):
-    print(' '*1, op, url) 
-    
-
 def repr_clustering(labels, terms):
     out = []
     for ridx, row in enumerate(terms):
@@ -32,25 +20,25 @@ def repr_clustering(labels, terms):
     out = pd.DataFrame(out).sort_values('N_documents', ascending=False)
     return out
 
-use_docker = False
-
-dataset_name = "treclegal09_2k_subset"
-    
-if use_docker:
-    data_dir = "/freediscovery_shared/{}".format(dataset_name)
-else:
-    data_dir = "../freediscovery_shared/{}".format(dataset_name)
-rel_data_dir = os.path.abspath("../../freediscovery_shared/{}".format(dataset_name)) # relative path between this file and the FreeDiscovery source folder
+dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
+print(" 0. Load the test dataset")
+url = BASE_URL + '/datasets/{}'.format(dataset_name)
+print(" POST", url)
+res = requests.get(url)
+res = res.json()
+
+# To use a custom dataset, simply specify the following variables
+data_dir = res['data_dir']
 
 # # 1. Feature extraction (non hashed)
 
 print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
-_print_url("POST", url)
-fe_opts = {'data_dir': os.path.join(data_dir, 'data'),
+print(" POST", url)
+fe_opts = {'data_dir': data_dir,
            'stop_words': 'english', 'chunk_size': 2000, 'n_jobs': -1,
            'use_idf': 1, 'sublinear_tf': 1, 'binary': 0, 'n_features': 30001,
            'analyzer': 'word', 'ngram_range': (1, 1), "norm": "l2",
@@ -66,18 +54,17 @@ print("   => dsid = {}".format(dsid))
 print("\n1.b Run feature extraction")
 # progress status is available for the hashed version only
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
-_print_url("POST", url)
+print(" POST", url)
 res = requests.post(url)
 
 print("\n1.d. check the parameters of the extracted features")
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
-_print_url('GET', url)
+print(' GET', url)
 res = requests.get(url)
 
 data = res.json()
-for key, val in data.items():
-    if key!='filenames':
-           print('     - {}: {}'.format(key, val))
+print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
+                                                  if "filenames" not in key]))
 
 
 # # 2. Document Clustering (LSI + K-Means)
@@ -85,7 +72,7 @@ for key, val in data.items():
 print("\n2.a. Document clustering (LSI + K-means)")
 
 url = BASE_URL + '/clustering/k-mean/'
-_print_url("POST", url)
+print(" POST", url)
 t0 = time()
 res = requests.post(url,
                     json={'dataset_id': dsid,
@@ -99,7 +86,7 @@ print("     => model id = {}".format(mid))
 
 print("\n2.b. Computing cluster labels")
 url = BASE_URL + '/clustering/k-mean/{}'.format(mid)
-_print_url("POST", url)
+print(" POST", url)
 res = requests.get(url,
                    json={'n_top_words': 6
                          })
@@ -115,7 +102,7 @@ print(repr_clustering(np.array(data['labels']), data['cluster_terms']))
 print("\n2.a. Document clustering (LSI + Ward HC)")
 
 url = BASE_URL + '/clustering/ward_hc/'
-_print_url("POST", url)
+print(" POST", url)
 t0 = time()
 res = requests.post(url,
                     json={'dataset_id': dsid,
@@ -130,7 +117,7 @@ print("     => model id = {}".format(mid))
 
 print("\n2.b. Computing cluster labels")
 url = BASE_URL + '/clustering/ward_hc/{}'.format(mid)
-_print_url("POST", url)
+print("POST", url)
 res = requests.get(url,
                    json={'n_top_words': 6
                          })
