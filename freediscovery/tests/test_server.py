@@ -11,7 +11,7 @@ import json
 import itertools
 from unittest import SkipTest
 
-from ..api import fd_app
+from ..server import fd_app
 from ..utils import _silent
 from ..exceptions import OptionalDependencyMissing
 from .run_suite import check_cache

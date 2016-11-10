@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import sys
 
-from freediscovery.api import fd_app
+from freediscovery.server import fd_app
 
 if __name__ == '__main__':
     cache_dir = sys.argv[1]
