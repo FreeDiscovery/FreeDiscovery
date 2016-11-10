@@ -63,9 +63,8 @@ print(' GET', url)
 res = requests.get(url)
 
 data = res.json()
-for key, val in data.items():
-    if key!='filenames':
-           print('     - {}: {}'.format(key, val))
+print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
+                                                  if "filenames" not in key]))
 
 
 # # 2. Document Clustering (LSI + K-Means)
