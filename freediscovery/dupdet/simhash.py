@@ -23,8 +23,6 @@ class SimhashDuplicates(BaseEstimator):
         Possibles values are "murmurhash3_int_u32" or a custom function.
     hash_func_nbytes : int, default=64
         expected size of the hash produced by hash_func
-
-    This class aims to expose a scikit-learn compatible API.
     """
     def __init__(self, hash_func='murmurhash3_int_u32', hash_func_nbytes=32):
         self._fit_X = None

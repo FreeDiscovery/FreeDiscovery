@@ -31,10 +31,12 @@ def _silent(stream='stderr'):
 
 def classification_score(X_ref, Y_ref, X, Y):
     """ Calculate the efficiency scores """
+    # This function should be deprecated
+    # An equivalent functionally should be achieved with a
+    # more general freediscovery.metrics module
     import warnings
     from sklearn.metrics import (precision_score, recall_score, f1_score,
             roc_auc_score, average_precision_score)
-    from sklearn.metrics.base import UndefinedMetricWarning
     threshold = 0.0
 
     X_ref = np.asarray(X_ref)
@@ -76,6 +78,8 @@ def classification_score(X_ref, Y_ref, X, Y):
 
 
 def filter_rel_nrel(self, relevant_filenames, non_relevant_filenames):
+    """Load features corresponding to a list of relevant / non relevant filenames
+    """
     filenames_all, fset_all = self.fe.load(self.dsid)  #, mmap_mode='r')
     idx_rel = self.fe.search(relevant_filenames)
     idx_nrel = self.fe.search(non_relevant_filenames)
