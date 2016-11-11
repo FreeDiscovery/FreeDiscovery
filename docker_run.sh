@@ -8,4 +8,4 @@ Starting FREEDiscovery Server $(tail -n 1 freediscovery/_version.py |  cut -d "=
     shared folder set to ${FD_CACHE_DIR}
  " | tee -a ${FD_CACHE_DIR}/freediscovery-backend.log
 
-docker run -t -i -v ${FD_CACHE_DIR}:/freediscovery_shared -p 5001:5001 freediscovery/freediscovery
+docker run -t -i -v ${FD_CACHE_DIR}:/freediscovery_shared -p 5001:5001 $1

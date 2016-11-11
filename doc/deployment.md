@@ -20,7 +20,7 @@ This section illustrates how to run a FreeDiscovery Docker images on AWS EC2 wit
  3. A prebuild Docker image of FreeDiscovery can be downloaded with,
     * [only once] `docker login`  # using your [hub.docker.com](https://hub.docker.com) credentials
     * [only once, optional] requesting permission to access the `freediscovery/freediscovery` image for your `userid`
-    * `docker pull freediscovery/freediscovery:<tag>` # where <tag> is one of the stable tags on http://github.com/FreeDiscovery/FreeDiscovery
+    * `docker pull freediscovery/freediscovery:<tag>` # where `<tag>` is one of the stable tags on [github.com/FreeDiscovery/FreeDiscovery](http://github.com/FreeDiscovery/FreeDiscovery).
 
  3. Create or choose a folder where the data to process will be copied and that can be used to store temporary files.
  4. Run Docker and mount the above folder under `/freediscovery_shared` inside the container,
