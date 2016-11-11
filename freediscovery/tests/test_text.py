@@ -61,8 +61,8 @@ def test_feature_extraction(analyzer, stop_words, ngram_range, use_idf, sublinea
 
     fe.delete()
 
-@pytest.mark.parametrize('use_hashing, min_df, max_df', [[False, 0.4, 0.6],
-                                                         [True,  0.4, 0.6]])
+@pytest.mark.parametrize('use_hashing, min_df, max_df', [[False, 0.1, 0.6],
+                                                         [True,  0.1, 0.6]])
 def test_df_filtering(use_hashing, min_df, max_df):
     cache_dir = check_cache()
 

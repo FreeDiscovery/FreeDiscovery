@@ -47,7 +47,7 @@ jabberwocky = '''
 jabberwocky_author = ' - Lewis Carroll (Alice in Wonderland)'
 
 
-def fd_setup():
+def fd_setup(**fe_options):
     basename = os.path.dirname(__file__)
     cache_dir = check_cache()
     data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
@@ -55,7 +55,10 @@ def fd_setup():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features, use_hashing=True,
-                         stop_words='english')  # TODO unused variable (overwritten on the next line)
+                         stop_words='english',
+                         **fe_options
+
+                         )  # TODO unused variable (overwritten on the next line)
     uuid, filenames  = fe.transform()
     return cache_dir, uuid, filenames, fe
 
@@ -138,17 +141,18 @@ def test_imatch(n_rand_lexicons):
     # RY: not sure what other tests could be run for I-Match
 
 
-@pytest.mark.parametrize('method, options', [['simhash', {'distance': 3}],
-                                             ['simhash', {'distance': 10}],
-                                             ['i-match', {}]])
-def test_dup_detection(method, options):
+@pytest.mark.parametrize('method, options, fe_options',
+        [['simhash', {'distance': 3}, {} ],
+         ['simhash', {'distance': 10}, {}],
+         ['i-match', {}, {}]])
+def test_dup_detection(method, options, fe_options):
     if method == 'simhash':
         try:
             import simhash
         except ImportError:
             raise SkipTest
     from freediscovery.dupdet import DuplicateDetection
-    cache_dir, uuid, filenames, fe = fd_setup()
+    cache_dir, uuid, filenames, fe = fd_setup(**fe_options)
 
     dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
     dd.fit(method=method)

@@ -82,7 +82,7 @@ data = res.json()
 mid  = data['id']
 print("     => model id = {}".format(mid))
 
-url = BASE_URL + '/clustering/k-mean/{}'.format(mid)
+url = BASE_URL + '/clustering/dbscan/{}'.format(mid)
 print(" POST", url)
 res = requests.get(url,
         json={'n_top_words': 0, # don't compute cluster labels

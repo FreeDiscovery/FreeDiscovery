@@ -17,6 +17,7 @@ Contents:
    API_reference
    freediscovery
    examples/index
+   scaling_benchmarks
    deployment
    contributing
 

@@ -62,11 +62,15 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
 
     VALID_MD5SUM = {'treclegal09_2k_subset' : '8090cc55ac18fe5c4d5d53d82fc767a2',
                     'treclegal09_20k_subset': '43a711897ce724e873bdbc47a374a57e',
-                    'treclegal09_37k_subset': '9fb6b7505871bbaee5a438de3b0f497c'}
+                    'treclegal09_37k_subset': '9fb6b7505871bbaee5a438de3b0f497c',
+                    'legal09int': 'None',
+                    }
 
     DATASET_SIZE = {'treclegal09_2k_subset' : 2.8,
                     'treclegal09_20k_subset': 30,
-                    'treclegal09_37k_subset': 55}
+                    'treclegal09_37k_subset': 55,
+                    'legal09int': 1500,
+                    }
 
     if name not in VALID_MD5SUM:
         raise ValueError('Dataset name {} not known!'.format(name))
@@ -119,9 +123,11 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
 
 
     results = {'base_dir': outdir, 'data_dir': os.path.join(outdir, 'data')}
+    if name == 'legal09int':
+        results['data_dir'] = results['base_dir']
 
 
-    if load_ground_truth:
+    if load_ground_truth and name != 'legal09int':
         with open(os.path.join(outdir,'seed_relevant.txt'), 'rt') as fh:
             relevant_files = [el.strip() for el in fh.readlines()]
 
