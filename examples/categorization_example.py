@@ -105,8 +105,6 @@ if __name__ == '__main__':
 
     data = res.json()
     mid = data['id']
-    print(data.keys())
-    print('Failed!!!')
     print("     => model id = {}".format(mid))
     print('    => Training scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data))
 

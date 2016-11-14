@@ -4,10 +4,12 @@ dist: trusty
 matrix:
     include:
     - python: "3.5"
-      env: SKLEARN="0.17.1"
+      env: SKLEARN="0.18.1"
     - python: "3.4" 
-      env: SKLEARN="0.17.1"
+      env: SKLEARN="0.18.1"
     - python: "2.7" 
+      env: SKLEARN="0.18.1"
+    - python: "3.5"
       env: SKLEARN="0.17.1"
 
 # setup adapted from https://github.com/soft-matter/trackpy/blob/master/.travis.yml
@@ -22,6 +24,8 @@ before_install:
 install: 
     - conda install --yes --file ./build_tools/requirements_conda.txt python=${TRAVIS_PYTHON_VERSION}
     - pip install -r ./build_tools/requirements_pip_unix.txt
+    # reinstall the tested version of SKLEARN
+    - pip uninstall --yes scikit-learn &&  pip install scikit-learn==${SKLEARN}
     - python setup.py install
     - pwd
 

@@ -5,6 +5,6 @@ flask_apispec
 # xgboost==0.4a30 # this version does not build on windows using pip,
 # disabling it, version 0.6 currently broken for sparse arrays https://github.com/dmlc/xgboost/issues/1238#issuecomment-247787192 
 nltk
-scikit-learn==0.17.1  # as long as the 0.18 is not released
+scikit-learn==0.18.1  
 # gensim # not used at present
 # coverage # not used at present
