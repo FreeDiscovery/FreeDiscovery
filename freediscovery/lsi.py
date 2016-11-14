@@ -26,24 +26,23 @@ def _touch(filename):
 
 
 class LSI(BaseEstimator):
+    """Document categorization using Latent Semantic Indexing (LSI)
+
+    Parameters
+    ----------
+    cache_dir : str
+       folder where the model will be saved
+    dsid : str
+       dataset id
+    mid : str
+       LSI model id (the dataset id will be inferred)
+    verbose : bool, optional
+       print progress messages
+    """
 
     _DIRREF = "lsi"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None, verbose=False):
-        """ 
-        Document categorization using Latent Semantic Indexing (LSI)
-
-        Parameters
-        ----------
-          cache_dir: str
-             folder where the model will be saved
-          dsid: str
-             dataset id
-          mid: str
-             LSI model id (the dataset id will be inferred)
-	  verbose: bool, optional
-             print progress messages
-        """
         if dsid is None and mid is not None:
             self.dsid = dsid =  self.get_dsid(cache_dir, mid)
             self.mid = mid
@@ -75,19 +74,19 @@ class LSI(BaseEstimator):
         
         Parameters
         ----------
-          - n_components: int
-             number of selected singular values (number of LSI dimensions)
-          - n_iter: int
-             number of iterations for the stochastic SVD algorithm
+        n_components : int
+           number of selected singular values (number of LSI dimensions)
+        n_iter : int
+           number of iterations for the stochastic SVD algorithm
 
         Returns
         -------
-          - mid: str
-             model id
-          - lsi: BaseEstimator
-             the TruncatedSVD object
-          - exp_var: float
-             the explained variance of the SVD decomposition
+        mid : str
+           model id
+        lsi : BaseEstimator
+           the TruncatedSVD object
+        exp_var : float
+           the explained variance of the SVD decomposition
         """
 
         dsid = self.dsid
@@ -125,13 +124,13 @@ class LSI(BaseEstimator):
 
         Parameters
         ----------
-          relevant_filenames: list
-             a list of relevant documents filenames
-          non_relevant_filenames: list
-             a list of not relevant documents filenames
-          accumulate: str, optional, default='nearest-max'
-             if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
-             otherwise if `accumulate=="centroid-max"` the centroid of relevant documents is used as the query vector.
+        relevant_filenames : list
+           a list of relevant documents filenames
+        non_relevant_filenames : list
+           a list of not relevant documents filenames
+        accumulate : str, optional, default='nearest-max'
+           if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
+           otherwise if `accumulate=="centroid-max"` the centroid of relevant documents is used as the query vector.
 
         """
         if accumulate in ['centroid-max', 'nearest-max']:
@@ -258,7 +257,6 @@ class TruncatedSVD_LSI(TruncatedSVD):
 
         Parameters
         ----------
-
         X : {array-like, sparse matrix}, shape (n_samples, n_features)
             Training data.
 

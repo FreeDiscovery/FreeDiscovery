@@ -51,17 +51,18 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
 
 
 class FeatureVectorizer(object):
+    """Extract features from text documents
+
+    Parameters
+    ----------
+    cache_dir : str, default='/tmp/'
+        directory where to save temporary and regression files
+    dsid : str
+        load an exising dataset
+    verbose : bool
+        pring progress messages
+    """
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
-        """
-        Parameters
-        ----------
-          cache_dir: str, default='/tmp/'
-            directory where to save temporary and regression files
-        dsid: str
-            load an exising dataset
-        verbose: bool
-            pring progress messages
-        """
         self.data_dir = None
         self.verbose = verbose
         if cache_dir is not None:
@@ -88,7 +89,7 @@ class FeatureVectorizer(object):
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=False, binary=True, use_hashing=True,
             norm=None, min_df=0.0, max_df=1.0):
-        """ Initalize the features extraction. See sklearn.feature_extraction.text for a
+        """Initalize the features extraction. See sklearn.feature_extraction.text for a
         detailed description of the input parameters """
         data_dir = os.path.normpath(data_dir)
 

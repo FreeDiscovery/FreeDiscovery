@@ -48,9 +48,9 @@ class WrongParameter(_BaseException):
 
 class NotImplementedFD(_BaseException):
     status_code = 500
-    message = 'Not implemented'
+    message = 'Not implemented in FreeDiscovery'
 
 
 class OptionalDependencyMissing(_BaseException):
     status_code = 500
-    message = 'Not Found'
+    message = 'Optional dependency is missing'

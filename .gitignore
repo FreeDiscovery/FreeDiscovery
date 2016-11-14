@@ -39,4 +39,5 @@ newsgroup_data/
 *.coverage*
 doc/modules/
 doc/examples/
+doc/generated/
 
