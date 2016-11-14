@@ -64,9 +64,15 @@ extensions = [
     'sphinx.ext.viewcode',
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinxcontrib.napoleon',
-    'sphinx_gallery.gen_gallery'
+    'sphinx_gallery.gen_gallery',
 ]
+
+
+autosummary_generate = True
+
+autodoc_default_flags = ['members', 'inherited-members']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

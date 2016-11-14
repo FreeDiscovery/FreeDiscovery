@@ -51,17 +51,18 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
 
 
 class FeatureVectorizer(object):
+    """Extract features from text documents
+
+    Parameters
+    ----------
+      cache_dir: str, default='/tmp/'
+        directory where to save temporary and regression files
+    dsid: str
+        load an exising dataset
+    verbose: bool
+        pring progress messages
+    """
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
-        """
-        Parameters
-        ----------
-          cache_dir: str, default='/tmp/'
-            directory where to save temporary and regression files
-        dsid: str
-            load an exising dataset
-        verbose: bool
-            pring progress messages
-        """
         self.data_dir = None
         self.verbose = verbose
         if cache_dir is not None:

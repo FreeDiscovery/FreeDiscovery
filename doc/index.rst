@@ -3,29 +3,23 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to FreeDiscovery's documentation!
-=========================================
+.. include:: ../README.rst
 
-Contents:
+
+Contents
+^^^^^^^^
 
 .. toctree::
    :maxdepth: 2
 
 
-   readme
    installation_instructions
    API_reference
-   freediscovery
+   python_api
    examples/index
    scaling_benchmarks
    deployment
    contributing
-
-..
-   rest_api_clients
-
-
-
 
 
 
