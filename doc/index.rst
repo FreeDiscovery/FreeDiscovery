@@ -14,7 +14,7 @@ Contents
 
 
    installation_instructions
-   API_reference
+   rest_api/index
    python_api
    examples/index
    scaling_benchmarks
