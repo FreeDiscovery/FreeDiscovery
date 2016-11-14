@@ -70,17 +70,25 @@ def _generate_lsi(lsi_components=None):
 
 
 class ClusterLabels(object):
+    """Calculate the cluster labels.
+
+    This is an internal class that is called by Clustering
+
+    Parameters
+    ----------
+    vect : VectorizerMixin object
+       a scikit-learn's text vectorizer
+    model : ClusterMixin object
+       the cluster object
+    pars : dict
+       clustering algorithms parameters 
+    lsi_components: TruncatedSVD object or None
+       LSA object if it was used for clustering
+    cluster_indices : list, default=None
+       if not None, ignore clustering given by the clustering model and compute
+       terms for the cluster provided by the given indices
+    """
     def __init__(self, vect, model, pars, lsi=None, cluster_indices=None):
-        """ Calculate the cluster labels.
-
-        This is an internal class that is called by Clustering
-
-        Parameters
-        ----------
-        cluster_indices: list, default=None
-           if not None, ignore clustering given by the clustering model and compute
-           terms for the cluster provided by the given indices
-        """
         self.model = model
         self.vect = vect
         self.n_clusters = pars['n_clusters']
@@ -115,7 +123,6 @@ class ClusterLabels(object):
 
         Parameters
         ----------
-
         method: str, optional, default='centroid-frequency'
             the method used to compute the centroid labels
             Must be one of 'centroid-frequency',
@@ -151,27 +158,26 @@ class ClusterLabels(object):
 
 
 class Clustering(BaseEstimator):
+    """Document clustering
+
+    The algorithms are adapted from scikit learn.
+
+    The option `use_hashing=False` must be set for the feature extraction.
+    Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+    Parameters
+    ----------
+    cache_dir : str
+       directory where to save temporary and regression files
+    dsid : str, optional
+       dataset id
+    mid : str, optional
+       model id
+    """
 
     _DIRREF = "clustering"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
-        """
-        Document clustering
-
-        The algorithms are adapted from scikit learn.
-
-        The option `use_hashing=False` must be set for the feature extraction.
-        Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
-
-        Parameters
-        ----------
-          cache_dir : str
-             directory where to save temporary and regression files
-          dsid : str, optional
-             dataset id
-          mid : str, optional
-             model id
-        """
 
         if dsid is None and mid is not None:
             self.dsid = dsid = self.get_dsid(cache_dir, mid)
@@ -264,17 +270,17 @@ class Clustering(BaseEstimator):
 
         Parameters
         ----------
-        label_method: str, default='centroid-frequency'
+        label_method : str, default='centroid-frequency'
             the method used for computing the cluster labels
-        n_top_words: int, default=10
+        n_top_words : int, default=10
            keep only most relevant n_top_words words
-        cluster_indices: list, default=None
+        cluster_indices : list, default=None
            if not None, ignore clustering given by the clustering model and compute
            terms for the cluster provided by the given indices
 
         Returns
         -------
-        cluster_labels: array [n_samples]
+        cluster_labels : array [n_samples]
 
         """
         vect = joblib.load(os.path.join(self.fe.dsid_dir, 'vectorizer'))
@@ -306,11 +312,11 @@ class Clustering(BaseEstimator):
 
         Parameters
         ----------
-        n_clusters: int
+        n_clusters : int
            number of clusters
-        lsi_components: int
+        lsi_components : int
            apply LSA before the clustering algorithm
-        batch_size: int
+        batch_size : int
            the bath size for the MiniBatchKMeans algorithm
         """
         from sklearn.cluster import MiniBatchKMeans
@@ -327,11 +333,11 @@ class Clustering(BaseEstimator):
 
         Parameters
         ----------
-        n_clusters: int
+        n_clusters : int
             number of clusters
-        lsi_components: int
+        lsi_components : int
             apply LSA before the clustering algorithm
-        threshold: float
+        threshold : float
             birch threshold
         """
         from sklearn.cluster import Birch
@@ -353,11 +359,11 @@ class Clustering(BaseEstimator):
 
         Parameters
         ----------
-        n_clusters: int
+        n_clusters : int
             number of clusters
-        lsi_components: int
+        lsi_components : int
             apply LSA before the clustering algorithm
-        n_neighbors: int
+        n_neighbors : int
             N nearest neighbors used for computing the connectivity matrix
         """
         from sklearn.cluster import AgglomerativeClustering
@@ -389,14 +395,14 @@ class Clustering(BaseEstimator):
 
         Parameters
         ----------
-        n_clusters: int
+        n_clusters : int
             number of clusters # not used just present for compatibility
-        lsi_components: int
+        lsi_components : int
             apply LSA before the clustering algorithm
-        eps: float
+        eps : float
             The maximum distance between two samples for them to be considered
              as in the same neighborhood.
-        min_samples: int
+        min_samples : int
             The number of samples (or total weight) in a neighborhood for a point
             to be considered as a core point. This includes the point itself.
         """
@@ -415,9 +421,9 @@ class Clustering(BaseEstimator):
         """
         Parameters
         ----------
-        ref_labels: list,
+        ref_labels : list,
             reference labels
-        labels: list,
+        labels : list,
             computed labels
         """
         from sklearn.metrics import ( v_measure_score, adjusted_rand_score,

@@ -18,30 +18,29 @@ from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, Option
 
 
 class Categorizer(BaseEstimator):
+    """ Document categorization model
+
+    The option `use_hashing=True` must be set for the feature extraction.
+    Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+    Parameters
+    ----------
+    cache_dir : str
+      folder where the model will be saved
+    dsid : str, optional
+      dataset id
+    mid : str, optional
+      model id
+    cv_scoring : str, optional, default='roc_auc'
+      score that is used for Cross Validation, cf. sklearn
+    cv_n_folds : str, optional
+      number of K-folds used for Cross Validation
+    """
 
     _DIRREF = "models"
 
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
-        """ Document categrorization model
-
-        The option `use_hashing=True` must be set for the feature extraction.
-        Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
-
-        Parameters
-        ----------
-          cache_dir : str
-             folder where the model will be saved
-          dsid : str, optional
-             dataset id
-          mid : str, optional
-             model id
-          cv_scoring: str, optional, default='roc_auc'
-             score that is used for Cross Validation, cf. sklearn
-          cv_n_folds: str, optional
-             number of K-folds used for Cross Validation
-
-        """
 
         if dsid is None and mid is not None:
             self.dsid = dsid =  self.get_dsid(cache_dir, mid)
@@ -137,17 +136,16 @@ class Categorizer(BaseEstimator):
 
         Parameters
         ----------
-           relevant_filenames: list
-              a list of relevant documents filenames
-           non_relevant_filenames: list
-              a list of not relevant documents filenames
-           method: str
-              the ML algorithm to use (one of "LogisticRegression", "LinearSVC", 'xgboost')
-           cv: str
-              use cross-validation
+        relevant_filenames : list
+           a list of relevant documents filenames
+        non_relevant_filenames : list
+           a list of not relevant documents filenames
+        method : str
+           the ML algorithm to use (one of "LogisticRegression", "LinearSVC", 'xgboost')
+        cv : str
+           use cross-validation
         Returns
         -------
-        dict
            a dictionary with the results
         """
 
@@ -218,8 +216,8 @@ class Categorizer(BaseEstimator):
 
         Parameters
         ----------
-          chunck_size: int
-             chunck size
+        chunck_size : int
+           chunck size
         """
 
         if self.cmod is not None:

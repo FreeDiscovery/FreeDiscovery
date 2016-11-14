@@ -16,27 +16,26 @@ from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
                             WrongParameter)
 
 class DuplicateDetection(BaseEstimator):
+    """Find near duplicates in a document collection.
+
+    Currently supported backends are simhash-py and i-match.
+
+    The option `use_hashing=False` must be set for the feature extraction.
+    Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+    Parameters
+    ----------
+    cache_dir : str
+       directory where to save temporary and regression files
+    dsid : str, optional
+       dataset id
+    mid : str, optional
+       model id
+    """
 
     _DIRREF = "dupdet"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
-        """
-        Find near duplicates in a document collection.
-
-        Currently supported backends are simhash-py and i-match.
-
-        The option `use_hashing=False` must be set for the feature extraction.
-        Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
-
-        Parameters
-        ----------
-        cache_dir : str
-           directory where to save temporary and regression files
-        dsid : str, optional
-           dataset id
-        mid : str, optional
-           model id
-        """
 
         if dsid is None and mid is not None:
             self.dsid = dsid =  self.get_dsid(cache_dir, mid)

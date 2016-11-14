@@ -1,8 +1,6 @@
 Python API reference
 ====================
 
-**Note:** the Python API reference will change in future releases (i.e. it is not considered stable).
-
 Two types of classes can be found in FreeDiscovery,
   - scikit-learn compatible estimators that inherit from `sklearn.base.BaseEstimator`
   - freediscovery specific classes that add a persistance layer and are designed to function together with the REST API.
@@ -74,7 +72,7 @@ Tools
 Metrics
 -------
 
-This module aims extends `sklearn.metrics <http://scikit-learn.org/stable/modules/classes.html#module-sklearn.metrics>`_ with a few additional metrics.
+This module aims to extend `sklearn.metrics <http://scikit-learn.org/stable/modules/classes.html#module-sklearn.metrics>`_ with a few additional metrics,
 
 .. autosummary::
     :toctree: ./generated/

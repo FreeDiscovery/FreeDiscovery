@@ -53,9 +53,7 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
     -------
 
     response: dict
-       a dictionary containing
-           - base_dir: str
-               path to the dataset folder
+       a dictionary containing paths to the dataset and corresponding metadata
     """
     import tarfile
     import requests

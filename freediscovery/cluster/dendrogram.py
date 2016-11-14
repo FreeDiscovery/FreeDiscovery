@@ -9,8 +9,14 @@ import numpy as np
 
 
 class _DendrogramChildren(object):
+    """Compute childen for a given dendogram node
+
+    Parameters
+    ----------
+    ddata : dict
+       data returned by scipy.cluster.hierarchy.dendrogram function
+    """
     def __init__(self, ddata):
-        """Initialize using the data produced by the scipy.cluster.hierarchy.dendrogram function"""
         self.icoord = np.array(ddata['icoord'])[:, 1:3]
         self.dcoord = np.array(ddata['dcoord'])[:, 1]
         self.icoord_min = self.icoord.min()
