@@ -64,9 +64,9 @@ print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
                                                   if "filenames" not in key]))
 
 
-# # 2. Duplicate detection by cosine similarity (DBSCAN)
+# # 2. Near Duplicates detection by cosine similarity (DBSCAN)
 
-print("\n2. Duplicate detection by cosine similarity (DBSCAN)")
+print("\n2. Near Duplicates detection by cosine similarity (DBSCAN)")
 
 url = BASE_URL + '/clustering/dbscan/'
 print(" POST", url)
@@ -74,29 +74,27 @@ t0 = time()
 res = requests.post(url,
         json={'dataset_id': dsid,
               'lsi_components': 100,
-              'eps': 0.1,            # threashold for 2 documents considered to be duplicates
+              'eps': 0.1,            # 2*cosine distance for documents to be considered as duplicates
               'n_max_samples': 2
-              }) 
+              }).json()
 
-data = res.json()
-mid  = data['id']
+mid  = res['id']
 print("     => model id = {}".format(mid))
 
 url = BASE_URL + '/clustering/dbscan/{}'.format(mid)
 print(" POST", url)
 res = requests.get(url,
         json={'n_top_words': 0, # don't compute cluster labels
-              }) 
-data = res.json()
+              }).json()
 t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
 
-labels_ = data['labels']
+labels_ = res['labels']
 
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
-print("\n3. Duplicate detection by I-Match")
+print("\n3. Near Duplicates Detection using I-Match")
 
 url = BASE_URL + '/duplicate-detection/'
 print(" POST", url)
@@ -118,49 +116,50 @@ print("GET", url)
 t0 = time()
 res = requests.get(url,
         json={'n_rand_lexicons': 10,
-              'rand_lexicon_ratio': 0.9}) 
-data = res.json()
+              'rand_lexicon_ratio': 0.9}).json()
 t1 = time()
 print('    .. computed in {:.1f}s'.format(time() - t0))
 
-labels_ = data['cluster_id']
+labels_ = res['cluster_id']
 
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
 
-if platform.system() == 'Windows':
-    print('Simhash-py is currently not installed on Windows')
-    sys.exit()
-
-print("\n3. Duplicate detection by Simhash")
-
-url = BASE_URL + '/duplicate-detection/'
-print(" POST", url)
-t0 = time()
-res = requests.post(url,
-        json={'dataset_id': dsid,
-              'method': 'simhash',
-              }) 
-
-data = res.json()
-mid  = data['id']
-print("     => model id = {}".format(mid))
-
-print('    .. computed in {:.1f}s'.format(time() - t0))
-
-
-
-url = BASE_URL + '/duplicate-detection/{}'.format(mid)
-print(" GET", url)
-t0 = time()
-res = requests.get(url,
-        json={'distance': 1 }) 
-data = res.json()
-print('    .. computed in {:.1f}s'.format(time() - t0))
-
-labels_ = data['cluster_id']
-
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+# Commenting out simhash for the moment
+# 
+#if platform.system() == 'Windows':
+#    print('Simhash-py is currently not installed on Windows')
+#    sys.exit()
+#
+#print("\n3. Duplicate detection by Simhash")
+#
+#url = BASE_URL + '/duplicate-detection/'
+#print(" POST", url)
+#t0 = time()
+#res = requests.post(url,
+#        json={'dataset_id': dsid,
+#              'method': 'simhash',
+#              }) 
+#
+#data = res.json()
+#mid  = data['id']
+#print("     => model id = {}".format(mid))
+#
+#print('    .. computed in {:.1f}s'.format(time() - t0))
+#
+#
+#
+#url = BASE_URL + '/duplicate-detection/{}'.format(mid)
+#print(" GET", url)
+#t0 = time()
+#res = requests.get(url,
+#        json={'distance': 1 }) 
+#data = res.json()
+#print('    .. computed in {:.1f}s'.format(time() - t0))
+#
+#labels_ = data['cluster_id']
+#
+#print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
 
 
