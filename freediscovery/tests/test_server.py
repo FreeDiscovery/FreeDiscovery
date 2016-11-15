@@ -203,7 +203,7 @@ def test_api_categorization(app, solver, cv):
     try:
         res = app.post(method, data=pars)
     except OptionalDependencyMissing:
-        return None # skip this test
+        raise SkipTest
 
     data = parse_res(res)
     assert res.status_code == 200, method
