@@ -41,7 +41,8 @@ fe_opts = {'data_dir': data_dir,
            'stop_words': 'english', 'chunk_size': 2000, 'n_jobs': -1,
            'use_idf': 1, 'sublinear_tf': 1, 'binary': 0, 'n_features': 30001,
            'analyzer': 'word', 'ngram_range': (1, 1), "norm": "l2",
-           'use_hashing': False  # hashing should be disabled for clustering
+           'use_hashing': False,  # hashing should be disabled for clustering
+           'min_df': 4, 'max_df': 0.75
            }
 res = requests.post(url, json=fe_opts).json()
 

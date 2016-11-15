@@ -39,7 +39,7 @@ fe_opts = {'data_dir': data_dir,
            'use_idf': 1, 'sublinear_tf': 0, 'binary': 0, 'n_features': 30001,
            'analyzer': 'word', 'ngram_range': (1, 1), "norm": "l2",
            'use_hashing': False,  # hashing should be disabled for clustering
-           #'min_df': 0.2, 'max_df': 0.8
+           'min_df': 4, 'max_df': 0.75
           }
 res = requests.post(url, json=fe_opts)
 

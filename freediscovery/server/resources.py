@@ -26,6 +26,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ErrorSchema, DuplicateDetectionSchema
                       )
 
+EPSILON = 1e-3 # small numeric value
+
 # ============================================================================ # 
 #                         Datasets download                                    #
 # ============================================================================ # 
@@ -66,6 +68,10 @@ class FeaturesApi(Resource):
             for key in ['min_df', 'max_df']:
                 if key in args:
                     del args[key] # the above parameters are ignored with caching
+        for key in ['min_df', 'max_df']:
+            if key in args and args[key] > 1. + EPSILON: # + eps
+                args[key] = int(args[key])
+
         fe = FeatureVectorizer(self._cache_dir)
         dsid = fe.preprocess(**args)
         pars = fe.get_params()
