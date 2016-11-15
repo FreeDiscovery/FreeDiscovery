@@ -5,14 +5,14 @@ This REST API allows to use FreeDiscovery from any supported programming languag
 
 Following resources are defined,
 
-Load benchmark dataset
+Load Benchmark Dataset
 ----------------------
 
 =======================================================  ======  =========================================================
 `/api/v0/dataset/<dataset-name> <./dataset_get.html>`_   GET     Load benchmark dataset
 =======================================================  ======  =========================================================
 
-Feature extraction 
+Feature Extraction 
 ------------------
 
 ===================================================================================  ======  =========================================================
@@ -23,7 +23,7 @@ Feature extraction
 `/api/v0/feature-extraction/<dataset-id> <./feature_extraction_delete.html>`_        DELETE  Delete a processed dataset
 ===================================================================================  ======  =========================================================
 
-Document categorizaiton
+Document Categorizaiton
 -----------------------
 
 =================================================================================  =======  =========================================================
@@ -33,14 +33,14 @@ Document categorizaiton
 `/api/v0/lsi/<lsi-id> <./lsi_get.html>`_                                           GET      Show LSI model parameters
 `/api/v0/lsi/<lsi-id> <./lsi_delete.html>`_                                        DELETE   Delete a LSI model
 `/api/v0/categorization/ <./categorization_post.html>`_                            POST     Build the ML categorization model
-`/api/v0/categorization/<model-id>/predict <./categorization_predict_post.html>`_  POST     Categorize documents
+`/api/v0/categorization/<model-id>/predict <./categorization_predict_post.html>`_  POST     Categorize documents using different ML algorithms
 `/api/v0/categorization/<model-id>/test <./categorization_test_post.html>`_        POST     Test categorization accuracy
 `/api/v0/categorization/<model-id> <./categorization_element_get.html>`_           GET      Load categorization model parameters
 `/api/v0/categorization/<model-id> <./categorization_element_delete.html>`_        DELETE   Delete the categorization model
 =================================================================================  =======  =========================================================
 
 
-Document clustering
+Document Clustering
 -------------------
 
 ======================================================================================  ======  =========================================================
@@ -53,7 +53,7 @@ Document clustering
 ======================================================================================  ======  =========================================================
 
 
-Near duplicate detection
+Near Duplicate Detection
 ------------------------
 
 ==================================================================================  ======  =========================================================

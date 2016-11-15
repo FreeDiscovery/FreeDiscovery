@@ -1,4 +1,4 @@
-Scaling benchmarks
+Scaling Benchmarks
 ==================
 
 This page aims to summarize the performance and scaling of the algorithms used in FreeDiscovery.
@@ -7,8 +7,8 @@ Benchmarks are computed running the `examples <./examples/index.html>`_ on the T
 
 
 
-Duplicates detection
---------------------
+Near Duplicates Detection
+-------------------------
 
 The `examples/duplicate_detection_example.py <./examples/duplicate_detection_example.html>`_ script with `dataset_name='legal09int'` was used,
 

@@ -1,4 +1,4 @@
-Python API reference
+Python API Reference
 ====================
 
 Two types of classes can be found in FreeDiscovery,

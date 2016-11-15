@@ -1,4 +1,4 @@
-# Installation instructions
+# Installation Instructions
 
 There are two ways of installing FreeDiscovery,
 
@@ -14,9 +14,9 @@ The latest development version of FreeDiscovery can be obtained from [Github](ht
 or by downloading the latest stable version from the [Github releases page](https://github.com/FreeDiscovery/FreeDiscovery/releases).
 
 
-## 2. Installing the dependencies
+## 2. Installing the Dependencies
 
-### 2.a. Python install
+### 2.a. Python Install
 
  1. Download and install [Miniconda](http://conda.pydata.org/miniconda.html) 64 bit for Python 3.5 (a cross-platform package manager for Python & R)
  
@@ -49,7 +49,7 @@ or by downloading the latest stable version from the [Github releases page](http
           conda_setup.bat
 
 
-### 2.b. Docker container
+### 2.b. Docker Container
 1. Download and [install Docker](https://docs.docker.com/engine/installation/)
 
 2. Build the container locally (from the `FreeDiscovery` folder),
@@ -58,7 +58,7 @@ or by downloading the latest stable version from the [Github releases page](http
         docker build -t "freediscovery/freediscovery:latest" .     
 
       
-## 3. Starting the FreeDiscovery server
+## 3. Starting the FreeDiscovery Server
 
 ### 3.1. On Linux/Mac OS 
 
