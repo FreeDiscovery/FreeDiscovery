@@ -12,6 +12,9 @@ from multiprocessing import Process
 import requests
 import pandas as pd
 
+pd.options.display.float_format = '{:,.3f}'.format
+pd.options.display.expand_frame_repr = False
+
 dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
@@ -21,8 +24,7 @@ if __name__ == '__main__':
     print(" 0. Load the test dataset")
     url = BASE_URL + '/datasets/{}'.format(dataset_name)
     print(" POST", url)
-    res = requests.get(url)
-    res = res.json()
+    res = requests.get(url).json()
 
     # To use a custom dataset, simply specify the following variables
     data_dir = res['data_dir']
@@ -37,14 +39,14 @@ if __name__ == '__main__':
     url = BASE_URL + '/feature-extraction'
     print(" POST", url)
     fe_opts = {'data_dir': data_dir,
-               'stop_words': 'None', 'chunk_size': 2000, 'n_jobs': -1,
-               'use_idf': 1, 'sublinear_tf': 1, 'binary': 0, 'n_features': 50001,
+               'stop_words': 'english', 'chunk_size': 2000, 'n_jobs': -1,
+               'use_idf': 1, 'sublinear_tf': 0, 'binary': 0, 'n_features': 50001,
                'analyzer': 'word', 'ngram_range': (1, 1), "norm": "l2"
               }
-    res = requests.post(url, json=fe_opts)
+    res = requests.post(url, json=fe_opts).json()
 
-    dsid = res.json()['id']
-    print("   => received {}".format(list(res.json().keys())))
+    dsid = res['id']
+    print("   => received {}".format(list(res.keys())))
     print("   => dsid = {}".format(dsid))
 
     print("\n1.b Start feature extraction (in the background)")
@@ -79,10 +81,9 @@ if __name__ == '__main__':
     print("\n1.d. check the parameters of the extracted features")
     url = BASE_URL + '/feature-extraction/{}'.format(dsid)
     print(' GET', url)
-    res = requests.get(url)
+    res = requests.get(url).json()
 
-    data = res.json()
-    print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
+    print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
 
 
@@ -99,29 +100,27 @@ if __name__ == '__main__':
                         json={'relevant_filenames': relevant_files,
                               'non_relevant_filenames': non_relevant_files,
                               'dataset_id': dsid,
-                              'method': 'LogisticRegression',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
+                              'method': 'LinearSVC',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                               'cv': 0                          # Cross Validation
-                              })
+                              }).json()
 
-    data = res.json()
-    mid = data['id']
+    mid = res['id']
     print("     => model id = {}".format(mid))
-    print('    => Training scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data))
+    print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
     print("\n2.b. Check the parameters used in the categorization model")
     url = BASE_URL + '/categorization/{}'.format(mid)
     print(" GET", url)
-    res = requests.get(url)
+    res = requests.get(url).json()
 
-    data = res.json()
-    print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
+    print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
 
     print("\n2.c Categorize the complete dataset with this model")
     url = BASE_URL + '/categorization/{}/predict'.format(mid)
     print(" GET", url)
-    res = requests.get(url)
-    prediction = res.json()['prediction']
+    res = requests.get(url).json()
+    prediction = res['prediction']
 
     print("    => Predicting {} relevant and {} non relevant documents".format(
         len(list(filter(lambda x: x>0, prediction))),
@@ -131,10 +130,9 @@ if __name__ == '__main__':
     print("         using {}".format(ground_truth_file))  
     url = BASE_URL + '/categorization/{}/test'.format(mid)
     print("POST", url)
-    res = requests.post(url, json={'ground_truth_filename': ground_truth_file})
+    res = requests.post(url, json={'ground_truth_filename': ground_truth_file}).json()
 
-    data2 = res.json()
-    print('    => Test scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data2))
+    print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
 
     # 3. Document categorization with LSI
@@ -148,13 +146,12 @@ if __name__ == '__main__':
     res = requests.post(url,
                         json={'n_components': n_components,
                               'dataset_id': dsid
-                              })
+                              }).json()
 
-    data = res.json()
-    lid = data['id']
+    lid = res['id']
     print('  => LSI model id = {}'.format(lid))
     print('  => SVD decomposition with {} dimensions explaining {:.2f} % variabilty of the data'.format(
-                            n_components, data['explained_variance']*100))
+                            n_components, res['explained_variance']*100))
     print("\n3.b. Predict categorization with LSI")
 
     url = BASE_URL + '/lsi/{}/predict'.format(lid)
@@ -162,12 +159,11 @@ if __name__ == '__main__':
     res = requests.post(url,
                         json={'relevant_filenames': relevant_files,
                               'non_relevant_filenames': non_relevant_files
-                              })
-    data = res.json()
+                              }).json()
+    prediction = res['prediction']
 
-    prediction = data['prediction']
-
-    print('    => Training scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data))
+    print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+    df = pd.DataFrame({key: res[key] for key in res if 'prediction'==key or 'nearest' in key})
 
 
     print("\n3.c. Test categorization with LSI")
@@ -178,11 +174,10 @@ if __name__ == '__main__':
                         json={'relevant_filenames': relevant_files,
                               'non_relevant_filenames': non_relevant_files,
                               'ground_truth_filename': ground_truth_file
-                              })
-    data2 = res.json()
-    print('    => Test scores: MAP = {average_precision:.2f}, ROC-AUC = {roc_auc:.2f}'.format(**data2))
+                              }).json()
+    print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
-    pd.DataFrame({key: data[key] for key in data if 'prediction' in key or 'nearest' in key})
+    print('\n', df)
 
 
     print("\n4.a Delete the extracted features")

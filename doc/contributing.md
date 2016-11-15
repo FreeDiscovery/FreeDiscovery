@@ -11,7 +11,7 @@ The issue tracker is located at: [https://github.com/FreeDiscovery/FreeDiscovery
 
 The [scikit learn's developper guide](http://scikit-learn.org/stable/developers/index.html) is also worth reading.
 
-## Test suite
+## Test Suite
 
 A two level test suite is implemented in FreeDiscovery, that validates both the algorithms and the REST API, 
 
@@ -26,7 +26,7 @@ or alternatively from Python with,
 It is automatically run as part of the installation procedure locally. The Continuous Integration also runs this test suite on Linux and Windows for all commits and pull requests on GitHub.  
 
 
-## Building documentation
+## Building Documentation
 
 This html documentation can be built from sources with,
      
