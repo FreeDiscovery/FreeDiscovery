@@ -106,6 +106,11 @@ def _rename_main_thread():
         print('Warning: joblib: renaming current thread {} to "MainThread".'.format(threading.current_thread().name))
         threading.current_thread().name = 'MainThread'
 
+def _count_duplicates(x):
+    """Return y an array of the same shape as x with the number of
+    duplicates for each element"""
+    _, indices, counts = np.unique(x, return_counts=True, return_inverse=True)
+    return counts[indices]
 
 def generate_uuid():
     """

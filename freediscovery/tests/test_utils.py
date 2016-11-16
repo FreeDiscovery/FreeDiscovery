@@ -17,3 +17,11 @@ import itertools
 import pytest
 
 
+def test_count_duplicates():
+    from freediscovery.utils import _count_duplicates
+
+    x = np.array([1, 2, 1, 2, 2, 0])
+
+    y = _count_duplicates(x)
+    assert_equal(y, np.array([2, 3, 2, 3, 3, 1]))
+
