@@ -9,7 +9,7 @@ A Python installation using Anaconda distribution is recommended for development
 
 The issue tracker is located at: [https://github.com/FreeDiscovery/FreeDiscovery](https://github.com/FreeDiscovery/FreeDiscovery).
 
-The [scikit learn's developper guide](http://scikit-learn.org/stable/developers/index.html) is also worth reading.
+The [scikit learn developer guide](http://scikit-learn.org/stable/developers/index.html) is also worth reading.
 
 ## Test Suite
 
