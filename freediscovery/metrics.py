@@ -53,3 +53,21 @@ def f1_same_duplicates_score(x, y):
         score = f1_score(x_dup, y_dup)
 
     return score
+
+
+def mean_duplicates_count_score(x, y):
+    """ Score based on the number of duplicates for sample k,
+    averaged over samples."""
+    from .utils import _count_duplicates
+    x_count = _count_duplicates(x)
+    y_count = _count_duplicates(y)
+    mask = (x_count > 1) | (y_count > 1) # select only duplicates
+    x_count = x_count[mask]
+    y_count = y_count[mask]
+
+    score = 1 - np.abs(x_count - y_count)/np.maximum(x_count, y_count)
+    return np.mean(score)
+
+
+
+

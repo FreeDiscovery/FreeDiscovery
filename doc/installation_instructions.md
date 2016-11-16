@@ -27,7 +27,7 @@ or by downloading the latest stable version from the [Github releases page](http
  
           source activate freediscovery-env   # on Linuix/Mac OS X
           # or "activate freediscovery-env"   # on Windows 
-          pip install -r build_tools/requirements_pip_unux.txt # on Linux/MacOS X
+          pip install -r build_tools/requirements_pip_unix.txt # on Linux/MacOS X
           pip install -r build_tools/requirements_pip_win.txt # on Windows
 
           python setup.py develop
