@@ -13,7 +13,7 @@ from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
-from .utils import filter_rel_nrel, setup_model, _rename_main_thread
+from .utils import setup_model, _rename_main_thread
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
 
@@ -165,7 +165,12 @@ class Categorizer(BaseEstimator):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        d_all, _, _, d_rel, d_nrel = filter_rel_nrel(self, relevant_filenames, non_relevant_filenames)
+        idx_rel = self.fe.search(relevant_filenames, error_not_found=True)
+        idx_nrel = self.fe.search(non_relevant_filenames, error_not_found=True)
+
+        _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
+        d_rel = d_all[idx_rel,:]
+        d_nrel = d_all[idx_nrel,:]
 
         X_train = scipy.sparse.vstack((d_rel, d_nrel))
         X_train_str = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))

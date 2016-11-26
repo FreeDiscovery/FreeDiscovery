@@ -76,24 +76,6 @@ def classification_score(X_ref, Y_ref, X, Y):
             "f1": m_f1_score, 'roc_auc': m_roc_auc,
             'average_precision': m_average_precision }
 
-
-def filter_rel_nrel(self, relevant_filenames, non_relevant_filenames):
-    """Load features corresponding to a list of relevant / non relevant filenames
-    """
-    filenames_all, fset_all = self.fe.load(self.dsid)  #, mmap_mode='r')
-    idx_rel = self.fe.search(relevant_filenames)
-    idx_nrel = self.fe.search(non_relevant_filenames)
-    if idx_rel is None:
-        raise ValueError('No relevant files found with the input provided: {} ...!'.format(relevant_filenames[:20]))
-    if idx_nrel is None:
-        raise ValueError('No not-relevant files found with the input provided!')
-    d_rel = fset_all[idx_rel,:]
-    #print(idx_rel)
-    #print(type(fset_all.shape))
-    d_nrel = fset_all[idx_nrel,:]
-    return fset_all, idx_rel, idx_nrel, d_rel, d_nrel
-
-
 def _rename_main_thread():
     """
     This aims to address the fact that joblib wrongly detects uWSGI workers

@@ -17,7 +17,7 @@ from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
-from .utils import (filter_rel_nrel, setup_model)
+from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
 
@@ -140,7 +140,12 @@ class LSI(BaseEstimator):
         else:
             raise NotImplementedFD() 
 
-        ds, idx_p, idx_n, d_p, d_n = filter_rel_nrel(self, relevant_filenames, non_relevant_filenames)
+        idx_p = self.fe.search(relevant_filenames, error_not_found=True)
+        idx_n = self.fe.search(non_relevant_filenames, error_not_found=True)
+
+        _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
+        d_p = ds[idx_p,:]
+        d_n = ds[idx_n,:]
 
         idx_train = np.concatenate((idx_p, idx_n), axis=0)
         X_train = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))

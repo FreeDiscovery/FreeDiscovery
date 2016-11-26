@@ -317,8 +317,8 @@ class FeatureVectorizer(object):
         pars = joblib.load(os.path.join(dsid_dir, 'pars'))
         return pars
 
-    def search(self, filenames):
-        """ Given a dsid return the features that correspond to the provided filenames """
+    def search(self, filenames, error_not_found=False):
+        """ Return the document ids that correspond to the provided filenames """
         pars = self._pars
         filenames_all = pars['filenames']
         # calculate the indices of the intersection of filenames with filenames_all
@@ -328,7 +328,10 @@ class FeatureVectorizer(object):
         if len(filenames) == len(indices):
             return indices
         elif len(indices) == 0:
-            return None  # np.zeros(len(filenames)).astype(bool)
+            if error_not_found:
+                raise ValueError('No relevant files found with the input provided: {} ...!'.format(filenames[:20]))
+            else:
+                return None  # np.zeros(len(filenames)).astype(bool)
         elif len(filenames) != len(indices):
             # this is not supposed to happen, we should do something
             raise ValueError("unconsistant indices, the results may be wrong!")
