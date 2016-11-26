@@ -39,11 +39,14 @@ def test_lsi():
 
     mask = ground_truth.is_relevant.values == 1
 
+    idx_rel = lsi.fe.search(ground_truth.index.values[mask])
+    idx_nrel = lsi.fe.search(ground_truth.index.values[~mask])
+
     for accumulate in ['nearest-max', 'centroid-max']:
                         #'nearest-diff', 'nearest-combine', 'stacking']:
         _, X_train, Y_train_val, Y_train, X_pred, Y_pred, ND_train = lsi.predict(
-                                ground_truth.index.values[mask],
-                                ground_truth.index.values[~mask],
+                                idx_rel,
+                                idx_nrel,
                                 accumulate=accumulate)
         scores = classification_score(ground_truth.index.values,
                             ground_truth.is_relevant.values,

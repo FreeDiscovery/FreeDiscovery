@@ -130,16 +130,16 @@ class Categorizer(BaseEstimator):
             raise WrongParameter('Method {} not implemented!'.format(method))
         return cmod
 
-    def train(self, relevant_filenames, non_relevant_filenames, method='LinearSVC', cv=None):
+    def train(self, relevant_id, non_relevant_id, method='LinearSVC', cv=None):
         """
         Train the categorization model
 
         Parameters
         ----------
-        relevant_filenames : list
-           a list of relevant documents filenames
-        non_relevant_filenames : list
-           a list of not relevant documents filenames
+        relevant_id : list
+           a list of relevant document ids
+        non_relevant_id : list
+           a list of not relevant documents ids
         method : str
            the ML algorithm to use (one of "LogisticRegression", "LinearSVC", 'xgboost')
         cv : str
@@ -165,15 +165,12 @@ class Categorizer(BaseEstimator):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        idx_rel = self.fe.search(relevant_filenames, error_not_found=True)
-        idx_nrel = self.fe.search(non_relevant_filenames, error_not_found=True)
-
         _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
-        d_rel = d_all[idx_rel,:]
-        d_nrel = d_all[idx_nrel,:]
+        d_rel = d_all[relevant_id,:]
+        d_nrel = d_all[non_relevant_id,:]
 
         X_train = scipy.sparse.vstack((d_rel, d_nrel))
-        X_train_str = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))
+        #X_train_str = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))
         Y_train = np.concatenate((np.ones((d_rel.shape[0])), np.zeros((d_nrel.shape[0]))), axis=0).astype(np.int)
 
         if method != 'ensemble-stacking':
@@ -204,8 +201,8 @@ class Categorizer(BaseEstimator):
 
         pars = {
             'method': method,
-            'relevant_filenames': relevant_filenames,
-            'non_relevant_filenames': non_relevant_filenames
+            'relevant_id': relevant_id,
+            'non_relevant_id': non_relevant_id
         }
         pars['options'] = cmod.get_params()
         self._pars = pars
@@ -213,7 +210,7 @@ class Categorizer(BaseEstimator):
 
         self.mid = mid
         self.cmod = cmod
-        return cmod, X_train_str, Y_train
+        return cmod, None, Y_train
 
     def predict(self, chunk_size=5000):
         """

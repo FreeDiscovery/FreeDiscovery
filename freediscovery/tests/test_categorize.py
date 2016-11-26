@@ -57,11 +57,12 @@ def test_categorization(method, cv):
 
     cat = Categorizer(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
     mask = ground_truth.is_relevant.values == 1
+    idx_rel = cat.fe.search(ground_truth.index.values[mask])
+    idx_nrel = cat.fe.search(ground_truth.index.values[~mask])
     
     try:
         coefs, X_train, Y_train = cat.train(
-                                ground_truth.index.values[mask],
-                                ground_truth.index.values[~mask],
+                                idx_rel, idx_nrel,
                                 method=method,
                                 cv=cv)
     except OptionalDependencyMissing:

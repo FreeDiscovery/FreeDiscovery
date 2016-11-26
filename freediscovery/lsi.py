@@ -118,15 +118,15 @@ class LSI(BaseEstimator):
 
         return lsi, exp_var
 
-    def predict(self, relevant_filenames, non_relevant_filenames, accumulate='nearest-max', chunk_size=100):
+    def predict(self, relevant_id, non_relevant_id, accumulate='nearest-max', chunk_size=100):
         """
         Predict the document relevance using a previously trained LSI model
 
         Parameters
         ----------
-        relevant_filenames : list
+        relevant_id : list
            a list of relevant documents filenames
-        non_relevant_filenames : list
+        non_relevant_id : list
            a list of not relevant documents filenames
         accumulate : str, optional, default='nearest-max'
            if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
@@ -140,15 +140,14 @@ class LSI(BaseEstimator):
         else:
             raise NotImplementedFD() 
 
-        idx_p = self.fe.search(relevant_filenames, error_not_found=True)
-        idx_n = self.fe.search(non_relevant_filenames, error_not_found=True)
+        idx_p = relevant_id
+        idx_n = non_relevant_id
 
         _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
         d_p = ds[idx_p,:]
         d_n = ds[idx_n,:]
 
         idx_train = np.concatenate((idx_p, idx_n), axis=0)
-        X_train = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))
         Y_train_ref = np.concatenate((np.ones((d_p.shape[0])), np.zeros((d_n.shape[0]))), axis=0)
 
         lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
@@ -205,7 +204,7 @@ class LSI(BaseEstimator):
             raise NotImplementedFD('accumulate={} not supported!'.format(accumulate))
         Y_train = D[idx_train]
         Y_test = D[:]
-        return lsi, X_train, Y_train_ref, Y_train, X_test, Y_test, res
+        return lsi, None, Y_train_ref, Y_train, X_test, Y_test, res
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')
