@@ -16,8 +16,8 @@ class DatasetSchema(Schema):
     base_dir = fields.Str(required=True)
     data_dir = fields.Str(required=True)
     ground_truth_file = fields.Str()
-    seed_relevant_files = fields.List(fields.Str())
-    seed_non_relevant_files = fields.List(fields.Str())
+    seed_filenames = fields.List(fields.Str())
+    seed_y = fields.List(fields.Int())
 
 class IDSchema(Schema):
     id = fields.Str(required=True)

@@ -28,8 +28,8 @@ if __name__ == '__main__':
 
     # To use a custom dataset, simply specify the following variables
     data_dir = res['data_dir']
-    index_files = res['seed_relevant_files'] + res['seed_non_relevant_files']
-    y = [1]*len(res['seed_relevant_files']) + [0]*len(res['seed_non_relevant_files'])
+    seed_filenames = res['seed_filenames']
+    seed_y = res['seed_y']
     ground_truth_file = res['ground_truth_file']  # (optional)
 
 
@@ -87,20 +87,20 @@ if __name__ == '__main__':
                                                       if "filenames" not in key]))
 
     method = BASE_URL + "/feature-extraction/{}/index".format(dsid)
-    res = requests.get(method, data={'filenames': index_files})
-    index = res.json()['indices']
+    res = requests.get(method, data={'filenames': seed_filenames})
+    seed_index = res.json()['indices']
 
     # 2. Document categorization with ML algorithms
 
     print("\n2.a. Train the ML categorization model")
-    print("   {} relevant, {} non-relevant files".format(y.count(1), y.count(0)))
+    print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
     url = BASE_URL + '/categorization/'
     print(" POST", url)
     print(' Training...')
 
     res = requests.post(url,
-                        json={'index': index,
-                              'y': y,
+                        json={'index': seed_index,
+                              'y': seed_y,
                               'dataset_id': dsid,
                               'method': 'LinearSVC',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                               'cv': 0                          # Cross Validation
@@ -159,8 +159,8 @@ if __name__ == '__main__':
     url = BASE_URL + '/lsi/{}/predict'.format(lid)
     print("POST", url)
     res = requests.post(url,
-                        json={'index': index,
-                              'y': y
+                        json={'index': seed_index,
+                              'y': seed_y
                               }).json()
     prediction = res['prediction']
 
@@ -173,8 +173,8 @@ if __name__ == '__main__':
     print(" POST", url)
 
     res = requests.post(url,
-                        json={'index': index,
-                              'y': y,
+                        json={'index': seed_index,
+                              'y': seed_y,
                               'ground_truth_filename': ground_truth_file
                               }).json()
     print(res)
