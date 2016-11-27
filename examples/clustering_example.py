@@ -96,7 +96,7 @@ print(repr_clustering(np.array(res['labels']), res['cluster_terms']))
 
 # # 3. Document Clustering (LSI + Ward Hierarchical Clustering)
 
-print("\n2.a. Document clustering (LSI + Ward HC)")
+print("\n3.a. Document clustering (LSI + Ward HC)")
 
 url = BASE_URL + '/clustering/ward_hc/'
 print(" POST", url)
@@ -111,7 +111,7 @@ res = requests.post(url,
 mid = res['id']
 print("     => model id = {}".format(mid))
 
-print("\n2.b. Computing cluster labels")
+print("\n3.b. Computing cluster labels")
 url = BASE_URL + '/clustering/ward_hc/{}'.format(mid)
 print("POST", url)
 res = requests.get(url,
@@ -121,3 +121,10 @@ t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
 print(repr_clustering(np.array(res['labels']), res['cluster_terms']))
+
+
+# 4. Cleaning
+print("\n4.a Delete the extracted features")
+url = BASE_URL + '/feature-extraction/{}'.format(dsid)
+print(" DELETE", url)
+requests.delete(url)

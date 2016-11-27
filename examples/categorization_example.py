@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     print(" 0. Load the test dataset")
     url = BASE_URL + '/datasets/{}'.format(dataset_name)
-    print(" POST", url)
+    print(" GET", url)
     res = requests.get(url).json()
 
     # To use a custom dataset, simply specify the following variables
@@ -179,7 +179,8 @@ if __name__ == '__main__':
 
     print('\n', df)
 
-
+    # 4. Cleaning
     print("\n4.a Delete the extracted features")
     url = BASE_URL + '/feature-extraction/{}'.format(dsid)
     print(" DELETE", url)
+    requests.delete(url)
