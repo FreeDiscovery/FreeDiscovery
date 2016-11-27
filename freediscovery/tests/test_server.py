@@ -375,16 +375,6 @@ def test_get_feature_extraction(app):
 def test_get_search_filenames(app):
     dsid, _ = features_hashed(app)
 
-
-    method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
-
-    filenames = data['filenames']
-
-
-
     method = V01 + "/feature-extraction/{}/index".format(dsid)
     for pars, indices in [
             ({ 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
@@ -394,8 +384,6 @@ def test_get_search_filenames(app):
         assert res.status_code == 200
         data = parse_res(res)
         assert sorted(data.keys()) ==  sorted(['indices'])
-        print('filenames:', filenames)
-        print("data['indices']:", data['indices'])
         assert_equal(data['indices'], indices)
 
 

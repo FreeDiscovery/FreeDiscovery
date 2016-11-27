@@ -106,6 +106,9 @@ class FeatureVectorizer(object):
                     if re.match(file_pattern, fname):
                         filenames.append(os.path.normpath(os.path.join(root, fname)))
 
+        # make sure that sorting order is deterministic
+        filenames = sorted(filenames)
+
         if not filenames: # no files were found
             raise WrongParameter('No files to process were found!')
         if analyzer not in ['word', 'char', 'char_wb']:
