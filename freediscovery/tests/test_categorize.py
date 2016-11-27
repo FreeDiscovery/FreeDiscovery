@@ -57,13 +57,12 @@ def test_categorization(method, cv):
             raise SkipTest
 
     cat = Categorizer(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
-    mask = ground_truth.is_relevant.values == 1
-    idx_rel = cat.fe.search(ground_truth.index.values[mask])
-    idx_nrel = cat.fe.search(ground_truth.index.values[~mask])
-    
+    index = cat.fe.search(ground_truth.index.values)
+
     try:
         coefs, X_train, Y_train = cat.train(
-                                idx_rel, idx_nrel,
+                                index,
+                                ground_truth.is_relevant.values,
                                 method=method,
                                 cv=cv)
     except OptionalDependencyMissing:

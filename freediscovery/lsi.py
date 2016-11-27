@@ -17,7 +17,7 @@ from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
-from .categorization import _zip_relevant
+from .categorization import _unzip_relevant
 from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
@@ -119,16 +119,16 @@ class LSI(BaseEstimator):
 
         return lsi, exp_var
 
-    def predict(self, relevant_id, non_relevant_id, accumulate='nearest-max', chunk_size=100):
+    def predict(self, index, y, accumulate='nearest-max', chunk_size=100):
         """
         Predict the document relevance using a previously trained LSI model
 
         Parameters
         ----------
-        relevant_id : list
-           a list of relevant documents filenames
-        non_relevant_id : list
-           a list of not relevant documents filenames
+        index : array-like, shape (n_samples)
+           document indices of the training set
+        y : array-like, shape (n_samples)
+           target binary class relative to index
         accumulate : str, optional, default='nearest-max'
            if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
            otherwise if `accumulate=="centroid-max"` the centroid of relevant documents is used as the query vector.
@@ -141,8 +141,10 @@ class LSI(BaseEstimator):
         else:
             raise NotImplementedFD() 
 
-        idx_p = relevant_id
-        idx_n = non_relevant_id
+        y = np.asarray(y, dtype='int')
+        index = np.asarray(y, dtype='int')
+
+        idx_p, idx_n = _unzip_relevant(index, y)
 
         _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
         d_p = ds[idx_p,:]

@@ -147,16 +147,16 @@ class Categorizer(BaseEstimator):
             raise WrongParameter('Method {} not implemented!'.format(method))
         return cmod
 
-    def train(self, relevant_id, non_relevant_id, method='LinearSVC', cv=None):
+    def train(self, index, y, method='LinearSVC', cv=None):
         """
         Train the categorization model
 
         Parameters
         ----------
-        relevant_id : list
-           a list of relevant document ids
-        non_relevant_id : list
-           a list of not relevant documents ids
+        index : array-like, shape (n_samples)
+           document indices of the training set
+        y : array-like, shape (n_samples)
+           target binary class relative to index
         method : str
            the ML algorithm to use (one of "LogisticRegression", "LinearSVC", 'xgboost')
         cv : str
@@ -183,12 +183,11 @@ class Categorizer(BaseEstimator):
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
         _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
-        d_rel = d_all[relevant_id,:]
-        d_nrel = d_all[non_relevant_id,:]
 
-        X_train = scipy.sparse.vstack((d_rel, d_nrel))
+        X_train = d_all[index, :]
 
-        X_train_id, Y_train = _zip_relevant(relevant_id, non_relevant_id)
+        X_train_id = index
+        Y_train = y
 
         if method != 'ensemble-stacking':
             cmod = self._build_estimator(Y_train, method, cv, self.cv_scoring, self.cv_n_folds)
@@ -218,8 +217,8 @@ class Categorizer(BaseEstimator):
 
         pars = {
             'method': method,
-            'relevant_id': relevant_id,
-            'non_relevant_id': non_relevant_id
+            'index': index,
+            'y': y
         }
         pars['options'] = cmod.get_params()
         self._pars = pars

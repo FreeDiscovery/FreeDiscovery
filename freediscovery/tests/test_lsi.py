@@ -37,10 +37,7 @@ def test_lsi():
     assert lsi._load_pars(lsi_id) is not None
     lsi.load(lsi_id)
 
-    mask = ground_truth.is_relevant.values == 1
-
-    idx_rel = lsi.fe.search(ground_truth.index.values[mask])
-    idx_nrel = lsi.fe.search(ground_truth.index.values[~mask])
+    index = lsi.fe.search(ground_truth.index.values)
 
     idx_gt = lsi.fe.search(ground_truth.index.values)
     idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
@@ -48,12 +45,16 @@ def test_lsi():
     for accumulate in ['nearest-max', 'centroid-max']:
                         #'nearest-diff', 'nearest-combine', 'stacking']:
         _, X_train, Y_train_val, Y_train, X_pred, Y_pred, ND_train = lsi.predict(
-                                idx_rel,
-                                idx_nrel,
+                                index,
+                                ground_truth.is_relevant.values,
                                 accumulate=accumulate)
+        print('accumulate: ', accumulate)
+        print(idx_gt, ground_truth.is_relevant.values)
+        print(idx_all, Y_pred)
         scores = categorization_score(idx_gt,
                             ground_truth.is_relevant.values,
                             idx_all, Y_pred)
+        print(scores)
         assert_allclose(scores['precision'], 1, rtol=0.5)
         assert_allclose(scores['recall'], 1, rtol=0.3)
 

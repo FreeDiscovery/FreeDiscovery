@@ -113,14 +113,8 @@ class FeaturesApiElementIndex(Resource):
     @marshal_with(FeaturesElementIndexSchema())
     def get(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        #out = []
-        #for filenames_slice in args['filenames']:
-        #idx = fe.search(filenames_slice)
         idx = fe.search(args['filenames'])
         return {'indices': list(idx)}
-        #    if idx is not None:
-        #        out.append(idx)
-        #return idx
 
 # ============================================================================ # 
 #                  Categorization (LSI)
@@ -161,8 +155,8 @@ class LsiApiElement(Resource):
 _lsi_api_element_predict_post_args = {
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'relevant_id': wfields.List(wfields.Int(), required=True),
-        'non_relevant_id': wfields.List(wfields.Int(), required=True),
+        'index': wfields.List(wfields.Int(), required=True),
+        'y': wfields.List(wfields.Int(), required=True),
         }
 
 
@@ -186,8 +180,8 @@ class LsiApiElementPredict(Resource):
 _lsi_api_element_test_post_args = {
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'relevant_id': wfields.List(wfields.Int(), required=True),
-        'non_relevant_id': wfields.List(wfields.Int(), required=True),
+        'index': wfields.List(wfields.Int(), required=True),
+        'y': wfields.List(wfields.Int(), required=True),
         'ground_truth_filename': wfields.Str(required=True)
         }
 
@@ -217,8 +211,8 @@ _models_api_post_args = {
         'dataset_id': wfields.Str(required=True),
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'relevant_id': wfields.List(wfields.Int(), required=True),
-        'non_relevant_id': wfields.List(wfields.Int(), required=True),
+        'index': wfields.List(wfields.Int(), required=True),
+        'y': wfields.List(wfields.Int(), required=True),
         'method': wfields.Str(required=True),
         'cv': wfields.Boolean(missing=True),
         'training_scores': wfields.Boolean(missing=True)

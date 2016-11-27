@@ -116,8 +116,14 @@ def test_api_lsi(app):
     assert res.status_code == 200
 
     filenames = data['filenames']
-    relevant_files = filenames[:1]
-    non_relevant_files = filenames[1:]
+    # we train the model on 5 samples / 6 and see what happens
+    index_filenames = filenames[:1] + filenames[3:]
+    y = [1, 1,  0, 0, 0]
+
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
+    res = app.get(method, data={'filenames': index_filenames})
+    assert res.status_code == 200, method
+    index = parse_res(res)['indices']
 
     lsi_pars = dict( n_components=101, dataset_id=dsid)
     method = V01 + "/lsi/"
@@ -145,19 +151,12 @@ def test_api_lsi(app):
     for key, vals in lsi_pars.items():
         assert vals == data[key]
 
-    method = V01 + "/feature-extraction/{}/index".format(dsid)
-    res = app.get(method, data={'filenames': relevant_files})
-    assert res.status_code == 200, method
-    relevant_id = parse_res(res)['indices']
-    res = app.get(method, data={'filenames': non_relevant_files})
-    assert res.status_code == 200, method
-    non_relevant_id = parse_res(res)['indices']
 
     method = V01 + "/lsi/{}/predict".format(lid)
     res = app.post(method,
             data={
-              'relevant_id': relevant_id,
-              'non_relevant_id': non_relevant_id,
+              'index': index,
+              'y': y,
               })
 
     assert res.status_code == 200
@@ -198,22 +197,19 @@ def test_api_categorization(app, solver, cv):
 
     filenames = data['filenames']
     # we train the model on 5 samples / 6 and see what happens
-    relevant_files = filenames[:3]
-    non_relevant_files = filenames[3:]
+    index_filenames = filenames[:2] + filenames[3:]
+    y = [1, 1,  0, 0, 0]
 
     method = V01 + "/feature-extraction/{}/index".format(dsid)
-    res = app.get(method, data={'filenames': relevant_files})
+    res = app.get(method, data={'filenames': index_filenames})
     assert res.status_code == 200, method
-    relevant_id = parse_res(res)['indices']
-    res = app.get(method, data={'filenames': non_relevant_files})
-    assert res.status_code == 200, method
-    non_relevant_id = parse_res(res)['indices']
+    index = parse_res(res)['indices']
 
 
     pars = {
           'dataset_id': dsid,
-          'non_relevant_id': non_relevant_id,
-          'relevant_id': relevant_id,
+          'index': index,
+          'y': y,
           'method': solver,
           'cv': cv}
 
@@ -234,11 +230,11 @@ def test_api_categorization(app, solver, cv):
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == \
-            sorted(["relevant_id", "non_relevant_id",
+            sorted(["index", "y",
                     "method", "options"])
 
-    for key in ["relevant_id", "non_relevant_id", "method"]:
-        if 'filenames' in key:
+    for key in ["index", "y", "method"]:
+        if key in ['index', 'y']:
             assert len(pars[key]) == len(data[key])
         else:
             assert pars[key] == data[key]

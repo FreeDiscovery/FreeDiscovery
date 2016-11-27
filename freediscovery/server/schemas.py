@@ -88,8 +88,8 @@ class CategorizationPredictSchema(Schema):
 
 class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
-    relevant_id = fields.List(fields.Int(), required=True)
-    non_relevant_id = fields.List(fields.Int(), required=True)
+    index = fields.List(fields.Int(), required=True)
+    y = fields.List(fields.Int(), required=True)
     options = fields.Str(required=True)
 
 
