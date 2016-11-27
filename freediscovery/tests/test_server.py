@@ -145,7 +145,7 @@ def test_api_lsi(app):
     for key, vals in lsi_pars.items():
         assert vals == data[key]
 
-    method = V01 + "/feature-extraction/{}/get_indices".format(dsid)
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
     res = app.get(method, data={'filenames': relevant_files})
     assert res.status_code == 200, method
     relevant_id = parse_res(res)['indices']
@@ -201,7 +201,7 @@ def test_api_categorization(app, solver, cv):
     relevant_files = filenames[:3]
     non_relevant_files = filenames[3:]
 
-    method = V01 + "/feature-extraction/{}/get_indices".format(dsid)
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
     res = app.get(method, data={'filenames': relevant_files})
     assert res.status_code == 200, method
     relevant_id = parse_res(res)['indices']
@@ -379,7 +379,7 @@ def test_get_feature_extraction(app):
 
 def test_get_search_filenames(app):
     dsid, _ = features_hashed(app)
-    method = V01 + "/feature-extraction/{}/get_indices".format(dsid)
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
     for pars, indices in [
             ( { 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
             ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:

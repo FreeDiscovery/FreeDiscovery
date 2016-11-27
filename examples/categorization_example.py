@@ -86,6 +86,11 @@ if __name__ == '__main__':
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
 
+    method = BASE_URL + "/feature-extraction/{}/index".format(dsid)
+    res = requests.get(method, data={'filenames': relevant_files})
+    relevant_id = res.json()['indices']
+    res = requests.get(method, data={'filenames': non_relevant_files})
+    non_relevant_id = res.json()['indices']
 
     # 2. Document categorization with ML algorithms
 
@@ -97,8 +102,8 @@ if __name__ == '__main__':
     print(' Training...')
 
     res = requests.post(url,
-                        json={'relevant_filenames': relevant_files,
-                              'non_relevant_filenames': non_relevant_files,
+                        json={'relevant_id': relevant_id,
+                              'non_relevant_id': non_relevant_id,
                               'dataset_id': dsid,
                               'method': 'LinearSVC',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                               'cv': 0                          # Cross Validation
@@ -157,8 +162,8 @@ if __name__ == '__main__':
     url = BASE_URL + '/lsi/{}/predict'.format(lid)
     print("POST", url)
     res = requests.post(url,
-                        json={'relevant_filenames': relevant_files,
-                              'non_relevant_filenames': non_relevant_files
+                        json={'relevant_id': relevant_id,
+                              'non_relevant_id': non_relevant_id
                               }).json()
     prediction = res['prediction']
 
@@ -171,10 +176,11 @@ if __name__ == '__main__':
     print(" POST", url)
 
     res = requests.post(url,
-                        json={'relevant_filenames': relevant_files,
-                              'non_relevant_filenames': non_relevant_files,
+                        json={'relevant_id': relevant_id,
+                              'non_relevant_id': non_relevant_id,
                               'ground_truth_filename': ground_truth_file
                               }).json()
+    print(res)
     print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
     print('\n', df)

@@ -15,13 +15,14 @@ Load Benchmark Dataset
 Feature Extraction 
 ------------------
 
-===================================================================================  ======  =========================================================
-`/api/v0/feature-extraction/ <./feature_extraction_post.html>`_                      POST    Load a dataset and initialize feature extraction
-`/api/v0/feature-extraction/ <./feature_extraction_get.html>`_                       GET     List processed datasets
-`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_post.html>`_  POST    Run feature extraction on a dataset
-`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_get.html>`_   GET     Load extracted features (and obtain the processing status)
-`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_delete.html>`_        DELETE  Delete a processed dataset
-===================================================================================  ======  =========================================================
+=====================================================================================   ======  =========================================================
+`/api/v0/feature-extraction/ <./feature_extraction_post.html>`_                         POST    Load a dataset and initialize feature extraction
+`/api/v0/feature-extraction/ <./feature_extraction_get.html>`_                          GET     List processed datasets
+`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_post.html>`_     POST    Run feature extraction on a dataset
+`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_get.html>`_      GET     Load extracted features (and obtain the processing status)
+`/api/v0/feature-extraction/<dataset-id>/index <./feature_extraction_index_get.html>`_  GET     Query document index for filenames
+`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_delete.html>`_           DELETE  Delete a processed dataset
+======================================================================================  ======  =========================================================
 
 Document Categorizaiton
 -----------------------

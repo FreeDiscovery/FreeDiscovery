@@ -47,7 +47,7 @@ def fd_app(cache_dir):
          (DatasetsApiElement      , "/datasets/<name>")                      ,
          (FeaturesApi             , "/feature-extraction")                   ,
          (FeaturesApiElement      , '/feature-extraction/<dsid>')            ,
-         (FeaturesApiElementIndex , '/feature-extraction/<dsid>/get_indices'),
+         (FeaturesApiElementIndex , '/feature-extraction/<dsid>/index'),
          (ModelsApi               , '/categorization/')                      ,
          (ModelsApiElement        , '/categorization/<mid>')                 ,
          (ModelsApiPredict        , '/categorization/<mid>/predict')         ,
