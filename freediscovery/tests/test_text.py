@@ -67,15 +67,16 @@ def test_search_filenames(use_hashing):
 
 
 
-    for low, high in [(0, 1),
-                      (0, 4),
-                      (1, 3)]:
-        idx_slice = list(range(low, high))
+    for low, high, step in [(0, 1, 1),
+                            (0, 4, 1),
+                            (3, 1, -1)]:
+        idx_slice = list(range(low, high, step))
         filenames_slice = [filenames[idx] for idx in idx_slice]
         idx0 = fe.search(filenames_slice)
         assert_equal(idx0, idx_slice)
+        assert_equal(filenames_slice, fe[idx0])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         fe.search(['DOES_NOT_EXIST.txt'])
 
     if not use_hashing:

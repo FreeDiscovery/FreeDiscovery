@@ -69,6 +69,7 @@ def test_categorization(method, cv):
         raise SkipTest
 
 
+
     Y_pred = cat.predict()
     X_pred = np.arange(cat.fe.n_samples_, dtype='int')
     idx_gt = cat.fe.search(ground_truth.index.values)

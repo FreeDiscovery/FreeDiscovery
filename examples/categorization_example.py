@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     method = BASE_URL + "/feature-extraction/{}/index".format(dsid)
     res = requests.get(method, data={'filenames': seed_filenames})
-    seed_index = res.json()['indices']
+    seed_index = res.json()['index']
 
     # 2. Document categorization with ML algorithms
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     res = requests.get(url).json()
 
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                      if "filenames" not in key]))
+                                                      if key not in ['index', 'y']]))
 
     print("\n2.c Categorize the complete dataset with this model")
     url = BASE_URL + '/categorization/{}/predict'.format(mid)

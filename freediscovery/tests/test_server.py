@@ -123,7 +123,7 @@ def test_api_lsi(app):
     method = V01 + "/feature-extraction/{}/index".format(dsid)
     res = app.get(method, data={'filenames': index_filenames})
     assert res.status_code == 200, method
-    index = parse_res(res)['indices']
+    index = parse_res(res)['index']
 
     lsi_pars = dict( n_components=101, dataset_id=dsid)
     method = V01 + "/lsi/"
@@ -203,7 +203,7 @@ def test_api_categorization(app, solver, cv):
     method = V01 + "/feature-extraction/{}/index".format(dsid)
     res = app.get(method, data={'filenames': index_filenames})
     assert res.status_code == 200, method
-    index = parse_res(res)['indices']
+    index = parse_res(res)['index']
 
 
     pars = {
@@ -383,8 +383,8 @@ def test_get_search_filenames(app):
         res = app.get(method, data=pars)
         assert res.status_code == 200
         data = parse_res(res)
-        assert sorted(data.keys()) ==  sorted(['indices'])
-        assert_equal(data['indices'], indices)
+        assert sorted(data.keys()) ==  sorted(['index'])
+        assert_equal(data['index'], indices)
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])

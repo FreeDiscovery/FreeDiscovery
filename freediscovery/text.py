@@ -265,6 +265,9 @@ class FeatureVectorizer(object):
         dsid_dir = os.path.join(self.cache_dir, dsid)
         return os.path.exists(dsid_dir)
 
+    def __getitem__(self, index):
+        return np.asarray(self._pars['filenames'])[index]
+
     def list_datasets(self):
         """ List all datasets in the working directory """
         out = []
@@ -320,7 +323,7 @@ class FeatureVectorizer(object):
         pars = joblib.load(os.path.join(dsid_dir, 'pars'))
         return pars
 
-    def search(self, filenames, error_not_found=True):
+    def search(self, filenames):
         """ Return the document ids that correspond to the provided filenames,
         without preserving order.
 
@@ -328,24 +331,17 @@ class FeatureVectorizer(object):
         ----------
         filenames : list[str]
             list of filenames (relatives to the data_dir)
-        error_not_found : bool
-            raise an error if a file is not found (otherwise fail silently)
 
         Returns
         -------
         indices : array[int]
             corresponding list of document id (order is not preserved)
         """
-        filenames = np.array(filenames)
-        filenames_all = np.array(self._pars['filenames'])
-        if error_not_found:
-            mask_inv = np.in1d(filenames, filenames_all)
-            if (~mask_inv).any():
-                raise ValueError('Files not found :  {} ...!'.format(filenames[~mask_inv][:20]))
+        filenames_all = self._pars['filenames']
         # calculate the indices of the intersection of filenames with filenames_all
-        mask = np.in1d(filenames_all, filenames)
-        indices = np.nonzero(mask)[0]
-        return indices
+        ind_dict = dict((k,i) for i,k in enumerate(filenames_all))
+        indices = [ ind_dict[x] for x in filenames]
+        return np.array(indices)
 
     @property
     def n_samples_(self):

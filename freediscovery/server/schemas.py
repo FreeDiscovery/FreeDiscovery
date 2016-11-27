@@ -51,7 +51,7 @@ class FeaturesSchema(FeaturesParsSchema):
     filenames = fields.List(fields.Str())
 
 class FeaturesElementIndexSchema(Schema):
-    indices = fields.List(fields.Int(), required=True)
+    index = fields.List(fields.Int(), required=True)
 
 class ClassificationScoresSchema(Schema):
     precision = fields.Number(required=True)

@@ -114,7 +114,7 @@ class FeaturesApiElementIndex(Resource):
     def get(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         idx = fe.search(args['filenames'])
-        return {'indices': list(idx)}
+        return {'index': list(idx)}
 
 # ============================================================================ # 
 #                  Categorization (LSI)
