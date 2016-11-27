@@ -141,8 +141,8 @@ class LSI(BaseEstimator):
         else:
             raise NotImplementedFD() 
 
+        index = np.asarray(index, dtype='int')
         y = np.asarray(y, dtype='int')
-        index = np.asarray(y, dtype='int')
 
         idx_p, idx_n = _unzip_relevant(index, y)
 
@@ -204,6 +204,18 @@ class LSI(BaseEstimator):
             raise NotImplementedFD('accumulate={} not supported!'.format(accumulate))
         Y_train = D[index]
         Y_test = D[:]
+
+        # transform nearest document from relative indexing
+        # (within the idx_p, idx_n) to absolute indexing
+        for key in res:
+            if key.startswith('idx'):
+                if key.endswith('_p'):
+                    idx_mapping = idx_p
+                elif key.endswith('_n'):
+                    idx_mapping = idx_n
+                else:
+                    raise ValueError
+                res[key] = idx_mapping[res[key]]
         return (lsi, Y_train, Y_test, res)
 
     def list_models(self):

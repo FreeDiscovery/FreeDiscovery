@@ -117,7 +117,7 @@ def test_api_lsi(app):
 
     filenames = data['filenames']
     # we train the model on 5 samples / 6 and see what happens
-    index_filenames = filenames[:1] + filenames[3:]
+    index_filenames = filenames[:2] + filenames[3:]
     y = [1, 1,  0, 0, 0]
 
     method = V01 + "/feature-extraction/{}/index".format(dsid)
@@ -330,8 +330,7 @@ def test_api_dupdetection(app, kind, options):
     res = app.get(url, data=options)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == \
-            sorted(['cluster_id'])
+    assert sorted(data.keys()) == sorted(['cluster_id'])
 
     res = app.delete(method)
     assert res.status_code == 200
@@ -375,16 +374,29 @@ def test_get_feature_extraction(app):
 
 def test_get_search_filenames(app):
     dsid, _ = features_hashed(app)
+
+
+    method = V01 + "/feature-extraction/{}".format(dsid)
+    res = app.get(method)
+    assert res.status_code == 200
+    data = parse_res(res)
+
+    filenames = data['filenames']
+
+
+
     method = V01 + "/feature-extraction/{}/index".format(dsid)
     for pars, indices in [
-            ( { 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
+            ({ 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
             ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:
 
         res = app.get(method, data=pars)
         assert res.status_code == 200
         data = parse_res(res)
         assert sorted(data.keys()) ==  sorted(['indices'])
-        assert_equal(sorted(data['indices']), indices)
+        print('filenames:', filenames)
+        print("data['indices']:", data['indices'])
+        assert_equal(data['indices'], indices)
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
@@ -397,8 +409,7 @@ def test_get_model_404(app_notest, method):
     assert res.status_code in [500, 404] # depends on the url
     #assert '500' in data['message']
 
-    assert sorted(data.keys()) == \
-                    sorted(['message'])
+    assert sorted(data.keys()) == sorted(['message'])
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
