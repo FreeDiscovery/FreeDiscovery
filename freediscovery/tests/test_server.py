@@ -15,6 +15,7 @@ from ..server import fd_app
 from ..utils import _silent
 from ..exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
+from numpy.testing import assert_equal
 
 V01 = '/api/v0'
 
@@ -192,10 +193,23 @@ def test_api_categorization(app, solver, cv):
     relevant_files = filenames[:3]
     non_relevant_files = filenames[3:]
 
+    method = V01 + "/feature-extraction/{}/get_indices".format(dsid)
+    res = app.get(method, data={'filenames': relevant_files})
+    assert res.status_code == 200, method
+    relevant_id = parse_res(res)['indices']
+    res = app.get(method, data={'filenames': non_relevant_files})
+    assert res.status_code == 200, method
+    non_relevant_id = parse_res(res)['indices']
+
+
+    print(relevant_id)
+    print(non_relevant_id)
+
+
     pars = {
           'dataset_id': dsid,
-          'non_relevant_filenames': non_relevant_files,
-          'relevant_filenames': relevant_files,
+          'non_relevant_id': non_relevant_id,
+          'relevant_id': relevant_id,
           'method': solver,
           'cv': cv}
 
@@ -306,7 +320,6 @@ def test_api_dupdetection(app, kind, options):
     url = V01 + "/duplicate-detection" 
     pars = { 'dataset_id': dsid,
              'method': kind}
-    print(pars)
     res = app.post(url, data=pars)
     assert res.status_code == 200
     data = parse_res(res)
@@ -358,6 +371,20 @@ def test_get_feature_extraction(app):
                  'analyzer', 'ngram_range', 'stop_words', 'use_idf',
                  'binary', 'sublinear_tf', 'use_hashing',
                  'max_df', 'min_df'])
+
+
+def test_get_search_filenames(app):
+    dsid, _ = features_hashed(app)
+    method = V01 + "/feature-extraction/{}/get_indices".format(dsid)
+    for pars, indices in [
+            ( { 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
+            ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:
+
+        res = app.get(method, data=pars)
+        assert res.status_code == 200
+        data = parse_res(res)
+        assert sorted(data.keys()) ==  sorted(['indices'])
+        assert_equal(sorted(data['indices']), indices)
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])

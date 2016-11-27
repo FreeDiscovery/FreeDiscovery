@@ -49,17 +49,42 @@ def test_feature_extraction(analyzer, stop_words, ngram_range, use_idf, sublinea
     assert_equal(filenames2, filenames)
     assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), "not an array {}".format(res2)
 
-    fe.search(['0.7.47.117435.txt'])
-    fe.search(['DOES_NOT_EXIST.txt'])
-    fe.list_datasets
     assert np.isfinite(res2.data).all()
+
+
+    fe.delete()
+
+@pytest.mark.parametrize('use_hashing,', [True, False])
+def test_search_filenames(use_hashing):
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+              use_hashing=use_hashing)  # TODO unused (overwritten on the next line)
+    uuid, filenames = fe.transform()
+
+    assert_equal(fe._pars['filenames'], filenames)
+
+
+
+    for low, high in [(0, 1),
+                      (0, 4),
+                      (1, 3)]:
+        idx_slice = list(range(low, high))
+        filenames_slice = [filenames[idx] for idx in idx_slice]
+        idx0 = fe.search(filenames_slice)
+        assert_equal(sorted(idx0), sorted(idx_slice))
+
+    idx1 = fe.search(['DOES_NOT_EXIST.txt'])
+    assert idx1 is None
 
     if not use_hashing:
         n_top_words = 5
         terms = fe.query_features([2, 3, 5], n_top_words=n_top_words)
         assert len(terms) == n_top_words
 
-    fe.delete()
+    fe.list_datasets
+
 
 @pytest.mark.parametrize('use_hashing, min_df, max_df', [[False, 0.1, 0.6],
                                                          [True,  0.1, 0.6]])

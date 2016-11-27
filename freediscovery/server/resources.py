@@ -18,7 +18,8 @@ from ..io import parse_ground_truth_file
 from ..utils import classification_score
 from ..cluster import Clustering
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema, DatasetSchema,
+                      FeaturesSchema, FeaturesElementIndexSchema,
+                      DatasetSchema,
                       LsiParsSchema, LsiPostSchema, LsiPredictSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
@@ -105,6 +106,20 @@ class FeaturesApiElement(Resource):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         fe.delete()
 
+_features_api_index_get_args = {'filenames': wfields.List(wfields.Str(), required=True)}
+class FeaturesApiElementIndex(Resource):
+    @use_args(_features_api_index_get_args)
+    @marshal_with(FeaturesElementIndexSchema())
+    def get(self, dsid, **args):
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        #out = []
+        #for filenames_slice in args['filenames']:
+        #idx = fe.search(filenames_slice)
+        idx = fe.search(args['filenames'])
+        return {'indices': list(idx)}
+        #    if idx is not None:
+        #        out.append(idx)
+        #return idx
 
 # ============================================================================ # 
 #                  Categorization (LSI)

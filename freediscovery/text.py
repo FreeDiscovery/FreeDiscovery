@@ -27,7 +27,7 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     from sklearn.feature_extraction.text import HashingVectorizer
     from sklearn.externals import joblib
 
-    filenames = pars['filenames']
+    filenames = pars['filenames_abs']
     chunk_size = pars['chunk_size']
     n_samples = pars['n_samples']
 
@@ -169,7 +169,7 @@ class FeatureVectorizer(object):
         pars = self._pars
         filenames_base = pars['filenames']
         data_dir = pars['data_dir']
-        pars['filenames'] = [os.path.join(data_dir, el) for el in filenames_base]
+        pars['filenames_abs'] = [os.path.join(data_dir, el) for el in filenames_base]
         chunk_size = pars['chunk_size']
         n_samples = pars['n_samples']
         n_jobs = pars['n_jobs']
@@ -206,7 +206,7 @@ class FeatureVectorizer(object):
                             max_features=pars['n_features'],
                             norm=pars['norm'],
                             decode_error='ignore', **opts_tfidf)
-                res = tfidf.fit_transform(pars['filenames'])
+                res = tfidf.fit_transform(pars['filenames_abs'])
                 joblib.dump(tfidf, os.path.join(dsid_dir, 'vectorizer'))
                 self.vect = tfidf
 
@@ -318,7 +318,21 @@ class FeatureVectorizer(object):
         return pars
 
     def search(self, filenames, error_not_found=False):
-        """ Return the document ids that correspond to the provided filenames """
+        """ Return the document ids that correspond to the provided filenames,
+        without preserving order.
+
+        Parameters
+        ----------
+        filenames : list[str]
+            list of filenames (relatives to the data_dir)
+        error_not_found : bool
+            raise an error if no 
+
+        Returns
+        -------
+        indices : array[int]
+            corresponding list of document id (order is not preserved)
+        """
         pars = self._pars
         filenames_all = pars['filenames']
         # calculate the indices of the intersection of filenames with filenames_all
