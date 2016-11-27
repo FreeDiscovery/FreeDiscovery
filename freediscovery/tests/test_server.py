@@ -15,6 +15,7 @@ from ..server import fd_app
 from ..utils import _silent
 from ..exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
+from numpy.testing import assert_equal
 
 V01 = '/api/v0'
 
@@ -115,8 +116,14 @@ def test_api_lsi(app):
     assert res.status_code == 200
 
     filenames = data['filenames']
-    relevant_files = filenames[:1]
-    non_relevant_files = filenames[1:]
+    # we train the model on 5 samples / 6 and see what happens
+    index_filenames = filenames[:2] + filenames[3:]
+    y = [1, 1,  0, 0, 0]
+
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
+    res = app.get(method, data={'filenames': index_filenames})
+    assert res.status_code == 200, method
+    index = parse_res(res)['index']
 
     lsi_pars = dict( n_components=101, dataset_id=dsid)
     method = V01 + "/lsi/"
@@ -144,11 +151,12 @@ def test_api_lsi(app):
     for key, vals in lsi_pars.items():
         assert vals == data[key]
 
+
     method = V01 + "/lsi/{}/predict".format(lid)
     res = app.post(method,
             data={
-              'relevant_filenames': relevant_files,
-              'non_relevant_filenames': non_relevant_files,
+              'index': index,
+              'y': y,
               })
 
     assert res.status_code == 200
@@ -161,8 +169,8 @@ def test_api_lsi(app):
     method = V01 + "/lsi/{}/test".format(lid)
     res = app.post(method,
             data={
-              'relevant_filenames': relevant_files,
-              'non_relevant_filenames': non_relevant_files,
+              'index': index,
+              'y': y,
               'ground_truth_filename': os.path.join(data_dir, '..', 'ground_truth_file.txt')
               })
 
@@ -189,13 +197,19 @@ def test_api_categorization(app, solver, cv):
 
     filenames = data['filenames']
     # we train the model on 5 samples / 6 and see what happens
-    relevant_files = filenames[:3]
-    non_relevant_files = filenames[3:]
+    index_filenames = filenames[:2] + filenames[3:]
+    y = [1, 1,  0, 0, 0]
+
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
+    res = app.get(method, data={'filenames': index_filenames})
+    assert res.status_code == 200, method
+    index = parse_res(res)['index']
+
 
     pars = {
           'dataset_id': dsid,
-          'non_relevant_filenames': non_relevant_files,
-          'relevant_filenames': relevant_files,
+          'index': index,
+          'y': y,
           'method': solver,
           'cv': cv}
 
@@ -216,11 +230,11 @@ def test_api_categorization(app, solver, cv):
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == \
-            sorted(["relevant_filenames", "non_relevant_filenames",
+            sorted(["index", "y",
                     "method", "options"])
 
-    for key in ["relevant_filenames", "non_relevant_filenames", "method"]:
-        if 'filenames' in key:
+    for key in ["index", "y", "method"]:
+        if key in ['index', 'y']:
             assert len(pars[key]) == len(data[key])
         else:
             assert pars[key] == data[key]
@@ -306,7 +320,6 @@ def test_api_dupdetection(app, kind, options):
     url = V01 + "/duplicate-detection" 
     pars = { 'dataset_id': dsid,
              'method': kind}
-    print(pars)
     res = app.post(url, data=pars)
     assert res.status_code == 200
     data = parse_res(res)
@@ -317,8 +330,7 @@ def test_api_dupdetection(app, kind, options):
     res = app.get(url, data=options)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == \
-            sorted(['cluster_id'])
+    assert sorted(data.keys()) == sorted(['cluster_id'])
 
     res = app.delete(method)
     assert res.status_code == 200
@@ -360,6 +372,21 @@ def test_get_feature_extraction(app):
                  'max_df', 'min_df'])
 
 
+def test_get_search_filenames(app):
+    dsid, _ = features_hashed(app)
+
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
+    for pars, indices in [
+            ({ 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
+            ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:
+
+        res = app.get(method, data=pars)
+        assert res.status_code == 200
+        data = parse_res(res)
+        assert sorted(data.keys()) ==  sorted(['index'])
+        assert_equal(data['index'], indices)
+
+
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
 def test_get_model_404(app_notest, method):
     method = V01 + "/{}/DOES_NOT_EXISTS".format(method)
@@ -370,8 +397,7 @@ def test_get_model_404(app_notest, method):
     assert res.status_code in [500, 404] # depends on the url
     #assert '500' in data['message']
 
-    assert sorted(data.keys()) == \
-                    sorted(['message'])
+    assert sorted(data.keys()) == sorted(['message'])
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
@@ -407,13 +433,12 @@ def test_exception_handling(app_notest):
         res = app_notest.post(method,
                         data={
                               'dataset_id': dsid,
-                              'non_relevant_filenames': [0, 0, 0],       # just something wrong
-                              'relevant_filenames': ['ds', 'dsd', 'dsd'],
+                              'index': [0, 0, 0],       # just something wrong
+                              'y': ['ds', 'dsd', 'dsd'],
                               'method': "LogisticRegression",
                               'cv': 0,
                               })
     data = parse_res(res)
-    assert res.status_code == 500
-    assert sorted(data.keys()) == \
-                    sorted(['message'])
+    assert res.status_code in [500, 422]
+    assert sorted(data.keys()) == ['messages']
     #assert 'ValueError' in data['message'] # check that the error message has the traceback

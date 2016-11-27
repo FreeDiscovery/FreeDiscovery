@@ -17,7 +17,8 @@ from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
-from .utils import (filter_rel_nrel, setup_model)
+from .categorization import _unzip_relevant
+from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
 
@@ -118,16 +119,16 @@ class LSI(BaseEstimator):
 
         return lsi, exp_var
 
-    def predict(self, relevant_filenames, non_relevant_filenames, accumulate='nearest-max', chunk_size=100):
+    def predict(self, index, y, accumulate='nearest-max', chunk_size=100):
         """
         Predict the document relevance using a previously trained LSI model
 
         Parameters
         ----------
-        relevant_filenames : list
-           a list of relevant documents filenames
-        non_relevant_filenames : list
-           a list of not relevant documents filenames
+        index : array-like, shape (n_samples)
+           document indices of the training set
+        y : array-like, shape (n_samples)
+           target binary class relative to index
         accumulate : str, optional, default='nearest-max'
            if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
            otherwise if `accumulate=="centroid-max"` the centroid of relevant documents is used as the query vector.
@@ -140,11 +141,14 @@ class LSI(BaseEstimator):
         else:
             raise NotImplementedFD() 
 
-        ds, idx_p, idx_n, d_p, d_n = filter_rel_nrel(self, relevant_filenames, non_relevant_filenames)
+        index = np.asarray(index, dtype='int')
+        y = np.asarray(y, dtype='int')
 
-        idx_train = np.concatenate((idx_p, idx_n), axis=0)
-        X_train = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))
-        Y_train_ref = np.concatenate((np.ones((d_p.shape[0])), np.zeros((d_n.shape[0]))), axis=0)
+        idx_p, idx_n = _unzip_relevant(index, y)
+
+        _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
+        d_p = ds[idx_p,:]
+        d_n = ds[idx_n,:]
 
         lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
 
@@ -180,7 +184,7 @@ class LSI(BaseEstimator):
         for key in res:
             res[key] = np.concatenate(res[key], axis=0)
 
-        X_test = np.asarray(self.fe._pars['filenames'])
+        
         D_rel = res['D_d_p']
         D_nrel = res['D_d_n']
         D_max = np.where(D_rel > D_nrel, D_rel, - D_nrel)
@@ -195,12 +199,24 @@ class LSI(BaseEstimator):
             D = res['D_centr_p']
         elif accumulate == 'stacking':
             from .private import lsi_stacking
-            D = lsi_stacking(res, Y_train_ref, idx_train)
+            D = lsi_stacking(res, y, index)
         else:
             raise NotImplementedFD('accumulate={} not supported!'.format(accumulate))
-        Y_train = D[idx_train]
+        Y_train = D[index]
         Y_test = D[:]
-        return lsi, X_train, Y_train_ref, Y_train, X_test, Y_test, res
+
+        # transform nearest document from relative indexing
+        # (within the idx_p, idx_n) to absolute indexing
+        for key in res:
+            if key.startswith('idx'):
+                if key.endswith('_p'):
+                    idx_mapping = idx_p
+                elif key.endswith('_n'):
+                    idx_mapping = idx_n
+                else:
+                    raise ValueError
+                res[key] = idx_mapping[res[key]]
+        return (lsi, Y_train, Y_test, res)
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')

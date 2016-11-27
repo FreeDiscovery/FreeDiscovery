@@ -16,8 +16,8 @@ class DatasetSchema(Schema):
     base_dir = fields.Str(required=True)
     data_dir = fields.Str(required=True)
     ground_truth_file = fields.Str()
-    seed_relevant_files = fields.List(fields.Str())
-    seed_non_relevant_files = fields.List(fields.Str())
+    seed_filenames = fields.List(fields.Str())
+    seed_y = fields.List(fields.Int())
 
 class IDSchema(Schema):
     id = fields.Str(required=True)
@@ -50,6 +50,8 @@ class FeaturesSchema(FeaturesParsSchema):
     id = fields.Str(required=True)
     filenames = fields.List(fields.Str())
 
+class FeaturesElementIndexSchema(Schema):
+    index = fields.List(fields.Int(), required=True)
 
 class ClassificationScoresSchema(Schema):
     precision = fields.Number(required=True)
@@ -86,8 +88,8 @@ class CategorizationPredictSchema(Schema):
 
 class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
-    relevant_filenames = fields.List(fields.Str(), required=True)
-    non_relevant_filenames = fields.List(fields.Str(), required=True)
+    index = fields.List(fields.Int(), required=True)
+    y = fields.List(fields.Int(), required=True)
     options = fields.Str(required=True)
 
 

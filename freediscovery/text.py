@@ -27,7 +27,7 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     from sklearn.feature_extraction.text import HashingVectorizer
     from sklearn.externals import joblib
 
-    filenames = pars['filenames']
+    filenames = pars['filenames_abs']
     chunk_size = pars['chunk_size']
     n_samples = pars['n_samples']
 
@@ -106,6 +106,9 @@ class FeatureVectorizer(object):
                     if re.match(file_pattern, fname):
                         filenames.append(os.path.normpath(os.path.join(root, fname)))
 
+        # make sure that sorting order is deterministic
+        filenames = sorted(filenames)
+
         if not filenames: # no files were found
             raise WrongParameter('No files to process were found!')
         if analyzer not in ['word', 'char', 'char_wb']:
@@ -169,7 +172,7 @@ class FeatureVectorizer(object):
         pars = self._pars
         filenames_base = pars['filenames']
         data_dir = pars['data_dir']
-        pars['filenames'] = [os.path.join(data_dir, el) for el in filenames_base]
+        pars['filenames_abs'] = [os.path.join(data_dir, el) for el in filenames_base]
         chunk_size = pars['chunk_size']
         n_samples = pars['n_samples']
         n_jobs = pars['n_jobs']
@@ -206,7 +209,7 @@ class FeatureVectorizer(object):
                             max_features=pars['n_features'],
                             norm=pars['norm'],
                             decode_error='ignore', **opts_tfidf)
-                res = tfidf.fit_transform(pars['filenames'])
+                res = tfidf.fit_transform(pars['filenames_abs'])
                 joblib.dump(tfidf, os.path.join(dsid_dir, 'vectorizer'))
                 self.vect = tfidf
 
@@ -261,6 +264,9 @@ class FeatureVectorizer(object):
         exist on disk (in general)"""
         dsid_dir = os.path.join(self.cache_dir, dsid)
         return os.path.exists(dsid_dir)
+
+    def __getitem__(self, index):
+        return np.asarray(self._pars['filenames'])[index]
 
     def list_datasets(self):
         """ List all datasets in the working directory """
@@ -318,17 +324,26 @@ class FeatureVectorizer(object):
         return pars
 
     def search(self, filenames):
-        """ Given a dsid return the features that correspond to the provided filenames """
-        pars = self._pars
-        filenames_all = pars['filenames']
+        """ Return the document ids that correspond to the provided filenames,
+        without preserving order.
+
+        Parameters
+        ----------
+        filenames : list[str]
+            list of filenames (relatives to the data_dir)
+
+        Returns
+        -------
+        indices : array[int]
+            corresponding list of document id (order is not preserved)
+        """
+        filenames_all = self._pars['filenames']
         # calculate the indices of the intersection of filenames with filenames_all
         ind_dict = dict((k,i) for i,k in enumerate(filenames_all))
-        inter =  set(ind_dict).intersection(filenames)
-        indices = np.asarray([ ind_dict[x] for x in inter])
-        if len(filenames) == len(indices):
-            return indices
-        elif len(indices) == 0:
-            return None  # np.zeros(len(filenames)).astype(bool)
-        elif len(filenames) != len(indices):
-            # this is not supposed to happen, we should do something
-            raise ValueError("unconsistant indices, the results may be wrong!")
+        indices = [ ind_dict[x] for x in filenames]
+        return np.array(indices)
+
+    @property
+    def n_samples_(self):
+        """ Number of documents in the dataset """
+        return len(self._pars['filenames'])

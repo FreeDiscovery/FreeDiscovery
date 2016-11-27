@@ -65,7 +65,6 @@ Tools
 
     freediscovery.base.BaseEstimator
     freediscovery.io.parse_ground_truth_file
-    freediscovery.utils.filter_rel_nrel
     freediscovery.utils.generate_uuid
     freediscovery.utils.setup_model
 

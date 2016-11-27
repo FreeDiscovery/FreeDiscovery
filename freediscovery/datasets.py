@@ -12,6 +12,8 @@ import shutil
 import hashlib
 import platform
 
+import numpy as np
+
 
 def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
                  force=False, verbose=True,
@@ -138,8 +140,9 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
             relevant_files = [el.replace('/', '\\') for el in relevant_files]
             non_relevant_files = [el.replace('/', '\\') for el in non_relevant_files]
 
-        results['seed_non_relevant_files'] = non_relevant_files
-        results['seed_relevant_files'] = relevant_files
+        results['seed_filenames'] = relevant_files + non_relevant_files 
+        results['seed_y'] = list(np.concatenate((np.ones(len(relevant_files)),
+                                            np.zeros(len(non_relevant_files)))).astype('int'))
         results['ground_truth_file'] = ground_truth_file
 
     return results

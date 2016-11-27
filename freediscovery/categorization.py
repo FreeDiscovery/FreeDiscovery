@@ -13,8 +13,25 @@ from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
-from .utils import filter_rel_nrel, setup_model, _rename_main_thread
+from .utils import setup_model, _rename_main_thread
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
+
+
+def _zip_relevant(relevant_id, non_relevant_id):
+    """ Take a list of relevant and non relevant documents id and return
+    an array of indices and prediction values """
+    idx_id = np.hstack((np.asarray(relevant_id), np.asarray(non_relevant_id)))
+    y = np.concatenate((np.ones((len(relevant_id))),
+                        np.zeros((len(non_relevant_id))))).astype(np.int)
+    return idx_id, y
+
+def _unzip_relevant(idx_id, y):
+    """ Take an array of indices and prediction values and return
+    a list of relevant and non relevant documents id
+    """
+    mask = np.asarray(y) > 0.5
+    idx_id = np.asarray(idx_id, dtype='int')
+    return idx_id[mask], idx_id[~mask]
 
 
 class Categorizer(BaseEstimator):
@@ -130,23 +147,26 @@ class Categorizer(BaseEstimator):
             raise WrongParameter('Method {} not implemented!'.format(method))
         return cmod
 
-    def train(self, relevant_filenames, non_relevant_filenames, method='LinearSVC', cv=None):
+    def train(self, index, y, method='LinearSVC', cv=None):
         """
         Train the categorization model
 
         Parameters
         ----------
-        relevant_filenames : list
-           a list of relevant documents filenames
-        non_relevant_filenames : list
-           a list of not relevant documents filenames
+        index : array-like, shape (n_samples)
+           document indices of the training set
+        y : array-like, shape (n_samples)
+           target binary class relative to index
         method : str
            the ML algorithm to use (one of "LogisticRegression", "LinearSVC", 'xgboost')
         cv : str
            use cross-validation
         Returns
         -------
-           a dictionary with the results
+        cmod : sklearn.BaseEstimator
+           the scikit learn classifier object
+        Y_train : array-like, shape (n_samples)
+           training predictions
         """
 
         valid_methods = ["LinearSVC", "LogisticRegression", "xgboost"]
@@ -165,11 +185,11 @@ class Categorizer(BaseEstimator):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        d_all, _, _, d_rel, d_nrel = filter_rel_nrel(self, relevant_filenames, non_relevant_filenames)
+        _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
 
-        X_train = scipy.sparse.vstack((d_rel, d_nrel))
-        X_train_str = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))
-        Y_train = np.concatenate((np.ones((d_rel.shape[0])), np.zeros((d_nrel.shape[0]))), axis=0).astype(np.int)
+        X_train = d_all[index, :]
+
+        Y_train = y
 
         if method != 'ensemble-stacking':
             cmod = self._build_estimator(Y_train, method, cv, self.cv_scoring, self.cv_n_folds)
@@ -199,8 +219,8 @@ class Categorizer(BaseEstimator):
 
         pars = {
             'method': method,
-            'relevant_filenames': relevant_filenames,
-            'non_relevant_filenames': non_relevant_filenames
+            'index': index,
+            'y': y
         }
         pars['options'] = cmod.get_params()
         self._pars = pars
@@ -208,7 +228,7 @@ class Categorizer(BaseEstimator):
 
         self.mid = mid
         self.cmod = cmod
-        return cmod, X_train_str, Y_train
+        return cmod, Y_train
 
     def predict(self, chunk_size=5000):
         """

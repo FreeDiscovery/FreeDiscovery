@@ -10,7 +10,7 @@ from numpy.testing import assert_allclose
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import LSI, TruncatedSVD_LSI
-from freediscovery.utils import classification_score
+from freediscovery.utils import categorization_score
 from freediscovery.io import parse_ground_truth_file
 from .run_suite import check_cache
 
@@ -37,20 +37,22 @@ def test_lsi():
     assert lsi._load_pars(lsi_id) is not None
     lsi.load(lsi_id)
 
-    mask = ground_truth.is_relevant.values == 1
+    idx_gt = lsi.fe.search(ground_truth.index.values)
+    idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
 
     for accumulate in ['nearest-max', 'centroid-max']:
                         #'nearest-diff', 'nearest-combine', 'stacking']:
-        _, X_train, Y_train_val, Y_train, X_pred, Y_pred, ND_train = lsi.predict(
-                                ground_truth.index.values[mask],
-                                ground_truth.index.values[~mask],
+        _, Y_train, Y_pred, ND_train = lsi.predict(
+                                idx_gt,
+                                ground_truth.is_relevant.values,
                                 accumulate=accumulate)
-        scores = classification_score(ground_truth.index.values,
+        scores = categorization_score(idx_gt,
                             ground_truth.is_relevant.values,
-                            X_pred, Y_pred)  # TODO unused variable
-        #yield assert_allclose, scores['precision_score'], 1
-        #yield assert_allclose, scores['recall_score'], 1
-        
+                            idx_all, Y_pred)
+        assert_allclose(scores['precision'], 1, rtol=0.5)
+        assert_allclose(scores['recall'], 1, rtol=0.3)
+
+
     lsi.list_models()
     lsi.delete()
 

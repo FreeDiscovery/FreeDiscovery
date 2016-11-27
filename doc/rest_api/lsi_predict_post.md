@@ -4,8 +4,8 @@
  * **URL**: `/api/v0/lsi/<lsi-id>/predict` 
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
-    - `relevant_filenames`: [required] list of relevant filenames
-    - `non_relevant_filenames`: [required] list of not relevant filenames
+    - `index`: [required] document indices of the training set
+    - `y`: [required] target binary class relative to index
                     
 
  * **Success Response**: `HTTP 200`

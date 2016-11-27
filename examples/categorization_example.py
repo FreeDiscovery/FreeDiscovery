@@ -28,8 +28,8 @@ if __name__ == '__main__':
 
     # To use a custom dataset, simply specify the following variables
     data_dir = res['data_dir']
-    relevant_files = res['seed_relevant_files']
-    non_relevant_files = res['seed_non_relevant_files']
+    seed_filenames = res['seed_filenames']
+    seed_y = res['seed_y']
     ground_truth_file = res['ground_truth_file']  # (optional)
 
 
@@ -86,19 +86,21 @@ if __name__ == '__main__':
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
 
+    method = BASE_URL + "/feature-extraction/{}/index".format(dsid)
+    res = requests.get(method, data={'filenames': seed_filenames})
+    seed_index = res.json()['index']
 
     # 2. Document categorization with ML algorithms
 
     print("\n2.a. Train the ML categorization model")
-    print("       {} relevant, {} non-relevant files".format(
-        len(relevant_files), len(non_relevant_files)))
+    print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
     url = BASE_URL + '/categorization/'
     print(" POST", url)
     print(' Training...')
 
     res = requests.post(url,
-                        json={'relevant_filenames': relevant_files,
-                              'non_relevant_filenames': non_relevant_files,
+                        json={'index': seed_index,
+                              'y': seed_y,
                               'dataset_id': dsid,
                               'method': 'LinearSVC',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                               'cv': 0                          # Cross Validation
@@ -114,7 +116,7 @@ if __name__ == '__main__':
     res = requests.get(url).json()
 
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                      if "filenames" not in key]))
+                                                      if key not in ['index', 'y']]))
 
     print("\n2.c Categorize the complete dataset with this model")
     url = BASE_URL + '/categorization/{}/predict'.format(mid)
@@ -157,8 +159,8 @@ if __name__ == '__main__':
     url = BASE_URL + '/lsi/{}/predict'.format(lid)
     print("POST", url)
     res = requests.post(url,
-                        json={'relevant_filenames': relevant_files,
-                              'non_relevant_filenames': non_relevant_files
+                        json={'index': seed_index,
+                              'y': seed_y
                               }).json()
     prediction = res['prediction']
 
@@ -171,10 +173,11 @@ if __name__ == '__main__':
     print(" POST", url)
 
     res = requests.post(url,
-                        json={'relevant_filenames': relevant_files,
-                              'non_relevant_filenames': non_relevant_files,
+                        json={'index': seed_index,
+                              'y': seed_y,
                               'ground_truth_filename': ground_truth_file
                               }).json()
+    print(res)
     print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
     print('\n', df)

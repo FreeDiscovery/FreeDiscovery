@@ -29,7 +29,7 @@ def _silent(stream='stderr'):
     setattr(sys, stream, stderr)
 
 
-def classification_score(X_ref, Y_ref, X, Y):
+def categorization_score(idx_ref, Y_ref, idx, Y):
     """ Calculate the efficiency scores """
     # This function should be deprecated
     # An equivalent functionally should be achieved with a
@@ -39,60 +39,47 @@ def classification_score(X_ref, Y_ref, X, Y):
             roc_auc_score, average_precision_score)
     threshold = 0.0
 
-    X_ref = np.asarray(X_ref)
-    X = np.asarray(X)
+    idx = np.asarray(idx, dtype='int')
+    idx_ref = np.asarray(idx_ref, dtype='int')
+    Y = np.asarray(Y)
+    Y_ref = np.asarray(Y_ref)
 
-    # this merge operation should not be necessary anymore once we move to the
-    # numeric indexing (issue #4)
-
-    d_pred = pd.DataFrame({'is_relevant_p': Y > threshold,
-                           'is_relevant_score': Y}, index=X)
-    d_ref = pd.DataFrame({'is_relevant': Y_ref}, index=X_ref)
-    d_out = pd.merge(d_ref, d_pred, how='inner', left_index=True, right_index=True)
-    if d_out.shape[0] == 0:
+    idx_out = np.intersect1d(idx_ref, idx)
+    if not len(idx_out):
         return {"recall_score": -1, "precision_score": -1, 'f1': -1, 'auc_roc': -1,
                 'average_precision': -1}
 
-    is_relevant = d_out.is_relevant.values
+    # sort values by index 
+    order_ref = idx_ref.argsort()
+    idx_ref = idx_ref[order_ref]
+    Y_ref = Y_ref[order_ref]
+
+    order = idx.argsort()
+    idx = idx[order]
+    Y = Y[order]
+
+    # find indices that are in both the reference and the test dataset
+    mask_ref = np.in1d(idx_ref, idx_out)
+    mask = np.in1d(idx, idx_out)
+
+    Y_ref = Y_ref[mask_ref]
+    Y = (Y > threshold)[mask]
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UndefinedMetricWarning)
 
-        m_recall_score = recall_score(is_relevant,
-                                      d_out.is_relevant_p.values)
-        m_precision_score = precision_score(d_out.is_relevant.values,
-                                            d_out.is_relevant_p.values)
-        m_f1_score = f1_score(is_relevant,
-                              d_out.is_relevant_p.values)
-    if len(np.unique(is_relevant)) == 2:
-        m_roc_auc = roc_auc_score(is_relevant,
-                                  d_out.is_relevant_score.values)
+        m_recall_score = recall_score(Y_ref, Y)
+        m_precision_score = precision_score(Y_ref, Y)
+        m_f1_score = f1_score(Y_ref, Y)
+    if len(np.unique(Y)) == 2:
+        m_roc_auc = roc_auc_score(Y_ref, Y)
     else:
         m_roc_auc = np.nan # ROC not defined in this case
-    m_average_precision = average_precision_score(
-                              is_relevant,
-                              d_out.is_relevant_score.values)
+    m_average_precision = average_precision_score(Y_ref, Y)
 
     return {"recall": m_recall_score, "precision": m_precision_score,
             "f1": m_f1_score, 'roc_auc': m_roc_auc,
             'average_precision': m_average_precision }
-
-
-def filter_rel_nrel(self, relevant_filenames, non_relevant_filenames):
-    """Load features corresponding to a list of relevant / non relevant filenames
-    """
-    filenames_all, fset_all = self.fe.load(self.dsid)  #, mmap_mode='r')
-    idx_rel = self.fe.search(relevant_filenames)
-    idx_nrel = self.fe.search(non_relevant_filenames)
-    if idx_rel is None:
-        raise ValueError('No relevant files found with the input provided: {} ...!'.format(relevant_filenames[:20]))
-    if idx_nrel is None:
-        raise ValueError('No not-relevant files found with the input provided!')
-    d_rel = fset_all[idx_rel,:]
-    #print(idx_rel)
-    #print(type(fset_all.shape))
-    d_nrel = fset_all[idx_nrel,:]
-    return fset_all, idx_rel, idx_nrel, d_rel, d_nrel
-
 
 def _rename_main_thread():
     """
