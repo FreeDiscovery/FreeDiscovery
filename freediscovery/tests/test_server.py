@@ -169,8 +169,8 @@ def test_api_lsi(app):
     method = V01 + "/lsi/{}/test".format(lid)
     res = app.post(method,
             data={
-              'relevant_id': relevant_id,
-              'non_relevant_id': non_relevant_id,
+              'index': index,
+              'y': y,
               'ground_truth_filename': os.path.join(data_dir, '..', 'ground_truth_file.txt')
               })
 
@@ -434,8 +434,8 @@ def test_exception_handling(app_notest):
         res = app_notest.post(method,
                         data={
                               'dataset_id': dsid,
-                              'non_relevant_id': [0, 0, 0],       # just something wrong
-                              'relevant_id': ['ds', 'dsd', 'dsd'],
+                              'index': [0, 0, 0],       # just something wrong
+                              'y': ['ds', 'dsd', 'dsd'],
                               'method': "LogisticRegression",
                               'cv': 0,
                               })

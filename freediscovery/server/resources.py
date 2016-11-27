@@ -165,11 +165,14 @@ class LsiApiElementPredict(Resource):
     @marshal_with(LsiPredictSchema())
     def post(self, mid, **args):
         lsi = LSI(self._cache_dir, mid=mid)
-        _, idx_train, Y_train, Y_train_res, idx_test, Y_test_res, res  = lsi.predict(
+        _, Y_train, Y_test, res  = lsi.predict(
                 accumulate='nearest-max', **args) 
 
-        res_scores = categorization_score(idx_train, Y_train, idx_train, Y_train_res)
-        res_scores.update({'prediction': Y_test_res.tolist(),
+        idx_train = args['index']
+        y = args['y']
+
+        res_scores = categorization_score(idx_train, y, idx_train, Y_train)
+        res_scores.update({'prediction': Y_test.tolist(),
                     'prediction_rel': res['D_d_p'].tolist(),
                     'prediction_nrel': res['D_d_n'].tolist(),
                     'nearest_rel_doc': res['idx_d_p'].tolist(),
@@ -193,13 +196,15 @@ class LsiApiElementTest(Resource):
         lsi = LSI(self._cache_dir, mid=mid)
         d_ref = parse_ground_truth_file(args["ground_truth_filename"])
         del args['ground_truth_filename']
-        lsi_m, idx_train, Y_train, Y_train_res, idx_test, Y_test_res, res  = lsi.predict(
+        lsi_m, Y_train, Y_test, res  = lsi.predict(
                 accumulate='nearest-max', **args) 
 
         idx_ref = lsi.fe.search(d_ref.index.values)
 
+        idx_test = np.arange(lsi.fe.n_samples_, dtype='int')
+
         res = categorization_score(idx_ref,
-                                   d_ref.is_relevant.values, idx_test, Y_test_res)
+                                   d_ref.is_relevant.values, idx_test, Y_test)
         return res
 
 
@@ -239,7 +244,8 @@ class ModelsApi(Resource):
         for key in ['dataset_id', 'cv', 'training_scores']:
             del args[key]
         cat = Categorizer(self._cache_dir, dsid=dsid)
-        _, idx_train, Y_train = cat.train(cv=cv, **args)
+        _, Y_train = cat.train(cv=cv, **args)
+        idx_train = args['index']
         if training_scores:
             Y_res = cat.predict()
             idx_res = np.arange(cat.fe.n_samples_, dtype='int')

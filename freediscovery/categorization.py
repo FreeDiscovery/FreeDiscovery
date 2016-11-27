@@ -163,7 +163,10 @@ class Categorizer(BaseEstimator):
            use cross-validation
         Returns
         -------
-           a dictionary with the results
+        cmod : sklearn.BaseEstimator
+           the scikit learn classifier object
+        Y_train : array-like, shape (n_samples)
+           training predictions
         """
 
         valid_methods = ["LinearSVC", "LogisticRegression", "xgboost"]
@@ -186,7 +189,6 @@ class Categorizer(BaseEstimator):
 
         X_train = d_all[index, :]
 
-        X_train_id = index
         Y_train = y
 
         if method != 'ensemble-stacking':
@@ -226,7 +228,7 @@ class Categorizer(BaseEstimator):
 
         self.mid = mid
         self.cmod = cmod
-        return cmod, X_train_id, Y_train
+        return cmod, Y_train
 
     def predict(self, chunk_size=5000):
         """

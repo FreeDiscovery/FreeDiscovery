@@ -6,8 +6,8 @@ The option `use_hashing=True` must be set for the feature extraction. Recommende
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
     - `dataset_id`: dataset id
-    - `relevant_filenames`: [required] list of relevant filenames
-    - `non_relevant_filenames`: [required] list of not relevant filenames
+    - `index`: [required] document indices of the training set
+    - `y`: [required] target binary class relative to index
     - `method`: classification algorithm to use (default: LogisticRegression),
           * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
           * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),

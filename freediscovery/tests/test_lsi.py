@@ -44,7 +44,7 @@ def test_lsi():
 
     for accumulate in ['nearest-max', 'centroid-max']:
                         #'nearest-diff', 'nearest-combine', 'stacking']:
-        _, X_train, Y_train_val, Y_train, X_pred, Y_pred, ND_train = lsi.predict(
+        _, Y_train, Y_pred, ND_train = lsi.predict(
                                 index,
                                 ground_truth.is_relevant.values,
                                 accumulate=accumulate)

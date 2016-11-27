@@ -150,9 +150,6 @@ class LSI(BaseEstimator):
         d_p = ds[idx_p,:]
         d_n = ds[idx_n,:]
 
-        idx_train = np.concatenate((idx_p, idx_n), axis=0)
-        Y_train_ref = np.concatenate((np.ones((d_p.shape[0])), np.zeros((d_n.shape[0]))), axis=0)
-
         lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
 
         d_p_p = lsi.transform_lsi_norm(d_p)
@@ -187,7 +184,7 @@ class LSI(BaseEstimator):
         for key in res:
             res[key] = np.concatenate(res[key], axis=0)
 
-        idx_test = np.arange(self.fe.n_samples_, dtype='int')
+        
         D_rel = res['D_d_p']
         D_nrel = res['D_d_n']
         D_max = np.where(D_rel > D_nrel, D_rel, - D_nrel)
@@ -202,13 +199,12 @@ class LSI(BaseEstimator):
             D = res['D_centr_p']
         elif accumulate == 'stacking':
             from .private import lsi_stacking
-            D = lsi_stacking(res, Y_train_ref, idx_train)
+            D = lsi_stacking(res, y, index)
         else:
             raise NotImplementedFD('accumulate={} not supported!'.format(accumulate))
-        Y_train = D[idx_train]
+        Y_train = D[index]
         Y_test = D[:]
-        return (lsi, idx_train, Y_train_ref, Y_train,
-               idx_test, Y_test, res)
+        return (lsi, Y_train, Y_test, res)
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')

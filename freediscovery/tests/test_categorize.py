@@ -60,7 +60,7 @@ def test_categorization(method, cv):
     index = cat.fe.search(ground_truth.index.values)
 
     try:
-        coefs, X_train, Y_train = cat.train(
+        coefs, Y_train = cat.train(
                                 index,
                                 ground_truth.is_relevant.values,
                                 method=method,
