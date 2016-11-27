@@ -160,8 +160,8 @@ class LsiApiElement(Resource):
 _lsi_api_element_predict_post_args = {
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'relevant_filenames': wfields.List(wfields.Str(), required=True),
-        'non_relevant_filenames': wfields.List(wfields.Str(), required=True),
+        'relevant_id': wfields.List(wfields.Int(), required=True),
+        'non_relevant_id': wfields.List(wfields.Int(), required=True),
         }
 
 
@@ -212,8 +212,8 @@ _models_api_post_args = {
         'dataset_id': wfields.Str(required=True),
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'relevant_filenames': wfields.List(wfields.Str(), required=True),
-        'non_relevant_filenames': wfields.List(wfields.Str(), required=True),
+        'relevant_id': wfields.List(wfields.Int(), required=True),
+        'non_relevant_id': wfields.List(wfields.Int(), required=True),
         'method': wfields.Str(required=True),
         'cv': wfields.Boolean(missing=True),
         'training_scores': wfields.Boolean(missing=True)

@@ -145,11 +145,19 @@ def test_api_lsi(app):
     for key, vals in lsi_pars.items():
         assert vals == data[key]
 
+    method = V01 + "/feature-extraction/{}/get_indices".format(dsid)
+    res = app.get(method, data={'filenames': relevant_files})
+    assert res.status_code == 200, method
+    relevant_id = parse_res(res)['indices']
+    res = app.get(method, data={'filenames': non_relevant_files})
+    assert res.status_code == 200, method
+    non_relevant_id = parse_res(res)['indices']
+
     method = V01 + "/lsi/{}/predict".format(lid)
     res = app.post(method,
             data={
-              'relevant_filenames': relevant_files,
-              'non_relevant_filenames': non_relevant_files,
+              'relevant_id': relevant_id,
+              'non_relevant_id': non_relevant_id,
               })
 
     assert res.status_code == 200
@@ -200,10 +208,6 @@ def test_api_categorization(app, solver, cv):
     res = app.get(method, data={'filenames': non_relevant_files})
     assert res.status_code == 200, method
     non_relevant_id = parse_res(res)['indices']
-
-
-    print(relevant_id)
-    print(non_relevant_id)
 
 
     pars = {
@@ -434,13 +438,12 @@ def test_exception_handling(app_notest):
         res = app_notest.post(method,
                         data={
                               'dataset_id': dsid,
-                              'non_relevant_filenames': [0, 0, 0],       # just something wrong
-                              'relevant_filenames': ['ds', 'dsd', 'dsd'],
+                              'non_relevant_id': [0, 0, 0],       # just something wrong
+                              'relevant_id': ['ds', 'dsd', 'dsd'],
                               'method': "LogisticRegression",
                               'cv': 0,
                               })
     data = parse_res(res)
-    assert res.status_code == 500
-    assert sorted(data.keys()) == \
-                    sorted(['message'])
+    assert res.status_code in [500, 422]
+    assert sorted(data.keys()) == ['messages']
     #assert 'ValueError' in data['message'] # check that the error message has the traceback

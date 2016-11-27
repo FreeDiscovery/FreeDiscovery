@@ -17,7 +17,7 @@ import itertools
 from freediscovery.text import FeatureVectorizer
 from freediscovery.categorization import Categorizer
 from freediscovery.io import parse_ground_truth_file
-from freediscovery.utils import classification_score
+from freediscovery.utils import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
 
@@ -72,7 +72,7 @@ def test_categorization(method, cv):
     Y_pred = cat.predict()
     X_pred = cat.fe._pars['filenames']
 
-    scores = classification_score(ground_truth.index.values,
+    scores = categorization_score(ground_truth.index.values,
                         ground_truth.is_relevant.values,
                         X_pred, Y_pred)
 
@@ -92,11 +92,30 @@ def test_unique_label():
     np.random.seed(10)
     Nshape = ground_truth.index.values.shape
     is_relevant = np.zeros(Nshape).astype(int)
-    scores = classification_score(ground_truth.index.values,
+    scores = categorization_score(ground_truth.index.values,
                         is_relevant,
                         ground_truth.index.values,
                         np.random.rand(*Nshape))
     # TODO unused variable 'scores'
+
+
+def test_categorization_score():
+    idx = [1, 2,  3,  4,  5, 6]
+    y   = [1, 1, -1, -1, -1, 1]
+    idx_ref = [10, 5, 3, 2, 6]
+    y_ref   = [0,  1, 0, 1, 1]
+
+    scores = categorization_score(idx_ref, y_ref, idx, y)
+
+    assert_allclose(scores['precision'], 1.0)
+    assert_allclose(scores['recall'], 0.66666666, rtol=1e-4)
+
+    # make sure permutations don't affect the result
+    idx_ref2 = [10, 5, 2, 3, 6]
+    y_ref2   = [0,  1, 1, 0, 1]
+    scores2 = categorization_score(idx_ref2, y_ref2, idx, y)
+    assert scores['average_precision'] == scores2['average_precision']
+
 
 
 def test_ensemble_stacking():
