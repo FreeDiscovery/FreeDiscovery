@@ -88,8 +88,8 @@ class CategorizationPredictSchema(Schema):
 
 class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
-    relevant_filenames = fields.List(fields.Str(), required=True)
-    non_relevant_filenames = fields.List(fields.Str(), required=True)
+    relevant_id = fields.List(fields.Int(), required=True)
+    non_relevant_id = fields.List(fields.Int(), required=True)
     options = fields.Str(required=True)
 
 

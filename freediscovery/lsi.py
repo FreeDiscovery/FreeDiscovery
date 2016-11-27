@@ -185,7 +185,7 @@ class LSI(BaseEstimator):
         for key in res:
             res[key] = np.concatenate(res[key], axis=0)
 
-        X_test = np.asarray(self.fe._pars['filenames'])
+        idx_test = np.arange(self.fe.n_samples_, dtype='int')
         D_rel = res['D_d_p']
         D_nrel = res['D_d_n']
         D_max = np.where(D_rel > D_nrel, D_rel, - D_nrel)
@@ -206,7 +206,7 @@ class LSI(BaseEstimator):
         Y_train = D[idx_train]
         Y_test = D[:]
         return (lsi, idx_train, Y_train_ref, Y_train,
-               np.arange(len(self.fe._pars['filenames'])), Y_test, res)
+               idx_test, Y_test, res)
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')

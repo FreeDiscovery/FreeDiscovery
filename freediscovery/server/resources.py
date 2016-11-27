@@ -10,12 +10,13 @@ from glob import glob
 from flask_restful import abort, Resource
 from webargs import fields as wfields
 from flask_apispec import marshal_with, use_kwargs as use_args
+import numpy as np
 
 from ..text import FeatureVectorizer
 from ..lsi import LSI
 from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
-from ..utils import classification_score
+from ..utils import categorization_score
 from ..cluster import Clustering
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
@@ -170,9 +171,10 @@ class LsiApiElementPredict(Resource):
     @marshal_with(LsiPredictSchema())
     def post(self, mid, **args):
         lsi = LSI(self._cache_dir, mid=mid)
-        _, X_train, Y_train, Y_train_res, X_test, Y_test_res, res  = lsi.predict(
+        _, idx_train, Y_train, Y_train_res, idx_test, Y_test_res, res  = lsi.predict(
                 accumulate='nearest-max', **args) 
-        res_scores = classification_score(X_train, Y_train, X_train, Y_train_res)
+
+        res_scores = categorization_score(idx_train, Y_train, idx_train, Y_train_res)
         res_scores.update({'prediction': Y_test_res.tolist(),
                     'prediction_rel': res['D_d_p'].tolist(),
                     'prediction_nrel': res['D_d_n'].tolist(),
@@ -184,8 +186,8 @@ class LsiApiElementPredict(Resource):
 _lsi_api_element_test_post_args = {
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'relevant_filenames': wfields.List(wfields.Str(), required=True),
-        'non_relevant_filenames': wfields.List(wfields.Str(), required=True),
+        'relevant_id': wfields.List(wfields.Int(), required=True),
+        'non_relevant_id': wfields.List(wfields.Int(), required=True),
         'ground_truth_filename': wfields.Str(required=True)
         }
 
@@ -197,10 +199,13 @@ class LsiApiElementTest(Resource):
         lsi = LSI(self._cache_dir, mid=mid)
         d_ref = parse_ground_truth_file(args["ground_truth_filename"])
         del args['ground_truth_filename']
-        lsi_m, X_train, Y_train, Y_train_res, X_test, Y_test_res, res  = lsi.predict(
+        lsi_m, idx_train, Y_train, Y_train_res, idx_test, Y_test_res, res  = lsi.predict(
                 accumulate='nearest-max', **args) 
-        res = classification_score(d_ref.index.values,
-                                   d_ref.is_relevant.values, X_test, Y_test_res)
+
+        idx_ref = lsi.fe.search(d_ref.index.values)
+
+        res = categorization_score(idx_ref,
+                                   d_ref.is_relevant.values, idx_test, Y_test_res)
         return res
 
 
@@ -240,11 +245,11 @@ class ModelsApi(Resource):
         for key in ['dataset_id', 'cv', 'training_scores']:
             del args[key]
         cat = Categorizer(self._cache_dir, dsid=dsid)
-        _, X_train, Y_train = cat.train(cv=cv, **args)
+        _, idx_train, Y_train = cat.train(cv=cv, **args)
         if training_scores:
             Y_res = cat.predict()
-            X_res = cat.fe._pars['filenames']
-            res = classification_score(X_train, Y_train, X_res, Y_res)
+            idx_res = np.arange(cat.fe.n_samples_, dtype='int')
+            res = categorization_score(idx_train, Y_train, idx_res, Y_res)
         else:
             res = {"recall": -1, "precision": -1 , "f1": -1, 
                 'auc_roc': -1, 'average_precision': -1}
@@ -287,9 +292,11 @@ class ModelsApiTest(Resource):
 
         y_res = cat.predict()
         d_ref = parse_ground_truth_file( args["ground_truth_filename"])
-        res = classification_score(d_ref.index.values,
+        idx_ref = cat.fe.search(d_ref.index.values)
+        idx_res = np.arange(cat.fe.n_samples_, dtype='int')
+        res = categorization_score(idx_ref,
                                    d_ref.is_relevant.values,
-                                   cat.fe._pars['filenames'], y_res)
+                                   idx_res, y_res)
         return res
 
 

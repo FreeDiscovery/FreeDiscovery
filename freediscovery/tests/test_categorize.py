@@ -71,9 +71,10 @@ def test_categorization(method, cv):
 
 
     Y_pred = cat.predict()
-    X_pred = cat.fe._pars['filenames']
+    X_pred = np.arange(cat.fe.n_samples_, dtype='int')
+    idx_gt = cat.fe.search(ground_truth.index.values)
 
-    scores = categorization_score(ground_truth.index.values,
+    scores = categorization_score(idx_gt,
                         ground_truth.is_relevant.values,
                         X_pred, Y_pred)
 
@@ -93,9 +94,12 @@ def test_unique_label():
     np.random.seed(10)
     Nshape = ground_truth.index.values.shape
     is_relevant = np.zeros(Nshape).astype(int)
-    scores = categorization_score(ground_truth.index.values,
+
+    idx = np.arange(len(is_relevant), dtype='int')
+
+    scores = categorization_score(idx,
                         is_relevant,
-                        ground_truth.index.values,
+                        idx,
                         np.random.rand(*Nshape))
     # TODO unused variable 'scores'
 

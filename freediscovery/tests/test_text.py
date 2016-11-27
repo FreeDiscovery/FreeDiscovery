@@ -75,8 +75,8 @@ def test_search_filenames(use_hashing):
         idx0 = fe.search(filenames_slice)
         assert_equal(idx0, idx_slice)
 
-    idx1 = fe.search(['DOES_NOT_EXIST.txt'])
-    assert idx1 is None
+    with pytest.raises(ValueError):
+        fe.search(['DOES_NOT_EXIST.txt'])
 
     if not use_hashing:
         n_top_words = 5

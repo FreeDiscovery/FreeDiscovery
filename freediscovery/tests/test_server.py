@@ -170,8 +170,8 @@ def test_api_lsi(app):
     method = V01 + "/lsi/{}/test".format(lid)
     res = app.post(method,
             data={
-              'relevant_filenames': relevant_files,
-              'non_relevant_filenames': non_relevant_files,
+              'relevant_id': relevant_id,
+              'non_relevant_id': non_relevant_id,
               'ground_truth_filename': os.path.join(data_dir, '..', 'ground_truth_file.txt')
               })
 
@@ -234,10 +234,10 @@ def test_api_categorization(app, solver, cv):
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == \
-            sorted(["relevant_filenames", "non_relevant_filenames",
+            sorted(["relevant_id", "non_relevant_id",
                     "method", "options"])
 
-    for key in ["relevant_filenames", "non_relevant_filenames", "method"]:
+    for key in ["relevant_id", "non_relevant_id", "method"]:
         if 'filenames' in key:
             assert len(pars[key]) == len(data[key])
         else:

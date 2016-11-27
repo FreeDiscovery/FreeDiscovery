@@ -42,18 +42,22 @@ def test_lsi():
     idx_rel = lsi.fe.search(ground_truth.index.values[mask])
     idx_nrel = lsi.fe.search(ground_truth.index.values[~mask])
 
+    idx_gt = lsi.fe.search(ground_truth.index.values)
+    idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
+
     for accumulate in ['nearest-max', 'centroid-max']:
                         #'nearest-diff', 'nearest-combine', 'stacking']:
         _, X_train, Y_train_val, Y_train, X_pred, Y_pred, ND_train = lsi.predict(
                                 idx_rel,
                                 idx_nrel,
                                 accumulate=accumulate)
-        scores = categorization_score(ground_truth.index.values,
+        scores = categorization_score(idx_gt,
                             ground_truth.is_relevant.values,
-                            X_pred, Y_pred)  # TODO unused variable
-        #yield assert_allclose, scores['precision_score'], 1
-        #yield assert_allclose, scores['recall_score'], 1
-        
+                            idx_all, Y_pred)
+        assert_allclose(scores['precision'], 1, rtol=0.5)
+        assert_allclose(scores['recall'], 1, rtol=0.3)
+
+
     lsi.list_models()
     lsi.delete()
 
