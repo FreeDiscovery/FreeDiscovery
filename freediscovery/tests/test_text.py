@@ -73,7 +73,7 @@ def test_search_filenames(use_hashing):
         idx_slice = list(range(low, high))
         filenames_slice = [filenames[idx] for idx in idx_slice]
         idx0 = fe.search(filenames_slice)
-        assert_equal(sorted(idx0), sorted(idx_slice))
+        assert_equal(idx0, idx_slice)
 
     idx1 = fe.search(['DOES_NOT_EXIST.txt'])
     assert idx1 is None

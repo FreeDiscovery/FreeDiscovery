@@ -326,26 +326,22 @@ class FeatureVectorizer(object):
         filenames : list[str]
             list of filenames (relatives to the data_dir)
         error_not_found : bool
-            raise an error if no 
+            raise an error if no files found
 
         Returns
         -------
         indices : array[int]
             corresponding list of document id (order is not preserved)
         """
-        pars = self._pars
-        filenames_all = pars['filenames']
+        filenames = np.array(filenames)
+        filenames_all = np.array(self._pars['filenames'])
         # calculate the indices of the intersection of filenames with filenames_all
-        ind_dict = dict((k,i) for i,k in enumerate(filenames_all))
-        inter =  set(ind_dict).intersection(filenames)
-        indices = np.asarray([ ind_dict[x] for x in inter])
-        if len(filenames) == len(indices):
-            return indices
-        elif len(indices) == 0:
+        mask = np.in1d(filenames_all, filenames)
+        indices = np.nonzero(mask)[0]
+        if len(indices) == 0:
             if error_not_found:
                 raise ValueError('No relevant files found with the input provided: {} ...!'.format(filenames[:20]))
             else:
                 return None  # np.zeros(len(filenames)).astype(bool)
-        elif len(filenames) != len(indices):
-            # this is not supposed to happen, we should do something
-            raise ValueError("unconsistant indices, the results may be wrong!")
+        else:
+            return indices
