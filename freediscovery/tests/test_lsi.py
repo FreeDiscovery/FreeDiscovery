@@ -10,7 +10,7 @@ from numpy.testing import assert_allclose
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import LSI, TruncatedSVD_LSI
-from freediscovery.utils import classification_score
+from freediscovery.utils import categorization_score
 from freediscovery.io import parse_ground_truth_file
 from .run_suite import check_cache
 
@@ -48,7 +48,7 @@ def test_lsi():
                                 idx_rel,
                                 idx_nrel,
                                 accumulate=accumulate)
-        scores = classification_score(ground_truth.index.values,
+        scores = categorization_score(ground_truth.index.values,
                             ground_truth.is_relevant.values,
                             X_pred, Y_pred)  # TODO unused variable
         #yield assert_allclose, scores['precision_score'], 1

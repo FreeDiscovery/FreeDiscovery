@@ -17,6 +17,7 @@ from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
+from .categorization import _zip_relevant
 from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
@@ -204,7 +205,8 @@ class LSI(BaseEstimator):
             raise NotImplementedFD('accumulate={} not supported!'.format(accumulate))
         Y_train = D[idx_train]
         Y_test = D[:]
-        return lsi, None, Y_train_ref, Y_train, X_test, Y_test, res
+        return (lsi, idx_train, Y_train_ref, Y_train,
+               np.arange(len(self.fe._pars['filenames'])), Y_test, res)
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')

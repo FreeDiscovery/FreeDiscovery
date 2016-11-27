@@ -39,8 +39,8 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
             roc_auc_score, average_precision_score)
     threshold = 0.0
 
-    idx = np.asarray(idx)
-    idx_ref = np.asarray(idx_ref)
+    idx = np.asarray(idx, dtype='int')
+    idx_ref = np.asarray(idx_ref, dtype='int')
     Y = np.asarray(Y)
     Y_ref = np.asarray(Y_ref)
 

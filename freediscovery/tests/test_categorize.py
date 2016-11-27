@@ -15,7 +15,8 @@ import pytest
 import itertools
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.categorization import Categorizer
+from freediscovery.categorization import (Categorizer, _zip_relevant,
+        _unzip_relevant)
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
@@ -116,6 +117,19 @@ def test_categorization_score():
     scores2 = categorization_score(idx_ref2, y_ref2, idx, y)
     assert scores['average_precision'] == scores2['average_precision']
 
+def test_relevant_zip():
+    relevant_id = [2, 3, 5]
+    non_relevant_id = [1, 7, 10]
+    idx_id = [2, 3, 5, 1, 7, 10]
+    y = [1, 1, 1, 0, 0, 0]
+
+    idx_id2, y2 = _zip_relevant(relevant_id, non_relevant_id)
+    assert_equal(idx_id, idx_id2)
+    assert_equal(y, y2)
+
+    relevant_id2, non_relevant_id2 = _unzip_relevant(idx_id2, y2)
+    assert_equal(relevant_id2, relevant_id)
+    assert_equal(non_relevant_id2, non_relevant_id)
 
 
 def test_ensemble_stacking():

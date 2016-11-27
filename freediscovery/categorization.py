@@ -17,6 +17,23 @@ from .utils import setup_model, _rename_main_thread
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
 
+def _zip_relevant(relevant_id, non_relevant_id):
+    """ Take a list of relevant and non relevant documents id and return
+    an array of indices and prediction values """
+    idx_id = np.hstack((np.asarray(relevant_id), np.asarray(non_relevant_id)))
+    y = np.concatenate((np.ones((len(relevant_id))),
+                        np.zeros((len(non_relevant_id))))).astype(np.int)
+    return idx_id, y
+
+def _unzip_relevant(idx_id, y):
+    """ Take an array of indices and prediction values and return
+    a list of relevant and non relevant documents id
+    """
+    mask = np.asarray(y) > 0.5
+    idx_id = np.asarray(idx_id, dtype='int')
+    return idx_id[mask], idx_id[~mask]
+
+
 class Categorizer(BaseEstimator):
     """ Document categorization model
 
@@ -170,8 +187,8 @@ class Categorizer(BaseEstimator):
         d_nrel = d_all[non_relevant_id,:]
 
         X_train = scipy.sparse.vstack((d_rel, d_nrel))
-        #X_train_str = np.hstack((np.asarray(relevant_filenames), np.asarray(non_relevant_filenames)))
-        Y_train = np.concatenate((np.ones((d_rel.shape[0])), np.zeros((d_nrel.shape[0]))), axis=0).astype(np.int)
+
+        X_train_id, Y_train = _zip_relevant(relevant_id, non_relevant_id)
 
         if method != 'ensemble-stacking':
             cmod = self._build_estimator(Y_train, method, cv, self.cv_scoring, self.cv_n_folds)
@@ -210,7 +227,7 @@ class Categorizer(BaseEstimator):
 
         self.mid = mid
         self.cmod = cmod
-        return cmod, None, Y_train
+        return cmod, X_train_id, Y_train
 
     def predict(self, chunk_size=5000):
         """
