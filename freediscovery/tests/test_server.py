@@ -197,8 +197,8 @@ def test_api_categorization(app, solver, cv):
 
     filenames = data['filenames']
     # we train the model on 5 samples / 6 and see what happens
-    index_filenames = filenames[:2] + filenames[3:]
-    y = [1, 1,  0, 0, 0]
+    index_filenames = filenames[:3] + filenames[3:]
+    y = [1, 1, 1,  0, 0, 0]
 
     method = V01 + "/feature-extraction/{}/index".format(dsid)
     res = app.get(method, data={'filenames': index_filenames})
