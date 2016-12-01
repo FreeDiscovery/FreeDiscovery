@@ -354,9 +354,7 @@ def test_get_feature_extraction_all(app):
                  sorted(['analyzer', 'ngram_range', 'stop_words',
                      'n_jobs', 'chunk_size', 'norm',
                      'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
-                     'binary', 'sublinear_tf', 'use_hashing',
-                     'max_df', 'min_df'])
-
+                     'binary', 'sublinear_tf', 'use_hashing'])
 
 def test_get_feature_extraction(app):
     dsid, _ = features_hashed(app)

@@ -274,15 +274,16 @@ class FeatureVectorizer(object):
         for dsid in os.listdir(self.cache_dir):
             try:
                 row = {"id": dsid}
-                pars = self.load_pars(dsid)
+                self.dsid = dsid
+                pars = self._load_pars()
                 for key in ['data_dir', 'n_samples', 'n_features',
                                     'n_jobs', 'chunk_size', 'norm',
                                     'analyzer', 'ngram_range', 'stop_words',
                                     'use_idf', 'sublinear_tf', 'binary', 'use_hashing']:
                     row[key] = pars[key]
                 out.append(row)
-            except:
-                pass
+            except Exception as err:
+                print("Error while loading parameters:\t", str(err))
         return out
 
     def _aggregate_features(self):

@@ -23,7 +23,7 @@ BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
 print(" 0. Load the test dataset")
 url = BASE_URL + '/datasets/{}'.format(dataset_name)
-print(" POST", url)
+print(" GET", url)
 res = requests.get(url)
 res = res.json()
 
@@ -65,7 +65,6 @@ print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
 
 
 # # 2. Near Duplicates detection by cosine similarity (DBSCAN)
-
 print("\n2. Near Duplicates detection by cosine similarity (DBSCAN)")
 
 url = BASE_URL + '/clustering/dbscan/'
@@ -82,7 +81,7 @@ mid  = res['id']
 print("     => model id = {}".format(mid))
 
 url = BASE_URL + '/clustering/dbscan/{}'.format(mid)
-print(" POST", url)
+print(" GET", url)
 res = requests.get(url,
         json={'n_top_words': 0, # don't compute cluster labels
               }).json()
@@ -94,6 +93,8 @@ labels_ = res['labels']
 
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
+
+# # 3. Near Duplicates detection by cosine similarity (DBSCAN)
 print("\n3. Near Duplicates Detection using I-Match")
 
 url = BASE_URL + '/duplicate-detection/'
@@ -112,7 +113,7 @@ print('    .. computed in {:.1f}s'.format(time() - t0))
 
 
 url = BASE_URL + '/duplicate-detection/{}'.format(mid)
-print("GET", url)
+print(" GET", url)
 t0 = time()
 res = requests.get(url,
         json={'n_rand_lexicons': 10,
@@ -123,6 +124,14 @@ print('    .. computed in {:.1f}s'.format(time() - t0))
 labels_ = res['cluster_id']
 
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+
+
+# 4. Cleaning
+print("\n4.a Delete the extracted features")
+url = BASE_URL + '/feature-extraction/{}'.format(dsid)
+print(" DELETE", url)
+requests.delete(url)
+
 
 
 # Commenting out simhash for the moment
