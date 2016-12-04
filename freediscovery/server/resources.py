@@ -11,6 +11,7 @@ from flask_restful import abort, Resource
 from webargs import fields as wfields
 from flask_apispec import marshal_with, use_kwargs as use_args
 import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 
 from ..text import FeatureVectorizer
 from ..lsi import LSI
@@ -25,7 +26,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
-                      ErrorSchema, DuplicateDetectionSchema
+                      ErrorSchema, DuplicateDetectionSchema,
+                      MetricsCategorizationSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -481,3 +483,33 @@ class DupDetectionApiElement(Resource):
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
         model.delete()
+
+
+
+# ============================================================================ #
+#                             Metrics                                          #
+# ============================================================================ #
+_metrics_categorization_api_get_args  = {
+    'y_true': wfields.List(wfields.Int(), required=True),
+    'y_pred': wfields.List(wfields.Int(), required=True),
+    'metrics': wfields.List(wfields.Str(), required=True)
+}
+
+class MetricsCategorizationApiElement(Resource):
+    @use_args(_metrics_categorization_api_get_args)
+    @marshal_with(MetricsCategorizationSchema())
+    def get(self, **args):
+        output_metrics = dict()
+        y_true = args['y_true']
+        y_pred = args['y_pred']
+        metrics = args['metrics']
+        if 'precision' in metrics:
+            output_metrics['precision'] = precision_score(y_true, y_pred)
+        if 'recall' in metrics:
+            output_metrics['recall'] = recall_score(y_true, y_pred)
+        if 'f1' in metrics:
+            output_metrics['f1'] = f1_score(y_true, y_pred)
+        if 'roc_auc' in metrics:
+            output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
+
+        return output_metrics

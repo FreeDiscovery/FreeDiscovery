@@ -440,3 +440,30 @@ def test_exception_handling(app_notest):
     assert res.status_code in [500, 422]
     assert sorted(data.keys()) == ['messages']
     #assert 'ValueError' in data['message'] # check that the error message has the traceback
+
+
+
+@pytest.mark.parametrize('metrics',
+                         itertools.combinations(['precision', 'recall', 'f1', 'roc_auc'], 3))
+def test_metrics_get(app, metrics):
+    from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+    metrics = list(metrics)
+    # print("METRICS:", metrics)
+    url = V01 + '/metrics/categorization'
+    y_true = [0, 0, 0, 1, 1, 0, 1, 0]
+    y_pred = [0, 0, 1, 1, 1, 0, 1, 1]
+
+    pars = {'y_true': y_true, 'y_pred': y_pred, 'metrics': metrics}
+    res = app.get(url, data=pars)
+    assert res.status_code == 200
+
+    data = parse_res(res)
+    assert sorted(data.keys()) == sorted(metrics)
+    if 'precision' in metrics:
+        assert data['precision'] == precision_score(y_true, y_pred)  # 0.6
+    if 'recall' in metrics:
+        assert data['recall'] == recall_score(y_true, y_pred)  # 1.0
+    if 'f1' in metrics:
+        assert data['f1'] == f1_score(y_true, y_pred)  # 0.75
+    if 'roc_auc' in metrics:
+        assert data['roc_auc'] == roc_auc_score(y_true, y_pred) # 0.8
