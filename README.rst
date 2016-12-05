@@ -10,12 +10,16 @@ FreeDiscovery
 
 Open Source Software for E-Discovery and Information Retrieval
 
+FreeDiscovery is build on top of existing machine learning libraries (scikit-learn) and provides REST web services for information retrieval applications. It aims to benefit existing e-discovery platforms with a focus on the following functionality, 
 
-FreeDiscovery is build on top of existing machine learning libraries (e.g.  scikit-learn) and provides REST web services for information retrieval applications. In particular, it aims to benefit existing e-discovery platforms. At present, a variety of binary categorization, clustering and duplicate detection algorithms are supported. Work is underway on e-mail threading.
+- binary text categorization
+- document clustering
+- duplicate detection
+- e-mail threading (soon to be added).
 
-In addition, FreeDiscovery can be used as Python package and aims to expose methods with a scikit-learn compatible API. 
+In addition, FreeDiscovery can be used as Python package and aims to expose a scikit-learn compatible API. 
 
-The final release is expected for January 1, 2017, but we would very much appreciate feedback on existing categorization and clustering. Feel free to submit encountered issues to the issue tracker and send any comments to grossman@ir.cs.georgetown.edu.  
+The first release is expected for January 1, 2017, but we would very much appreciate feedback on the existing functionality. Feel free to open new issues on Github or send any comments to grossman@ir.cs.georgetown.edu.  
 
 For more information see the `documentation and API Reference <https://freediscovery.github.io/doc/dev/>`_.
 
