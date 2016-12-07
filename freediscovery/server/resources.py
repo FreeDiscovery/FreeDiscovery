@@ -12,6 +12,11 @@ from webargs import fields as wfields
 from flask_apispec import marshal_with, use_kwargs as use_args
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+import warnings
+try:  # sklearn v0.17
+    from sklearn.exceptions import UndefinedMetricWarning
+except:  # sklearn v0.18
+    from sklearn.metrics.base import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
 from ..lsi import LSI
@@ -503,13 +508,18 @@ class MetricsCategorizationApiElement(Resource):
         y_true = args['y_true']
         y_pred = args['y_pred']
         metrics = args['metrics']
-        if 'precision' in metrics:
-            output_metrics['precision'] = precision_score(y_true, y_pred)
-        if 'recall' in metrics:
-            output_metrics['recall'] = recall_score(y_true, y_pred)
-        if 'f1' in metrics:
-            output_metrics['f1'] = f1_score(y_true, y_pred)
-        if 'roc_auc' in metrics:
-            output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
+
+        # wrapping metrics calculations, as for example F1 score can frequently print warnings
+        # "F-score is ill defined and being set to 0.0 due to no predicted samples"
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+            if 'precision' in metrics:
+                output_metrics['precision'] = precision_score(y_true, y_pred)
+            if 'recall' in metrics:
+                output_metrics['recall'] = recall_score(y_true, y_pred)
+            if 'f1' in metrics:
+                output_metrics['f1'] = f1_score(y_true, y_pred)
+            if 'roc_auc' in metrics:
+                output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
 
         return output_metrics

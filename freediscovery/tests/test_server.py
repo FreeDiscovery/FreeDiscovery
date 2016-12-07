@@ -15,7 +15,7 @@ from ..server import fd_app
 from ..utils import _silent
 from ..exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_almost_equal
 
 V01 = '/api/v0'
 
@@ -446,9 +446,7 @@ def test_exception_handling(app_notest):
 @pytest.mark.parametrize('metrics',
                          itertools.combinations(['precision', 'recall', 'f1', 'roc_auc'], 3))
 def test_metrics_get(app, metrics):
-    from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
     metrics = list(metrics)
-    # print("METRICS:", metrics)
     url = V01 + '/metrics/categorization'
     y_true = [0, 0, 0, 1, 1, 0, 1, 0]
     y_pred = [0, 0, 1, 1, 1, 0, 1, 1]
@@ -460,10 +458,10 @@ def test_metrics_get(app, metrics):
     data = parse_res(res)
     assert sorted(data.keys()) == sorted(metrics)
     if 'precision' in metrics:
-        assert data['precision'] == precision_score(y_true, y_pred)  # 0.6
+        assert_almost_equal(data['precision'], 0.6)
     if 'recall' in metrics:
-        assert data['recall'] == recall_score(y_true, y_pred)  # 1.0
+        assert_almost_equal(data['recall'], 1.0)
     if 'f1' in metrics:
-        assert data['f1'] == f1_score(y_true, y_pred)  # 0.75
+        assert_almost_equal(data['f1'], 0.75)
     if 'roc_auc' in metrics:
-        assert data['roc_auc'] == roc_auc_score(y_true, y_pred) # 0.8
+        assert_almost_equal(data['roc_auc'], 0.8)
