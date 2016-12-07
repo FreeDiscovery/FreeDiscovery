@@ -124,3 +124,11 @@ class MetricsCategorizationSchema(Schema):
     recall = fields.Number()
     f1 = fields.Number()
     roc_auc = fields.Number()
+
+
+class MetricsClusteringSchema(Schema):
+    adjusted_rand = fields.Number()
+    adjusted_mutual_info = fields.Number()
+    v_measure = fields.Number()
+    # silhouette = fields.Number()  TODO (X, labels), not (labels_true, labels_pred)
+

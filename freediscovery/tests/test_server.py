@@ -445,7 +445,7 @@ def test_exception_handling(app_notest):
 
 @pytest.mark.parametrize('metrics',
                          itertools.combinations(['precision', 'recall', 'f1', 'roc_auc'], 3))
-def test_metrics_get(app, metrics):
+def test_categorization_metrics_get(app, metrics):
     metrics = list(metrics)
     url = V01 + '/metrics/categorization'
     y_true = [0, 0, 0, 1, 1, 0, 1, 0]
@@ -465,3 +465,25 @@ def test_metrics_get(app, metrics):
         assert_almost_equal(data['f1'], 0.75)
     if 'roc_auc' in metrics:
         assert_almost_equal(data['roc_auc'], 0.8)
+
+
+@pytest.mark.parametrize('metrics',
+                         itertools.combinations(['adjusted_rand', 'adjusted_mutual_info', 'v_measure'], 2))
+def test_clustering_metrics_get(app, metrics):
+    metrics = list(metrics)
+    url = V01 + '/metrics/clustering'
+    labels_true = [0, 0, 1, 2]
+    labels_pred = [0, 0, 1, 1]
+
+    pars = {'labels_true': labels_true, 'labels_pred': labels_pred, 'metrics': metrics}
+    res = app.get(url, data=pars)
+    assert res.status_code == 200
+
+    data = parse_res(res)
+    assert sorted(data.keys()) == sorted(metrics)
+    if 'adjusted_rand' in metrics:
+        assert_almost_equal(data['adjusted_rand'], 0.5714, decimal=4)
+    if 'adjusted_mutual_info' in metrics:
+        assert_almost_equal(data['adjusted_mutual_info'], 0.4)
+    if 'v_measure' in metrics:
+        assert_almost_equal(data['v_measure'], 0.8)

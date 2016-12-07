@@ -11,7 +11,8 @@ from flask_restful import abort, Resource
 from webargs import fields as wfields
 from flask_apispec import marshal_with, use_kwargs as use_args
 import numpy as np
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, \
+                            adjusted_rand_score, adjusted_mutual_info_score, v_measure_score
 import warnings
 try:  # sklearn v0.17
     from sklearn.exceptions import UndefinedMetricWarning
@@ -32,7 +33,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       ErrorSchema, DuplicateDetectionSchema,
-                      MetricsCategorizationSchema
+                      MetricsCategorizationSchema, MetricsClusteringSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -521,5 +522,30 @@ class MetricsCategorizationApiElement(Resource):
                 output_metrics['f1'] = f1_score(y_true, y_pred)
             if 'roc_auc' in metrics:
                 output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
+        return output_metrics
 
+
+_metrics_clustering_api_get_args  = {
+    'labels_true': wfields.List(wfields.Int(), required=True),
+    'labels_pred': wfields.List(wfields.Int(), required=True),
+    'metrics': wfields.List(wfields.Str(), required=True)
+}
+
+class MetricsClusteringApiElement(Resource):
+    @use_args(_metrics_clustering_api_get_args)
+    @marshal_with(MetricsClusteringSchema())
+    def get(self, **args):
+        output_metrics = dict()
+        labels_true = args['labels_true']
+        labels_pred = args['labels_pred']
+        metrics = args['metrics']
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+            if 'adjusted_rand' in metrics:
+               output_metrics['adjusted_rand'] = adjusted_rand_score(labels_true, labels_pred)
+            if 'adjusted_mutual_info' in metrics:
+               output_metrics['adjusted_mutual_info'] = adjusted_mutual_info_score(labels_true, labels_pred)
+            if 'v_measure' in metrics:
+                output_metrics['v_measure'] = v_measure_score(labels_true, labels_pred)
         return output_metrics
