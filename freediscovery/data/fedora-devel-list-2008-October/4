@@ -1,0 +1,97 @@
+From dev@nigelj.com Tue Sep 30 23:06:10 2008
+Received: from int-mx1.corp.redhat.com (int-mx1.corp.redhat.com
+	[172.16.52.254])
+	by listman.util.phx.redhat.com (8.13.1/8.13.1) with ESMTP id
+	m91369DK026116 for <fedora-devel-list@listman.util.phx.redhat.com>;
+	Tue, 30 Sep 2008 23:06:10 -0400
+Received: from mx1.redhat.com (mx1.redhat.com [172.16.48.31])
+	by int-mx1.corp.redhat.com (8.13.1/8.13.1) with ESMTP id m91369Tl020177
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 23:06:09 -0400
+Received: from spunkymail-a16.g.dreamhost.com (sd-green-bigip-74.dreamhost.com
+	[208.97.132.74])
+	by mx1.redhat.com (8.13.8/8.13.8) with SMTP id m91367qF003788
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 23:06:08 -0400
+Received: from [192.168.0.150] (202-154-153-18.ubs-dynamic.connections.net.nz
+	[202.154.153.18])
+	by spunkymail-a16.g.dreamhost.com (Postfix) with ESMTP id DA4A07B292
+	for <fedora-devel-list@redhat.com>;
+	Tue, 30 Sep 2008 20:06:05 -0700 (PDT)
+From: Nigel Jones <dev@nigelj.com>
+To: Development discussions related to Fedora <fedora-devel-list@redhat.com>
+In-Reply-To: <80d7e4090809301952sfc8882ckc41cd88652958238@mail.gmail.com>
+References: <20081001022458.GA14186@jadzia.bu.edu>
+	<80d7e4090809301952sfc8882ckc41cd88652958238@mail.gmail.com>
+Content-Type: text/plain
+Date: Wed, 01 Oct 2008 16:06:02 +1300
+Message-Id: <1222830362.3674.3.camel@fantail.jnet.net.nz>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-RedHat-Spam-Score: -1.716 
+X-Scanned-By: MIMEDefang 2.58 on 172.16.52.254
+X-Scanned-By: MIMEDefang 2.63 on 172.16.48.31
+X-loop: fedora-devel-list@redhat.com
+Subject: Re: tab completion less useful now, due to sbin in path
+X-BeenThere: fedora-devel-list@redhat.com
+X-Mailman-Version: 2.1.5
+Precedence: junk
+Reply-To: Development discussions related to Fedora
+	<fedora-devel-list@redhat.com>
+List-Id: Development discussions related to Fedora
+	<fedora-devel-list.redhat.com>
+List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>, 
+	<mailto:fedora-devel-list-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/fedora-devel-list>
+List-Post: <mailto:fedora-devel-list@redhat.com>
+List-Help: <mailto:fedora-devel-list-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>,
+	<mailto:fedora-devel-list-request@redhat.com?subject=subscribe>
+X-List-Received-Date: Wed, 01 Oct 2008 03:06:10 -0000
+
+On Tue, 2008-09-30 at 20:52 -0600, Stephen John Smoogen wrote:
+> On Tue, Sep 30, 2008 at 8:24 PM, Matthew Miller <mattdm@mattdm.org> wrote:
+> > Grumble grumble.
+> >
+> > I'm finding having sbin in my user path really annoying. I go to type
+> > 'killall firefox' using tab completion, and killall5 (which says in its man
+> > page "Its primary (only) use is in the rc scripts"!) is in the way. I go to
+> > run firefox again, and I'm impeded by firstboot. Etc., etc., etc.
+> >
+> > This change is not for the better, and doesn't fit the stated goal of "sbin
+> > sanity".
+> >
+> > The sudo change was good, and helped out. Moving useful binaries out of sbin
+> > and into bin would have been a good path. Throwing everything into one pot
+> > is a regression.
+> >
+> >
+> > Now, I hear you saying already: "stop whining, Matthew. Just put it the way
+> > you want in your dotfiles". Well, okay, I have. But I don't want to just set
+> > a static path since I want /etc/profile.d to still work. So I've got to do
+> > an active munging sed script. Ugh.
+> >
+> > We've just made the command line a lot less user friendly for common use in
+> > exchange for an ugly fix to a small inconvenience. *Any* chance of putting
+> > this back and working at fixing the problem the hard but correct way?
+> >
+> 
+> I won't say you are whining.. but you are the first systems
+> administrator I have met in several years who hasn't had
+> /usr/sbin:/sbin in their default path. You sure they didn't make you a
+> manager and didn't tell you?
+> 
+> I think the chance for putting it back is still there.. if someone is
+> willing to do the work on the hard but correct way? I think it was
+> crickets the last couple of times when volunteers were asked for that.
+
+I personally have come to like typing the full paths for /sbin /usr/sbin
+stuff, only problem is, sometimes things that one would feel is more
+appropriate in /sbin isn't there (setenforce etc).
+
+I haven't added such to my . files for such a long time it's not funny,
+to the point where just typing 'ifconfig' before felt unnatural...
+
+I can however live with either, I literally don't give a damn and it
+doesn't bother me... :)
+-- 
+Nigel Jones <dev@nigelj.com>
+

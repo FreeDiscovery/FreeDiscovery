@@ -1,0 +1,91 @@
+From konrad@tylerc.org Tue Sep 30 22:39:55 2008
+Received: from int-mx2.corp.redhat.com (nat-pool.util.phx.redhat.com
+	[10.8.5.200])
+	by listman.util.phx.redhat.com (8.13.1/8.13.1) with ESMTP id
+	m912dsiJ022622 for <fedora-devel-list@listman.util.phx.redhat.com>;
+	Tue, 30 Sep 2008 22:39:54 -0400
+Received: from mx3.redhat.com (mx3.redhat.com [172.16.48.32])
+	by int-mx2.corp.redhat.com (8.13.1/8.13.1) with ESMTP id m912drPW023093
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 22:39:54 -0400
+Received: from kokanee.tylerc.org (kokanee.tylerc.org [67.222.12.203])
+	by mx3.redhat.com (8.13.8/8.13.8) with SMTP id m912dcZd015721
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 22:39:39 -0400
+Received: from d-128-208-53-208.dhcp4.washington.edu
+	(D-128-208-53-208.dhcp4.washington.edu [128.208.53.208])
+	by kokanee.tylerc.org (Postfix) with ESMTP id CF191E4D0242
+	for <fedora-devel-list@redhat.com>;
+	Tue, 30 Sep 2008 22:39:31 -0400 (EDT)
+From: Conrad Meyer <konrad@tylerc.org>
+To: Fedora Development List <fedora-devel-list@redhat.com>
+Date: Tue, 30 Sep 2008 19:38:44 -0700
+User-Agent: KMail/1.9.10
+References: <20081001022458.GA14186@jadzia.bu.edu>
+In-Reply-To: <20081001022458.GA14186@jadzia.bu.edu>
+MIME-Version: 1.0
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+Message-Id: <200809301938.44849.konrad@tylerc.org>
+X-tylerc.org-MailScanner-Information: Please contact the ISP for more
+	information
+X-MailScanner-ID: CF191E4D0242.73003
+X-tylerc.org-MailScanner: Found to be clean
+X-tylerc.org-MailScanner-From: konrad@tylerc.org
+X-Spam-Status: No
+X-RedHat-Spam-Score: 0 
+X-Scanned-By: MIMEDefang 2.58 on 172.16.27.26
+X-Scanned-By: MIMEDefang 2.63 on 172.16.48.32
+X-loop: fedora-devel-list@redhat.com
+Subject: Re: tab completion less useful now, due to sbin in path
+X-BeenThere: fedora-devel-list@redhat.com
+X-Mailman-Version: 2.1.5
+Precedence: junk
+Reply-To: Development discussions related to Fedora
+	<fedora-devel-list@redhat.com>
+List-Id: Development discussions related to Fedora
+	<fedora-devel-list.redhat.com>
+List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>, 
+	<mailto:fedora-devel-list-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/fedora-devel-list>
+List-Post: <mailto:fedora-devel-list@redhat.com>
+List-Help: <mailto:fedora-devel-list-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>,
+	<mailto:fedora-devel-list-request@redhat.com?subject=subscribe>
+X-List-Received-Date: Wed, 01 Oct 2008 02:39:55 -0000
+
+On Tuesday 30 September 2008 07:24:58 pm Matthew Miller wrote:
+> Grumble grumble.
+>
+> I'm finding having sbin in my user path really annoying. I go to type
+> 'killall firefox' using tab completion, and killall5 (which says in its man
+> page "Its primary (only) use is in the rc scripts"!) is in the way. I go to
+> run firefox again, and I'm impeded by firstboot. Etc., etc., etc.
+>
+> This change is not for the better, and doesn't fit the stated goal of "sbin
+> sanity".
+>
+> The sudo change was good, and helped out. Moving useful binaries out of
+> sbin and into bin would have been a good path. Throwing everything into one
+> pot is a regression.
+>
+> Now, I hear you saying already: "stop whining, Matthew. Just put it the way
+> you want in your dotfiles". Well, okay, I have. But I don't want to just
+> set a static path since I want /etc/profile.d to still work. So I've got to
+> do an active munging sed script. Ugh.
+>
+> We've just made the command line a lot less user friendly for common use in
+> exchange for an ugly fix to a small inconvenience. *Any* chance of putting
+> this back and working at fixing the problem the hard but correct way?
+
+This seems more a complaint that tab completion is different from what you're 
+used to. Many users feel the opposite (they add sbin to PATH in their 
+dotfiles) and won't notice the change. For users new to linux and Fedora, 
+sbin being in PATH gives them a better user experience than 'bash: foo: 
+command not found' errors when they try to follow some guide on the web.
+
+Regards,
+-- 
+Conrad Meyer <konrad@tylerc.org>
+
+

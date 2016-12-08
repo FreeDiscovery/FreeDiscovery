@@ -129,17 +129,29 @@ class _BaseTextTransformer(object):
 
     def list_datasets(self):
         """ List all datasets in the working directory """
+        import traceback
         out = []
         for dsid in os.listdir(self.cache_dir):
+            row = {"id": dsid}
+            self.dsid = dsid
             try:
-                row = {"id": dsid}
-                self.dsid = dsid
                 pars = self._load_pars()
+            except:
+                print(pars.keys())
+                traceback.print_exc()
+                continue
+
+            if pars['type'] != type(self).__name__:
+                continue
+
+            try:
                 for key in self._PARS_SHORT:
                     row[key] = pars[key]
                 out.append(row)
-            except Exception as err:
-                print("Error while loading parameters:\t", str(err))
+            except Exception:
+                print(pars.keys())
+                traceback.print_exc()
+
         return out
 
 
@@ -169,6 +181,10 @@ class BaseEstimator(object):
     def __contains__(self, mid):
         mid_dir = os.path.join(self.model_dir, mid)
         return os.path.exists(mid_dir)
+
+    def get_params(self):
+        """ Get model parameters """
+        return self._pars
 
     def list_models(self):
         out = []

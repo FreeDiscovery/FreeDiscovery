@@ -110,7 +110,8 @@ class FeatureVectorizer(_BaseTextTransformer):
                 'analyzer': analyzer, 'ngram_range': ngram_range,
                 'n_jobs': n_jobs, 'use_idf': use_idf, 'sublinear_tf': sublinear_tf,
                 'binary': binary, 'use_hashing': use_hashing,
-                'norm': norm, 'min_df': min_df, 'max_df': max_df
+                'norm': norm, 'min_df': min_df, 'max_df': max_df,
+                'type': type(self).__name__
                }
         self._pars = pars
         joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
