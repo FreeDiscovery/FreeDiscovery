@@ -490,12 +490,38 @@ def test_api_dupdetection(app, kind, options):
 
 #=============================================================================#
 #
-#                     Email threading
+#                     Duplicates detection
 #
 #=============================================================================#
 
-def test_api_email_threading(app):
-    pass
+
+def test_api_thread_emails(app):
+
+    dsid, _ = parse_emails(app)
+
+    method = V01 + "/email-parser/{}".format(dsid)
+    res = app.get(method)
+    assert res.status_code == 200
+    data = parse_res(res)  # TODO unused variable
+
+    url = V01 + "/email-threading" 
+    pars = { 'dataset_id': dsid,
+             }
+    res = app.post(url, data=pars)
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == sorted(['id'])
+    mid = data['id']
+
+    url += '/{}'.format(mid)
+    res = app.get(url)
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == sorted([])
+
+    res = app.delete(method)
+    assert res.status_code == 200
+
 
 
 #=============================================================================#

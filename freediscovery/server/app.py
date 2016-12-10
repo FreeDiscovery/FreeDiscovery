@@ -19,9 +19,9 @@ from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementIndex
                         DatasetsApiElement,
                         MetricsCategorizationApiElement, MetricsClusteringApiElement,
                         MetricsDupDetectionApiElement,
-                        #EmailThreadingApi, EmailThreadingApiElement,
                         EmailParserApi, EmailParserApiElementIndex,
-                        EmailParserApiElement
+                        EmailParserApiElement,
+                        EmailThreadingApi, EmailThreadingApiElement,
                         )
 
 
@@ -50,9 +50,9 @@ def fd_app(cache_dir):
          (FeaturesApi             , "/feature-extraction")                   ,
          (FeaturesApiElement      , '/feature-extraction/<dsid>')            ,
          (FeaturesApiElementIndex , '/feature-extraction/<dsid>/index'),
-         (EmailParserApi             , "/email-parser")                   ,
-         (EmailParserApiElement      , '/email-parser/<dsid>')            ,
-         (EmailParserApiElementIndex , '/email-parser/<dsid>/index'),
+         (EmailParserApi            , "/email-parser")                   ,
+         (EmailParserApiElement     , '/email-parser/<dsid>')            ,
+         (EmailParserApiElementIndex, '/email-parser/<dsid>/index'),
          (ModelsApi               , '/categorization/')                      ,
          (ModelsApiElement        , '/categorization/<mid>')                 ,
          (ModelsApiPredict        , '/categorization/<mid>/predict')         ,
@@ -71,8 +71,8 @@ def fd_app(cache_dir):
          (MetricsCategorizationApiElement, '/metrics/categorization')        ,
          (MetricsClusteringApiElement    , '/metrics/clustering')            ,
          (MetricsDupDetectionApiElement  , '/metrics/duplicate-detection')  ,
-         #(EmailThreadingApi       , '/emails-threading/')                 ,
-         #(EmailThreadingApiElement, '/emails-threading/<mid>')            ,
+         (EmailThreadingApi       , '/email-threading/')                 ,
+         (EmailThreadingApiElement, '/email-threading/<mid>')            ,
          #(CatchAll               , "/<url>")
                              ]:
         # monkeypatching, not great

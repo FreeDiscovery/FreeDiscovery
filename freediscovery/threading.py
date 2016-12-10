@@ -118,5 +118,4 @@ class EmailThreading(BaseEstimator):
             raise ModelNotFound('Model id {} not found in the cache!'.format(mid))
         pars = joblib.load(os.path.join(mid_dir, 'pars'))
         cmod = joblib.load(os.path.join(mid_dir, 'model'))
-        pars['options'] = cmod.get_params()
         return pars, cmod
