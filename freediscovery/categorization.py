@@ -69,8 +69,6 @@ class Categorizer(BaseEstimator):
             raise WrongParameter('dsid and mid')
 
         self.fe = FeatureVectorizer(cache_dir=cache_dir, dsid=dsid)
-        if not self.fe._pars['use_hashing']:
-            raise NotImplementedFD('Using categorisation without hashed features is not supported by FreeDiscovery at the moment!')
 
         self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
 
@@ -221,7 +219,7 @@ class Categorizer(BaseEstimator):
             'method': method,
             'index': index,
             'y': y
-        }
+            }
         pars['options'] = cmod.get_params()
         self._pars = pars
         joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)

@@ -19,7 +19,7 @@ from .utils import _dbscan_noisy2unique
 
 
 ### Clustering methods for FreeDiscovery
-### This is highly inspired by the scikit example
+### This is highly inspired from the scikit-learn text clustering example
 
 MAX_N_TOP_WORDS = 1000
 
@@ -63,10 +63,6 @@ def _generate_lsi(lsi_components=None):
     else:
         lsi = None
     return lsi
-
-
-
-
 
 
 class ClusterLabels(object):
