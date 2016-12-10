@@ -20,6 +20,7 @@ except:  # sklearn v0.18
     from sklearn.metrics.base import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
+from ..parsers import EmailParser
 from ..lsi import LSI
 from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
@@ -28,6 +29,7 @@ from ..cluster import Clustering
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
+                      EmailParserSchema, EmailParserElementIndexSchema,
                       DatasetSchema,
                       LsiParsSchema, LsiPostSchema, LsiPredictSchema,
                       ClassificationScoresSchema,
@@ -122,6 +124,44 @@ class FeaturesApiElementIndex(Resource):
     @marshal_with(FeaturesElementIndexSchema())
     def get(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        idx = fe.search(args['filenames'])
+        return {'index': list(idx)}
+
+# ============================================================================ # 
+#                   Email parser                                      #
+# ============================================================================ # 
+
+class EmailParserApi(Resource):
+
+    def get(self):
+        fe = EmailParser(self._cache_dir)
+        return fe.list_datasets()
+
+    @use_args({'data_dir': wfields.Str(required=True)})
+    @marshal_with(EmailParserSchema())
+    def post(self, **args):
+        fe = EmailParser(self._cache_dir)
+        dsid = fe.transform(**args)
+        pars = fe.get_params()
+        return {'id': dsid, 'filenames': pars['filenames']}
+
+
+class EmailParserApiElement(Resource):
+    def get(self, dsid):
+        fe = EmailParser(self._cache_dir, dsid=dsid)
+        out = fe.get_params()
+        return out
+
+    def delete(self, dsid):
+        fe = EmailParser(self._cache_dir, dsid=dsid)
+        fe.delete()
+
+
+class EmailParserApiElementIndex(Resource):
+    @use_args({'filenames': wfields.List(wfields.Str(), required=True)})
+    @marshal_with(EmailParserElementIndexSchema())
+    def get(self, dsid, **args):
+        fe = EmailParser(self._cache_dir, dsid=dsid)
         idx = fe.search(args['filenames'])
         return {'index': list(idx)}
 

@@ -24,10 +24,6 @@ basename = os.path.dirname(__file__)
 data_dir = os.path.join(basename, "..", "data", "fedora-devel-list-2008-October")
 
 
-
-
-#@pytest.mark.parametrize('method, cv', itertools.product(
-#                       [None, 'fast']))
 def test_threading():
     cache_dir = check_cache()
 
@@ -43,3 +39,4 @@ def test_threading():
     cat.get_params()
     assert len(filenames) == sum([el.size for el in res])
     assert len(filenames) == 5
+    assert len(filenames) == len([el for x in res for el in x.flatten()])

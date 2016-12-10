@@ -55,6 +55,13 @@ class FeaturesElementIndexSchema(Schema):
     index = fields.List(fields.Int(), required=True)
 
 
+class EmailParserSchema(FeaturesParsSchema):
+    id = fields.Str(required=True)
+    filenames = fields.List(fields.Str())
+
+class EmailParserElementIndexSchema(Schema):
+    index = fields.List(fields.Int(), required=True)
+
 # TODO to delete after successful implementation of metrics
 class ClassificationScoresSchema(Schema):
     precision = fields.Number(required=True)

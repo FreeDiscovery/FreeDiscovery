@@ -21,7 +21,14 @@ V01 = '/api/v0'
 
 
 data_dir = os.path.dirname(__file__)
+email_data_dir = os.path.join(data_dir, "..", "data", "fedora-devel-list-2008-October")
 data_dir = os.path.join(data_dir, "..", "data", "ds_001", "raw")
+
+#=============================================================================#
+#
+#                     Helper functions / features
+#
+#=============================================================================#
 
 
 def parse_res(res):
@@ -47,6 +54,13 @@ def app_notest():
 
     return tapp.test_client()
 
+
+
+#=============================================================================#
+#
+#                     Feature extraction
+#
+#=============================================================================#
 
 def features_hashed(app):
     method = V01 + "/feature-extraction/"
@@ -100,6 +114,133 @@ def features_non_hashed(app):
     assert sorted(data.keys()) == ['id']
     return dsid
 
+
+def test_delete_feature_extraction(app):
+    dsid, _ = features_hashed(app)
+
+    method = V01 + "/feature-extraction/{}".format(dsid)
+    res = app.delete(method)
+    assert res.status_code == 200
+
+
+def test_get_feature_extraction_all(app):
+    method = V01 + "/feature-extraction/"
+    res = app.get(method)
+    assert res.status_code == 200
+    data = parse_res(res)
+    for row in data:
+        assert sorted(row.keys()) == \
+                 sorted(['analyzer', 'ngram_range', 'stop_words',
+                     'n_jobs', 'chunk_size', 'norm',
+                     'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
+                     'binary', 'sublinear_tf', 'use_hashing'])
+
+def test_get_feature_extraction(app):
+    dsid, _ = features_hashed(app)
+    method = V01 + "/feature-extraction/{}".format(dsid)
+    res = app.get(method)
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == \
+             sorted(['data_dir', 'filenames', 'n_samples', 'norm',
+                 'n_samples_processed', 'n_features', 'n_jobs', 'chunk_size',
+                 'analyzer', 'ngram_range', 'stop_words', 'use_idf',
+                 'binary', 'sublinear_tf', 'use_hashing',
+                 'max_df', 'min_df'])
+
+
+def test_get_search_filenames(app):
+    dsid, _ = features_hashed(app)
+
+    method = V01 + "/feature-extraction/{}/index".format(dsid)
+    for pars, indices in [
+            ({ 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
+            ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:
+
+        res = app.get(method, data=pars)
+        assert res.status_code == 200
+        data = parse_res(res)
+        assert sorted(data.keys()) ==  sorted(['index'])
+        assert_equal(data['index'], indices)
+
+#=============================================================================#
+#
+#                     Email Parsing
+#
+#=============================================================================#
+
+def parse_emails(app):
+    method = V01 + "/email-parser/"
+    pars = dict(data_dir=email_data_dir)
+
+    res = app.post(method, data=pars)
+
+    assert res.status_code == 200, method
+    data = parse_res(res)
+    assert sorted(data.keys()) ==  ['filenames', 'id']
+    dsid = data['id']
+
+    return dsid, pars
+
+def test_parse_emails(app):
+    dsid, pars = parse_emails(app)
+
+    method = V01 + "/email-parser/{}".format(dsid)
+    res = app.get(method)
+    assert res.status_code == 200, method
+    data = parse_res(res)
+    for key, val in pars.items():
+        if key in ['data_dir']:
+            continue
+        assert val == data[key]
+
+
+def test_delete_parsed_emails(app):
+    dsid, _ = parse_emails(app)
+
+    method = V01 + "/email-parser/{}".format(dsid)
+    res = app.delete(method)
+    assert res.status_code == 200
+
+
+def test_get_email_parser_all(app):
+    method = V01 + "/email-parser/"
+    res = app.get(method)
+    assert res.status_code == 200
+    data = parse_res(res)
+    for row in data:
+        assert sorted(row.keys()) == sorted([ 'data_dir', 'id', 'encoding', 'n_samples']) 
+
+
+def test_get_email_parser(app):
+    dsid, _ = parse_emails(app)
+    method = V01 + "/email-parser/{}".format(dsid)
+    res = app.get(method)
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == \
+             sorted(['data_dir', 'filenames', 'encoding', 'n_samples', 'type'])
+
+
+def test_get_search_emails_by_filename(app):
+    dsid, _ = parse_emails(app)
+
+    method = V01 + "/email-parser/{}/index".format(dsid)
+    for pars, indices in [
+            ({ 'filenames': ['1', '2']}, [0, 1]),
+            ({ 'filenames': ['5']}, [4])]:
+
+        res = app.get(method, data=pars)
+        assert res.status_code == 200
+        data = parse_res(res)
+        assert sorted(data.keys()) ==  sorted(['index'])
+        assert_equal(data['index'], indices)
+
+#=============================================================================#
+#
+#                     Categorization / LSI
+#
+#=============================================================================#
 
 def test_api_lsi(app):
     dsid, _ = features_hashed(app)
@@ -256,6 +397,11 @@ def test_api_categorization(app, solver, cv):
     res = app.delete(method)
     assert res.status_code == 200
 
+#=============================================================================#
+#
+#                     Clustering
+#
+#=============================================================================#
 
 @pytest.mark.parametrize("model", ['k-mean', 'birch', 'ward_hc', 'dbscan'])
 def test_api_clustering(app, model):
@@ -299,6 +445,12 @@ def test_api_clustering(app, model):
     res = app.delete(method)
     assert res.status_code == 200
 
+#=============================================================================#
+#
+#                     Duplicates detection
+#
+#=============================================================================#
+
 
 @pytest.mark.parametrize('kind, options', [['simhash', {'distance': 3}],
                                              ['i-match', {}]])
@@ -336,53 +488,21 @@ def test_api_dupdetection(app, kind, options):
     assert res.status_code == 200
 
 
-def test_delete_feature_extraction(app):
-    dsid, _ = features_hashed(app)
+#=============================================================================#
+#
+#                     Email threading
+#
+#=============================================================================#
 
-    method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.delete(method)
-    assert res.status_code == 200
-
-
-def test_get_feature_extraction_all(app):
-    method = V01 + "/feature-extraction/"
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
-    for row in data:
-        assert sorted(row.keys()) == \
-                 sorted(['analyzer', 'ngram_range', 'stop_words',
-                     'n_jobs', 'chunk_size', 'norm',
-                     'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
-                     'binary', 'sublinear_tf', 'use_hashing'])
-
-def test_get_feature_extraction(app):
-    dsid, _ = features_hashed(app)
-    method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
-    assert sorted(data.keys()) == \
-             sorted(['data_dir', 'filenames', 'n_samples', 'norm',
-                 'n_samples_processed', 'n_features', 'n_jobs', 'chunk_size',
-                 'analyzer', 'ngram_range', 'stop_words', 'use_idf',
-                 'binary', 'sublinear_tf', 'use_hashing',
-                 'max_df', 'min_df'])
+def test_api_email_threading(app):
+    pass
 
 
-def test_get_search_filenames(app):
-    dsid, _ = features_hashed(app)
-
-    method = V01 + "/feature-extraction/{}/index".format(dsid)
-    for pars, indices in [
-            ({ 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
-            ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:
-
-        res = app.get(method, data=pars)
-        assert res.status_code == 200
-        data = parse_res(res)
-        assert sorted(data.keys()) ==  sorted(['index'])
-        assert_equal(data['index'], indices)
+#=============================================================================#
+#
+#                     Exception handling
+#
+#=============================================================================#
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
