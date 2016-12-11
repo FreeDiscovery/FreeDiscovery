@@ -6,17 +6,9 @@ from __future__ import print_function
 #from __future__ import unicode_literals
 
 import os.path
-from unittest import SkipTest
-
-import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-
-import pytest
-import itertools
 
 from freediscovery.parsers import EmailParser
 from freediscovery.threading import (EmailThreading)
-from freediscovery.exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
 
 
@@ -34,9 +26,10 @@ def test_threading():
 
 
     cat = EmailThreading(cache_dir=cache_dir, dsid=uuid)
-    res = cat.thread()
 
+    tree, res = cat.thread()
     cat.get_params()
-    assert len(filenames) == sum([el.size for el in res])
+
+    assert len(filenames) == len(tree)
     assert len(filenames) == 5
-    assert len(filenames) == len([el for x in res for el in x.flatten()])
+    assert len(filenames) == len(res)

@@ -505,19 +505,19 @@ def test_api_thread_emails(app):
     data = parse_res(res)  # TODO unused variable
 
     url = V01 + "/email-threading" 
-    pars = { 'dataset_id': dsid,
-             }
+    pars = { 'dataset_id': dsid, }
     res = app.post(url, data=pars)
     assert res.status_code == 200
+    print(res.data)
     data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['id'])
+    assert sorted(data.keys()) == sorted(['id', 'thread_ids', 'parent_ids'])
     mid = data['id']
 
     url += '/{}'.format(mid)
     res = app.get(url)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == sorted([])
+    assert sorted(data.keys()) == sorted(['group_by_subject'])
 
     res = app.delete(method)
     assert res.status_code == 200

@@ -14,7 +14,7 @@ from sklearn.externals import joblib
 from .text import FeatureVectorizer
 from .base import BaseEstimator
 from .parsers import EmailParser
-from .utils import setup_model, _rename_main_thread
+from .utils import setup_model, INT_NAN
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
 from jwzthreading import jwzthreading as jwzt
@@ -64,8 +64,7 @@ class EmailThreading(BaseEstimator):
         self.cmod = cmod
 
 
-    def thread(self, index=None, group_by_subject=False,
-               sort_by='message_idx', sort_missing=-1):
+    def thread(self, index=None, group_by_subject=False):
         """
         Thread the emails
 
@@ -82,10 +81,14 @@ class EmailThreading(BaseEstimator):
            training predictions
         group_by_subject : boolean, default=True
            group emails by subject
-        sort_by_subject : str, default='message_idx'
-           key used for sorting threads
-        sort_missing : object, default=-1
-           value used for sorting when the `sort_by_subject` key is missing
+
+        Returns
+        -------
+
+        tree: array (N_samples)
+           the id of the parent element in the tree
+        root_idx: array (N_samples)
+           the id of the root element in the tree
         """
         if index is None:
             index = np.arange(self.fe.n_samples_)
@@ -94,21 +97,44 @@ class EmailThreading(BaseEstimator):
 
         cmod = jwzt.thread(d_all, group_by_subject)
 
-        cmod = jwzt.sort_threads(cmod, key=sort_by, missing=sort_missing)
-
         mid, mid_dir = setup_model(self.model_dir)
 
         joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
 
+        tree = np.zeros(self.fe.n_samples_)*np.nan
+        root_id = np.zeros(self.fe.n_samples_)*np.nan
+        for root_container in cmod:
+            if root_container.message is not None:
+                root_message_idx = root_container.message.message_idx
+            elif root_container.children and \
+                root_container.children[0].message is not None:
+                root_message_idx = root_container.children[0].message.message_idx
+            else:
+                raise ValueError('Container {} has a None root and None first children.',
+                       '\nThis should not be happening')
+
+            for cont in root_container.flatten():
+                if cont.message is None:
+                    continue
+                msg_idx = cont.message.message_idx
+                root_id[msg_idx] = root_message_idx
+
+                if cont.parent is None:
+                    tree[msg_idx] = INT_NAN
+                elif cont.parent.message is None:
+                    tree[msg_idx] = root_message_idx
+                else:
+                    tree[msg_idx] = cont.parent.message.message_idx
+
         pars = {
-            'index': index,
+            'group_by_subject': group_by_subject
         }
         self._pars = pars
         joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
 
         self.mid = mid
         self.cmod = cmod
-        return cmod
+        return tree, root_id
 
     def _load_pars(self):
         """ Load the parameters specified by a mid """

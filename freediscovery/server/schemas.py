@@ -120,8 +120,14 @@ class DuplicateDetectionSchema(Schema):
     cluster_id = fields.List(fields.Int(), required=True)
     dup_pairs = fields.List(fields.List(fields.Int()), required=True)
 
+
 class EmailThreadingSchema(Schema):
-    pass
+    id = fields.Str(required=True)
+    parent_ids = fields.List(fields.Int(), required=True)
+    thread_ids = fields.List(fields.Int(), required=True)
+
+class EmailThreadingParsSchema(Schema):
+    group_by_subject = fields.Boolean(required=True)
 
 class ErrorSchema(Schema):
     message = fields.Str(required=True)

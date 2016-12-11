@@ -38,7 +38,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ErrorSchema, DuplicateDetectionSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
-                      EmailThreadingSchema,
+                      EmailThreadingSchema, EmailThreadingParsSchema,
                       ErrorSchema, DuplicateDetectionSchema
                       )
 
@@ -627,21 +627,23 @@ class MetricsDupDetectionApiElement(Resource):
 class EmailThreadingApi(Resource):
 
     @use_args({ "dataset_id": wfields.Str(required=True)})
-    @marshal_with(IDSchema())
+    @marshal_with(EmailThreadingSchema())
     def post(self, **args):
         from ..threading import EmailThreading
 
         model = EmailThreading(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
-        #del args['dataset_id']
 
-        model.thread(args['dataset_id'])
+        parent_ids, root_ids =  model.thread()
 
-        return {'id': model.mid}
+        return {'id': model.mid,
+                'thread_ids': root_ids.tolist(),
+                'parent_ids': parent_ids.tolist()
+                }
 
 class EmailThreadingApiElement(Resource):
 
-    @marshal_with(EmailThreadingSchema())
+    @marshal_with(EmailThreadingParsSchema())
     def get(self, mid):
         from ..threading import EmailThreading
 
