@@ -39,11 +39,11 @@ def f1_same_duplicates_score(x, y):
     if x.shape != y.shape:
         raise ValueError
     x_dup = _dbscan_unique2noisy(x)
-    x_dup[x_dup > -1] = 1 # not a duplicate
-    x_dup[x_dup == -1] = 0 # not a duplicate
+    x_dup[x_dup > -1] = 1  # duplicates
+    x_dup[x_dup == -1] = 0  # not duplicates
     y_dup = _dbscan_unique2noisy(y)
-    y_dup[y_dup > -1] = 1 # not a duplicate
-    y_dup[y_dup == -1] = 0 # not a duplicate
+    y_dup[y_dup > -1] = 1  # duplicates
+    y_dup[y_dup == -1] = 0  # not duplicates
 
     x_dup = np.abs(x_dup)
     y_dup = np.abs(y_dup)

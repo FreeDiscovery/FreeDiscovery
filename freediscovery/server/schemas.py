@@ -130,5 +130,9 @@ class MetricsClusteringSchema(Schema):
     adjusted_rand = fields.Number()
     adjusted_mutual_info = fields.Number()
     v_measure = fields.Number()
-    # silhouette = fields.Number()  TODO (X, labels), not (labels_true, labels_pred)
 
+
+class MetricsDupDetectionSchema(Schema):
+    ratio_duplicates = fields.Number()
+    f1_same_duplicates = fields.Number()
+    mean_duplicates_count = fields.Number()

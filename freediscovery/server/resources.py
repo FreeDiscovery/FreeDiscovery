@@ -25,6 +25,7 @@ from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
 from ..utils import categorization_score
 from ..cluster import Clustering
+from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
                       DatasetSchema,
@@ -33,7 +34,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       ErrorSchema, DuplicateDetectionSchema,
-                      MetricsCategorizationSchema, MetricsClusteringSchema
+                      MetricsCategorizationSchema, MetricsClusteringSchema, MetricsDupDetectionSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -548,4 +549,29 @@ class MetricsClusteringApiElement(Resource):
                output_metrics['adjusted_mutual_info'] = adjusted_mutual_info_score(labels_true, labels_pred)
             if 'v_measure' in metrics:
                 output_metrics['v_measure'] = v_measure_score(labels_true, labels_pred)
+        return output_metrics
+
+
+class MetricsDupDetectionApiElement(Resource):
+    @use_args(_metrics_clustering_api_get_args)  # Arguments are the same as for clustering
+    @marshal_with(MetricsDupDetectionSchema())
+    def get(self, **args):
+        output_metrics = dict()
+        labels_true = args['labels_true']
+        labels_pred = args['labels_pred']
+        metrics = args['metrics']
+
+        # Methods 'ratio_duplicates_score' and 'f1_same_duplicates_score' in ..metrics.py
+        # accept Numpy array objects, not standard Python lists
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+            if 'ratio_duplicates' in metrics:
+               output_metrics['ratio_duplicates'] = \
+                   ratio_duplicates_score(np.array(labels_true), np.array(labels_pred))
+            if 'f1_same_duplicates' in metrics:
+               output_metrics['f1_same_duplicates'] = \
+                   f1_same_duplicates_score(np.array(labels_true), np.array(labels_pred))
+            if 'mean_duplicates_count' in metrics:
+                output_metrics['mean_duplicates_count'] = \
+                    mean_duplicates_count_score(labels_true, labels_pred)
         return output_metrics

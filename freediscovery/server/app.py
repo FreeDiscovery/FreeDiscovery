@@ -17,7 +17,7 @@ from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementIndex
                         BirchClusteringApi, WardHCClusteringApi, DBSCANClusteringApi,
                         DupDetectionApi, DupDetectionApiElement,
                         DatasetsApiElement,
-                        MetricsCategorizationApiElement, MetricsClusteringApiElement  # MetricsDupDetectionApiElement
+                        MetricsCategorizationApiElement, MetricsClusteringApiElement, MetricsDupDetectionApiElement
                         )
 
 
@@ -63,6 +63,7 @@ def fd_app(cache_dir):
         (DupDetectionApiElement         , '/duplicate-detection/<mid>')            ,
         (MetricsCategorizationApiElement, '/metrics/categorization')               ,
         (MetricsClusteringApiElement    , '/metrics/clustering')                   ,
+        (MetricsDupDetectionApiElement  , '/metrics/duplicate-detection')
          #(CatchAll               , "/<url>")
                              ]:
         # monkeypatching, not great
