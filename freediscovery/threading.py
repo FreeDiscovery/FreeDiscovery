@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding  utf-8 -*-
 
 from __future__ import absolute_import
 from __future__ import division
@@ -85,9 +85,9 @@ class EmailThreading(BaseEstimator):
         Returns
         -------
 
-        tree: array (N_samples)
+        tree : array (N_samples)
            the id of the parent element in the tree
-        root_idx: array (N_samples)
+        root_idx : array (N_samples)
            the id of the root element in the tree
         """
         if index is None:
@@ -97,12 +97,19 @@ class EmailThreading(BaseEstimator):
 
         cmod = jwzt.thread(d_all, group_by_subject)
 
+        for idx, cont in enumerate(cmod):
+            print('Thread id', idx)
+            print(cont.children)
+            jwzt.print_container(cont)
+
+
         mid, mid_dir = setup_model(self.model_dir)
 
         joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
 
-        tree = np.zeros(self.fe.n_samples_)*np.nan
-        root_id = np.zeros(self.fe.n_samples_)*np.nan
+        tree = np.ones(self.fe.n_samples_, dtype='int')*INT_NAN
+        root_id = np.ones(self.fe.n_samples_, dtype='int')*INT_NAN
+
         for root_container in cmod:
             if root_container.message is not None:
                 root_message_idx = root_container.message.message_idx
@@ -134,7 +141,7 @@ class EmailThreading(BaseEstimator):
 
         self.mid = mid
         self.cmod = cmod
-        return tree, root_id
+        return cmod, root_id
 
     def _load_pars(self):
         """ Load the parameters specified by a mid """

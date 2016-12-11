@@ -10,6 +10,7 @@ import os.path
 from freediscovery.parsers import EmailParser
 from freediscovery.threading import (EmailThreading)
 from .run_suite import check_cache
+from itertools import groupby
 
 
 basename = os.path.dirname(__file__)
@@ -27,9 +28,19 @@ def test_threading():
 
     cat = EmailThreading(cache_dir=cache_dir, dsid=uuid)
 
-    tree, res = cat.thread()
+    tree, parent = cat.thread()
     cat.get_params()
 
     assert len(filenames) == len(tree)
     assert len(filenames) == 5
     assert len(filenames) == len(res)
+
+    #res2 = {idx: [el0[0] for el0 in el] for idx, el in \
+    #    groupby(enumerate(tree), key=lambda x: x[1])}
+
+
+  
+    #for key, idx in res2.items():
+    #    print('Thread id: {}'.format(key))
+    #    print('Relevant documents: {}'.format(idx))
+    #    print('Parent documents  : {}'.format([parent[el] for el in idx]))

@@ -121,16 +121,20 @@ class DuplicateDetectionSchema(Schema):
     dup_pairs = fields.List(fields.List(fields.Int()), required=True)
 
 
-class EmailThreadingSchema(Schema):
-    id = fields.Str(required=True)
-    parent_ids = fields.List(fields.Int(), required=True)
-    thread_ids = fields.List(fields.Int(), required=True)
 
 class EmailThreadingParsSchema(Schema):
     group_by_subject = fields.Boolean(required=True)
 
 class ErrorSchema(Schema):
     message = fields.Str(required=True)
+
+class TreeSchema(Schema):
+    id = fields.Int(required=True)
+    parent = fields.Int(allow_none=True)
+    children = fields.Nested('self', many=True)
+
+class EmailThreadingSchema(TreeSchema):
+    subject = fields.Str()
 
 
 class MetricsCategorizationSchema(Schema):
