@@ -50,9 +50,12 @@ class FeaturesSchema(FeaturesParsSchema):
     id = fields.Str(required=True)
     filenames = fields.List(fields.Str())
 
+
 class FeaturesElementIndexSchema(Schema):
     index = fields.List(fields.Int(), required=True)
 
+
+# TODO to delete after successful implementation of metrics
 class ClassificationScoresSchema(Schema):
     precision = fields.Number(required=True)
     recall = fields.Number(required=True)
@@ -114,3 +117,22 @@ class DuplicateDetectionSchema(Schema):
 
 class ErrorSchema(Schema):
     message = fields.Str(required=True)
+
+
+class MetricsCategorizationSchema(Schema):
+    precision = fields.Number()
+    recall = fields.Number()
+    f1 = fields.Number()
+    roc_auc = fields.Number()
+
+
+class MetricsClusteringSchema(Schema):
+    adjusted_rand = fields.Number()
+    adjusted_mutual_info = fields.Number()
+    v_measure = fields.Number()
+
+
+class MetricsDupDetectionSchema(Schema):
+    ratio_duplicates = fields.Number()
+    f1_same_duplicates = fields.Number()
+    mean_duplicates_count = fields.Number()

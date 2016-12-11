@@ -11,15 +11,13 @@ from flask_restful import Api, Resource
 from flask import jsonify
 
 from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementIndex,
-                        LsiApi, ModelsApi,
-                        ModelsApiElement, ModelsApiPredict,
-                        ModelsApiTest, LsiApiElement,
-                        LsiApiElementTest, LsiApiElementPredict,
+                        ModelsApi, ModelsApiElement, ModelsApiPredict, ModelsApiTest,
+                        LsiApi, LsiApiElement, LsiApiElementPredict, LsiApiElementTest,
                         ClusteringApiElement, KmeanClusteringApi,
-                        BirchClusteringApi, WardHCClusteringApi,
-                        DBSCANClusteringApi,
+                        BirchClusteringApi, WardHCClusteringApi, DBSCANClusteringApi,
                         DupDetectionApi, DupDetectionApiElement,
-                        DatasetsApiElement
+                        DatasetsApiElement,
+                        MetricsCategorizationApiElement, MetricsClusteringApiElement, MetricsDupDetectionApiElement
                         )
 
 
@@ -44,25 +42,28 @@ def fd_app(cache_dir):
 
     ## Actually setup the Api resource routing here
     for resource_el, url in [
-         (DatasetsApiElement      , "/datasets/<name>")                      ,
-         (FeaturesApi             , "/feature-extraction")                   ,
-         (FeaturesApiElement      , '/feature-extraction/<dsid>')            ,
-         (FeaturesApiElementIndex , '/feature-extraction/<dsid>/index'),
-         (ModelsApi               , '/categorization/')                      ,
-         (ModelsApiElement        , '/categorization/<mid>')                 ,
-         (ModelsApiPredict        , '/categorization/<mid>/predict')         ,
-         (ModelsApiTest           , "/categorization/<mid>/test")            ,
-         (LsiApi                  , '/lsi/')                                 ,
-         (LsiApiElement           , '/lsi/<mid>')                            ,
-         (LsiApiElementPredict    , '/lsi/<mid>/predict')                    ,
-         (LsiApiElementTest       , '/lsi/<mid>/test')                       ,
-         (KmeanClusteringApi      , '/clustering/k-mean/')                   ,
-         (BirchClusteringApi      , '/clustering/birch')                     ,
-         (WardHCClusteringApi     , '/clustering/ward_hc')                   ,
-         (DBSCANClusteringApi     , '/clustering/dbscan')                    ,
-         (ClusteringApiElement    , '/clustering/<method>/<mid>')            ,
-         (DupDetectionApi         , '/duplicate-detection/')                 ,
-         (DupDetectionApiElement  , '/duplicate-detection/<mid>')            ,
+        (DatasetsApiElement             , '/datasets/<name>')                      ,
+        (FeaturesApi                    , '/feature-extraction')                   ,
+        (FeaturesApiElement             , '/feature-extraction/<dsid>')            ,
+        (FeaturesApiElementIndex        , '/feature-extraction/<dsid>/index')      ,
+        (ModelsApi                      , '/categorization/')                      ,
+        (ModelsApiElement               , '/categorization/<mid>')                 ,
+        (ModelsApiPredict               , '/categorization/<mid>/predict')         ,
+        (ModelsApiTest                  , '/categorization/<mid>/test')            ,
+        (LsiApi                         , '/lsi/')                                 ,
+        (LsiApiElement                  , '/lsi/<mid>')                            ,
+        (LsiApiElementPredict           , '/lsi/<mid>/predict')                    ,
+        (LsiApiElementTest              , '/lsi/<mid>/test')                       ,
+        (KmeanClusteringApi             , '/clustering/k-mean/')                   ,
+        (BirchClusteringApi             , '/clustering/birch')                     ,
+        (WardHCClusteringApi            , '/clustering/ward_hc')                   ,
+        (DBSCANClusteringApi            , '/clustering/dbscan')                    ,
+        (ClusteringApiElement           , '/clustering/<method>/<mid>')            ,
+        (DupDetectionApi                , '/duplicate-detection/')                 ,
+        (DupDetectionApiElement         , '/duplicate-detection/<mid>')            ,
+        (MetricsCategorizationApiElement, '/metrics/categorization')               ,
+        (MetricsClusteringApiElement    , '/metrics/clustering')                   ,
+        (MetricsDupDetectionApiElement  , '/metrics/duplicate-detection')
          #(CatchAll               , "/<url>")
                              ]:
         # monkeypatching, not great

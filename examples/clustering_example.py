@@ -84,7 +84,7 @@ print("     => model id = {}".format(mid))
 
 print("\n2.b. Computing cluster labels")
 url = BASE_URL + '/clustering/k-mean/{}'.format(mid)
-print(" POST", url)
+print(" GET", url)
 res = requests.get(url,
                    json={'n_top_words': 6
                          }).json()
@@ -113,7 +113,7 @@ print("     => model id = {}".format(mid))
 
 print("\n3.b. Computing cluster labels")
 url = BASE_URL + '/clustering/ward_hc/{}'.format(mid)
-print("POST", url)
+print(" GET", url)
 res = requests.get(url,
                    json={'n_top_words': 6
                          }).json()

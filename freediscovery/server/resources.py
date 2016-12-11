@@ -11,6 +11,13 @@ from flask_restful import abort, Resource
 from webargs import fields as wfields
 from flask_apispec import marshal_with, use_kwargs as use_args
 import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, \
+                            adjusted_rand_score, adjusted_mutual_info_score, v_measure_score
+import warnings
+try:  # sklearn v0.17
+    from sklearn.exceptions import UndefinedMetricWarning
+except:  # sklearn v0.18
+    from sklearn.metrics.base import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
 from ..lsi import LSI
@@ -18,6 +25,7 @@ from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
 from ..utils import categorization_score
 from ..cluster import Clustering
+from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
                       DatasetSchema,
@@ -25,7 +33,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
-                      ErrorSchema, DuplicateDetectionSchema
+                      ErrorSchema, DuplicateDetectionSchema,
+                      MetricsCategorizationSchema, MetricsClusteringSchema, MetricsDupDetectionSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -481,3 +490,88 @@ class DupDetectionApiElement(Resource):
 
         model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
         model.delete()
+
+
+
+# ============================================================================ #
+#                             Metrics                                          #
+# ============================================================================ #
+_metrics_categorization_api_get_args  = {
+    'y_true': wfields.List(wfields.Int(), required=True),
+    'y_pred': wfields.List(wfields.Int(), required=True),
+    'metrics': wfields.List(wfields.Str(), required=True)
+}
+
+class MetricsCategorizationApiElement(Resource):
+    @use_args(_metrics_categorization_api_get_args)
+    @marshal_with(MetricsCategorizationSchema())
+    def get(self, **args):
+        output_metrics = dict()
+        y_true = args['y_true']
+        y_pred = args['y_pred']
+        metrics = args['metrics']
+
+        # wrapping metrics calculations, as for example F1 score can frequently print warnings
+        # "F-score is ill defined and being set to 0.0 due to no predicted samples"
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+            if 'precision' in metrics:
+                output_metrics['precision'] = precision_score(y_true, y_pred)
+            if 'recall' in metrics:
+                output_metrics['recall'] = recall_score(y_true, y_pred)
+            if 'f1' in metrics:
+                output_metrics['f1'] = f1_score(y_true, y_pred)
+            if 'roc_auc' in metrics:
+                output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
+        return output_metrics
+
+
+_metrics_clustering_api_get_args  = {
+    'labels_true': wfields.List(wfields.Int(), required=True),
+    'labels_pred': wfields.List(wfields.Int(), required=True),
+    'metrics': wfields.List(wfields.Str(), required=True)
+}
+
+class MetricsClusteringApiElement(Resource):
+    @use_args(_metrics_clustering_api_get_args)
+    @marshal_with(MetricsClusteringSchema())
+    def get(self, **args):
+        output_metrics = dict()
+        labels_true = args['labels_true']
+        labels_pred = args['labels_pred']
+        metrics = args['metrics']
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+            if 'adjusted_rand' in metrics:
+               output_metrics['adjusted_rand'] = adjusted_rand_score(labels_true, labels_pred)
+            if 'adjusted_mutual_info' in metrics:
+               output_metrics['adjusted_mutual_info'] = adjusted_mutual_info_score(labels_true, labels_pred)
+            if 'v_measure' in metrics:
+                output_metrics['v_measure'] = v_measure_score(labels_true, labels_pred)
+        return output_metrics
+
+
+class MetricsDupDetectionApiElement(Resource):
+    @use_args(_metrics_clustering_api_get_args)  # Arguments are the same as for clustering
+    @marshal_with(MetricsDupDetectionSchema())
+    def get(self, **args):
+        output_metrics = dict()
+        labels_true = args['labels_true']
+        labels_pred = args['labels_pred']
+        metrics = args['metrics']
+
+        # Methods 'ratio_duplicates_score' and 'f1_same_duplicates_score' in ..metrics.py
+        # accept Numpy array objects, not standard Python lists
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+            if 'ratio_duplicates' in metrics:
+               output_metrics['ratio_duplicates'] = \
+                   ratio_duplicates_score(np.array(labels_true), np.array(labels_pred))
+            if 'f1_same_duplicates' in metrics:
+               output_metrics['f1_same_duplicates'] = \
+                   f1_same_duplicates_score(np.array(labels_true), np.array(labels_pred))
+            if 'mean_duplicates_count' in metrics:
+                output_metrics['mean_duplicates_count'] = \
+                    mean_duplicates_count_score(labels_true, labels_pred)
+        return output_metrics
