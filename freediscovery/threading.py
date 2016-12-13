@@ -15,7 +15,8 @@ from .text import FeatureVectorizer
 from .base import BaseEstimator
 from .parsers import EmailParser
 from .utils import setup_model, INT_NAN
-from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
+from .exceptions import (ModelNotFound, WrongParameter,
+             NotImplementedFD, OptionalDependencyMissing)
 
 from jwzthreading import jwzthreading as jwzt
 
@@ -95,53 +96,26 @@ class EmailThreading(BaseEstimator):
 
         _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
 
-        cmod = jwzt.thread(d_all, group_by_subject)
+        threads = jwzt.thread(d_all, group_by_subject)
 
-        for idx, cont in enumerate(cmod):
-            print('Thread id', idx)
-            print(cont.children)
-            jwzt.print_container(cont)
+        threads = [el.collapse_empty() for el in threads]
 
+        cmod = threads
 
         mid, mid_dir = setup_model(self.model_dir)
 
-        joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
-
-        tree = np.ones(self.fe.n_samples_, dtype='int')*INT_NAN
-        root_id = np.ones(self.fe.n_samples_, dtype='int')*INT_NAN
-
-        for root_container in cmod:
-            if root_container.message is not None:
-                root_message_idx = root_container.message.message_idx
-            elif root_container.children and \
-                root_container.children[0].message is not None:
-                root_message_idx = root_container.children[0].message.message_idx
-            else:
-                raise ValueError('Container {} has a None root and None first children.',
-                       '\nThis should not be happening')
-
-            for cont in root_container.flatten():
-                if cont.message is None:
-                    continue
-                msg_idx = cont.message.message_idx
-                root_id[msg_idx] = root_message_idx
-
-                if cont.parent is None:
-                    tree[msg_idx] = INT_NAN
-                elif cont.parent.message is None:
-                    tree[msg_idx] = root_message_idx
-                else:
-                    tree[msg_idx] = cont.parent.message.message_idx
 
         pars = {
             'group_by_subject': group_by_subject
         }
         self._pars = pars
         joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
+        joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
+
 
         self.mid = mid
         self.cmod = cmod
-        return cmod, root_id
+        return cmod
 
     def _load_pars(self):
         """ Load the parameters specified by a mid """

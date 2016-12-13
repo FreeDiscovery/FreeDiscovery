@@ -508,10 +508,19 @@ def test_api_thread_emails(app):
     pars = { 'dataset_id': dsid, }
     res = app.post(url, data=pars)
     assert res.status_code == 200
-    print(res.data)
     data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['id', 'thread_ids', 'parent_ids'])
+    assert sorted(data.keys()) == sorted(['data', 'id'])
     mid = data['id']
+
+    tree_ref = [ {'id': 0, 'parent': None, 'children': [
+                  {'id': 1, 'children': [], 'parent': 0},
+                  {'id': 2, 'parent': 0,  'children': [
+                         {'id': 3, 'children': [], 'parent': 2},
+                         {'id': 4, 'children': [], 'parent': 2}],
+                         }]
+                  }]
+
+    assert data['data'] == tree_ref
 
     url += '/{}'.format(mid)
     res = app.get(url)

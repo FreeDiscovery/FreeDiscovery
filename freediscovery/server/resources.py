@@ -633,13 +633,10 @@ class EmailThreadingApi(Resource):
 
         model = EmailThreading(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
+        tree =  model.thread()
 
-        parent_ids, root_ids =  model.thread()
-
-        return {'id': model.mid,
-                'thread_ids': root_ids.tolist(),
-                'parent_ids': parent_ids.tolist()
-                }
+        return {'data': [el.to_dict(include=['subject']) for el in tree],
+                'id': model.mid}
 
 class EmailThreadingApiElement(Resource):
 

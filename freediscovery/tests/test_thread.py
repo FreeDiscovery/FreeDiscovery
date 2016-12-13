@@ -28,12 +28,22 @@ def test_threading():
 
     cat = EmailThreading(cache_dir=cache_dir, dsid=uuid)
 
-    tree, parent = cat.thread()
+    tree = cat.thread()
     cat.get_params()
 
-    assert len(filenames) == len(tree)
+    tree_ref = [ {'id': 0, 'parent': None, 'children': [
+                  {'id': 1, 'children': [], 'parent': 0},
+                  {'id': 2, 'parent': 0,  'children': [
+                         {'id': 3, 'children': [], 'parent': 2},
+                         {'id': 4, 'children': [], 'parent': 2}],
+                         }]
+                  }]
+
+    assert [el.to_dict() for el in tree] == tree_ref
+
+
+    assert len(filenames) == sum([el.size for el in tree])
     assert len(filenames) == 5
-    assert len(filenames) == len(res)
 
     #res2 = {idx: [el0[0] for el0 in el] for idx, el in \
     #    groupby(enumerate(tree), key=lambda x: x[1])}

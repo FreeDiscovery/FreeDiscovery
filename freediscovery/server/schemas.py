@@ -130,11 +130,15 @@ class ErrorSchema(Schema):
 
 class TreeSchema(Schema):
     id = fields.Int(required=True)
-    parent = fields.Int(allow_none=True)
-    children = fields.Nested('self', many=True)
-
-class EmailThreadingSchema(TreeSchema):
+    parent = fields.Int(allow_none=True, required=True)
     subject = fields.Str()
+    children = fields.Nested('self', many=True, required=True)
+
+
+class EmailThreadingSchema(Schema):
+    id = fields.Str(required=True)
+    data = fields.Nested(TreeSchema, many=True)
+
 
 
 class MetricsCategorizationSchema(Schema):
