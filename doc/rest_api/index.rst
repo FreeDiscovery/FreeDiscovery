@@ -12,6 +12,17 @@ Load Benchmark Dataset
 `/api/v0/dataset/<dataset-name> <./dataset_get.html>`_   GET     Load benchmark dataset
 =======================================================  ======  =========================================================
 
+Parsers
+-------
+
+======================================================================================  ======  ==========================================================
+`/api/v0/email-parser/ <./email_parser_post.html>`_                                     POST    Load a dataset and parse emails
+`/api/v0/email-parser/ <./email_parser_get.html>`_                                      GET     List processed datasets
+`/api/v0/email-parser/<dataset-id> <./email_parser_element_get.html>`_                  GET     Load parsed emails
+`/api/v0/email-parser/<dataset-id>/index <./email_parser_index_get.html>`_              GET     Query document index for a list of filenames
+`/api/v0/email-parser/<dataset-id> <./email_parser_delete.html>`_                       DELETE  Delete a processed dataset
+======================================================================================  ======  ==========================================================
+
 Feature Extraction 
 ------------------
 
@@ -20,7 +31,7 @@ Feature Extraction
 `/api/v0/feature-extraction/ <./feature_extraction_get.html>`_                          GET     List processed datasets
 `/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_post.html>`_     POST    Run feature extraction on a dataset
 `/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_get.html>`_      GET     Load extracted features (and obtain the processing status)
-`/api/v0/feature-extraction/<dataset-id>/index <./feature_extraction_index_get.html>`_  GET     Query document index for filenames
+`/api/v0/feature-extraction/<dataset-id>/index <./feature_extraction_index_get.html>`_  GET     Query document index for a list of filenames
 `/api/v0/feature-extraction/<dataset-id> <./feature_extraction_delete.html>`_           DELETE  Delete a processed dataset
 ======================================================================================  ======  ==========================================================
 
@@ -59,7 +70,14 @@ Near Duplicate Detection
 
 ==================================================================================  ======  =========================================================
 `/api/v0/duplicate-detection/ <./duplicate_detection_post.html>`_                   POST    Compute near duplicates
-`/api/v0/duplicate-detection/<model-id> <./duplicate_detection_element_get.html>`_  POST    Query duplicates
+`/api/v0/duplicate-detection/<model-id> <./duplicate_detection_element_get.html>`_  GET     Query duplicates
 ==================================================================================  ======  =========================================================
 
+Email threading
+---------------
+
+==================================================================================  ======  =========================================================
+`/api/v0/email-threading/     <./email_threading_post.html>`_                       POST    Thread emails
+`/api/v0/email-threading/<model-id> <./email_threading_element_get.html>`_          GET     Get threading parameters
+==================================================================================  ======  =========================================================
 

@@ -75,7 +75,7 @@ def print_thread(container, depth=0):
 
 print("\nThreading examples\n"
       "cf. https://www.redhat.com/archives/rhl-devel-list/2008-October/thread.htlm \n"
-      "for ground truth data (mailman has a maximum threading depth of 3)"
+      "for ground truth data (mailman has a maximum threading depth of 3, unlike FreeDiscovery)"
        )
 for idx in [-1, -2, -3, -4, -5]: # get latest threads
     print(' ')

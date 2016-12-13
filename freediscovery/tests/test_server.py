@@ -505,7 +505,8 @@ def test_api_thread_emails(app):
     data = parse_res(res)  # TODO unused variable
 
     url = V01 + "/email-threading" 
-    pars = { 'dataset_id': dsid, }
+    pars = { 'dataset_id': dsid }
+             
     res = app.post(url, data=pars)
     assert res.status_code == 200
     data = parse_res(res)
@@ -519,6 +520,15 @@ def test_api_thread_emails(app):
                          {'id': 4, 'children': [], 'parent': 2}],
                          }]
                   }]
+
+    def remove_subject_field(d):
+        del d['subject']
+        for el in d['children']:
+            remove_subject_field(el)
+
+    tree_res = data['data']
+    for el in tree_res:
+        remove_subject_field(el)
 
     assert data['data'] == tree_ref
 
