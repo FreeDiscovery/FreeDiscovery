@@ -15,7 +15,7 @@ FreeDiscovery is build on top of existing machine learning libraries (scikit-lea
 - binary text categorization
 - document clustering
 - duplicate detection
-- e-mail threading (soon to be added).
+- e-mail threading
 
 In addition, FreeDiscovery can be used as Python package and aims to expose a scikit-learn compatible API. 
 

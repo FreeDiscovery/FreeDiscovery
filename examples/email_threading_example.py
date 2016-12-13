@@ -1,8 +1,8 @@
 """
-Duplicate Detection Example [REST API]
+Email threading Example [REST API]
 --------------------------------------
 
-Find near-duplicates in a text collection
+Thread a email collection
 """
 from __future__ import print_function
 
