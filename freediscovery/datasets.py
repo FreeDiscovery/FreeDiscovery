@@ -20,15 +20,19 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
                  load_ground_truth=False, verify_checksum=False):
     """ Download a benchmark dataset.
 
-    Currently the following datasets based on TREC 2009 legal collection
-    are supported:
+    The currently supported datasets are listed below,
 
-     - treclegal09_2k_subset  :   2 400 documents,   2 MB
-     - treclegal09_20k_subset :  20 000 documents,  30 MB
-     - treclegal09_37k_subset :  37 000 documents,  55 MB
-     - treclegal09            : 700 000 documents, 1.2 GB
+    1. TREC 2009 legal collection
 
-    The ground truth files for categorization are adapted from TAR Toolkit.
+       - treclegal09_2k_subset  :   2 400 documents,   2 MB
+       - treclegal09_20k_subset :  20 000 documents,  30 MB
+       - treclegal09_37k_subset :  37 000 documents,  55 MB
+       - treclegal09            : 700 000 documents, 1.2 GB
+
+       The ground truth files for categorization are adapted from TAR Toolkit.
+
+    2. Fedora mailing list (2009-2009)
+       - fedora_ml_
 
     If you encounter any issues for downloads with this function,
     you can also manually download and extract the required dataset to `cache_dir` (the
@@ -64,12 +68,14 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
                     'treclegal09_20k_subset': '43a711897ce724e873bdbc47a374a57e',
                     'treclegal09_37k_subset': '9fb6b7505871bbaee5a438de3b0f497c',
                     'legal09int': 'None',
+                    'fedora_ml_3k_subset': '09dbb03d13b8e341bd615ce43f2d836b'
                     }
 
     DATASET_SIZE = {'treclegal09_2k_subset' : 2.8,
                     'treclegal09_20k_subset': 30,
                     'treclegal09_37k_subset': 55,
                     'legal09int': 1500,
+                    'fedora_ml_3k_subset': 3,
                     }
 
     if name not in VALID_MD5SUM:
@@ -127,7 +133,7 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
         results['data_dir'] = results['base_dir']
 
 
-    if load_ground_truth and name != 'legal09int':
+    if load_ground_truth and 'treclegal09' in name:
         with open(os.path.join(outdir,'seed_relevant.txt'), 'rt') as fh:
             relevant_files = [el.strip() for el in fh.readlines()]
 

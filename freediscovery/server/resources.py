@@ -20,6 +20,7 @@ except:  # sklearn v0.18
     from sklearn.metrics.base import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
+from ..parsers import EmailParser
 from ..lsi import LSI
 from ..categorization import Categorizer
 from ..io import parse_ground_truth_file
@@ -28,13 +29,17 @@ from ..cluster import Clustering
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
+                      EmailParserSchema, EmailParserElementIndexSchema,
                       DatasetSchema,
                       LsiParsSchema, LsiPostSchema, LsiPredictSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       ErrorSchema, DuplicateDetectionSchema,
-                      MetricsCategorizationSchema, MetricsClusteringSchema, MetricsDupDetectionSchema
+                      MetricsCategorizationSchema, MetricsClusteringSchema,
+                      MetricsDupDetectionSchema,
+                      EmailThreadingSchema, EmailThreadingParsSchema,
+                      ErrorSchema, DuplicateDetectionSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -122,6 +127,44 @@ class FeaturesApiElementIndex(Resource):
     @marshal_with(FeaturesElementIndexSchema())
     def get(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        idx = fe.search(args['filenames'])
+        return {'index': list(idx)}
+
+# ============================================================================ # 
+#                   Email parser                                      #
+# ============================================================================ # 
+
+class EmailParserApi(Resource):
+
+    def get(self):
+        fe = EmailParser(self._cache_dir)
+        return fe.list_datasets()
+
+    @use_args({'data_dir': wfields.Str(required=True)})
+    @marshal_with(EmailParserSchema())
+    def post(self, **args):
+        fe = EmailParser(self._cache_dir)
+        dsid = fe.transform(**args)
+        pars = fe.get_params()
+        return {'id': dsid, 'filenames': pars['filenames']}
+
+
+class EmailParserApiElement(Resource):
+    def get(self, dsid):
+        fe = EmailParser(self._cache_dir, dsid=dsid)
+        out = fe.get_params()
+        return out
+
+    def delete(self, dsid):
+        fe = EmailParser(self._cache_dir, dsid=dsid)
+        fe.delete()
+
+
+class EmailParserApiElementIndex(Resource):
+    @use_args({'filenames': wfields.List(wfields.Str(), required=True)})
+    @marshal_with(EmailParserElementIndexSchema())
+    def get(self, dsid, **args):
+        fe = EmailParser(self._cache_dir, dsid=dsid)
         idx = fe.search(args['filenames'])
         return {'index': list(idx)}
 
@@ -446,7 +489,7 @@ class ClusteringApiElement(Resource):
 # ============================================================================ # 
 
 _dup_detection_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        "dataset_id": wfields.Str(required=True),
         "method": wfields.Str(required=False, missing='simhash')
         }
 
@@ -575,3 +618,38 @@ class MetricsDupDetectionApiElement(Resource):
                 output_metrics['mean_duplicates_count'] = \
                     mean_duplicates_count_score(labels_true, labels_pred)
         return output_metrics
+
+# ============================================================================ # 
+#                              Email threading
+# ============================================================================ # 
+
+
+class EmailThreadingApi(Resource):
+
+    @use_args({ "dataset_id": wfields.Str(required=True)})
+    @marshal_with(EmailThreadingSchema())
+    def post(self, **args):
+        from ..threading import EmailThreading
+
+        model = EmailThreading(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+
+        tree =  model.thread()
+
+        return {'data': [el.to_dict(include=['subject']) for el in tree],
+                'id': model.mid}
+
+class EmailThreadingApiElement(Resource):
+
+    @marshal_with(EmailThreadingParsSchema())
+    def get(self, mid):
+        from ..threading import EmailThreading
+
+        model = EmailThreading(cache_dir=self._cache_dir, mid=mid)
+
+        return model.get_params()
+
+    def delete(self, mid):
+        from ..threading import EmailThreading
+
+        model = EmailThreading(cache_dir=self._cache_dir, mid=mid)
+        model.delete()

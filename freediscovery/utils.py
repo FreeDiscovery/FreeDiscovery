@@ -29,6 +29,9 @@ def _silent(stream='stderr'):
     setattr(sys, stream, stderr)
 
 
+INT_NAN = -99999
+
+
 def categorization_score(idx_ref, Y_ref, idx, Y):
     """ Calculate the efficiency scores """
     # This function should be deprecated

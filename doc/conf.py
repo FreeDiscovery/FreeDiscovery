@@ -15,9 +15,9 @@
 
 import sys
 import os
-import shlex
 import six
 import freediscovery
+import sphinx_rtd_theme
 
 from recommonmark.parser import CommonMarkParser
 
@@ -25,6 +25,7 @@ from recommonmark.parser import CommonMarkParser
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('sphinxext'))
 
 # Scipy and Numpy packages cannot be installed in on readthedocs.org
 # https://read-the-docs.readthedocs.org/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
@@ -45,6 +46,7 @@ MOCK_MODULES = []
         
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
+from github_link import make_linkcode_resolve
 
 
 source_parsers = {
@@ -61,12 +63,12 @@ source_parsers = {
 extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinxcontrib.napoleon',
     'sphinx_gallery.gen_gallery',
+    'sphinx.ext.linkcode'
 ]
 
 
@@ -167,6 +169,7 @@ html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -196,7 +199,7 @@ html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = '%b %d, %Y'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
@@ -219,7 +222,7 @@ html_static_path = ['_static']
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 #html_show_sphinx = True
@@ -343,3 +346,9 @@ napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
 
 autoclass_content = 'class' # don't document __init__
+
+# The following is used by sphinx.ext.linkcode to provide links to github
+linkcode_resolve = make_linkcode_resolve('freediscovery',
+                                         u'https://github.com/FreeDiscovery/'
+                                         'FreeDiscovery/blob/{revision}/'
+                                         '{package}/{path}#L{lineno}')

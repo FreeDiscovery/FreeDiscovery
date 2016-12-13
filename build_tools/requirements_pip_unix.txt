@@ -6,5 +6,6 @@ xgboost==0.4a30 # version 0.6 currently broken for sparse arrays https://github.
 nltk
 scikit-learn==0.18.1
 git+https://github.com/rth/simhash-py.git
+git+https://github.com/FreeDiscovery/jwzthreading.git
 # gensim # not used at present
 # coverage # not used at present

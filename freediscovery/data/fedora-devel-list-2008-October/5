@@ -1,0 +1,75 @@
+From mattdm@mattdm.org Tue Sep 30 23:51:28 2008
+Received: from int-mx2.corp.redhat.com (nat-pool.util.phx.redhat.com
+	[10.8.5.200])
+	by listman.util.phx.redhat.com (8.13.1/8.13.1) with ESMTP id
+	m913pRwe031603 for <fedora-devel-list@listman.util.phx.redhat.com>;
+	Tue, 30 Sep 2008 23:51:28 -0400
+Received: from mx3.redhat.com (mx3.redhat.com [172.16.48.32])
+	by int-mx2.corp.redhat.com (8.13.1/8.13.1) with ESMTP id m913pRX5006125
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 23:51:27 -0400
+Received: from jadzia.bu.edu (jadzia.bu.edu [128.197.11.189])
+	by mx3.redhat.com (8.13.8/8.13.8) with SMTP id m913pGrX012337
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 23:51:16 -0400
+Received: by jadzia.bu.edu (Postfix, from userid 18281)
+	id 5DB9A22991C; Tue, 30 Sep 2008 23:51:16 -0400 (EDT)
+Date: Tue, 30 Sep 2008 23:51:16 -0400
+From: Matthew Miller <mattdm@mattdm.org>
+To: Development discussions related to Fedora <fedora-devel-list@redhat.com>
+Message-ID: <20081001035116.GA21890@jadzia.bu.edu>
+Mail-Followup-To: Development discussions related to Fedora
+	<fedora-devel-list@redhat.com>
+References: <20081001022458.GA14186@jadzia.bu.edu>
+	<80d7e4090809301952sfc8882ckc41cd88652958238@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <80d7e4090809301952sfc8882ckc41cd88652958238@mail.gmail.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
+X-RedHat-Spam-Score: -0.018 
+X-Scanned-By: MIMEDefang 2.58 on 172.16.27.26
+X-Scanned-By: MIMEDefang 2.63 on 172.16.48.32
+X-loop: fedora-devel-list@redhat.com
+Subject: Re: tab completion less useful now, due to sbin in path
+X-BeenThere: fedora-devel-list@redhat.com
+X-Mailman-Version: 2.1.5
+Precedence: junk
+Reply-To: Development discussions related to Fedora
+	<fedora-devel-list@redhat.com>
+List-Id: Development discussions related to Fedora
+	<fedora-devel-list.redhat.com>
+List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>, 
+	<mailto:fedora-devel-list-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/fedora-devel-list>
+List-Post: <mailto:fedora-devel-list@redhat.com>
+List-Help: <mailto:fedora-devel-list-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>,
+	<mailto:fedora-devel-list-request@redhat.com?subject=subscribe>
+X-List-Received-Date: Wed, 01 Oct 2008 03:51:28 -0000
+
+On Tue, Sep 30, 2008 at 08:52:10PM -0600, Stephen John Smoogen wrote:
+> I won't say you are whining.. but you are the first systems
+> administrator I have met in several years who hasn't had
+> /usr/sbin:/sbin in their default path. You sure they didn't make you a
+> manager and didn't tell you?
+
+
+Heh. Well, I also have had sudo compiled with /sbin and /usr/sbin in its
+secure path, so sudo command (and sudo com[tab] with bash_completion) has
+worked correctly for me for years. And if there's an admin command that I'm
+for some reason running not as root it should a) be moved out of sbin or b)
+I probably at least want to think about it and so typing the path doesn't
+hurt.
+
+> I think the chance for putting it back is still there.. if someone is
+> willing to do the work on the hard but correct way? I think it was
+> crickets the last couple of times when volunteers were asked for that.
+
+Sure, I'm willing to work on it.
+
+-- 
+Matthew Miller <mattdm@mattdm.org>
+Senior Systems Architect 
+Cyberinfrastructure Labs
+Computing & Information Technology 
+Harvard School of Engineering & Applied Sciences
+

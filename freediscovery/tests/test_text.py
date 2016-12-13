@@ -84,7 +84,7 @@ def test_search_filenames(use_hashing):
         terms = fe.query_features([2, 3, 5], n_top_words=n_top_words)
         assert len(terms) == n_top_words
 
-    fe.list_datasets
+    fe.list_datasets()
 
 
 @pytest.mark.parametrize('use_hashing, min_df, max_df', [[False, 0.1, 0.6],

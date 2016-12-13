@@ -271,10 +271,6 @@ class Categorizer(BaseEstimator):
         res = np.concatenate(res, axis=0)
         return res
 
-    def get_params(self):
-        """ Get model parameters """
-        return self._pars
-
     def _load_pars(self):
         """ Load the parameters specified by a mid """
         mid = self.mid

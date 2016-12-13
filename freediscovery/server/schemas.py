@@ -55,6 +55,13 @@ class FeaturesElementIndexSchema(Schema):
     index = fields.List(fields.Int(), required=True)
 
 
+class EmailParserSchema(FeaturesParsSchema):
+    id = fields.Str(required=True)
+    filenames = fields.List(fields.Str())
+
+class EmailParserElementIndexSchema(Schema):
+    index = fields.List(fields.Int(), required=True)
+
 # TODO to delete after successful implementation of metrics
 class ClassificationScoresSchema(Schema):
     precision = fields.Number(required=True)
@@ -108,15 +115,30 @@ class ClusteringSchema(Schema):
     htree = fields.Nested(_HTreeSchema()) 
     pars = fields.Str(required=True)
 
-
 class DuplicateDetectionSchema(Schema):
     simhash = fields.List(fields.Int(), required=True)
     cluster_id = fields.List(fields.Int(), required=True)
     dup_pairs = fields.List(fields.List(fields.Int()), required=True)
 
 
+
+class EmailThreadingParsSchema(Schema):
+    group_by_subject = fields.Boolean(required=True)
+
 class ErrorSchema(Schema):
     message = fields.Str(required=True)
+
+class TreeSchema(Schema):
+    id = fields.Int(required=True)
+    parent = fields.Int(allow_none=True, required=True)
+    subject = fields.Str()
+    children = fields.Nested('self', many=True, required=True)
+
+
+class EmailThreadingSchema(Schema):
+    id = fields.Str(required=True)
+    data = fields.Nested(TreeSchema, many=True)
+
 
 
 class MetricsCategorizationSchema(Schema):

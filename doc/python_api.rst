@@ -15,6 +15,12 @@ Datasets
 
     freediscovery.datasets.load_dataset
 
+Parsers
+---------------
+.. autosummary::
+    :toctree: ./generated/
+
+    freediscovery.parsers.EmailParser
 
 Feature extraction
 ------------------
@@ -56,6 +62,14 @@ Duplicates detection
     freediscovery.dupdet.DuplicateDetection
     freediscovery.dupdet.SimhashDuplicates
     freediscovery.dupdet.IMatchDuplicates
+
+Email threading
+---------------
+
+.. autosummary::
+    :toctree: ./generated/
+
+    freediscovery.threading.EmailThreading
 
 Tools
 -----

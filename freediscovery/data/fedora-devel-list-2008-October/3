@@ -1,0 +1,105 @@
+From smooge@gmail.com Tue Sep 30 22:52:24 2008
+Received: from int-mx2.corp.redhat.com (nat-pool.util.phx.redhat.com
+	[10.8.5.200])
+	by listman.util.phx.redhat.com (8.13.1/8.13.1) with ESMTP id
+	m912qNPA024233 for <fedora-devel-list@listman.util.phx.redhat.com>;
+	Tue, 30 Sep 2008 22:52:24 -0400
+Received: from mx3.redhat.com (mx3.redhat.com [172.16.48.32])
+	by int-mx2.corp.redhat.com (8.13.1/8.13.1) with ESMTP id m912qN2V025844
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 22:52:23 -0400
+Received: from rn-out-0910.google.com (rn-out-0910.google.com [64.233.170.184])
+	by mx3.redhat.com (8.13.8/8.13.8) with ESMTP id m912qCid020475
+	for <fedora-devel-list@redhat.com>; Tue, 30 Sep 2008 22:52:12 -0400
+Received: by rn-out-0910.google.com with SMTP id k32so145435rnd.7
+	for <fedora-devel-list@redhat.com>;
+	Tue, 30 Sep 2008 19:52:12 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=gamma;
+	h=domainkey-signature:received:received:message-id:date:from:to
+	:subject:in-reply-to:mime-version:content-type
+	:content-transfer-encoding:content-disposition:references;
+	bh=w/Cf3Km9xllcYTyCgkV8KMJEw3ukAcXkeHtesCQ/m04=;
+	b=WxEC8cePCoHOy8AfBvAnckNAOH601/yMGvmhqBSUL+Kx9b7gc3h3lblkzm8W1bnjWV
+	LLvUvjWzYTlztiWmQ0TU97p6fsjVwmTObgk00rBsllW6RitZDzmK53mRngwN4pcKkQfg
+	gkSqK2gtOo6YZSgQylAnlalK+yaQqm4O65Dag=
+DomainKey-Signature: a=rsa-sha1; c=nofws; d=gmail.com; s=gamma;
+	h=message-id:date:from:to:subject:in-reply-to:mime-version
+	:content-type:content-transfer-encoding:content-disposition
+	:references;
+	b=juTwjaIlDm4luMRoctB96/cHn8WjMgBBrTcM61ib/arxWeFw7xhIOkDqTTi6oQSbWi
+	tB3X8bRfw7bWLjz1vkcSOxYVzcQii5RjjQnRzy+jYl0/pye8u33cEl85YxDe4Uh+Ep3l
+	BQwR4PvIcUQb/iXmIozI9v0CSZx/9holyTqjE=
+Received: by 10.150.149.19 with SMTP id w19mr11187633ybd.50.1222829530934;
+	Tue, 30 Sep 2008 19:52:10 -0700 (PDT)
+Received: by 10.150.218.17 with HTTP; Tue, 30 Sep 2008 19:52:10 -0700 (PDT)
+Message-ID: <80d7e4090809301952sfc8882ckc41cd88652958238@mail.gmail.com>
+Date: Tue, 30 Sep 2008 20:52:10 -0600
+From: "Stephen John Smoogen" <smooge@gmail.com>
+To: "Fedora Development List" <fedora-devel-list@redhat.com>
+In-Reply-To: <20081001022458.GA14186@jadzia.bu.edu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+References: <20081001022458.GA14186@jadzia.bu.edu>
+X-RedHat-Spam-Score: -0.105 
+X-Scanned-By: MIMEDefang 2.58 on 172.16.27.26
+X-Scanned-By: MIMEDefang 2.63 on 172.16.48.32
+X-loop: fedora-devel-list@redhat.com
+Subject: Re: tab completion less useful now, due to sbin in path
+X-BeenThere: fedora-devel-list@redhat.com
+X-Mailman-Version: 2.1.5
+Precedence: junk
+Reply-To: Development discussions related to Fedora
+	<fedora-devel-list@redhat.com>
+List-Id: Development discussions related to Fedora
+	<fedora-devel-list.redhat.com>
+List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>, 
+	<mailto:fedora-devel-list-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/fedora-devel-list>
+List-Post: <mailto:fedora-devel-list@redhat.com>
+List-Help: <mailto:fedora-devel-list-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>,
+	<mailto:fedora-devel-list-request@redhat.com?subject=subscribe>
+X-List-Received-Date: Wed, 01 Oct 2008 02:52:24 -0000
+
+On Tue, Sep 30, 2008 at 8:24 PM, Matthew Miller <mattdm@mattdm.org> wrote:
+> Grumble grumble.
+>
+> I'm finding having sbin in my user path really annoying. I go to type
+> 'killall firefox' using tab completion, and killall5 (which says in its man
+> page "Its primary (only) use is in the rc scripts"!) is in the way. I go to
+> run firefox again, and I'm impeded by firstboot. Etc., etc., etc.
+>
+> This change is not for the better, and doesn't fit the stated goal of "sbin
+> sanity".
+>
+> The sudo change was good, and helped out. Moving useful binaries out of sbin
+> and into bin would have been a good path. Throwing everything into one pot
+> is a regression.
+>
+>
+> Now, I hear you saying already: "stop whining, Matthew. Just put it the way
+> you want in your dotfiles". Well, okay, I have. But I don't want to just set
+> a static path since I want /etc/profile.d to still work. So I've got to do
+> an active munging sed script. Ugh.
+>
+> We've just made the command line a lot less user friendly for common use in
+> exchange for an ugly fix to a small inconvenience. *Any* chance of putting
+> this back and working at fixing the problem the hard but correct way?
+>
+
+I won't say you are whining.. but you are the first systems
+administrator I have met in several years who hasn't had
+/usr/sbin:/sbin in their default path. You sure they didn't make you a
+manager and didn't tell you?
+
+I think the chance for putting it back is still there.. if someone is
+willing to do the work on the hard but correct way? I think it was
+crickets the last couple of times when volunteers were asked for that.
+
+
+-- 
+Stephen J Smoogen. -- BSD/GNU/Linux
+How far that little candle throws his beams! So shines a good deed
+in a naughty world. = Shakespeare. "The Merchant of Venice"
+
