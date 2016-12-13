@@ -65,7 +65,8 @@ class EmailThreading(BaseEstimator):
         self.cmod = cmod
 
 
-    def thread(self, index=None, group_by_subject=False):
+    def thread(self, index=None, group_by_subject=False,
+            sort_by_key='message_idx', sort_missing=-1):
         """
         Thread the emails
 
@@ -99,6 +100,9 @@ class EmailThreading(BaseEstimator):
         threads = jwzt.thread(d_all, group_by_subject)
 
         threads = [el.collapse_empty() for el in threads]
+
+        threads = jwzt.sort_threads(threads, key=sort_by_key,
+                                             missing=sort_missing)
 
         cmod = threads
 

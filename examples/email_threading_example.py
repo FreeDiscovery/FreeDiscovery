@@ -77,6 +77,6 @@ print("\nThreading examples\n"
       "cf. https://www.redhat.com/archives/rhl-devel-list/2008-October/thread.htlm \n"
       "for ground truth data (mailman has a maximum threading depth of 3)"
        )
-for idx in [5, 6, 7]:
+for idx in [-1, -2, -3, -4, -5]: # get latest threads
     print(' ')
     print_thread(res['data'][idx])
