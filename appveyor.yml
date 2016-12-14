@@ -33,7 +33,7 @@ install:
   - conda info -a
   # create a conda virtual environement 
   - "cd C:\\projects\\freediscovery"
-  - conda config --add channels conda-forge
+  - conda config --append channels conda-forge
   - "conda create -n freediscovery-env --yes --file .\\build_tools\\requirements_conda.txt python=%PYTHON_VERSION%"
   - activate freediscovery-env
   - "pip install -r .\\build_tools\\requirements_pip_win.txt"

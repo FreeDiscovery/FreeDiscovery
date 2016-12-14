@@ -1,7 +1,7 @@
 #!/bin/bash
 
 conda env remove --yes -n freediscovery-env
-conda config --add channels conda-forge
+conda config --append channels conda-forge
 conda create -n freediscovery-env --yes --file ./build_tools/requirements_conda.txt python=3.5
 
 source activate freediscovery-env

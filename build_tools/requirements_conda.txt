@@ -1,6 +1,6 @@
 cython==0.23.4
 numpy==1.11.1       # core  library
-scipy==0.18
+scipy==0.18.1
 pandas==0.18.1
 scikit-learn==0.18.1
 nltk==3.2.1

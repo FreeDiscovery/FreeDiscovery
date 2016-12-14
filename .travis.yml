@@ -22,7 +22,7 @@ before_install:
     - conda info -a
 
 install: 
-    - conda config --add channels conda-forge
+    - conda config --append channels conda-forge
     - conda install --yes --file ./build_tools/requirements_conda.txt python=${TRAVIS_PYTHON_VERSION}
     - pip install -r ./build_tools/requirements_pip_unix.txt
     # reinstall the tested version of SKLEARN
