@@ -1,10 +1,9 @@
-pip
-future
-pytest
-setuptools
-numpy==1.11.1
-scipy==0.18
+cython==0.23.4
+numpy==1.11.1       # core  library
+scipy==0.18.1
 pandas==0.18.1
-flask==0.11
+scikit-learn==0.18.1
+nltk==3.2.1
+pytest==2.9.1       
+flask==0.11         # server
 requests==2.11.1
-cython

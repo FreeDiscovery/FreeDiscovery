@@ -22,10 +22,15 @@ before_install:
     - conda info -a
 
 install: 
+    - conda config --append channels conda-forge
     - conda install --yes --file ./build_tools/requirements_conda.txt python=${TRAVIS_PYTHON_VERSION}
     - pip install -r ./build_tools/requirements_pip_unix.txt
     # reinstall the tested version of SKLEARN
-    - pip uninstall --yes scikit-learn &&  pip install scikit-learn==${SKLEARN}
+    - | 
+        if [ "${SKLEARN}" != "0.18.1" ]; then
+            pip uninstall --yes scikit-learn &&  pip install scikit-learn==${SKLEARN}
+        fi
+
     - python setup.py install
     - pwd
 
