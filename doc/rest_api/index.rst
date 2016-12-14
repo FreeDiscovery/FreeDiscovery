@@ -51,7 +51,6 @@ Document Categorizaiton
 `/api/v0/categorization/<model-id> <./categorization_element_delete.html>`_        DELETE   Delete the categorization model
 =================================================================================  =======  =========================================================
 
-
 Document Clustering
 -------------------
 
@@ -63,7 +62,6 @@ Document Clustering
 `/api/v0/clustering/<model-name>/<model-id> <./clustering_model_element_get.html>`_     POST    Compute cluster labels
 `/api/v0/clustering/<model-name>/<model-id> <./clustering_model_element_delete.html>`_  DELETE  Delete a clustering model
 ======================================================================================  ======  =========================================================
-
 
 Near Duplicate Detection
 ------------------------
@@ -80,4 +78,13 @@ Email threading
 `/api/v0/email-threading/     <./email_threading_post.html>`_                       POST    Thread emails
 `/api/v0/email-threading/<model-id> <./email_threading_element_get.html>`_          GET     Get threading parameters
 ==================================================================================  ======  =========================================================
+
+Metrics
+-------
+
+================================================================================== ======  =========================================================
+`/api/v0/metrics/categorization <./metrics_categorization_get.html>`_              GET     Retrieve categorization metrics
+`/api/v0/metrics/clustering <./metrics_clustering_get.html>`_                      GET     Retrieve clustering metrics
+`/api/v0/metrics/duplicate-detection <./metrics_duplicate_detection_get.html>`_    GET     Retrieve duplicate detection metrics
+================================================================================== ======  =========================================================
 
