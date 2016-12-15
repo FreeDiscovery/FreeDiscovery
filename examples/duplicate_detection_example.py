@@ -125,9 +125,8 @@ print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), 
 
 
 
-
 if platform.system() == 'Windows':
-    print('Simhash-py is currently not compatible with Windows')
+    print('Simhash-py is currently not implemented for Windows.')
     sys.exit()
 
 print("\n3. Duplicate detection by Simhash")
@@ -145,6 +144,20 @@ mid  = data['id']
 print("     => model id = {}".format(mid))
 
 print('    .. computed in {:.1f}s'.format(time() - t0))
+
+
+
+url = BASE_URL + '/duplicate-detection/{}'.format(mid)
+print(" GET", url)
+t0 = time()
+res = requests.get(url,
+        json={'distance': 1 }) 
+data = res.json()
+print('    .. computed in {:.1f}s'.format(time() - t0))
+
+labels_ = data['cluster_id']
+
+print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
 
 
