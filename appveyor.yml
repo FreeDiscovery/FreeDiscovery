@@ -55,4 +55,9 @@ test_script:
         Foreach-Object {
             python $_.FullName 2>&1 | Tee-Object -Append -FilePath "log.txt"
         }
+        if (sls "Traceback \(most recent call last\):" log.txt -ca -quiet) {
+            exit 1
+        } else {
+            exit 0
+        }
 
