@@ -7,5 +7,6 @@ flask_apispec
 nltk
 scikit-learn==0.18.1  
 git+https://github.com/FreeDiscovery/jwzthreading.git
+sphinx_rtd_theme  # for building documentation
 # gensim # not used at present
 # coverage # not used at present
