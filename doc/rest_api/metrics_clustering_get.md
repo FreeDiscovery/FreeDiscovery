@@ -11,6 +11,7 @@ Use metrics to assess the quality of clustering, comparing groud truth cluster l
 
  * **Success Response**: `HTTP 200`
 
-Presence of keys depend on the value of `metrics` parameter. The most detailed response (all 3 metrics are called):
+        {'adjusted_rand': <float>, 'adjusted_mutual_info': <float>, 'v_measure': <float>}
 
- {'adjusted_rand': <float>, 'adjusted_mutual_info': <float>, 'v_measure': <float>}
+Presence of keys depend on the value of `metrics` parameter.
+The most detailed response (all 3 metrics are called) is shown above.

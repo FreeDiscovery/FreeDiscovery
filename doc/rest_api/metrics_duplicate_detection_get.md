@@ -11,6 +11,8 @@ Use metrics to assess the quality of duplicate detection, comparing groud truth 
 
  * **Success Response**: `HTTP 200`
 
-Presence of keys depend on the value of `metrics` parameter. The most detailed response (all 3 metrics are called):
+       {'ratio_duplicates': <float>, 'f1_same_duplicates': <float>, 'mean_duplicates_count': <float>}
 
- {'ratio_duplicates': <float>, 'f1_same_duplicates': <float>, 'mean_duplicates_count': <float>}
+
+Presence of keys depend on the value of `metrics` parameter.
+The most detailed response (all 3 metrics are called) is shown above.

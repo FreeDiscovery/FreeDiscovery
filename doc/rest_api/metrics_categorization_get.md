@@ -11,6 +11,7 @@ Use metrics to assess the quality of categorization, comparing groud truth label
 
  * **Success Response**: `HTTP 200`
 
-Presence of keys depend on the value of `metrics` parameter. The most detailed response (all 4 metrics are called):
+        {'precision': <float>, 'recall': <float>, 'f1': <float>, 'roc_auc': <float>}
 
- {'precision': <float>, 'recall': <float>, 'f1': <float>, 'roc_auc': <float>}
+Presence of keys depend on the value of `metrics` parameter.
+The most detailed response (all 4 metrics are called) is shown above.
