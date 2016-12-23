@@ -19,20 +19,22 @@ or by downloading the latest stable version from the [Github releases page](http
 ### 2.a. Python Install
 
  1. Download and install [Miniconda](http://conda.pydata.org/miniconda.html) 64 bit for Python 3.5 (a cross-platform package manager for Python & R)
+
+ 2. The install requires a C++ compiler (gcc >= 4.8) on Linux. On Windows the corresponding dependencies are not installed. 
  
- 2. A virtual environment with all the dependencies can be setup with the following command,
+ 3. A virtual environment with all the dependencies can be setup with the following command,
  
           cd FreeDiscovery
           conda create -n freediscovery-env --file build_tools/requirements_conda.txt python=3.5
  
-          source activate freediscovery-env   # on Linuix/Mac OS X
+          source activate freediscovery-env   # on Linux/Mac OS X
           # or "activate freediscovery-env"   # on Windows 
-          pip install -r build_tools/requirements_pip_unix.txt # on Linux/MacOS X
-          pip install -r build_tools/requirements_pip_win.txt # on Windows
+          pip install -r build_tools/requirements_pip.txt 
+          pip install -r build_tools/requirements_pip_compiled.txt # (Linux only) requires a C++ compiler
 
           python setup.py develop
  
- 3. [optional] The test suite can then be run with,
+ 4. [optional] The test suite can then be run with,
  
           python -c "import freediscovery.tests as ft; ft.run()"
 

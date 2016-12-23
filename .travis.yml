@@ -24,7 +24,8 @@ before_install:
 install: 
     - conda config --append channels conda-forge
     - conda install --yes --file ./build_tools/requirements_conda.txt python=${TRAVIS_PYTHON_VERSION}
-    - pip install -r ./build_tools/requirements_pip_unix.txt
+    - pip install -r ./build_tools/requirements_pip.txt
+    - pip install -r ./build_tools/requirements_pip_comp.txt
     # reinstall the tested version of SKLEARN
     - | 
         if [ "${SKLEARN}" != "0.18.1" ]; then

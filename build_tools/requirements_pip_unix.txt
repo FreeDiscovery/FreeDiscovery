@@ -1,7 +1,0 @@
-flask-restful
-marshmallow==2.10.2
-webargs==1.4.0
-flask_apispec
-xgboost==0.4a30 # version 0.6 currently broken for sparse arrays https://github.com/dmlc/xgboost/issues/1238#issuecomment-247787192
-git+https://github.com/rth/simhash-py.git
-git+https://github.com/FreeDiscovery/jwzthreading.git

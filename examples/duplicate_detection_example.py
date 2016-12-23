@@ -64,7 +64,6 @@ print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
                                                   if "filenames" not in key]))
 
 
-# # 2. Near Duplicates detection by cosine similarity (DBSCAN)
 print("\n2. Near Duplicates detection by cosine similarity (DBSCAN)")
 
 url = BASE_URL + '/clustering/dbscan/'
@@ -94,7 +93,6 @@ labels_ = res['labels']
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
 
-# # 3. Near Duplicates detection by cosine similarity (DBSCAN)
 print("\n3. Near Duplicates Detection using I-Match")
 
 url = BASE_URL + '/duplicate-detection/'
@@ -126,49 +124,59 @@ labels_ = res['cluster_id']
 print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
 
 
+
+if platform.system() == 'Windows':
+    print('Simhash-py is currently not implemented for Windows.')
+    sys.exit()
+
+print("\n3. Duplicate detection by Simhash")
+
+url = BASE_URL + '/duplicate-detection/'
+print(" POST", url)
+t0 = time()
+res = requests.post(url,
+        json={'dataset_id': dsid,
+              'method': 'simhash',
+              }) 
+
+data = res.json()
+mid  = data['id']
+print("     => model id = {}".format(mid))
+
+print('    .. computed in {:.1f}s'.format(time() - t0))
+
+
+
+url = BASE_URL + '/duplicate-detection/{}'.format(mid)
+print(" GET", url)
+t0 = time()
+res = requests.get(url,
+        json={'distance': 1 }) 
+data = res.json()
+print('    .. computed in {:.1f}s'.format(time() - t0))
+
+labels_ = data['cluster_id']
+
+print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+
+
+
+url = BASE_URL + '/duplicate-detection/{}'.format(mid)
+print(" GET", url)
+t0 = time()
+res = requests.get(url,
+        json={'distance': 1 }) 
+data = res.json()
+print('    .. computed in {:.1f}s'.format(time() - t0))
+
+labels_ = data['cluster_id']
+
+print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+
+
+
 # 4. Cleaning
 print("\n4.a Delete the extracted features")
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
 print(" DELETE", url)
 requests.delete(url)
-
-
-
-# Commenting out simhash for the moment
-# 
-#if platform.system() == 'Windows':
-#    print('Simhash-py is currently not installed on Windows')
-#    sys.exit()
-#
-#print("\n3. Duplicate detection by Simhash")
-#
-#url = BASE_URL + '/duplicate-detection/'
-#print(" POST", url)
-#t0 = time()
-#res = requests.post(url,
-#        json={'dataset_id': dsid,
-#              'method': 'simhash',
-#              }) 
-#
-#data = res.json()
-#mid  = data['id']
-#print("     => model id = {}".format(mid))
-#
-#print('    .. computed in {:.1f}s'.format(time() - t0))
-#
-#
-#
-#url = BASE_URL + '/duplicate-detection/{}'.format(mid)
-#print(" GET", url)
-#t0 = time()
-#res = requests.get(url,
-#        json={'distance': 1 }) 
-#data = res.json()
-#print('    .. computed in {:.1f}s'.format(time() - t0))
-#
-#labels_ = data['cluster_id']
-#
-#print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
-
-
-

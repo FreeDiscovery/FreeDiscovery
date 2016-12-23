@@ -20,6 +20,11 @@ import os
 pd.options.display.float_format = '{:,.3f}'.format
 
 
+if platform.system() == 'Windows' and sys.version_info > (3, 0):
+   print('This example currently fails on Windows with PY3 (issue #')
+   sys.exit()
+
+
 dataset_name = "fedora_ml_3k_subset"     # see list of available datasets
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
