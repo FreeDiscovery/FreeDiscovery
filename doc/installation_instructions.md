@@ -54,10 +54,16 @@ or by downloading the latest stable version from the [Github releases page](http
 ### 2.b. Docker Container
 1. Download and [install Docker](https://docs.docker.com/engine/installation/)
 
-2. Build the container locally (from the `FreeDiscovery` folder),
+2. Download the pre-build container images (requires authentication),
+
+        docker pull "freediscovery/freediscovery:<version>"
+
+   or build the container locally,
    
         cd FreeDiscovery
-        docker build -t "freediscovery/freediscovery:latest" .     
+        docker build -t "freediscovery/freediscovery:<version>" .     
+
+   where `<version>` is the stable version `0.7` or latest development version with the tag `latest`.
 
       
 ## 3. Starting the FreeDiscovery Server
@@ -69,7 +75,7 @@ The FreeDiscovery server can be started with,
     bash conda_run.sh
 for the Python install, or with
 
-    bash docker_run.sh freediscovery/freediscovery:latest
+    bash docker_run.sh freediscovery/freediscovery:<version>
 for the docker container, respectively.
 
 ### 3.2. On Windows
@@ -82,6 +88,6 @@ The server initialization is not currently fully scripted on Windows, and the fo
         python scripts\run_api.py ..\freediscovery_shared 
    for the Python install, or with,
 
-        docker run -t -i -v ../tar_fd_benchmark:/freediscovery_shared -p 5001:5001 freediscovery/freediscovery:latest
+        docker run -t -i -v /<absolute-path-to-the-foder-with-data>:/freediscovery_shared -p 5001:5001 freediscovery/freediscovery:<version>
 
    for the docker install.
