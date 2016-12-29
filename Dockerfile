@@ -32,7 +32,8 @@ RUN wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O
     conda update --yes --no-deps conda && \
     conda config --set always_yes yes --set changeps1 no && \
     conda install --yes --file /tmp/requirements_conda.txt python=3.5 &&\
-    pip install -r /tmp/requirements_pip_unix.txt && \
+    pip install -r /tmp/requirements_pip.txt && \
+    pip install -r /tmp/requirements_pip_comp.txt && \
     pip install uwsgi==2.0.14 # to communicate with the nginx web-server 
 
 # Copy the modified Nginx conf

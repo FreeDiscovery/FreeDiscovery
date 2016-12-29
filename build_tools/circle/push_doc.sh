@@ -31,7 +31,7 @@ if [ ! -d $DOC_REPO ];
 then git clone "git@github.com:FreeDiscovery/"$DOC_REPO".git";
 fi
 cd $DOC_REPO
-git checkout $CIRCLE_BRANCH
+git checkout master #$CIRCLE_BRANCH
 git reset --hard origin/$CIRCLE_BRANCH
 git rm -rf doc/$dir/ && rm -rf doc/$dir/
 mkdir -p doc

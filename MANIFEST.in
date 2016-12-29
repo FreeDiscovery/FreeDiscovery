@@ -4,3 +4,4 @@ recursive-include freediscovery *.py
 prune freediscovery/tests/.hypothesis
 recursive-include freediscovery *.txt
 recursive-include examples *.py
+recursive-include freediscovery/data/fedora-devel-list-2008-October *

@@ -21,6 +21,9 @@ In addition, FreeDiscovery can be used as Python package and aims to expose a sc
 
 The first release is expected for January 1, 2017, but we would very much appreciate feedback on the existing functionality. Feel free to open new issues on Github or send any comments to grossman@ir.cs.georgetown.edu.  
 
-For more information see the `documentation and API Reference <https://freediscovery.github.io/doc/dev/>`_.
+For more information see the documentation and API Reference,
+
+- development version [`master` branch| `documentation <https://freediscovery.github.io/doc/dev/>`_ ].
+- stable version 0.7 [`0.7.X` branch| `documentation <https://freediscovery.github.io/doc/0.7/>`_ ].
 
 FreeDiscovery is released under the 3-clause BSD licence.

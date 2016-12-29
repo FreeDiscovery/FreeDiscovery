@@ -76,7 +76,7 @@ The FreeDiscovery server can be started with,
 for the Python install, or with
 
     bash docker_run.sh freediscovery/freediscovery:<version>
-for the docker container, respectively.
+for the docker container, respectively. The repository shared with the Docker container (used to ingest the data) is `../freediscovery_shared`.
 
 ### 3.2. On Windows
 
