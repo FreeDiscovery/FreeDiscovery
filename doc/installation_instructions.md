@@ -20,7 +20,7 @@ or by downloading the latest stable version from the [Github releases page](http
 
  1. Download and install [Miniconda](http://conda.pydata.org/miniconda.html) 64 bit for Python 3.5 (a cross-platform package manager for Python & R)
 
- 2. The install requires a C++ compiler (gcc >= 4.8) on Linux. On Windows the corresponding dependencies are not installed. 
+ 2. The install requires the g++ (GCC >= 4.8) compiler Linux. On Windows the corresponding dependencies are not installed. 
  
  3. A virtual environment with all the dependencies can be setup with the following command,
  
@@ -30,7 +30,7 @@ or by downloading the latest stable version from the [Github releases page](http
           source activate freediscovery-env   # on Linux/Mac OS X
           # or "activate freediscovery-env"   # on Windows 
           pip install -r build_tools/requirements_pip.txt 
-          pip install -r build_tools/requirements_pip_compiled.txt # (Linux only) requires a C++ compiler
+          pip install -r build_tools/requirements_pip_comp.txt # (Linux only) requires the g++ compiler
 
           python setup.py develop
  
