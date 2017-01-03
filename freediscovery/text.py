@@ -63,13 +63,15 @@ class FeatureVectorizer(_BaseTextTransformer):
         load an exising dataset
     verbose : bool
         pring progress messages
+    sampling_index : list of filenames or None, default=None
+        a list of filenames used for upsampling / downsampling
+
     """
 
     _PARS_SHORT = ['data_dir', 'n_samples', 'n_features',
                    'n_jobs', 'chunk_size', 'norm',
                    'analyzer', 'ngram_range', 'stop_words',
                    'use_idf', 'sublinear_tf', 'binary', 'use_hashing']
-
     def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=11000000,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=False, binary=True, use_hashing=True,
@@ -231,6 +233,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         return out
 
 
+
     def _aggregate_features(self):
         """ Agregate features loaded as separate files features-<number>
         into a single file features"""
@@ -242,3 +245,61 @@ class FeatureVectorizer(_BaseTextTransformer):
             out.append(ds)
         res = scipy.sparse.vstack(out)
         return res
+
+
+
+class _FeatureVectorizerSampled(FeatureVectorizer):
+    """Extract features from text documents, with additional sampling
+
+    This is mostly a helper class for debugging and experimenting
+
+    Parameters
+    ----------
+    cache_dir : str, default='/tmp/'
+        directory where to save temporary and regression files
+    dsid : str
+        load an exising dataset
+    verbose : bool
+        pring progress messages
+    sampling_index : list of filenames or None, default=None
+        a list of filenames in self._pars['filenames'] (with possible duplicates)
+        used to downsample / upsample the dataset
+
+    """
+    def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False, sampling_filenames=None):
+        super(_FeatureVectorizerSampled, self).__init__(cache_dir, dsid, verbose)
+
+        if sampling_filenames is not None:
+            self.sampling_filenames = sampling_filenames
+            if dsid is None:
+                raise ValueError('sampling_index must be applied onto an existing dataset\n'
+                                 'specified by dsid')
+            if not isinstance(sampling_filenames, list):
+                raise TypeError('Wrong type {} for sampling_index, must be list'.format(
+                            type(sampling_filenames).__name__))
+            self.sampling_index = self.search(self.sampling_filenames)
+        else:
+            self.sampling_filenames = None
+            self.sampling_index = None
+
+    def _load_pars_sampled(self):
+        pars = super(_FeatureVectorizerSampled , self)._load_pars()
+        if self.sampling_filenames is not None:
+            pars['filenames'] = self.sampling_filenames
+            pars['n_samples'] = self.n_samples_
+            pars['additional_sampling'] = True
+        else:
+            pars['additional_sampling'] = False
+        return pars
+
+    def load(self, dsid):
+        fnames, X = super(_FeatureVectorizerSampled , self).load(dsid)
+        if self.sampling_filenames is not None:
+            return (np.array(fnames)[self.sampling_index].tolist(),
+                    X[self.sampling_index, :])
+        else:
+            return fnames, X
+
+    @property
+    def n_samples_(self):
+        return len(self.sampling_filenames)

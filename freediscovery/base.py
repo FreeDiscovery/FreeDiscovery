@@ -103,8 +103,7 @@ class _BaseTextTransformer(object):
         return pars
 
     def search(self, filenames):
-        """ Return the document ids that correspond to the provided filenames,
-        without preserving order.
+        """ Return the document ids that correspond to the provided filenames.
 
         Parameters
         ----------
