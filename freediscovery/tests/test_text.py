@@ -130,6 +130,7 @@ def test_sampling_filenames():
     pars = fe._load_pars()
     assert_array_equal(fnames, fnames_s)
     assert_array_equal(X.data, X_s.data)
+    assert fes.n_samples_ == len(fnames)
 
     fes = _FeatureVectorizerSampled(cache_dir=cache_dir, dsid=uuid,
                                     sampling_filenames=fnames[::-1])

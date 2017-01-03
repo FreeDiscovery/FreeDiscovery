@@ -302,4 +302,7 @@ class _FeatureVectorizerSampled(FeatureVectorizer):
 
     @property
     def n_samples_(self):
-        return len(self.sampling_filenames)
+        if self.sampling_filenames is not None:
+            return len(self.sampling_filenames)
+        else:
+            return super(_FeatureVectorizerSampled , self).n_samples_
