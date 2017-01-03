@@ -6,12 +6,13 @@ from __future__ import print_function
 
 import os.path
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_array_equal
 import scipy.sparse
 import itertools
 import pytest
 
-from freediscovery.text import FeatureVectorizer
+from freediscovery.text import (FeatureVectorizer,
+                                _FeatureVectorizerSampled)
 from .run_suite import check_cache
 
 basename = os.path.dirname(__file__)
@@ -110,5 +111,70 @@ def test_df_filtering(use_hashing, min_df, max_df):
     else:
         assert X.shape[1] < X2.shape[1] # min/max_df removes some features
 
+
+    fe.delete()
+
+def test_sampling_filenames():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+              use_hashing=True)  # TODO unused (overwritten on the next line)
+    uuid, filenames = fe.transform()
+    fnames, X = fe.load(uuid)
+
+    # don't use any sampling
+    fes = _FeatureVectorizerSampled(cache_dir=cache_dir, dsid=uuid,
+                                    sampling_filenames=None)
+    fnames_s, X_s = fes.load(uuid)
+    pars = fe._load_pars()
+    assert_array_equal(fnames, fnames_s)
+    assert_array_equal(X.data, X_s.data)
+
+    fes = _FeatureVectorizerSampled(cache_dir=cache_dir, dsid=uuid,
+                                    sampling_filenames=fnames[::-1])
+
+    assert fes.sampling_index is not None
+    fnames_s, X_s = fes.load(uuid)
+    pars_s = fes._load_pars_sampled()
+    assert_array_equal(fnames[::-1], fnames_s)
+    assert_array_equal(X[::-1,:].data, X_s.data)
+    for key in pars:
+        if key == 'filenames':
+            assert pars[key][::-1] == pars_s[key]
+        else:
+            assert pars[key] == pars_s[key]
+
+    # repeat twice the filenames
+    fes = _FeatureVectorizerSampled(cache_dir=cache_dir, dsid=uuid,
+                                    sampling_filenames=(fnames+fnames))
+
+    assert fes.sampling_index is not None
+    fnames_s, X_s = fes.load(uuid)
+    pars_s = fes._load_pars_sampled()
+    assert_array_equal(fnames + fnames, fnames_s )
+    assert_array_equal(X.data, X_s[:len(fnames)].data)
+    assert_array_equal(X.data, X_s[len(fnames):].data)
+    assert fes.n_samples_ == len(fnames)*2
+    #for key in pars:
+    #    assert pars[key] == pars_s[key]
+
+    # downsample the filenames
+    N = len(fnames)//2
+
+    np.random.seed(1)
+
+    idx = np.random.choice(fe.n_samples_, size=(N,))
+    fnames_s_in = np.array(fnames)[idx].tolist()
+
+    fes = _FeatureVectorizerSampled(cache_dir=cache_dir, dsid=uuid,
+            sampling_filenames=fnames_s_in)
+
+    assert fes.sampling_index is not None
+    fnames_s, X_s = fes.load(uuid)
+    pars_s = fes._load_pars_sampled()
+    assert_array_equal(fnames_s_in, fnames_s )
+    assert_array_equal(X[idx].data, X_s.data)
+    assert fes.n_samples_ == N
 
     fe.delete()
