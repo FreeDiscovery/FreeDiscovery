@@ -17,8 +17,7 @@ Contents
    rest_api/index
    python_api
    examples/index
-   scaling_benchmarks
-   deployment
+   user_manual/index
    contributing
    whats_new
 
