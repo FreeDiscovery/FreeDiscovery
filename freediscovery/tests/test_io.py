@@ -34,3 +34,9 @@ def test_parse_smart_stemmed():
     res = parse_smart_tokens(text)
     assert list(res.keys()) == ['26187', '26188']
     assert len(res['26188']) == 28
+    res_ref = ['sunday', 'won', 'race', 'race', 'andret', 'andret', 'rahal',
+               'bobby', 'lola', 'lola', 'ford', 'ford', 'reynard', 'merced',
+               'christ', 'benz', 'motor', 'fittipald', 'grand', 'prix',
+               'finish', 'finish', 'michael', 'win', 'vancouv', 'vancouv',
+               'indycar', 'indycar']
+    assert res['26188'] == res_ref
