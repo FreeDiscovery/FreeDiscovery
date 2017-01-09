@@ -7,7 +7,8 @@ from __future__ import print_function
 import os.path
 from numpy.testing import assert_allclose
 
-from freediscovery.io import parse_ground_truth_file, parse_smart_tokens
+from freediscovery.io import (parse_ground_truth_file,
+                              parse_rcv1_smart_tokens)
 
 
 def test_parse_ground_truth_file():
@@ -31,7 +32,7 @@ def test_parse_smart_stemmed():
     sunday won race race andret andret rahal bobby lola lola ford ford reynard merced christ benz motor fittipald grand prix finish finish michael win vancouv vancouv indycar indycar
     """)
 
-    res = parse_smart_tokens(text)
+    res = parse_rcv1_smart_tokens(text)
     assert list(res.keys()) == ['26187', '26188']
     assert len(res['26188']) == 28
     res_ref = ['sunday', 'won', 'race', 'race', 'andret', 'andret', 'rahal',

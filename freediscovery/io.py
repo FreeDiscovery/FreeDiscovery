@@ -19,7 +19,7 @@ def parse_ground_truth_file(filename):
     return df
 
 
-def parse_smart_tokens(text):
+def parse_rcv1_smart_tokens(text):
     """
     Parse a dataset stored in the SMART tokenized format, used
     in particular for the RCV1-v2 dataset,
