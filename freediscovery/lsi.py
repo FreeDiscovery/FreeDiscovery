@@ -107,7 +107,8 @@ class LSI(BaseEstimator):
         joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
         ds = joblib.load(os.path.join(dsid_dir, 'features'))
 
-        svd = TruncatedSVD_LSI(n_components=n_components, n_iter=n_iter #, algorithm='arpack'
+        svd = _TruncatedSVD_LSI(n_components=n_components,
+                                n_iter=n_iter #, algorithm='arpack'
                                )
         lsi = svd
         lsi.fit(ds)
@@ -139,7 +140,7 @@ class LSI(BaseEstimator):
         elif method in ['nearest-neighbor-diff', 'nearest-neighbor-combine', 'stacking']:
             raise WrongParameter('method = {} is implemented but is not production ready and was disabled for v0.5 release'.format(method))
         else:
-            raise NotImplementedFD() 
+            raise NotImplementedFD()
 
         index = np.asarray(index, dtype='int')
         y = np.asarray(y, dtype='int')
@@ -147,73 +148,57 @@ class LSI(BaseEstimator):
         idx_p, idx_n = _unzip_relevant(index, y)
 
         _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
-        d_p = ds[idx_p,:]
-        d_n = ds[idx_n,:]
 
         lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
 
-        d_p_p = lsi.transform_lsi_norm(d_p)
-        d_n_p = lsi.transform_lsi_norm(d_n)
+        d_p = lsi.transform_lsi_norm(ds)
 
-        centr_p_p = np.mean(d_p_p, axis=0)[None, :]
-        centr_n_p = np.mean(d_n_p, axis=0)[None, :]
+        if method.startswith('nearest-neighbor'):
+            from sklearn.neighbors import NearestNeighbors
+            cmod_p = NearestNeighbors(n_neighbors=1, n_jobs=-1, metric='euclidean') # euclidean metric by default
+            cmod_n = NearestNeighbors(n_neighbors=1, n_jobs=-1, metric='euclidean')
 
-        query = {'d_p': d_p_p, 'd_n': d_n_p, 'centr_p': centr_p_p, 'centr_n': centr_n_p}
-        n_samples = ds.shape[0]
+            cmod_p.fit(d_p[idx_p, :], np.ones(len(idx_p), dtype='int'))
+            cmod_n.fit(d_p[idx_n, :], np.zeros(len(idx_n), dtype='int'))
+            D_p, d_idx_p_loc = cmod_p.kneighbors(d_p)
+            D_n, d_idx_n_loc = cmod_n.kneighbors(d_p)
 
-        def _predict_chunk(lsi, ds, k, _query, chunk_size):
-            n_samples = ds.shape[0]
-            mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
-            ds_p = lsi.transform_lsi_norm(ds[mslice, :])
-            out = {}
-            for key, val in _query.items():
-                D_tmp = 1 - val.dot(ds_p.T).T
-                out['idx_'+key] = np.argmin(D_tmp, axis=1)
-                out['D_'+key] = np.min(D_tmp, axis=1)
-            return out
+            # convert Euclidean distance on L2 norm data to cosine distance
+            D_n /= 2
+            D_p /= 2
 
-        res = {}
-        for key in query:
-            for prefix in ['idx_', 'D_']:
-                res[prefix+key] = []
-        for k in range(n_samples//chunk_size + 1):
-            res_el  = _predict_chunk(lsi, ds, k, query, chunk_size)
-            for key in res:
-                res[key].append(res_el[key])
+            # how the ranking score is computed
+            D_max = np.where(D_p < D_n, 1 - D_p, - (1 - D_n))
+            D_diff = D_p - D_n
+            if method == 'nearest-neighbor-1':
+                D = D_max
+            elif method == 'nearest-neighbor-diff':
+                D = D_diff
+            elif method == "nearest-neighbor-combine":
+                D = D_max*abs(D_diff)
+            else:
+                raise NotImplementedFD('method={} not supported!'.format(method))
+            y_test = D[:]
+            y_train = D[index]
 
-        for key in res:
-            res[key] = np.concatenate(res[key], axis=0)
-
-        
-        D_rel = res['D_d_p']
-        D_nrel = res['D_d_n']
-        D_max = np.where(D_rel < D_nrel, 1 - D_rel, - (1 - D_nrel))
-        D_diff = D_rel - D_nrel
-        if method == 'nearest-neighbor-1':
-            D = D_max
-        elif method == 'nearest-neighbor-diff':
-            D = D_diff
-        elif method == "nearest-neighbor-combine":
-            D = D_max*abs(D_diff)
+            # transform local index (within idx_p, idx_n to a global index)
+            d_idx_p = idx_p[d_idx_p_loc]
+            d_idx_n = idx_n[d_idx_n_loc]
+            res = {'D_p': D_p, 'D_n': D_n,
+                   'idx_p': d_idx_p,
+                   'idx_n': d_idx_n}
         elif method == 'nearest-centroid':
-            D = res['D_centr_p']
+            from sklearn.neighbors import NearestCentroid
+            cmod  = NearestCentroid()
+            cmod.fit(d_p[index], y)
+            y_test = cmod.predict(d_p)
+            y_train = cmod.predict(d_p[index])
+            # other optional return values
+            res = {}
         else:
             raise NotImplementedFD('method={} not supported!'.format(method))
-        Y_train = D[index]
-        Y_test = D[:]
 
-        # transform nearest document from relative indexing
-        # (within the idx_p, idx_n) to absolute indexing
-        for key in res:
-            if key.startswith('idx'):
-                if key.endswith('_p'):
-                    idx_mapping = idx_p
-                elif key.endswith('_n'):
-                    idx_mapping = idx_n
-                else:
-                    raise ValueError
-                res[key] = idx_mapping[res[key]]
-        return (lsi, Y_train, Y_test, res)
+        return (lsi, y_train, y_test, res)
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')
@@ -249,8 +234,9 @@ class LSI(BaseEstimator):
 # The below class is identical to TruncatedSVD,
 # https://github.com/scikit-learn/scikit-learn/blob/51a765a/sklearn/decomposition/truncated_svd.py#L25
 # the only reason is the we need to save the Sigma matrix when performing this transform!
+# This will not longer be necessary with sklearn v0.19
 
-class TruncatedSVD_LSI(TruncatedSVD):
+class _TruncatedSVD_LSI(TruncatedSVD):
     """
     A patch of `sklearn.decomposition.TruncatedSVD` to include whitening (`scikit-learn/scikit-learn#7832)`
     """
