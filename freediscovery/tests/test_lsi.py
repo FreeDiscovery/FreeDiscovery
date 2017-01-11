@@ -40,7 +40,7 @@ def test_lsi():
     idx_gt = lsi.fe.search(ground_truth.index.values)
     idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
 
-    for method in ['nearest-max', 'centroid-max']:
+    for method in ['nearest-neighbor-1', 'nearest-centroid']:
                         #'nearest-diff', 'nearest-combine', 'stacking']:
         _, Y_train, Y_pred, ND_train = lsi.predict(
                                 idx_gt,

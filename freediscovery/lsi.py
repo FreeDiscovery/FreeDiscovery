@@ -119,7 +119,7 @@ class LSI(BaseEstimator):
 
         return lsi, exp_var
 
-    def predict(self, index, y, method='nearest-max', chunk_size=100):
+    def predict(self, index, y, method='nearest-neighbor-1', chunk_size=100):
         """
         Predict the document relevance using a previously trained LSI model
 
@@ -129,14 +129,14 @@ class LSI(BaseEstimator):
            document indices of the training set
         y : array-like, shape (n_samples)
            target binary class relative to index
-        method : str, optional, default='nearest-max'
-           if `method=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
-           otherwise if `method=="centroid-max"` the centroid of relevant documents is used as the query vector.
+        method : str, optional, default='nearest-neighbor-1'
+           if `method=="nearest-neighbor-1"` the cosine distance to the closest relevant/non relevant document is used as classification score,
+           otherwise if `method=="nearest-centroid"` the centroid of relevant documents is used as the query vector.
 
         """
-        if method in ['centroid-max', 'nearest-max']:
+        if method in ['nearest-centroid', 'nearest-neighbor-1']:
             pass
-        elif method in ['nearest-diff', 'nearest-combine', 'stacking']:
+        elif method in ['nearest-neighbor-diff', 'nearest-neighbor-combine', 'stacking']:
             raise WrongParameter('method = {} is implemented but is not production ready and was disabled for v0.5 release'.format(method))
         else:
             raise NotImplementedFD() 
@@ -189,13 +189,13 @@ class LSI(BaseEstimator):
         D_nrel = res['D_d_n']
         D_max = np.where(D_rel > D_nrel, D_rel, - D_nrel)
         D_diff = D_rel - D_nrel
-        if method == 'nearest-max':
+        if method == 'nearest-neighbor-1':
             D = D_max
-        elif method == 'nearest-diff':
+        elif method == 'nearest-neighbor-diff':
             D = D_diff
-        elif method == "nearest-combine":
+        elif method == "nearest-neighbor-combine":
             D = D_max*abs(D_diff)
-        elif method == 'centroid-max':
+        elif method == 'nearest-centroid':
             D = res['D_centr_p']
         elif method == 'stacking':
             from .private import lsi_stacking

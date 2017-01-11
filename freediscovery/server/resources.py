@@ -218,7 +218,7 @@ class LsiApiElementPredict(Resource):
     def post(self, mid, **args):
         lsi = LSI(self._cache_dir, mid=mid)
         _, Y_train, Y_test, res  = lsi.predict(
-                method='nearest-max', **args) 
+                method='nearest-neighbor-1', **args)
 
         idx_train = args['index']
         y = args['y']
@@ -249,7 +249,7 @@ class LsiApiElementTest(Resource):
         d_ref = parse_ground_truth_file(args["ground_truth_filename"])
         del args['ground_truth_filename']
         lsi_m, Y_train, Y_test, res  = lsi.predict(
-                method='nearest-max', **args) 
+                method='nearest-neighbor-1', **args)
 
         idx_ref = lsi.fe.search(d_ref.index.values)
 
