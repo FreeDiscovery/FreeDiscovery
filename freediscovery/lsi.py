@@ -197,9 +197,6 @@ class LSI(BaseEstimator):
             D = D_max*abs(D_diff)
         elif method == 'nearest-centroid':
             D = res['D_centr_p']
-        elif method == 'stacking':
-            from .private import lsi_stacking
-            D = lsi_stacking(res, y, index)
         else:
             raise NotImplementedFD('method={} not supported!'.format(method))
         Y_train = D[index]
