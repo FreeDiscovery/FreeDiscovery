@@ -167,9 +167,9 @@ class LSI(BaseEstimator):
             ds_p = lsi.transform_lsi_norm(ds[mslice, :])
             out = {}
             for key, val in _query.items():
-                D_tmp = val.dot(ds_p.T).T
-                out['idx_'+key] = np.argmax(D_tmp, axis=1)
-                out['D_'+key] = np.max(D_tmp, axis=1)
+                D_tmp = 1 - val.dot(ds_p.T).T
+                out['idx_'+key] = np.argmin(D_tmp, axis=1)
+                out['D_'+key] = np.min(D_tmp, axis=1)
             return out
 
         res = {}
@@ -187,7 +187,7 @@ class LSI(BaseEstimator):
         
         D_rel = res['D_d_p']
         D_nrel = res['D_d_n']
-        D_max = np.where(D_rel > D_nrel, D_rel, - D_nrel)
+        D_max = np.where(D_rel < D_nrel, 1 - D_rel, - (1 - D_nrel))
         D_diff = D_rel - D_nrel
         if method == 'nearest-neighbor-1':
             D = D_max
