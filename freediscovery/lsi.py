@@ -119,7 +119,7 @@ class LSI(BaseEstimator):
 
         return lsi, exp_var
 
-    def predict(self, index, y, accumulate='nearest-max', chunk_size=100):
+    def predict(self, index, y, method='nearest-max', chunk_size=100):
         """
         Predict the document relevance using a previously trained LSI model
 
@@ -129,15 +129,15 @@ class LSI(BaseEstimator):
            document indices of the training set
         y : array-like, shape (n_samples)
            target binary class relative to index
-        accumulate : str, optional, default='nearest-max'
-           if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
-           otherwise if `accumulate=="centroid-max"` the centroid of relevant documents is used as the query vector.
+        method : str, optional, default='nearest-max'
+           if `method=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
+           otherwise if `method=="centroid-max"` the centroid of relevant documents is used as the query vector.
 
         """
-        if accumulate in ['centroid-max', 'nearest-max']:
+        if method in ['centroid-max', 'nearest-max']:
             pass
-        elif accumulate in ['nearest-diff', 'nearest-combine', 'stacking']:
-            raise WrongParameter('accumulate = {} is implemented but is not production ready and was disabled for v0.5 release'.format(accumulate))
+        elif method in ['nearest-diff', 'nearest-combine', 'stacking']:
+            raise WrongParameter('method = {} is implemented but is not production ready and was disabled for v0.5 release'.format(method))
         else:
             raise NotImplementedFD() 
 
@@ -189,19 +189,19 @@ class LSI(BaseEstimator):
         D_nrel = res['D_d_n']
         D_max = np.where(D_rel > D_nrel, D_rel, - D_nrel)
         D_diff = D_rel - D_nrel
-        if accumulate == 'nearest-max':
+        if method == 'nearest-max':
             D = D_max
-        elif accumulate == 'nearest-diff':
+        elif method == 'nearest-diff':
             D = D_diff
-        elif accumulate == "nearest-combine":
+        elif method == "nearest-combine":
             D = D_max*abs(D_diff)
-        elif accumulate == 'centroid-max':
+        elif method == 'centroid-max':
             D = res['D_centr_p']
-        elif accumulate == 'stacking':
+        elif method == 'stacking':
             from .private import lsi_stacking
             D = lsi_stacking(res, y, index)
         else:
-            raise NotImplementedFD('accumulate={} not supported!'.format(accumulate))
+            raise NotImplementedFD('method={} not supported!'.format(method))
         Y_train = D[index]
         Y_test = D[:]
 
