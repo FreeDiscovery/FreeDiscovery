@@ -13,6 +13,34 @@ from .exceptions import ModelNotFound
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
 
+class RankerMixin(object):
+    """Mixin class for all ranking estimators in FreeDiscovery.
+    A ranker is a binary classifier without a decision threshold.
+    """
+    _estimator_type = "classifier"  # so that thing would still work with scikit learn
+
+    def score(self, X, y, sample_weight=None):
+        """Returns the ROC score of the prediction.
+        Best possible score is 1.0 and the worst in 0.
+
+        Parameters
+        ----------
+        X : array-like, shape = (n_samples, n_features)
+            Test samples.
+        y : array-like, shape = (n_samples)
+            True values for X.
+        sample_weight : array-like, shape = [n_samples], optional
+            Sample weights.
+        Returns
+        -------
+        score : float
+            ROC score of self.decision_function(X) wrt. y.
+        """
+
+        from .metrics import roc_auc_score
+        return roc_auc_score(y, self.decision_function(X), sample_weight=sample_weight,)
+
+
 class _BaseTextTransformer(object):
     """Base text transformer
 

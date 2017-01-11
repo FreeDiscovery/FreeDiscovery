@@ -16,7 +16,7 @@ from sklearn.utils.sparsefuncs import mean_variance_axis
 from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
-from .base import BaseEstimator
+from .base import BaseEstimator, BaseRegressor
 from .categorization import _unzip_relevant
 from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
