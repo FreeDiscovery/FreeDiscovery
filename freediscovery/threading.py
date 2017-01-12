@@ -12,7 +12,7 @@ from scipy.special import logit
 from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
-from .base import BaseEstimator
+from .base import _BaseWrapper
 from .parsers import EmailParser
 from .utils import setup_model, INT_NAN
 from .exceptions import (ModelNotFound, WrongParameter,
@@ -21,7 +21,7 @@ from .exceptions import (ModelNotFound, WrongParameter,
 from jwzthreading import jwzthreading as jwzt
 
 
-class EmailThreading(BaseEstimator):
+class EmailThreading(_BaseWrapper):
     """ JWZ Email threading class
 
 

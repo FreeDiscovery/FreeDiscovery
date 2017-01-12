@@ -16,8 +16,8 @@ from sklearn.utils.sparsefuncs import mean_variance_axis
 from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
-from .base import BaseEstimator
-from .categorization import _unzip_relevant, NearestNeighborRanker
+from .base import _BaseWrapper
+from .categorization import NearestNeighborRanker
 from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
@@ -26,7 +26,7 @@ def _touch(filename):
     open(filename, 'ab').close()
 
 
-class LSI(BaseEstimator):
+class LSI(_BaseWrapper):
     """Document categorization using Latent Semantic Indexing (LSI)
 
     Parameters

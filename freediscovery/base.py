@@ -182,7 +182,7 @@ class _BaseTextTransformer(object):
         return out
 
 
-class BaseEstimator(object):
+class _BaseWrapper(object):
     def get_path(self, mid):
         dsid = self.get_dsid(self.fe.cache_dir, mid)
         return os.path.join(self.fe.cache_dir, dsid, self._DIRREF, mid)

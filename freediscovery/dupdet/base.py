@@ -9,13 +9,13 @@ import os
 from sklearn.externals import joblib
 import numpy as np
 
-from ..base import BaseEstimator
+from ..base import _BaseWrapper
 from ..text import FeatureVectorizer
 from ..utils import setup_model, _rename_main_thread
 from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
                             WrongParameter)
 
-class DuplicateDetection(BaseEstimator):
+class DuplicateDetection(_BaseWrapper):
     """Find near duplicates in a document collection.
 
     Currently supported backends are simhash-py and i-match.

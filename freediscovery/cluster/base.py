@@ -11,7 +11,7 @@ import os.path
 import numpy as np
 from sklearn.externals import joblib
 
-from ..base import BaseEstimator
+from ..base import _BaseWrapper
 from ..text import FeatureVectorizer
 from ..utils import setup_model
 from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
@@ -153,7 +153,7 @@ class ClusterLabels(object):
         #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
 
 
-class Clustering(BaseEstimator):
+class Clustering(_BaseWrapper):
     """Document clustering
 
     The algorithms are adapted from scikit learn.

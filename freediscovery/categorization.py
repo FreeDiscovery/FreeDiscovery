@@ -11,11 +11,12 @@ import scipy
 from scipy.special import logit
 from sklearn.externals import joblib
 from sklearn.neighbors import NearestNeighbors
+from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
 
 
 from .text import FeatureVectorizer
-from .base import BaseEstimator, RankerMixin
+from .base import _BaseWrapper, RankerMixin
 from .utils import setup_model, _rename_main_thread
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
@@ -199,7 +200,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
 
 
-class Categorizer(BaseEstimator):
+class Categorizer(_BaseWrapper):
     """ Document categorization model
 
     The option `use_hashing=True` must be set for the feature extraction.
