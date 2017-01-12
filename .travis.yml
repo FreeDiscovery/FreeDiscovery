@@ -9,8 +9,6 @@ matrix:
       env: SKLEARN="0.18.1"
     - python: "2.7" 
       env: SKLEARN="0.18.1"
-    - python: "3.5"
-      env: SKLEARN="0.17.1"
 
 # setup adapted from https://github.com/soft-matter/trackpy/blob/master/.travis.yml
 before_install:
