@@ -11,7 +11,7 @@ import os.path
 import numpy as np
 from sklearn.externals import joblib
 
-from ..base import BaseEstimator
+from ..base import _BaseWrapper
 from ..text import FeatureVectorizer
 from ..utils import setup_model
 from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
@@ -153,7 +153,7 @@ class ClusterLabels(object):
         #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
 
 
-class Clustering(BaseEstimator):
+class Clustering(_BaseWrapper):
     """Document clustering
 
     The algorithms are adapted from scikit learn.
@@ -171,34 +171,18 @@ class Clustering(BaseEstimator):
        model id
     """
 
-    _DIRREF = "clustering"
+    _wrapper_type = "cluster"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
 
-        if dsid is None and mid is not None:
-            self.dsid = dsid = self.get_dsid(cache_dir, mid)
-            self.mid = mid
-        elif dsid is not None:
-            self.dsid  = dsid
-            self.mid = None
-        elif dsid is None and mid is None:
-            raise ValueError
+        super(Clustering, self).__init__(cache_dir=cache_dir,  dsid=dsid,
+                                         mid=mid, load_model=True)
 
-        self.fe = FeatureVectorizer(cache_dir=cache_dir, dsid=dsid)
         if self.fe._pars['use_hashing']:
             raise NotImplementedError('Using clustering with hashed features is not supported by FreeDiscovery!')
 
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
-
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-
-        if mid is not None:
-            self.km = self.load(mid)
-            self._pars = self._load_pars()
-        else:
-            self.km = None
-            self._pars = None
+        self.km = self.cmod
+        del self.cmod
 
 
     def _cluster_func(self, n_clusters, km, pars=None, lsi=None):
@@ -430,28 +414,3 @@ class Clustering(BaseEstimator):
         out['v_measure_score'] = v_measure_score(ref_labels, labels)
         #out['silhouette_score'] = silhouette_score(X, labels, sample_size=1000)
         return out
-
-
-    def _load_pars(self):
-        """ Load parameters from cache specified by a mid """
-
-        mid = self.mid
-
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ValueError('Model id {} not found in the cache!'.format(mid))
-
-        pars = joblib.load(os.path.join(mid_dir, 'pars'))
-
-        return pars
-
-
-    def load(self, mid):
-        """ Load results from cache specified by a mid """
-
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ValueError('Model id {} not found in the cache!'.format(mid))
-
-        km = joblib.load(os.path.join(mid_dir, 'model'))
-        return km

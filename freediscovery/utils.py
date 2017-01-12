@@ -102,11 +102,12 @@ def _count_duplicates(x):
     _, indices, counts = np.unique(x, return_counts=True, return_inverse=True)
     return counts[indices]
 
-def generate_uuid():
+def generate_uuid(size=16):
     """
     Generate a unique id for the model
     """
-    return uuid.uuid4().hex # a new random id
+    sl = slice(size)
+    return uuid.uuid4().hex[sl] # a new random id
 
 
 def setup_model(base_path):

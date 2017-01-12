@@ -12,7 +12,7 @@ from scipy.special import logit
 from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
-from .base import BaseEstimator
+from .base import _BaseWrapper
 from .parsers import EmailParser
 from .utils import setup_model, INT_NAN
 from .exceptions import (ModelNotFound, WrongParameter,
@@ -21,7 +21,7 @@ from .exceptions import (ModelNotFound, WrongParameter,
 from jwzthreading import jwzthreading as jwzt
 
 
-class EmailThreading(BaseEstimator):
+class EmailThreading(_BaseWrapper):
     """ JWZ Email threading class
 
 
@@ -35,34 +35,14 @@ class EmailThreading(BaseEstimator):
       model id
     """
 
-    _DIRREF = "threading"
+    _wrapper_type = "threading"
 
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
                  decode_header=False):
 
-        if dsid is None and mid is not None:
-            self.dsid = dsid =  self.get_dsid(cache_dir, mid)
-            self.mid = mid
-        elif dsid is not None:
-            self.dsid  = dsid
-            self.mid = None
-        elif dsid is None and mid is None:
-            raise WrongParameter('dsid and mid')
-
-        self.fe = EmailParser(cache_dir=cache_dir, dsid=dsid)
-
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
-
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-
-        if self.mid is not None:
-            pars, cmod = self._load_pars()
-        else:
-            pars = None
-            cmod = None
-        self._pars = pars
-        self.cmod = cmod
+        super(EmailThreading, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid,
+                                          dataset_definition=EmailParser,
+                                          load_model=True)
 
 
     def thread(self, index=None, group_by_subject=False,
@@ -121,12 +101,3 @@ class EmailThreading(BaseEstimator):
         self.cmod = cmod
         return cmod
 
-    def _load_pars(self):
-        """ Load the parameters specified by a mid """
-        mid = self.mid
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ModelNotFound('Model id {} not found in the cache!'.format(mid))
-        pars = joblib.load(os.path.join(mid_dir, 'pars'))
-        cmod = joblib.load(os.path.join(mid_dir, 'model'))
-        return pars, cmod

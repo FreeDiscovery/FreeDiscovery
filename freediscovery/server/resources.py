@@ -200,7 +200,7 @@ class LsiApiElement(Resource):
     def get(self, mid):
         cat = LSI(self._cache_dir, mid=mid)
 
-        pars = cat._load_pars(mid)
+        pars = cat._load_pars()
         pars['dataset_id'] = pars['dsid']
         return pars
 
@@ -460,7 +460,7 @@ class ClusteringApiElement(Resource):
 
         cl = Clustering(cache_dir=self._cache_dir, mid=mid)
 
-        km = cl.load(mid=mid)
+        km = cl._load_model()
         htree = cl._get_htree(km)
         if 'children' in htree:
             htree['children'] = htree['children'].tolist()

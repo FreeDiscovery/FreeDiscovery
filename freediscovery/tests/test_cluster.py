@@ -68,7 +68,7 @@ def test_clustering(method, lsi_components, args, cl_args):
     check_cluster_consistency(labels, terms)
     cat.scores(np.random.randint(0, NCLUSTERS-1, size=len(labels)), labels)
     # load the model saved to disk
-    km = cat.load(mid)
+    km = cat._load_model()
     assert_allclose(labels, km.labels_)
     if method != 'dbscan':
         # DBSCAN does not take the number of clusters as input

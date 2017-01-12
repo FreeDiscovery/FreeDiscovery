@@ -11,11 +11,11 @@ import scipy
 from scipy.special import logit
 from sklearn.externals import joblib
 from sklearn.neighbors import NearestNeighbors
+from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
 
 
-from .text import FeatureVectorizer
-from .base import BaseEstimator, RankerMixin
+from .base import _BaseWrapper, RankerMixin
 from .utils import setup_model, _rename_main_thread
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
@@ -199,7 +199,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
 
 
-class Categorizer(BaseEstimator):
+class Categorizer(_BaseWrapper):
     """ Document categorization model
 
     The option `use_hashing=True` must be set for the feature extraction.
@@ -219,34 +219,13 @@ class Categorizer(BaseEstimator):
       number of K-folds used for Cross Validation
     """
 
-    _DIRREF = "models"
+    _wrapper_type = "models"
 
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
 
-        if dsid is None and mid is not None:
-            self.dsid = dsid =  self.get_dsid(cache_dir, mid)
-            self.mid = mid
-        elif dsid is not None:
-            self.dsid  = dsid
-            self.mid = None
-        elif dsid is None and mid is None:
-            raise WrongParameter('dsid and mid')
-
-        self.fe = FeatureVectorizer(cache_dir=cache_dir, dsid=dsid)
-
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
-
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-
-        if self.mid is not None:
-            pars, cmod = self._load_pars()
-        else:
-            pars = None
-            cmod = None
-        self._pars = pars
-        self.cmod = cmod
+        super(Categorizer, self).__init__(cache_dir=cache_dir, dsid=dsid,
+                                          mid=mid, load_model=True)
 
         self.cv_scoring = cv_scoring
         self.cv_n_folds = cv_n_folds
@@ -436,13 +415,12 @@ class Categorizer(BaseEstimator):
         res = np.concatenate(res, axis=0)
         return res
 
-    def _load_pars(self):
-        """ Load the parameters specified by a mid """
-        mid = self.mid
+    def _load_pars(self, mid=None):
+        """Load model parameters from disk"""
+        if mid is None:
+            mid = self.mid
         mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ModelNotFound('Model id {} not found in the cache!'.format(mid))
-        pars = joblib.load(os.path.join(mid_dir, 'pars'))
+        pars = super(Categorizer, self)._load_pars(mid)
         cmod = joblib.load(os.path.join(mid_dir, 'model'))
         pars['options'] = cmod.get_params()
-        return pars, cmod
+        return pars

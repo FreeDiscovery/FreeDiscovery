@@ -36,8 +36,8 @@ def test_lsi():
     assert lsi_res.components_.shape == (n_components, n_features)
     assert lsi.get_dsid(fe.cache_dir, lsi_id) == uuid
     assert lsi.get_path(lsi_id) is not None
-    assert lsi._load_pars(lsi_id) is not None
-    lsi.load(lsi_id)
+    assert lsi._load_pars() is not None
+    lsi._load_model()
 
     idx_gt = lsi.fe.search(ground_truth.index.values)
     idx_all = np.arange(lsi.fe.n_samples_, dtype='int')

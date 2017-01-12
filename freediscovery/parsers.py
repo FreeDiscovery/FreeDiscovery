@@ -15,7 +15,7 @@ from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
 
-from .base import _BaseTextTransformer
+from .text import _BaseTextTransformer
 from .utils import generate_uuid, _rename_main_thread
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 

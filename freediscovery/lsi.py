@@ -16,8 +16,8 @@ from sklearn.utils.sparsefuncs import mean_variance_axis
 from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
-from .base import BaseEstimator
-from .categorization import _unzip_relevant, NearestNeighborRanker
+from .base import _BaseWrapper
+from .categorization import NearestNeighborRanker
 from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
@@ -26,7 +26,7 @@ def _touch(filename):
     open(filename, 'ab').close()
 
 
-class LSI(BaseEstimator):
+class LSI(_BaseWrapper):
     """Document categorization using Latent Semantic Indexing (LSI)
 
     Parameters
@@ -41,33 +41,12 @@ class LSI(BaseEstimator):
        print progress messages
     """
 
-    _DIRREF = "lsi"
+    _wrapper_type = "lsi"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None, verbose=False):
-        if dsid is None and mid is not None:
-            self.dsid = dsid =  self.get_dsid(cache_dir, mid)
-            self.mid = mid
-        elif dsid is not None:
-            self.dsid  = dsid
-            self.mid = None
-        elif dsid is None and mid is None:
-            raise ValueError
 
-        self.data_dir = None
-        self.verbose = verbose
+        super(LSI, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
 
-        self.fe = FeatureVectorizer(cache_dir=cache_dir, dsid=dsid)
-
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
-
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-
-        if self.mid is not None:
-            pars = self._load_pars(self.mid)
-        else:
-            pars = None
-        self._pars = pars
 
     def transform(self, n_components, n_iter=5):
         """
@@ -98,7 +77,7 @@ class LSI(BaseEstimator):
 
         pars = {'dsid': dsid, 'n_components': n_components}
 
-        mid_dir_base = os.path.join(dsid_dir, "lsi")
+        mid_dir_base = os.path.join(dsid_dir, self._wrapper_type)
     
         if not os.path.exists(mid_dir_base):
             os.mkdir(mid_dir_base)
@@ -113,7 +92,7 @@ class LSI(BaseEstimator):
         lsi = svd
         lsi.fit(ds)
 
-        joblib.dump(lsi, os.path.join(mid_dir, 'lsi_decomposition'))
+        joblib.dump(lsi, os.path.join(mid_dir, 'model'))
 
         exp_var = lsi.explained_variance_ratio_.sum()
         self.mid = mid
@@ -147,7 +126,7 @@ class LSI(BaseEstimator):
 
         _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
 
-        lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
+        lsi = self._load_model()
 
         d_p = lsi.transform_lsi_norm(ds)
 
@@ -172,36 +151,6 @@ class LSI(BaseEstimator):
         y_train = y_test[index]
 
         return (lsi, y_train, y_test, md)
-
-    def list_models(self):
-        lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')
-        out = []
-        if not os.path.exists(lsi_path):
-            return out
-        for mid in os.listdir(lsi_path):
-            try:
-                pars = self._load_pars(mid)
-                out.append(pars)
-            except:
-                raise
-        return out
-
-    def _load_pars(self, mid):
-        """ Load LSI parameters from disk"""
-        lsi_path = os.path.join(self.model_dir, mid)
-        if not os.path.exists(lsi_path):
-            raise ValueError('Model id {} not found in the cache {}!'.format(mid, lsi_path))
-        pars = joblib.load(os.path.join(lsi_path, 'pars'))
-        pars['id'] = mid
-        return pars
-
-    def load(self, mid):
-        """ Load the computed features from cache specified by mid """
-        if self.fe.cache_dir is None:
-            raise ValueError('cache_dir is None: cannot load from cache!')
-        mid_dir = self.get_path(mid)
-        model = joblib.load(os.path.join(mid_dir, 'lsi_decomposition'))
-        return model
 
 
 # The below class is identical to TruncatedSVD,
