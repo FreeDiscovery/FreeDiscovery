@@ -82,7 +82,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
     def __init__(self, n_neighbors=1, radius=1.0,
                  algorithm='ball_tree', leaf_size=30, n_jobs=1, **kwargs):
 
-        # define nearest neighbors search for positive and negative samples
+        # define nearest neighbors search objects for positive and negative samples
         self._mod_p = NearestNeighbors(n_neighbors=1,
                                        leaf_size=leaf_size,
                                        algorithm=algorithm,
@@ -112,7 +112,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         -------
         score : array (n_samples,)
            the ranking score in the range [-1, 1]
-           For postive items score = 1 - cosine distance / 2
+           For positive items score = 1 - cosine distance / 2
         """
         # convert from eucledian distance in L2 norm space to cosine similarity
         S_p = 1 - d_p/2

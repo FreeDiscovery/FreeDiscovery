@@ -73,10 +73,11 @@ class ClassificationScoresSchema(Schema):
 
 class LsiPredictSchema(ClassificationScoresSchema):
     prediction = fields.List(fields.Number(), required=True)
-    prediction_rel = fields.List(fields.Number(), required=True)
-    prediction_nrel = fields.List(fields.Number(), required=True)
-    nearest_rel_doc = fields.List(fields.Int(), required=True)
-    nearest_nrel_doc = fields.List(fields.Int(), required=True)
+    dist_p = fields.List(fields.Number(), required=True)
+    dist_n = fields.List(fields.Number())
+    ind_p = fields.List(fields.Int(), required=True)
+    ind_n = fields.List(fields.Int())
+    scores = fields.Nested(ClassificationScoresSchema(), required=True)
 
 
 class LsiParsSchema(Schema):

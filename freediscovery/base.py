@@ -17,7 +17,7 @@ class RankerMixin(object):
     """Mixin class for all ranking estimators in FreeDiscovery.
     A ranker is a binary classifier without a decision threshold.
     """
-    _estimator_type = "classifier"  # so that thing would still work with scikit learn
+    _estimator_type = "ranker"  # so that thing would still work with scikit learn
 
     def score(self, X, y, sample_weight=None):
         """Returns the ROC score of the prediction.

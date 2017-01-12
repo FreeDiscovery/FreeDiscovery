@@ -17,7 +17,7 @@ from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
-from .categorization import _unzip_relevant
+from .categorization import _unzip_relevant, NearestNeighborRanker
 from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
@@ -145,8 +145,6 @@ class LSI(BaseEstimator):
         index = np.asarray(index, dtype='int')
         y = np.asarray(y, dtype='int')
 
-        idx_p, idx_n = _unzip_relevant(index, y)
-
         _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
 
         lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
@@ -154,51 +152,26 @@ class LSI(BaseEstimator):
         d_p = lsi.transform_lsi_norm(ds)
 
         if method.startswith('nearest-neighbor'):
-            from sklearn.neighbors import NearestNeighbors
-            cmod_p = NearestNeighbors(n_neighbors=1, n_jobs=-1, metric='euclidean') # euclidean metric by default
-            cmod_n = NearestNeighbors(n_neighbors=1, n_jobs=-1, metric='euclidean')
+            cmod = NearestNeighborRanker(n_jobs=-1) # euclidean metric by default
 
-            cmod_p.fit(d_p[idx_p, :], np.ones(len(idx_p), dtype='int'))
-            cmod_n.fit(d_p[idx_n, :], np.zeros(len(idx_n), dtype='int'))
-            D_p, d_idx_p_loc = cmod_p.kneighbors(d_p)
-            D_n, d_idx_n_loc = cmod_n.kneighbors(d_p)
-
-            # convert Euclidean distance on L2 norm data to cosine distance
-            D_n /= 2
-            D_p /= 2
-
-            # how the ranking score is computed
-            D_max = np.where(D_p < D_n, 1 - D_p, - (1 - D_n))
-            D_diff = D_p - D_n
-            if method == 'nearest-neighbor-1':
-                D = D_max
-            elif method == 'nearest-neighbor-diff':
-                D = D_diff
-            elif method == "nearest-neighbor-combine":
-                D = D_max*abs(D_diff)
-            else:
-                raise NotImplementedFD('method={} not supported!'.format(method))
+            cmod.fit(d_p[index], y)
+            D, _, md = cmod.kneighbors(d_p)
             y_test = D[:]
             y_train = D[index]
 
-            # transform local index (within idx_p, idx_n to a global index)
-            d_idx_p = idx_p[d_idx_p_loc]
-            d_idx_n = idx_n[d_idx_n_loc]
-            res = {'D_p': D_p, 'D_n': D_n,
-                   'idx_p': d_idx_p,
-                   'idx_n': d_idx_n}
         elif method == 'nearest-centroid':
             from sklearn.neighbors import NearestCentroid
             cmod  = NearestCentroid()
             cmod.fit(d_p[index], y)
             y_test = cmod.predict(d_p)
-            y_train = cmod.predict(d_p[index])
             # other optional return values
-            res = {}
+            md = {}
         else:
             raise NotImplementedFD('method={} not supported!'.format(method))
 
-        return (lsi, y_train, y_test, res)
+        y_train = y_test[index]
+
+        return (lsi, y_train, y_test, md)
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')
