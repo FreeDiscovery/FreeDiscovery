@@ -39,6 +39,7 @@ Document categorization
     :toctree: ./generated/
 
     freediscovery.categorization.Categorizer
+    freediscovery.categorization.NearestNeighborRanker
     freediscovery.lsi.LSI
 
 Document clustering
@@ -77,7 +78,7 @@ Tools
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.base.BaseEstimator
+    freediscovery.base._BaseWrapper
     freediscovery.io.parse_ground_truth_file
     freediscovery.utils.generate_uuid
     freediscovery.utils.setup_model
