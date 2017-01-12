@@ -17,7 +17,7 @@ from sklearn.decomposition import TruncatedSVD
 
 from .text import FeatureVectorizer
 from .base import BaseEstimator
-from .categorization import _unzip_relevant
+from .categorization import _unzip_relevant, NearestNeighborRanker
 from .utils import setup_model
 from .exceptions import (WrongParameter, NotImplementedFD)
 
@@ -107,7 +107,8 @@ class LSI(BaseEstimator):
         joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
         ds = joblib.load(os.path.join(dsid_dir, 'features'))
 
-        svd = TruncatedSVD_LSI(n_components=n_components, n_iter=n_iter #, algorithm='arpack'
+        svd = _TruncatedSVD_LSI(n_components=n_components,
+                                n_iter=n_iter #, algorithm='arpack'
                                )
         lsi = svd
         lsi.fit(ds)
@@ -119,7 +120,7 @@ class LSI(BaseEstimator):
 
         return lsi, exp_var
 
-    def predict(self, index, y, accumulate='nearest-max', chunk_size=100):
+    def predict(self, index, y, method='nearest-neighbor-1', chunk_size=100):
         """
         Predict the document relevance using a previously trained LSI model
 
@@ -129,94 +130,48 @@ class LSI(BaseEstimator):
            document indices of the training set
         y : array-like, shape (n_samples)
            target binary class relative to index
-        accumulate : str, optional, default='nearest-max'
-           if `accumulate=="nearest-max"` the cosine distance to the closest relevant/non relevant document is used as classification score,
-           otherwise if `accumulate=="centroid-max"` the centroid of relevant documents is used as the query vector.
+        method : str, optional, default='nearest-neighbor-1'
+           if `method=="nearest-neighbor-1"` the cosine distance to the closest relevant/non relevant document is used as classification score,
+           otherwise if `method=="nearest-centroid"` the centroid of relevant documents is used as the query vector.
 
         """
-        if accumulate in ['centroid-max', 'nearest-max']:
+        if method in ['nearest-centroid', 'nearest-neighbor-1']:
             pass
-        elif accumulate in ['nearest-diff', 'nearest-combine', 'stacking']:
-            raise WrongParameter('accumulate = {} is implemented but is not production ready and was disabled for v0.5 release'.format(accumulate))
+        elif method in ['nearest-neighbor-diff', 'nearest-neighbor-combine', 'stacking']:
+            raise WrongParameter('method = {} is implemented but is not production ready and was disabled for v0.5 release'.format(method))
         else:
-            raise NotImplementedFD() 
+            raise NotImplementedFD()
 
         index = np.asarray(index, dtype='int')
         y = np.asarray(y, dtype='int')
 
-        idx_p, idx_n = _unzip_relevant(index, y)
-
         _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
-        d_p = ds[idx_p,:]
-        d_n = ds[idx_n,:]
 
         lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
 
-        d_p_p = lsi.transform_lsi_norm(d_p)
-        d_n_p = lsi.transform_lsi_norm(d_n)
+        d_p = lsi.transform_lsi_norm(ds)
 
-        centr_p_p = np.mean(d_p_p, axis=0)[None, :]
-        centr_n_p = np.mean(d_n_p, axis=0)[None, :]
+        if method.startswith('nearest-neighbor'):
+            cmod = NearestNeighborRanker(n_jobs=-1) # euclidean metric by default
 
-        query = {'d_p': d_p_p, 'd_n': d_n_p, 'centr_p': centr_p_p, 'centr_n': centr_n_p}
-        n_samples = ds.shape[0]
+            cmod.fit(d_p[index], y)
+            D, _, md = cmod.kneighbors(d_p)
+            y_test = D[:]
+            y_train = D[index]
 
-        def _predict_chunk(lsi, ds, k, _query, chunk_size):
-            n_samples = ds.shape[0]
-            mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
-            ds_p = lsi.transform_lsi_norm(ds[mslice, :])
-            out = {}
-            for key, val in _query.items():
-                D_tmp = val.dot(ds_p.T).T
-                out['idx_'+key] = np.argmax(D_tmp, axis=1)
-                out['D_'+key] = np.max(D_tmp, axis=1)
-            return out
-
-        res = {}
-        for key in query:
-            for prefix in ['idx_', 'D_']:
-                res[prefix+key] = []
-        for k in range(n_samples//chunk_size + 1):
-            res_el  = _predict_chunk(lsi, ds, k, query, chunk_size)
-            for key in res:
-                res[key].append(res_el[key])
-
-        for key in res:
-            res[key] = np.concatenate(res[key], axis=0)
-
-        
-        D_rel = res['D_d_p']
-        D_nrel = res['D_d_n']
-        D_max = np.where(D_rel > D_nrel, D_rel, - D_nrel)
-        D_diff = D_rel - D_nrel
-        if accumulate == 'nearest-max':
-            D = D_max
-        elif accumulate == 'nearest-diff':
-            D = D_diff
-        elif accumulate == "nearest-combine":
-            D = D_max*abs(D_diff)
-        elif accumulate == 'centroid-max':
-            D = res['D_centr_p']
-        elif accumulate == 'stacking':
-            from .private import lsi_stacking
-            D = lsi_stacking(res, y, index)
+        elif method == 'nearest-centroid':
+            from sklearn.neighbors import NearestCentroid
+            cmod  = NearestCentroid()
+            cmod.fit(d_p[index], y)
+            y_test = cmod.predict(d_p)
+            # other optional return values
+            md = {}
         else:
-            raise NotImplementedFD('accumulate={} not supported!'.format(accumulate))
-        Y_train = D[index]
-        Y_test = D[:]
+            raise NotImplementedFD('method={} not supported!'.format(method))
 
-        # transform nearest document from relative indexing
-        # (within the idx_p, idx_n) to absolute indexing
-        for key in res:
-            if key.startswith('idx'):
-                if key.endswith('_p'):
-                    idx_mapping = idx_p
-                elif key.endswith('_n'):
-                    idx_mapping = idx_n
-                else:
-                    raise ValueError
-                res[key] = idx_mapping[res[key]]
-        return (lsi, Y_train, Y_test, res)
+        y_train = y_test[index]
+
+        return (lsi, y_train, y_test, md)
 
     def list_models(self):
         lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')
@@ -252,8 +207,9 @@ class LSI(BaseEstimator):
 # The below class is identical to TruncatedSVD,
 # https://github.com/scikit-learn/scikit-learn/blob/51a765a/sklearn/decomposition/truncated_svd.py#L25
 # the only reason is the we need to save the Sigma matrix when performing this transform!
+# This will not longer be necessary with sklearn v0.19
 
-class TruncatedSVD_LSI(TruncatedSVD):
+class _TruncatedSVD_LSI(TruncatedSVD):
     """
     A patch of `sklearn.decomposition.TruncatedSVD` to include whitening (`scikit-learn/scikit-learn#7832)`
     """

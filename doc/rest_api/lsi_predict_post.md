@@ -10,10 +10,11 @@
 
  * **Success Response**: `HTTP 200`
     
-        {"id": <str>, "recall": <float>, "precision": <float> , 
-         "f1": <float>,  "roc_auc": <float>, "average_precision": <float>,
-         "prediction": <list[float]> ,
-         "prediction_rel": <list[float]> ,
-         "prediction_nrel": <list[float]> ,
-         "nearest_rel_doc": <list[int]> ,
-         "nearest_nrel_doc": <list[int]> }
+        { "id": <str>, "prediction": <list[float]> ,
+         "dist_p": <list[float]> ,
+         "dist_n": <list[float]> ,
+         "ind_p": <list[int]> ,
+         "ind_n": <list[int]>
+         "scores":  {"recall": <float>, "precision": <float> , 
+                    "f1": <float>,  "roc_auc": <float>, "average_precision": <float>}
+         }

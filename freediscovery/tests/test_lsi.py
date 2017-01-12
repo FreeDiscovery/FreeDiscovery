@@ -9,7 +9,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.lsi import LSI, TruncatedSVD_LSI
+from freediscovery.lsi import LSI, _TruncatedSVD_LSI
 from freediscovery.utils import categorization_score
 from freediscovery.io import parse_ground_truth_file
 from .run_suite import check_cache
@@ -21,6 +21,7 @@ def test_lsi():
     cache_dir = check_cache()
     data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
     n_features = 110000
+    n_components = 5
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
@@ -30,8 +31,9 @@ def test_lsi():
                         os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
     lsi = LSI(cache_dir=cache_dir, dsid=uuid)
-    lsi_res, exp_var = lsi.transform(n_components=100)  # TODO unused variables
+    lsi_res, exp_var = lsi.transform(n_components=n_components)  # TODO unused variables
     lsi_id = lsi.mid
+    assert lsi_res.components_.shape == (n_components, n_features)
     assert lsi.get_dsid(fe.cache_dir, lsi_id) == uuid
     assert lsi.get_path(lsi_id) is not None
     assert lsi._load_pars(lsi_id) is not None
@@ -39,28 +41,43 @@ def test_lsi():
 
     idx_gt = lsi.fe.search(ground_truth.index.values)
     idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
+    train_mask = [0, 1,  3, 4, 5]
 
-    for accumulate in ['nearest-max', 'centroid-max']:
+    for method in ['nearest-neighbor-1', 'nearest-centroid']:
                         #'nearest-diff', 'nearest-combine', 'stacking']:
         _, Y_train, Y_pred, ND_train = lsi.predict(
-                                idx_gt,
-                                ground_truth.is_relevant.values,
-                                accumulate=accumulate)
+                                np.array(idx_gt)[train_mask],
+                                ground_truth.is_relevant.values[train_mask],
+                                method=method)
         scores = categorization_score(idx_gt,
                             ground_truth.is_relevant.values,
                             idx_all, Y_pred)
         assert_allclose(scores['precision'], 1, rtol=0.5)
-        assert_allclose(scores['recall'], 1, rtol=0.3)
+        assert_allclose(scores['recall'], 1, rtol=0.4)
 
 
     lsi.list_models()
     lsi.delete()
 
 
+def test_lsi_helper_class():
+    import scipy.sparse
+
+    X = scipy.sparse.rand(100, 10000)
+    lsi = _TruncatedSVD_LSI(n_components=20)
+    lsi.fit(X)
+    X_p = lsi.transform_lsi(X)
+    X_p2 = lsi.transform_lsi_norm(X)
+    assert lsi.components_.shape == (20, 10000)
+    assert X_p.shape == (100, 20)
+    assert X_p2.shape == (100, 20)
+
+
+
 def test_lsi_book_example():
     """ LSI example taken from the "Information retrieval" (2004) book by Grossman & Ophir
 
-    This illustrates the general principle of LSI using sklearn API with TruncatedSVD_LSI
+    This illustrates the general principle of LSI using sklearn API with _TruncatedSVD_LSI
     """
 
     # replacing "a" with "aa" as the former seems to be ignored by the CountVectorizer
@@ -82,7 +99,7 @@ def test_lsi_book_example():
     #print(X.todense().T)
     q = dm_vec.transform([querry])
 
-    lsi = TruncatedSVD_LSI(n_components=2)  #, algorithm='arpack')
+    lsi = _TruncatedSVD_LSI(n_components=2)  #, algorithm='arpack')
 
     lsi.fit(X)
     X_p = lsi.transform_lsi(X)

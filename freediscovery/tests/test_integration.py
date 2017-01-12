@@ -82,12 +82,11 @@ def test_features_hashing(use_hashing, method):
         idx_gt = lsi.fe.search(ground_truth.index.values)
         idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
 
-        for accumulate in ['nearest-max', 'centroid-max']:
-                            #'nearest-diff', 'nearest-combine', 'stacking']:
+        for method in ['nearest-neighbor-1', 'nearest-centroid']:
             _, Y_train, Y_pred, ND_train = lsi.predict(
                                     idx_gt,
                                     ground_truth.is_relevant.values,
-                                    accumulate=accumulate)
+                                    method=method)
             scores = categorization_score(idx_gt,
                                 ground_truth.is_relevant.values,
                                 idx_all, Y_pred)

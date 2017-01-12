@@ -302,10 +302,10 @@ def test_api_lsi(app):
 
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['prediction',
-        'prediction_rel', 'prediction_nrel',
-        'nearest_rel_doc', 'nearest_nrel_doc',
-        'f1', 'recall', 'precision', 'roc_auc', 'average_precision'])
+    assert sorted(data.keys()) == sorted(['prediction', 'dist_p', 'dist_n',
+                                          'ind_p', 'ind_n', 'scores'])
+    assert sorted(data['scores'].keys()) == sorted(
+        ['f1', 'recall', 'precision', 'roc_auc', 'average_precision'])
 
     method = V01 + "/lsi/{}/test".format(lid)
     res = app.post(method,

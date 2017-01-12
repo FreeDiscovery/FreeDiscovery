@@ -217,20 +217,16 @@ class LsiApiElementPredict(Resource):
     @marshal_with(LsiPredictSchema())
     def post(self, mid, **args):
         lsi = LSI(self._cache_dir, mid=mid)
-        _, Y_train, Y_test, res  = lsi.predict(
-                accumulate='nearest-max', **args) 
+        _, Y_train, Y_test, md  = lsi.predict(
+                method='nearest-neighbor-1', **args)
 
         idx_train = args['index']
         y = args['y']
 
-        res_scores = categorization_score(idx_train, y, idx_train, Y_train)
-        res_scores.update({'prediction': Y_test.tolist(),
-                    'prediction_rel': res['D_d_p'].tolist(),
-                    'prediction_nrel': res['D_d_n'].tolist(),
-                    'nearest_rel_doc': res['idx_d_p'].tolist(),
-                    'nearest_nrel_doc': res['idx_d_n'].tolist(),
-                     })
-        return res_scores
+        res = {'prediction': Y_test.tolist()}
+        res['scores'] = categorization_score(idx_train, y, idx_train, Y_train)
+        res.update({key: val.tolist() for key, val in md.items()})
+        return res
 
 _lsi_api_element_test_post_args = {
         # Warning this should be changed to wfields.DelimitedList
@@ -249,7 +245,7 @@ class LsiApiElementTest(Resource):
         d_ref = parse_ground_truth_file(args["ground_truth_filename"])
         del args['ground_truth_filename']
         lsi_m, Y_train, Y_test, res  = lsi.predict(
-                accumulate='nearest-max', **args) 
+                method='nearest-neighbor-1', **args)
 
         idx_ref = lsi.fe.search(d_ref.index.values)
 

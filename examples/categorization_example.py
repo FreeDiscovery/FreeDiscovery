@@ -164,8 +164,8 @@ if __name__ == '__main__':
                               }).json()
     prediction = res['prediction']
 
-    print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
-    df = pd.DataFrame({key: res[key] for key in res if 'prediction'==key or 'nearest' in key})
+    print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res['scores']))
+    df = pd.DataFrame({key: res[key] for key in res if key not in ['id', 'scores']})
 
 
     print("\n3.c. Test categorization with LSI")

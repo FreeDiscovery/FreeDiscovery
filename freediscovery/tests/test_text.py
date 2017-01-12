@@ -117,9 +117,11 @@ def test_df_filtering(use_hashing, min_df, max_df):
 def test_sampling_filenames():
     cache_dir = check_cache()
 
+    fe_pars = {'binary': True, 'norm': None, 'sublinear_tf': False}
+
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-              use_hashing=True)  # TODO unused (overwritten on the next line)
+              use_hashing=True, **fe_pars)  # TODO unused (overwritten on the next line)
     uuid, filenames = fe.transform()
     fnames, X = fe.load(uuid)
 

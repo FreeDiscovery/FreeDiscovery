@@ -10,9 +10,12 @@ import numpy as np
 import scipy
 from scipy.special import logit
 from sklearn.externals import joblib
+from sklearn.neighbors import NearestNeighbors
+from sklearn.utils.validation import check_array
+
 
 from .text import FeatureVectorizer
-from .base import BaseEstimator
+from .base import BaseEstimator, RankerMixin
 from .utils import setup_model, _rename_main_thread
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
@@ -26,12 +29,174 @@ def _zip_relevant(relevant_id, non_relevant_id):
     return idx_id, y
 
 def _unzip_relevant(idx_id, y):
-    """ Take an array of indices and prediction values and return
+    """Take an array of indices and prediction values and return
     a list of relevant and non relevant documents id
+
+    Parameters
+    ----------
+    idx_id : ndarray[int] (n_samples)
+        array of indices
+    y : ndarray[float] (n_samples)
+        target array
     """
     mask = np.asarray(y) > 0.5
     idx_id = np.asarray(idx_id, dtype='int')
     return idx_id[mask], idx_id[~mask]
+
+
+class NearestNeighborRanker(BaseEstimator, RankerMixin):
+    """A nearest neighbor ranker, behaves like
+        * KNeigborsClassifier (supervised) when trained on both positive and negative samples
+        * NearestNeighbors  (unsupervised) when trained on positive samples only
+
+    Parameters
+    ----------
+    radius : float, optional (default = 1.0)
+        Range of parameter space to use by default for :meth:`radius_neighbors`
+        queries.
+
+    algorithm : {'auto', 'ball_tree', 'kd_tree', 'brute'}, optional
+        Algorithm used to compute the nearest neighbors:
+
+        - 'ball_tree' will use :class:`BallTree`
+        - 'kd_tree' will use :class:`KDtree`
+        - 'brute' will use a brute-force search.
+        - 'auto' will attempt to decide the most appropriate algorithm
+          based on the values passed to :meth:`fit` method.
+
+        Note: fitting on sparse input will override the setting of
+        this parameter, using brute force.
+
+    leaf_size : int, optional (default = 30)
+        Leaf size passed to BallTree or KDTree.  This can affect the
+        speed of the construction and query, as well as the memory
+        required to store the tree.  The optimal value depends on the
+        nature of the problem.
+
+    n_jobs : int, optional (default = 1)
+        The number of parallel jobs to run for neighbors search.
+        If ``-1``, then the number of jobs is set to the number of CPU cores.
+
+    """
+
+    def __init__(self, n_neighbors=1, radius=1.0,
+                 algorithm='ball_tree', leaf_size=30, n_jobs=1, **kwargs):
+
+        # define nearest neighbors search objects for positive and negative samples
+        self._mod_p = NearestNeighbors(n_neighbors=1,
+                                       leaf_size=leaf_size,
+                                       algorithm=algorithm,
+                                       n_jobs=n_jobs,
+                                       metric='euclidean',  # euclidean metric by default
+                                       **kwargs)
+        self._mod_n = NearestNeighbors(n_neighbors=1,
+                                       leaf_size=leaf_size,
+                                       algorithm=algorithm,
+                                       n_jobs=n_jobs,
+                                       metric='euclidean',  # euclidean metric by default
+                                       **kwargs)
+
+    @staticmethod
+    def _ranking_score(d_p, d_n=None):
+        """ Compute the ranking score from the positive an negative
+        distances on L2 normalized data
+
+        Parameters
+        ----------
+        d_p : array (n_samples,)
+           distance to the positive samples
+        d_n : array (n_samples,)
+           (optional) distance to the negative samples
+
+        Returns
+        -------
+        score : array (n_samples,)
+           the ranking score in the range [-1, 1]
+           For positive items score = 1 - cosine distance / 2
+        """
+        # convert from eucledian distance in L2 norm space to cosine similarity
+        S_p = 1 - d_p/2
+        if d_n is not None:
+            S_n = 1 - d_n/2
+            return np.where(S_p > S_n,
+                            S_p + 1,
+                            -1 - S_n) / 2
+        else:
+            return (S_p + 1) / 2
+
+    def fit(self, X, y):
+        """Fit the model using X as training data
+        Parameters
+        ----------
+        X : {array-like, sparse matrix, BallTree, KDTree}
+            Training data, shape [n_samples, n_features],
+
+        """
+        X = check_array(X, accept_sparse='csr')
+
+        index = np.arange(X.shape[0], dtype='int')
+
+        self._index_p, self._index_n = _unzip_relevant(index, y)
+
+
+        if self._index_p.shape[0] > 0:
+            self._mod_p.fit(X[self._index_p])
+        else:
+            raise ValueError('Training sets with no positive labels are not supported!')
+        if self._index_n.shape[0] > 0:
+            self._mod_n.fit(X[self._index_n])
+        else:
+            pass
+
+    def kneighbors(self, X=None):
+        """Finds the K-neighbors of a point.
+        Returns indices of and distances to the neighbors of each point.
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            the input array
+        Returns
+        -------
+        score : array
+            ranking score (based on cosine similarity)
+        ind : array
+            Indices of the nearest points in the population matrix.
+        md : dict
+            Additional result data
+              * ind_p : Indices of the nearest positive points
+              * ind_n : Indices of the nearest negate points
+              * dist_p : distance to the nearest positive points
+              * dist_n : distance to the nearest negate points
+        --------
+        """
+        X = check_array(X, accept_sparse='csr')
+
+        D_p, idx_p_loc = self._mod_p.kneighbors(X)
+
+        # only NearestNeighbor-1 (only one column in the kneighbors output)
+        D_p = D_p[:,0]
+        # map local index within _index_p, _index_n to global index
+        ind_p = self._index_p[idx_p_loc[:,0]]
+
+        md = {'dist_p': D_p,
+              'ind_p': ind_p,
+             }
+
+        if self._mod_n._fit_method is not None:
+            D_n, idx_n_loc = self._mod_n.kneighbors(X)
+            D_n = D_n[:,0]
+            ind_n = self._index_n[idx_n_loc[:,0]]
+            md['ind_n'] = ind_n
+            md['dist_n'] = D_n
+            ind = np.where(D_p <= D_n, ind_p, ind_n)
+        else:
+            D_n = None
+            ind = ind_p
+
+        score = self._ranking_score(D_p, D_n)
+
+        return  score, ind , md
+
 
 
 class Categorizer(BaseEstimator):
