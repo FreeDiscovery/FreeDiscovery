@@ -92,7 +92,7 @@ class LSI(_BaseWrapper):
         lsi = svd
         lsi.fit(ds)
 
-        joblib.dump(lsi, os.path.join(mid_dir, 'lsi_decomposition'))
+        joblib.dump(lsi, os.path.join(mid_dir, 'model'))
 
         exp_var = lsi.explained_variance_ratio_.sum()
         self.mid = mid
@@ -126,7 +126,7 @@ class LSI(_BaseWrapper):
 
         _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
 
-        lsi = joblib.load(os.path.join(self.model_dir, self.mid, 'lsi_decomposition'))
+        lsi = self._load_model()
 
         d_p = lsi.transform_lsi_norm(ds)
 
@@ -151,14 +151,6 @@ class LSI(_BaseWrapper):
         y_train = y_test[index]
 
         return (lsi, y_train, y_test, md)
-
-    def load(self, mid):
-        """ Load the computed features from cache specified by mid """
-        if self.fe.cache_dir is None:
-            raise ValueError('cache_dir is None: cannot load from cache!')
-        mid_dir = self.get_path(mid)
-        model = joblib.load(os.path.join(mid_dir, 'lsi_decomposition'))
-        return model
 
 
 # The below class is identical to TruncatedSVD,

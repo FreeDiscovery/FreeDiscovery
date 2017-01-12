@@ -460,7 +460,7 @@ class ClusteringApiElement(Resource):
 
         cl = Clustering(cache_dir=self._cache_dir, mid=mid)
 
-        km = cl.load(mid=mid)
+        km = cl._load_model()
         htree = cl._get_htree(km)
         if 'children' in htree:
             htree['children'] = htree['children'].tolist()

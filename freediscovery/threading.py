@@ -41,12 +41,8 @@ class EmailThreading(_BaseWrapper):
                  decode_header=False):
 
         super(EmailThreading, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid,
-                                          dataset_definition=EmailParser)
-        if self.mid is not None:
-            cmod = self._load_model()
-        else:
-            cmod = None
-        self.cmod = cmod
+                                          dataset_definition=EmailParser,
+                                          load_model=True)
 
 
     def thread(self, index=None, group_by_subject=False,
@@ -103,13 +99,5 @@ class EmailThreading(_BaseWrapper):
 
         self.mid = mid
         self.cmod = cmod
-        return cmod
-
-    def _load_model(self):
-        mid = self.mid
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ModelNotFound('Model id {} not found in the cache!'.format(mid))
-        cmod = joblib.load(os.path.join(mid_dir, 'model'))
         return cmod
 

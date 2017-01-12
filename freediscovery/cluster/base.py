@@ -175,15 +175,14 @@ class Clustering(_BaseWrapper):
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
 
-        super(Clustering, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
+        super(Clustering, self).__init__(cache_dir=cache_dir,  dsid=dsid,
+                                         mid=mid, load_model=True)
 
         if self.fe._pars['use_hashing']:
             raise NotImplementedError('Using clustering with hashed features is not supported by FreeDiscovery!')
 
-        if mid is not None:
-            self.km = self.load(mid)
-        else:
-            self.km = None
+        self.km = self.cmod
+        del self.cmod
 
 
     def _cluster_func(self, n_clusters, km, pars=None, lsi=None):
@@ -415,13 +414,3 @@ class Clustering(_BaseWrapper):
         out['v_measure_score'] = v_measure_score(ref_labels, labels)
         #out['silhouette_score'] = silhouette_score(X, labels, sample_size=1000)
         return out
-
-    def load(self, mid):
-        """ Load results from cache specified by a mid """
-
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ValueError('Model id {} not found in the cache!'.format(mid))
-
-        km = joblib.load(os.path.join(mid_dir, 'model'))
-        return km

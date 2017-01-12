@@ -53,9 +53,15 @@ class _BaseWrapper(object):
       dataset id
     mid : str, optional
       model id
+    dataset_definition : a dataset defintion class
+      one of FeatureVectorizer, EmailParser
+    load_model : bool
+      whether the model should be loaded from disk on class
+      initialization
     """
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None,
-                 dataset_definition=FeatureVectorizer):
+                 dataset_definition=FeatureVectorizer,
+                 load_model=False):
 
         if dsid is None and mid is not None:
             self.dsid = dsid = self.get_dsid(cache_dir, mid)
@@ -74,10 +80,15 @@ class _BaseWrapper(object):
             os.mkdir(self.model_dir)
 
         if self.mid is not None:
-            pars = self._load_pars()
+            self._pars = self._load_pars()
         else:
-            pars = None
-        self._pars = pars
+            self._pars = None
+
+        if load_model:
+            if self.mid is not None:
+                self.cmod = self._load_model()
+            else:
+                self.cmod = None
 
 
     def get_path(self, mid):
@@ -109,6 +120,16 @@ class _BaseWrapper(object):
     def get_params(self):
         """ Get model parameters """
         return self._pars
+
+    def _load_model(self):
+        mid = self.mid
+        mid_dir = os.path.join(self.model_dir, mid)
+        if not os.path.exists(mid_dir):
+            raise ValueError('Model id {} ({}) not found in the cache {}!'.format(
+                             mid, self._wrapper_type, mid_dir))
+        cmod = joblib.load(os.path.join(mid_dir, 'model'))
+        return cmod
+
 
     def _load_pars(self, mid=None):
         """Load model parameters from disk"""

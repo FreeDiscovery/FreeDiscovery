@@ -224,13 +224,8 @@ class Categorizer(_BaseWrapper):
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
 
-        super(Categorizer, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
-
-        if self.mid is not None:
-            cmod = self._load_model()
-        else:
-            cmod = None
-        self.cmod = cmod
+        super(Categorizer, self).__init__(cache_dir=cache_dir, dsid=dsid,
+                                          mid=mid, load_model=True)
 
         self.cv_scoring = cv_scoring
         self.cv_n_folds = cv_n_folds
@@ -429,8 +424,3 @@ class Categorizer(_BaseWrapper):
         cmod = joblib.load(os.path.join(mid_dir, 'model'))
         pars['options'] = cmod.get_params()
         return pars
-
-    def _load_model(self):
-        """ Load the parameters specified by a mid """
-        mid_dir = os.path.join(self.model_dir, self.mid)
-        return joblib.load(os.path.join(mid_dir, 'model'))

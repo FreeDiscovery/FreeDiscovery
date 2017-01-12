@@ -37,30 +37,12 @@ class DuplicateDetection(_BaseWrapper):
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
 
-        if dsid is None and mid is not None:
-            self.dsid = dsid =  self.get_dsid(cache_dir, mid)
-            self.mid = mid
-        elif dsid is not None:
-            self.dsid  = dsid
-            self.mid = None
-        elif dsid is None and mid is None:
-            raise ValueError
+        super(DuplicateDetection, self).__init__(cache_dir=cache_dir,
+                                                 dsid=dsid, mid=mid,
+                                                 load_model=True)
 
-        self.fe = FeatureVectorizer(cache_dir=cache_dir, dsid=dsid)
-        #if self.fe._pars['use_hashing']:
-        #    raise NotImplementedError('Using dup detection with non-hashed features is not supported by FreeDiscovery!')
-
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._wrapper_type)
-
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-
-        if mid is not None:
-            self.model = self.load(mid)
-            self._pars = self._load_pars()
-        else:
-            self.model = None
-            self._pars = None
+        self.model = self.cmod
+        del self.cmod
 
     def fit(self, method='simhash'):
         """
@@ -145,16 +127,5 @@ class DuplicateDetection(_BaseWrapper):
         else:
             raise ValueError
 
-
         return cluster_id
 
-
-    def load(self, mid):
-        """ Load results from cache specified by a mid """
-
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ValueError('Model id {} not found in the cache!'.format(mid))
-
-        shash = joblib.load(os.path.join(mid_dir, 'model'))
-        return shash
