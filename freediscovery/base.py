@@ -185,19 +185,19 @@ class _BaseTextTransformer(object):
 class _BaseWrapper(object):
     def get_path(self, mid):
         dsid = self.get_dsid(self.fe.cache_dir, mid)
-        return os.path.join(self.fe.cache_dir, dsid, self._DIRREF, mid)
+        return os.path.join(self.fe.cache_dir, dsid, self._wrapper_type, mid)
 
     def get_dsid(self, cache_dir, mid):
         if 'ediscovery_cache' not in cache_dir:  # not very pretty
             cache_dir = os.path.join(cache_dir, "ediscovery_cache")
         for dsid in os.listdir(cache_dir):
-            mid_path = os.path.join(cache_dir, dsid, self._DIRREF)
+            mid_path = os.path.join(cache_dir, dsid, self._wrapper_type)
             if not os.path.exists(mid_path):
                 continue
             for mid_el in os.listdir(mid_path):
                 if mid_el == mid:
                     return dsid
-        raise ModelNotFound('Model id {} not found in {}/*/{}!'.format(mid, cache_dir, self._DIRREF))
+        raise ModelNotFound('Model id {} not found in {}/*/{}!'.format(mid, cache_dir, self._wrapper_type))
 
     def delete(self):
         """ Delete a trained model"""

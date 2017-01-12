@@ -171,7 +171,7 @@ class Clustering(_BaseWrapper):
        model id
     """
 
-    _DIRREF = "clustering"
+    _wrapper_type = "nclustering"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
 
@@ -188,7 +188,7 @@ class Clustering(_BaseWrapper):
         if self.fe._pars['use_hashing']:
             raise NotImplementedError('Using clustering with hashed features is not supported by FreeDiscovery!')
 
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
+        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._wrapper_type)
 
         if not os.path.exists(self.model_dir):
             os.mkdir(self.model_dir)

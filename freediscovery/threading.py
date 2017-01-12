@@ -35,7 +35,7 @@ class EmailThreading(_BaseWrapper):
       model id
     """
 
-    _DIRREF = "threading"
+    _wrapper_type = "threading"
 
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
                  decode_header=False):
@@ -51,7 +51,7 @@ class EmailThreading(_BaseWrapper):
 
         self.fe = EmailParser(cache_dir=cache_dir, dsid=dsid)
 
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
+        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._wrapper_type)
 
         if not os.path.exists(self.model_dir):
             os.mkdir(self.model_dir)

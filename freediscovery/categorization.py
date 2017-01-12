@@ -220,7 +220,7 @@ class Categorizer(_BaseWrapper):
       number of K-folds used for Cross Validation
     """
 
-    _DIRREF = "models"
+    _wrapper_type = "models"
 
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
@@ -236,7 +236,7 @@ class Categorizer(_BaseWrapper):
 
         self.fe = FeatureVectorizer(cache_dir=cache_dir, dsid=dsid)
 
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._DIRREF)
+        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._wrapper_type)
 
         if not os.path.exists(self.model_dir):
             os.mkdir(self.model_dir)
