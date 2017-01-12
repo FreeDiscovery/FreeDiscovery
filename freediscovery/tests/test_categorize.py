@@ -9,14 +9,17 @@ import os.path
 from unittest import SkipTest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import (assert_allclose, assert_equal,
+                           assert_array_less)
 
 import pytest
 import itertools
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.categorization import (Categorizer, _zip_relevant,
-        _unzip_relevant)
+        _unzip_relevant, NearestNeighborRanker)
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
@@ -27,6 +30,8 @@ basename = os.path.dirname(__file__)
 
 
 cache_dir = check_cache()
+
+EPSILON = 1e-4
 
 
 data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
@@ -135,21 +140,85 @@ def test_relevant_zip():
     assert_equal(relevant_id2, relevant_id)
     assert_equal(non_relevant_id2, non_relevant_id)
 
+def test_relevant_positives_zip():
+    # Check that _unzip_relavant works with only relevant files
+    idx_id = [2, 3, 5, 1, 7, 10]
+    y = [1, 1, 1, 1, 1, 1]
+    relevant_id2, non_relevant_id2 = _unzip_relevant(idx_id, y)
+    assert_equal(relevant_id2, idx_id)
+    assert_equal(non_relevant_id2, np.array([]))
 
-def test_ensemble_stacking():
-    from sklearn.linear_model import LogisticRegression
-    try:
-        from freediscovery_extra import _EnsembleStacking
-    except ImportError:
-        raise SkipTest
 
-    st = _EnsembleStacking([('m1', LogisticRegression()), ('m2', LogisticRegression())])
+def test_nearest_neighbor_ranker_supervised():
+    # check that we have sensible results with respect to
+    # NN1 binary classification (supervised, with both positive
+    # and negative samples)
+    from sklearn.neighbors import KNeighborsClassifier
+    np.random.seed(0)
 
-    X_train = np.random.randn(100, 5)
-    Y_train = np.random.randint(2, size=(100))
-    X_test = np.random.randn(20, 5)
+    n_samples = 1000
+    n_features = 10
 
-    st.fit(X_train, Y_train)
-    st.predict_proba(X_test)
+    X = np.random.rand(n_samples, n_features)
+    normalize(X, copy=False)
+    index = np.arange(n_samples, dtype='int')
+    y = np.random.randint(0, 2, size=(n_samples,))
+    index_train, index_test, y_train, y_test = train_test_split(index, y)
+    X_train = X[index_train]
+    X_test = X[index_test]
 
+    rk = NearestNeighborRanker()
+    rk.fit(X_train, y_train)
+    y_pred, idx, md = rk.kneighbors(X_test)
+
+    assert y_pred.shape == (X_test.shape[0],)
+    assert y_pred.min() >= -1 and y_pred.min() <= -0.8 # as we are using cosine similarities
+    assert y_pred.max() <=  1 and y_pred.max() >= 0.8
+    assert idx.shape == (X_test.shape[0],)
+    assert sorted(md.keys()) == ['dist_n', 'dist_p', 'ind_n', 'ind_p']
+    for key, val in md.items():
+        assert val.shape == (X_test.shape[0],)
+        assert_array_less(0, val) # all values are positive
+
+    # postive scores correspond to positive documents
+    assert_equal((y_pred > 0), y_train[idx])
+
+    cl = KNeighborsClassifier(n_neighbors=1)
+    cl.fit(X_train, y_train)
+
+    y_ref = cl.predict(X_test)
+
+    # make sure we get the same results as for the KNeighborsClassifier
+    assert_equal(y_ref, y_train[idx])
+
+def test_nearest_neighbor_ranker_unsupervised():
+    # Check NearestNeighborRanker with only positive samples
+    # (unsupervised)
+    from sklearn.neighbors import NearestNeighbors
+    np.random.seed(0)
+
+    n_samples = 1000
+    n_features = 120
+
+    X = np.random.rand(n_samples, n_features)
+    normalize(X, copy=False)
+    index = np.arange(n_samples, dtype='int')
+    y = np.ones(n_samples, dtype=np.int)
+    index_train, index_test, y_train, y_test = train_test_split(index, y)
+    X_train = X[index_train]
+    X_test = X[index_test]
+
+    rk = NearestNeighborRanker()
+    rk.fit(X_train, y_train)
+    y_pred, idx, md = rk.kneighbors(X_test)
+
+    assert_array_less(0, y_pred) # all distance are positive
+
+    nn = NearestNeighbors(n_neighbors=1)
+    nn.fit(X_train)
+    dist, idx_ref = nn.kneighbors(X_test)
+
+    assert_equal(idx, idx_ref[:,0])
+
+    assert_equal(y_pred, (1 - dist[:,0]/4))
 
