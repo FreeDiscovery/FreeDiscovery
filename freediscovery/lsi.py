@@ -44,30 +44,9 @@ class LSI(_BaseWrapper):
     _wrapper_type = "lsi"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None, verbose=False):
-        if dsid is None and mid is not None:
-            self.dsid = dsid =  self.get_dsid(cache_dir, mid)
-            self.mid = mid
-        elif dsid is not None:
-            self.dsid  = dsid
-            self.mid = None
-        elif dsid is None and mid is None:
-            raise ValueError
 
-        self.data_dir = None
-        self.verbose = verbose
+        super(LSI, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
 
-        self.fe = FeatureVectorizer(cache_dir=cache_dir, dsid=dsid)
-
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._wrapper_type)
-
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-
-        if self.mid is not None:
-            pars = self._load_pars(self.mid)
-        else:
-            pars = None
-        self._pars = pars
 
     def transform(self, n_components, n_iter=5):
         """
@@ -98,7 +77,7 @@ class LSI(_BaseWrapper):
 
         pars = {'dsid': dsid, 'n_components': n_components}
 
-        mid_dir_base = os.path.join(dsid_dir, "lsi")
+        mid_dir_base = os.path.join(dsid_dir, self._wrapper_type)
     
         if not os.path.exists(mid_dir_base):
             os.mkdir(mid_dir_base)
@@ -172,28 +151,6 @@ class LSI(_BaseWrapper):
         y_train = y_test[index]
 
         return (lsi, y_train, y_test, md)
-
-    def list_models(self):
-        lsi_path = os.path.join(self.fe.dsid_dir, 'lsi')
-        out = []
-        if not os.path.exists(lsi_path):
-            return out
-        for mid in os.listdir(lsi_path):
-            try:
-                pars = self._load_pars(mid)
-                out.append(pars)
-            except:
-                raise
-        return out
-
-    def _load_pars(self, mid):
-        """ Load LSI parameters from disk"""
-        lsi_path = os.path.join(self.model_dir, mid)
-        if not os.path.exists(lsi_path):
-            raise ValueError('Model id {} not found in the cache {}!'.format(mid, lsi_path))
-        pars = joblib.load(os.path.join(lsi_path, 'pars'))
-        pars['id'] = mid
-        return pars
 
     def load(self, mid):
         """ Load the computed features from cache specified by mid """

@@ -200,7 +200,7 @@ class LsiApiElement(Resource):
     def get(self, mid):
         cat = LSI(self._cache_dir, mid=mid)
 
-        pars = cat._load_pars(mid)
+        pars = cat._load_pars()
         pars['dataset_id'] = pars['dsid']
         return pars
 

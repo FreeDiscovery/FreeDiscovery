@@ -149,20 +149,6 @@ class DuplicateDetection(_BaseWrapper):
         return cluster_id
 
 
-    def _load_pars(self):
-        """ Load parameters from cache specified by a mid """
-
-        mid = self.mid
-
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ValueError('Model id {} not found in the cache!'.format(mid))
-
-        pars = joblib.load(os.path.join(mid_dir, 'pars'))
-
-        return pars
-
-
     def load(self, mid):
         """ Load results from cache specified by a mid """
 
