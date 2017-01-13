@@ -153,7 +153,7 @@ class ClusterLabels(object):
         #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
 
 
-class Clustering(_BaseWrapper):
+class _ClusteringWrapper(_BaseWrapper):
     """Document clustering
 
     The algorithms are adapted from scikit learn.
@@ -175,7 +175,7 @@ class Clustering(_BaseWrapper):
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
 
-        super(Clustering, self).__init__(cache_dir=cache_dir,  dsid=dsid,
+        super(_ClusteringWrapper, self).__init__(cache_dir=cache_dir,  dsid=dsid,
                                          mid=mid, load_model=True)
 
         if self.fe._pars['use_hashing']:

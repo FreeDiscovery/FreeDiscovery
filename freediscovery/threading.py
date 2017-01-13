@@ -21,7 +21,7 @@ from .exceptions import (ModelNotFound, WrongParameter,
 from jwzthreading import jwzthreading as jwzt
 
 
-class EmailThreading(_BaseWrapper):
+class _EmailThreadingWrapper(_BaseWrapper):
     """ JWZ Email threading class
 
 
@@ -40,7 +40,8 @@ class EmailThreading(_BaseWrapper):
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
                  decode_header=False):
 
-        super(EmailThreading, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid,
+        super(_EmailThreadingWrapper, self).__init__(cache_dir=cache_dir,
+                                          dsid=dsid, mid=mid,
                                           dataset_definition=EmailParser,
                                           load_model=True)
 

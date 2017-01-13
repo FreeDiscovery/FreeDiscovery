@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.categorization import (Categorizer, _zip_relevant,
+from freediscovery.categorization import (_CategorizerWrapper, _zip_relevant,
         _unzip_relevant, NearestNeighborRanker,
         NearestCentroidRanker)
 from freediscovery.io import parse_ground_truth_file
@@ -62,7 +62,7 @@ def test_categorization(method, cv):
         except ImportError:
             raise SkipTest
 
-    cat = Categorizer(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
+    cat = _CategorizerWrapper(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
     index = cat.fe.search(ground_truth.index.values)
 
     try:

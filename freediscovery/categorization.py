@@ -225,7 +225,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
 
 
-class Categorizer(_BaseWrapper):
+class _CategorizerWrapper(_BaseWrapper):
     """ Document categorization model
 
     The option `use_hashing=True` must be set for the feature extraction.
@@ -250,7 +250,7 @@ class Categorizer(_BaseWrapper):
     def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
 
-        super(Categorizer, self).__init__(cache_dir=cache_dir, dsid=dsid,
+        super(_CategorizerWrapper, self).__init__(cache_dir=cache_dir, dsid=dsid,
                                           mid=mid, load_model=True)
 
         self.cv_scoring = cv_scoring
@@ -446,7 +446,7 @@ class Categorizer(_BaseWrapper):
         if mid is None:
             mid = self.mid
         mid_dir = os.path.join(self.model_dir, mid)
-        pars = super(Categorizer, self)._load_pars(mid)
+        pars = super(_CategorizerWrapper, self)._load_pars(mid)
         cmod = joblib.load(os.path.join(mid_dir, 'model'))
         pars['options'] = cmod.get_params()
         return pars

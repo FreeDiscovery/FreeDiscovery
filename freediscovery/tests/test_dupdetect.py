@@ -151,10 +151,10 @@ def test_dup_detection(method, options, fe_options):
             import simhash
         except ImportError:
             raise SkipTest
-    from freediscovery.dupdet import DuplicateDetection
+    from freediscovery.dupdet import _DuplicateDetectionWrapper
     cache_dir, uuid, filenames, fe = fd_setup(**fe_options)
 
-    dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
+    dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, dsid=uuid)
     dd.fit(method=method)
     cluster_id = dd.query(**options)
     # cannot have more cluster_id than elements in the dataset

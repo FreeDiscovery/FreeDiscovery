@@ -6,5 +6,5 @@ from __future__ import print_function
 
 
 from .simhash import SimhashDuplicates
-from .base import DuplicateDetection
+from .base import _DuplicateDetectionWrapper
 from .imatch import IMatchDuplicates

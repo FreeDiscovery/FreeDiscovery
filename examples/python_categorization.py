@@ -11,7 +11,7 @@ import numpy as np
 
 from freediscovery.datasets import load_dataset
 from freediscovery.text import FeatureVectorizer
-from freediscovery.categorization import Categorizer
+from freediscovery.categorization import _CategorizerWrapper
 from freediscovery.tests.run_suite import check_cache
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import categorization_score
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     seed_index = fe.search(seed_filenames)
 
-    cat = Categorizer(cache_dir=cache_dir, dsid=uuid)
+    cat = _CategorizerWrapper(cache_dir=cache_dir, dsid=uuid)
     cat.train(seed_index, seed_y)
 
     predictions = cat.predict()

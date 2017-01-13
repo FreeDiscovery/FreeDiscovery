@@ -26,7 +26,7 @@ def _touch(filename):
     open(filename, 'ab').close()
 
 
-class LSI(_BaseWrapper):
+class _LSIWrapper(_BaseWrapper):
     """Document categorization using Latent Semantic Indexing (LSI)
 
     Parameters
@@ -45,7 +45,7 @@ class LSI(_BaseWrapper):
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None, verbose=False):
 
-        super(LSI, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
+        super(_LSIWrapper, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
 
 
     def transform(self, n_components, n_iter=5):
@@ -63,7 +63,7 @@ class LSI(_BaseWrapper):
         -------
         mid : str
            model id
-        lsi : BaseEstimator
+        lsi : _BaseWrapper
            the TruncatedSVD object
         exp_var : float
            the explained variance of the SVD decomposition

@@ -21,12 +21,14 @@ except:  # sklearn v0.18
 
 from ..text import FeatureVectorizer
 from ..parsers import EmailParser
-from ..lsi import LSI
-from ..categorization import Categorizer
+from ..lsi import _LSIWrapper
+from ..categorization import _CategorizerWrapper
 from ..io import parse_ground_truth_file
 from ..utils import categorization_score
-from ..cluster import Clustering
+from ..cluster import _ClusteringWrapper
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
+from ..dupdet import _DuplicateDetectionWrapper
+from ..threading import _EmailThreadingWrapper
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
@@ -181,7 +183,7 @@ class LsiApi(Resource):
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
         dsid = args['dataset_id']
-        lsi = LSI(cache_dir=self._cache_dir, dsid=dsid)
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, dsid=dsid)
         return lsi.list_models()
 
     @use_args(_lsi_api_post_args)
@@ -189,7 +191,7 @@ class LsiApi(Resource):
     def post(self, **args):
         dsid = args['dataset_id']
         del args['dataset_id']
-        lsi = LSI(cache_dir=self._cache_dir, dsid=dsid)
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, dsid=dsid)
         _, explained_variance = lsi.transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
 
@@ -198,7 +200,7 @@ class LsiApiElement(Resource):
 
     @marshal_with(LsiParsSchema())
     def get(self, mid):
-        cat = LSI(self._cache_dir, mid=mid)
+        cat = _LSIWrapper(self._cache_dir, mid=mid)
 
         pars = cat._load_pars()
         pars['dataset_id'] = pars['dsid']
@@ -216,7 +218,7 @@ class LsiApiElementPredict(Resource):
     @use_args(_lsi_api_element_predict_post_args)
     @marshal_with(LsiPredictSchema())
     def post(self, mid, **args):
-        lsi = LSI(self._cache_dir, mid=mid)
+        lsi = _LSIWrapper(self._cache_dir, mid=mid)
         _, Y_train, Y_test, md  = lsi.predict(
                 method='nearest-neighbor-1', **args)
 
@@ -241,7 +243,7 @@ class LsiApiElementTest(Resource):
     @use_args(_lsi_api_element_test_post_args)
     @marshal_with(ClassificationScoresSchema())
     def post(self, mid, **args):
-        lsi = LSI(self._cache_dir, mid=mid)
+        lsi = _LSIWrapper(self._cache_dir, mid=mid)
         d_ref = parse_ground_truth_file(args["ground_truth_filename"])
         del args['ground_truth_filename']
         lsi_m, Y_train, Y_test, res  = lsi.predict(
@@ -275,7 +277,7 @@ _models_api_post_args = {
 class ModelsApi(Resource):
     @marshal_with(CategorizationParsSchema(many=True))
     def get(self, dsid):
-        cat = Categorizer(dsid, self._cache_dir)
+        cat = _CategorizerWrapper(dsid, self._cache_dir)
 
         return cat.list_models()
 
@@ -291,7 +293,7 @@ class ModelsApi(Resource):
             cv = None
         for key in ['dataset_id', 'cv', 'training_scores']:
             del args[key]
-        cat = Categorizer(self._cache_dir, dsid=dsid)
+        cat = _CategorizerWrapper(self._cache_dir, dsid=dsid)
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
         if training_scores:
@@ -308,12 +310,12 @@ class ModelsApi(Resource):
 class ModelsApiElement(Resource):
     @marshal_with(CategorizationParsSchema())
     def get(self, mid):
-        cat = Categorizer(self._cache_dir, mid=mid)
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         pars = cat.get_params()
         return pars
 
     def delete(self, mid):
-        cat = Categorizer(self._cache_dir, mid=mid)
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         cat.delete()
 
 
@@ -322,7 +324,7 @@ class ModelsApiPredict(Resource):
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid):
 
-        cat = Categorizer(self._cache_dir, mid=mid)
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         y_res = cat.predict()
 
         return {'prediction': y_res.tolist()}
@@ -336,7 +338,7 @@ class ModelsApiTest(Resource):
     @use_args(_models_api_test)
     @marshal_with(ClassificationScoresSchema())
     def post(self, mid, **args):
-        cat = Categorizer(self._cache_dir, mid=mid)
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
 
         y_res = cat.predict()
         d_ref = parse_ground_truth_file( args["ground_truth_filename"])
@@ -368,7 +370,7 @@ class KmeanClusteringApi(Resource):
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
 
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -392,7 +394,7 @@ class BirchClusteringApi(Resource):
 
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
         del args['dataset_id']
         cl.birch(**args)
         return {'id': cl.mid}
@@ -415,7 +417,7 @@ class WardHCClusteringApi(Resource):
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
 
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -439,7 +441,7 @@ class DBSCANClusteringApi(Resource):
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
 
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -458,7 +460,7 @@ class ClusteringApiElement(Resource):
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):  # TODO unused parameter 'method'
 
-        cl = Clustering(cache_dir=self._cache_dir, mid=mid)
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
 
         km = cl._load_model()
         htree = cl._get_htree(km)
@@ -477,7 +479,7 @@ class ClusteringApiElement(Resource):
 
 
     def delete(self, method, mid):  # TODO unused parameter 'method'
-        cl = Clustering(cache_dir=self._cache_dir, mid=mid)
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
         cl.delete()
 
 # ============================================================================ # 
@@ -495,9 +497,9 @@ class DupDetectionApi(Resource):
     @use_args(_dup_detection_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
-        from ..dupdet import DuplicateDetection
 
-        model = DuplicateDetection(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir,
+                                           dsid=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -518,16 +520,14 @@ class DupDetectionApiElement(Resource):
     @use_args(_dupdet_api_get_args)
     @marshal_with(DuplicateDetectionSchema())
     def get(self, mid, **args):
-        from ..dupdet import DuplicateDetection
 
-        model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
+        model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
         return {'cluster_id': cluster_id}
 
     def delete(self, mid):
-        from ..dupdet import DuplicateDetection
 
-        model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
+        model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         model.delete()
 
 
@@ -625,9 +625,8 @@ class EmailThreadingApi(Resource):
     @use_args({ "dataset_id": wfields.Str(required=True)})
     @marshal_with(EmailThreadingSchema())
     def post(self, **args):
-        from ..threading import EmailThreading
 
-        model = EmailThreading(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
 
         tree =  model.thread()
 
@@ -638,14 +637,12 @@ class EmailThreadingApiElement(Resource):
 
     @marshal_with(EmailThreadingParsSchema())
     def get(self, mid):
-        from ..threading import EmailThreading
 
-        model = EmailThreading(cache_dir=self._cache_dir, mid=mid)
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, mid=mid)
 
         return model.get_params()
 
     def delete(self, mid):
-        from ..threading import EmailThreading
 
-        model = EmailThreading(cache_dir=self._cache_dir, mid=mid)
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, mid=mid)
         model.delete()

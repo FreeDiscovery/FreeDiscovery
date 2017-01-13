@@ -9,7 +9,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.lsi import LSI, _TruncatedSVD_LSI
+from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
 from freediscovery.utils import categorization_score
 from freediscovery.io import parse_ground_truth_file
 from .run_suite import check_cache
@@ -30,7 +30,7 @@ def test_lsi():
     ground_truth = parse_ground_truth_file(
                         os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
-    lsi = LSI(cache_dir=cache_dir, dsid=uuid)
+    lsi = _LSIWrapper(cache_dir=cache_dir, dsid=uuid)
     lsi_res, exp_var = lsi.transform(n_components=n_components)  # TODO unused variables
     lsi_id = lsi.mid
     assert lsi_res.components_.shape == (n_components, n_features)

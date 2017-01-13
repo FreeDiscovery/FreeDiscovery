@@ -15,7 +15,7 @@ from ..utils import setup_model, _rename_main_thread
 from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
                             WrongParameter)
 
-class DuplicateDetection(_BaseWrapper):
+class _DuplicateDetectionWrapper(_BaseWrapper):
     """Find near duplicates in a document collection.
 
     Currently supported backends are simhash-py and i-match.
@@ -37,7 +37,7 @@ class DuplicateDetection(_BaseWrapper):
 
     def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
 
-        super(DuplicateDetection, self).__init__(cache_dir=cache_dir,
+        super(_DuplicateDetectionWrapper, self).__init__(cache_dir=cache_dir,
                                                  dsid=dsid, mid=mid,
                                                  load_model=True)
 

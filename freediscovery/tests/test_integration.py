@@ -15,10 +15,10 @@ import pytest
 import itertools
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.categorization import Categorizer
-from freediscovery.dupdet import DuplicateDetection
-from freediscovery.cluster import Clustering
-from freediscovery.lsi import LSI
+from freediscovery.categorization import _CategorizerWrapper
+from freediscovery.dupdet import _DuplicateDetectionWrapper
+from freediscovery.cluster import _ClusteringWrapper
+from freediscovery.lsi import _LSIWrapper
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
@@ -49,7 +49,7 @@ def test_features_hashing(use_hashing, method):
 
 
     if method == 'Categorization':
-        cat = Categorizer(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
+        cat = _CategorizerWrapper(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
         index = cat.fe.search(ground_truth.index.values)
 
         try:
@@ -71,7 +71,7 @@ def test_features_hashing(use_hashing, method):
         assert_allclose(scores['recall'], 1, rtol=0.5)
         cat.delete()
     elif method == 'LSI':
-        lsi = LSI(cache_dir=cache_dir, dsid=uuid)
+        lsi = _LSIWrapper(cache_dir=cache_dir, dsid=uuid)
         lsi_res, exp_var = lsi.transform(n_components=100)  # TODO unused variables
         lsi_id = lsi.mid
         assert lsi.get_dsid(fe.cache_dir, lsi_id) == uuid
@@ -93,7 +93,7 @@ def test_features_hashing(use_hashing, method):
             assert_allclose(scores['precision'], 1, rtol=0.5)
             assert_allclose(scores['recall'], 1, rtol=0.3)
     elif method == 'DuplicateDetection':
-        dd = DuplicateDetection(cache_dir=cache_dir, dsid=uuid)
+        dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, dsid=uuid)
         try:
             dd.fit()
         except ImportError:
@@ -101,14 +101,14 @@ def test_features_hashing(use_hashing, method):
         cluster_id = dd.query(distance=10)
     elif method =='Clustering':
         if not use_hashing:
-            cat = Clustering(cache_dir=cache_dir, dsid=uuid)
+            cat = _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
             cm = getattr(cat,'k_means')
             labels, htree = cm(2, lsi_components=20)
 
             terms = cat.compute_labels(n_top_words=10)
         else:
             with pytest.raises(NotImplementedError):
-                Clustering(cache_dir=cache_dir, dsid=uuid)
+                _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
 
 
     else:

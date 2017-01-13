@@ -10,7 +10,7 @@ from numpy.testing import assert_allclose, assert_equal
 import pytest
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.cluster import Clustering, select_top_words
+from freediscovery.cluster import _ClusteringWrapper, select_top_words
 from .run_suite import check_cache
 
 
@@ -50,7 +50,7 @@ def test_clustering(method, lsi_components, args, cl_args):
     np.random.seed(1)
     n_top_words = 9
 
-    cat = Clustering(cache_dir=cache_dir, dsid=uuid)
+    cat = _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
     cm = getattr(cat, method)
     labels, htree = cm(NCLUSTERS, lsi_components=lsi_components, **args)
 
@@ -86,7 +86,7 @@ def test_clustering(method, lsi_components, args, cl_args):
             assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
 
 
-    cat2 = Clustering(cache_dir=cache_dir, mid=mid) # make sure we can load it  # TODO unused variable
+    cat2 = _ClusteringWrapper(cache_dir=cache_dir, mid=mid) # make sure we can load it  # TODO unused variable
     cat.delete()
 
 

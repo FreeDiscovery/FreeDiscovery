@@ -7,7 +7,7 @@ An example of clustering using the Python API
 
 import pandas as pd
 from freediscovery.text import FeatureVectorizer
-from freediscovery.cluster import Clustering
+from freediscovery.cluster import _ClusteringWrapper
 from freediscovery.utils import _silent
 from freediscovery.datasets import load_dataset
 from time import time
@@ -35,7 +35,7 @@ uuid, filenames = fe.transform()
 
 print("\n2. Document Clustering (LSI + K-Means)\n")
 
-cat = Clustering(cache_dir=cache_dir, dsid=uuid)
+cat = _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
 
 n_clusters = 10
 n_top_words = 6
