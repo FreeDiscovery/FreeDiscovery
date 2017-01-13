@@ -235,7 +235,7 @@ class _CategorizerWrapper(_BaseWrapper):
     ----------
     cache_dir : str
       folder where the model will be saved
-    dsid : str, optional
+    parent_id : str, optional
       dataset id
     mid : str, optional
       model id
@@ -247,10 +247,11 @@ class _CategorizerWrapper(_BaseWrapper):
 
     _wrapper_type = "models"
 
-    def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
+    def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
 
-        super(_CategorizerWrapper, self).__init__(cache_dir=cache_dir, dsid=dsid,
+        super(_CategorizerWrapper, self).__init__(cache_dir=cache_dir,
+                                          parent_id=parent_id,
                                           mid=mid, load_model=True)
 
         self.cv_scoring = cv_scoring
@@ -362,7 +363,7 @@ class _CategorizerWrapper(_BaseWrapper):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
+        _, d_all = self.fe.load(self.parent_id)  #, mmap_mode='r')
 
         X_train = d_all[index, :]
 

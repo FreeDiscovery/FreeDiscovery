@@ -182,16 +182,16 @@ class LsiApi(Resource):
     @use_args(_lsi_api_get_args)
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
-        dsid = args['dataset_id']
-        lsi = _LSIWrapper(cache_dir=self._cache_dir, dsid=dsid)
+        parent_id = args['dataset_id']
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
         return lsi.list_models()
 
     @use_args(_lsi_api_post_args)
     @marshal_with(LsiPostSchema())
     def post(self, **args):
-        dsid = args['dataset_id']
+        parent_id = args['dataset_id']
         del args['dataset_id']
-        lsi = _LSIWrapper(cache_dir=self._cache_dir, dsid=dsid)
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
         _, explained_variance = lsi.transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
 
@@ -203,7 +203,7 @@ class LsiApiElement(Resource):
         cat = _LSIWrapper(self._cache_dir, mid=mid)
 
         pars = cat._load_pars()
-        pars['dataset_id'] = pars['dsid']
+        pars['dataset_id'] = pars['parent_id']
         return pars
 
 _lsi_api_element_predict_post_args = {
@@ -232,8 +232,8 @@ _models_api_post_args = {
 
 class ModelsApi(Resource):
     @marshal_with(CategorizationParsSchema(many=True))
-    def get(self, dsid):
-        cat = _CategorizerWrapper(dsid, self._cache_dir)
+    def get(self, parent_id):
+        cat = _CategorizerWrapper(parent_id, self._cache_dir)
 
         return cat.list_models()
 
@@ -241,7 +241,7 @@ class ModelsApi(Resource):
     @marshal_with(CategorizationPostSchema())
     def post(self, **args):
         training_scores = args['training_scores']
-        dsid = args['dataset_id']
+        parent_id = args['dataset_id']
 
         if args['cv']:
             cv = 'fast'
@@ -249,7 +249,7 @@ class ModelsApi(Resource):
             cv = None
         for key in ['dataset_id', 'cv', 'training_scores']:
             del args[key]
-        cat = _CategorizerWrapper(self._cache_dir, dsid=dsid)
+        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
         if training_scores:
@@ -326,7 +326,7 @@ class KmeanClusteringApi(Resource):
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -350,7 +350,7 @@ class BirchClusteringApi(Resource):
 
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
         del args['dataset_id']
         cl.birch(**args)
         return {'id': cl.mid}
@@ -373,7 +373,7 @@ class WardHCClusteringApi(Resource):
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -397,7 +397,7 @@ class DBSCANClusteringApi(Resource):
         if args['lsi_components'] < 0:
             args['lsi_components'] = None
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -455,7 +455,7 @@ class DupDetectionApi(Resource):
     def post(self, **args):
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir,
-                                           dsid=args['dataset_id'])
+                                           parent_id=args['dataset_id'])
 
         del args['dataset_id']
 
@@ -582,7 +582,7 @@ class EmailThreadingApi(Resource):
     @marshal_with(EmailThreadingSchema())
     def post(self, **args):
 
-        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
 
         tree =  model.thread()
 

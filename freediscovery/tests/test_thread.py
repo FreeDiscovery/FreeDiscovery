@@ -26,7 +26,7 @@ def test_threading():
     filenames, res = fe.load(uuid)
 
 
-    cat = _EmailThreadingWrapper(cache_dir=cache_dir, dsid=uuid)
+    cat = _EmailThreadingWrapper(cache_dir=cache_dir, parent_id=uuid)
 
     tree = cat.thread()
     cat.get_params()

@@ -49,7 +49,7 @@ def test_features_hashing(use_hashing, method):
 
 
     if method == 'Categorization':
-        cat = _CategorizerWrapper(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
+        cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
         index = cat.fe.search(ground_truth.index.values)
 
         try:
@@ -71,7 +71,7 @@ def test_features_hashing(use_hashing, method):
         assert_allclose(scores['recall'], 1, rtol=0.5)
         cat.delete()
     elif method == 'LSI':
-        lsi = _LSIWrapper(cache_dir=cache_dir, dsid=uuid)
+        lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
         lsi_res, exp_var = lsi.transform(n_components=100)  # TODO unused variables
         lsi_id = lsi.mid
         assert lsi.get_dsid(fe.cache_dir, lsi_id) == uuid
@@ -83,7 +83,7 @@ def test_features_hashing(use_hashing, method):
         idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
 
     elif method == 'DuplicateDetection':
-        dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, dsid=uuid)
+        dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, parent_id=uuid)
         try:
             dd.fit()
         except ImportError:
@@ -91,14 +91,14 @@ def test_features_hashing(use_hashing, method):
         cluster_id = dd.query(distance=10)
     elif method =='Clustering':
         if not use_hashing:
-            cat = _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
+            cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=uuid)
             cm = getattr(cat,'k_means')
             labels, htree = cm(2, lsi_components=20)
 
             terms = cat.compute_labels(n_top_words=10)
         else:
             with pytest.raises(NotImplementedError):
-                _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
+                _ClusteringWrapper(cache_dir=cache_dir, parent_id=uuid)
 
 
     else:

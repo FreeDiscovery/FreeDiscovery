@@ -154,7 +154,7 @@ def test_dup_detection(method, options, fe_options):
     from freediscovery.dupdet import _DuplicateDetectionWrapper
     cache_dir, uuid, filenames, fe = fd_setup(**fe_options)
 
-    dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, dsid=uuid)
+    dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, parent_id=uuid)
     dd.fit(method=method)
     cluster_id = dd.query(**options)
     # cannot have more cluster_id than elements in the dataset

@@ -50,7 +50,7 @@ def test_clustering(method, lsi_components, args, cl_args):
     np.random.seed(1)
     n_top_words = 9
 
-    cat = _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
+    cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=uuid)
     cm = getattr(cat, method)
     labels, htree = cm(NCLUSTERS, lsi_components=lsi_components, **args)
 

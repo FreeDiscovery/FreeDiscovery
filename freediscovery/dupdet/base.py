@@ -27,7 +27,7 @@ class _DuplicateDetectionWrapper(_BaseWrapper):
     ----------
     cache_dir : str
        directory where to save temporary and regression files
-    dsid : str, optional
+    parent_id : str, optional
        dataset id
     mid : str, optional
        model id
@@ -35,10 +35,10 @@ class _DuplicateDetectionWrapper(_BaseWrapper):
 
     _wrapper_type = "dupdet"
 
-    def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None):
 
         super(_DuplicateDetectionWrapper, self).__init__(cache_dir=cache_dir,
-                                                 dsid=dsid, mid=mid,
+                                                 parent_id=parent_id, mid=mid,
                                                  load_model=True)
 
         self.model = self.cmod

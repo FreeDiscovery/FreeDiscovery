@@ -29,7 +29,7 @@ def test_lsi():
                          n_features=n_features)  # TODO unused variable (overwritten on the next line)
     uuid, filenames = fe.transform()
 
-    lsi = _LSIWrapper(cache_dir=cache_dir, dsid=uuid)
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
     lsi_res, exp_var = lsi.transform(n_components=n_components)  # TODO unused variables
     lsi_id = lsi.mid
     assert lsi_res.components_.shape == (n_components, n_features)

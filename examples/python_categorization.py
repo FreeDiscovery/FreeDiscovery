@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     seed_index = fe.search(seed_filenames)
 
-    cat = _CategorizerWrapper(cache_dir=cache_dir, dsid=uuid)
+    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid)
     cat.train(seed_index, seed_y)
 
     predictions = cat.predict()

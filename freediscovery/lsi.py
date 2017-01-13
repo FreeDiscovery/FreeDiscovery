@@ -33,7 +33,7 @@ class _LSIWrapper(_BaseWrapper):
     ----------
     cache_dir : str
        folder where the model will be saved
-    dsid : str
+    parent_id : str
        dataset id
     mid : str
        LSI model id (the dataset id will be inferred)
@@ -43,9 +43,10 @@ class _LSIWrapper(_BaseWrapper):
 
     _wrapper_type = "lsi"
 
-    def __init__(self, cache_dir='/tmp/', dsid=None, mid=None, verbose=False):
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None, verbose=False):
 
-        super(_LSIWrapper, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
+        super(_LSIWrapper, self).__init__(cache_dir=cache_dir,
+                                          parent_id=parent_id, mid=mid)
 
 
     def transform(self, n_components, n_iter=5):
@@ -69,13 +70,13 @@ class _LSIWrapper(_BaseWrapper):
            the explained variance of the SVD decomposition
         """
 
-        dsid = self.dsid
+        parent_id = self.parent_id
 
         dsid_dir = self.fe.dsid_dir
         if not os.path.exists(dsid_dir):
             raise IOError
 
-        pars = {'dsid': dsid, 'n_components': n_components}
+        pars = {'parent_id': parent_id, 'n_components': n_components}
 
         mid_dir_base = os.path.join(dsid_dir, self._wrapper_type)
     

@@ -29,7 +29,7 @@ class _EmailThreadingWrapper(_BaseWrapper):
     ----------
     cache_dir : str
       folder where the model will be saved
-    dsid : str, optional
+    parent_id : str, optional
       dataset id
     mid : str, optional
       model id
@@ -37,11 +37,11 @@ class _EmailThreadingWrapper(_BaseWrapper):
 
     _wrapper_type = "threading"
 
-    def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
+    def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None,
                  decode_header=False):
 
         super(_EmailThreadingWrapper, self).__init__(cache_dir=cache_dir,
-                                          dsid=dsid, mid=mid,
+                                          parent_id=parent_id, mid=mid,
                                           dataset_definition=EmailParser,
                                           load_model=True)
 
@@ -76,7 +76,7 @@ class _EmailThreadingWrapper(_BaseWrapper):
         if index is None:
             index = np.arange(self.fe.n_samples_)
 
-        _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
+        _, d_all = self.fe.load(self.parent_id)  #, mmap_mode='r')
 
         threads = jwzt.thread(d_all, group_by_subject)
 

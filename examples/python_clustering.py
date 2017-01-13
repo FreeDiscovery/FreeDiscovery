@@ -35,7 +35,7 @@ uuid, filenames = fe.transform()
 
 print("\n2. Document Clustering (LSI + K-Means)\n")
 
-cat = _ClusteringWrapper(cache_dir=cache_dir, dsid=uuid)
+cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=uuid)
 
 n_clusters = 10
 n_top_words = 6

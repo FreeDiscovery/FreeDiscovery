@@ -47,7 +47,7 @@ vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
 vect_uuid, filenames  = fe.transform()
 
 
-lsi = _LSIWrapper(cache_dir=cache_dir, dsid=vect_uuid)
+lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
 lsi.transform(n_components=6)
 
 ground_truth = parse_ground_truth_file(
@@ -79,7 +79,7 @@ def test_categorization(use_lsi, method, cv):
     else:
         uuid = vect_uuid
 
-    cat = _CategorizerWrapper(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
+    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
     index = cat.fe.search(ground_truth.index.values)
 
     try:
