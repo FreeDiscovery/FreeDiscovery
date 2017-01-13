@@ -76,7 +76,8 @@ class _BaseTextTransformer(object):
         if dsid is not None:
             dsid_dir = os.path.join(self.cache_dir, dsid)
             if not os.path.exists(dsid_dir):
-                raise DatasetNotFound()
+                raise DatasetNotFound('Dataset {} ({}) not found in {}!'.format(
+                                            dsid, type(self).__name__, cache_dir))
             pars = self._load_pars()
         else:
             dsid_dir = None
@@ -211,6 +212,9 @@ class FeatureVectorizer(_BaseTextTransformer):
                    'n_jobs', 'chunk_size', 'norm',
                    'analyzer', 'ngram_range', 'stop_words',
                    'use_idf', 'sublinear_tf', 'binary', 'use_hashing']
+
+    _wrapper_type = "vectorizer"
+
     def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=11000000,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=True,

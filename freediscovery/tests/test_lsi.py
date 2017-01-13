@@ -8,6 +8,7 @@ import os.path
 import numpy as np
 from numpy.testing import assert_allclose
 
+from freediscovery.base import PipelineFinder
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
 from freediscovery.utils import categorization_score
@@ -27,8 +28,6 @@ def test_lsi():
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features)  # TODO unused variable (overwritten on the next line)
     uuid, filenames = fe.transform()
-    ground_truth = parse_ground_truth_file(
-                        os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
     lsi = _LSIWrapper(cache_dir=cache_dir, dsid=uuid)
     lsi_res, exp_var = lsi.transform(n_components=n_components)  # TODO unused variables
@@ -39,22 +38,12 @@ def test_lsi():
     assert lsi._load_pars() is not None
     lsi._load_model()
 
-    idx_gt = lsi.fe.search(ground_truth.index.values)
-    idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
-    train_mask = [0, 1,  3, 4, 5]
+    # test pipeline
 
-    for method in ['nearest-neighbor-1', 'nearest-centroid']:
-                        #'nearest-diff', 'nearest-combine', 'stacking']:
-        _, Y_train, Y_pred, ND_train = lsi.predict(
-                                np.array(idx_gt)[train_mask],
-                                ground_truth.is_relevant.values[train_mask],
-                                method=method)
-        scores = categorization_score(idx_gt,
-                            ground_truth.is_relevant.values,
-                            idx_all, Y_pred)
-        assert_allclose(scores['precision'], 1, rtol=0.5)
-        assert_allclose(scores['recall'], 1, rtol=0.4)
+    mod = PipelineFinder.by_id(lsi_id, cache_dir)
 
+    assert list(mod.values()) == ['vectorizer', 'lsi']
+    assert list(mod.parent.values()) == ['vectorizer']
 
     lsi.list_models()
     lsi.delete()

@@ -12,7 +12,7 @@ from flask import jsonify
 
 from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementIndex,
                         ModelsApi, ModelsApiElement, ModelsApiPredict, ModelsApiTest,
-                        LsiApi, LsiApiElement, LsiApiElementPredict, LsiApiElementTest,
+                        LsiApi, LsiApiElement,
                         ClusteringApiElement, KmeanClusteringApi,
                         BirchClusteringApi, WardHCClusteringApi, DBSCANClusteringApi,
                         DupDetectionApi, DupDetectionApiElement,
@@ -59,8 +59,6 @@ def fd_app(cache_dir):
          (ModelsApiTest           , "/categorization/<mid>/test")            ,
          (LsiApi                  , '/lsi/')                                 ,
          (LsiApiElement           , '/lsi/<mid>')                            ,
-         (LsiApiElementPredict    , '/lsi/<mid>/predict')                    ,
-         (LsiApiElementTest       , '/lsi/<mid>/test')                       ,
          (KmeanClusteringApi      , '/clustering/k-mean/')                   ,
          (BirchClusteringApi      , '/clustering/birch')                     ,
          (WardHCClusteringApi     , '/clustering/ward_hc')                   ,

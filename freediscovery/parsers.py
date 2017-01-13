@@ -35,6 +35,8 @@ class EmailParser(_BaseTextTransformer):
 
     _PARS_SHORT = ['data_dir', 'n_samples', 'encoding']
 
+    _wrapper_type = 'parser'
+
     def transform(self, data_dir, file_pattern='.*', dir_pattern='.*',
               encoding='latin-1'):
         """Parse all emails in data_dir"""

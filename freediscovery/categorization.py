@@ -288,6 +288,11 @@ class _CategorizerWrapper(_BaseWrapper):
                 except ImportError:
                     raise OptionalDependencyMissing('freediscovery_extra')
                 cmod = make_logregr_cv_model(cv_obj, cv_scoring, **options)
+        elif method == 'NearestCentroid':
+            from sklearn.neighbors import NearestCentroid
+            cmod  = NearestCentroid()
+        elif method == 'NearestNeighbor':
+            cmod = NearestNeighborRanker(n_jobs=-1)
         elif method == 'xgboost':
             try:
                 import xgboost as xgb
@@ -337,14 +342,18 @@ class _CategorizerWrapper(_BaseWrapper):
            training predictions
         """
 
-        valid_methods = ["LinearSVC", "LogisticRegression", "xgboost"]
+        valid_methods = ["LinearSVC", "LogisticRegression", "xgboost",
+                         "NearestCentroid", "NearestNeighbor"]
 
-        if method in ['ensemble-stacking', 'MLPClassifier']:
+        if method in ['ensemble-stacking', 'MLPClassifier', "NearestCentroid"]:
             raise WrongParameter('method={} is implemented but not production ready. It was disabled for now.'.format(method))
 
         if method not in valid_methods:
             raise WrongParameter('method={} is not supported, should be one of {}'.format(
                 method, valid_methods)) 
+        if cv is not None and method in ['NearestNeighbor', 'NearestCentroid']:
+            raise WrongParameter('Cross validation (cv={}) not supported with {}'.format(
+                                        cv, method))
 
         if cv not in [None, 'fast', 'full']:
             raise WrongParameter('cv')
@@ -413,12 +422,6 @@ class _CategorizerWrapper(_BaseWrapper):
         else:
             raise WrongParameter('The model must be trained first, or sid must be provided to load\
                     a previously trained model!')
-        #else:
-        #    mid_dir = os.path.join(self.model_dir, mid)
-        #    if not os.path.exists(mid_dir):
-        #        raise ModelNotFound('Model id {} not found in the cache!'.format(mid))
-
-        #    cmod = joblib.load(os.path.join(mid_dir, 'model'))
 
         ds = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))  #, mmap_mode='r')
         n_samples = ds.shape[0]
@@ -427,7 +430,9 @@ class _CategorizerWrapper(_BaseWrapper):
             n_samples = ds.shape[0]
             mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
             ds_sl = ds[mslice, :]
-            if hasattr(cmod, 'decision_function'):
+            if isinstance(cmod, NearestNeighborRanker):
+                res, _, md = cmod.kneighbors(ds_sl)
+            elif hasattr(cmod, 'decision_function'):
                 res = cmod.decision_function(ds_sl)
             else:  # gradient boosting define the decision function by analogy
                 tmp = cmod.predict_proba(ds_sl)[:, 1]

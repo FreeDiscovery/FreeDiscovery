@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize
 
 from freediscovery.text import FeatureVectorizer
+from freediscovery.lsi import _LSIWrapper
 from freediscovery.categorization import (_CategorizerWrapper, _zip_relevant,
         _unzip_relevant, NearestNeighborRanker,
         NearestCentroidRanker)
@@ -40,18 +41,29 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 n_features = 20000
 
 fe = FeatureVectorizer(cache_dir=cache_dir)
-uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt', n_features=n_features,
-        binary=True, use_idf=False, norm=None)
-uuid, filenames  = fe.transform()
+vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+                          n_features=n_features,
+                          binary=True, use_idf=False, norm=None)
+vect_uuid, filenames  = fe.transform()
+
+
+lsi = _LSIWrapper(cache_dir=cache_dir, dsid=vect_uuid)
+lsi.transform(n_components=6)
 
 ground_truth = parse_ground_truth_file(
                         os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
-@pytest.mark.parametrize('method, cv', itertools.product(
-                       ["LinearSVC", "LogisticRegression", 'xgboost'],
+_test_cases = itertools.product(
+                       [False, True],
+                       ["LinearSVC", "LogisticRegression", 'xgboost', "NearestNeighbor"],
                         #'MLPClassifier', 'ensemble-stacking' not supported in production the moment
-                       [None, 'fast']))
-def test_categorization(method, cv):
+                       [None, 'fast'])
+_test_cases = filter(lambda x: not (x[1].startswith("Nearest") and x[2]),
+                     _test_cases)
+
+
+@pytest.mark.parametrize('use_lsi, method, cv', _test_cases)
+def test_categorization(use_lsi, method, cv):
 
     if 'CIRCLECI' in os.environ and cv == 'fast' and method in ['LinearSVC', 'xgboost']:
         raise SkipTest # Circle CI is too slow and timesout
@@ -61,6 +73,11 @@ def test_categorization(method, cv):
             import xgboost
         except ImportError:
             raise SkipTest
+
+    if use_lsi:
+        uuid = vect_uuid
+    else:
+        uuid = vect_uuid
 
     cat = _CategorizerWrapper(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
     index = cat.fe.search(ground_truth.index.values)

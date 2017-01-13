@@ -293,34 +293,6 @@ def test_api_lsi(app):
         assert vals == data[key]
 
 
-    method = V01 + "/lsi/{}/predict".format(lid)
-    res = app.post(method,
-            data={
-              'index': index,
-              'y': y,
-              })
-
-    assert res.status_code == 200
-    data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['prediction', 'dist_p', 'dist_n',
-                                          'ind_p', 'ind_n', 'scores'])
-    assert sorted(data['scores'].keys()) == sorted(
-        ['f1', 'recall', 'precision', 'roc_auc', 'average_precision'])
-
-    method = V01 + "/lsi/{}/test".format(lid)
-    res = app.post(method,
-            data={
-              'index': index,
-              'y': y,
-              'ground_truth_filename': os.path.join(data_dir, '..', 'ground_truth_file.txt')
-              })
-
-    assert res.status_code == 200
-    data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['precision', 'recall',
-                                          'f1', 'roc_auc', 'average_precision'])
-
-
 @pytest.mark.parametrize("solver,cv", itertools.product(
                    ["LinearSVC", "LogisticRegression", 'xgboost'],
                    [0, 1]))

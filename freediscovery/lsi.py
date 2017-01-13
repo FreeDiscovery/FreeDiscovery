@@ -99,59 +99,6 @@ class _LSIWrapper(_BaseWrapper):
 
         return lsi, exp_var
 
-    def predict(self, index, y, method='nearest-neighbor-1', chunk_size=100):
-        """
-        Predict the document relevance using a previously trained LSI model
-
-        Parameters
-        ----------
-        index : array-like, shape (n_samples)
-           document indices of the training set
-        y : array-like, shape (n_samples)
-           target binary class relative to index
-        method : str, optional, default='nearest-neighbor-1'
-           if `method=="nearest-neighbor-1"` the cosine distance to the closest relevant/non relevant document is used as classification score,
-           otherwise if `method=="nearest-centroid"` the centroid of relevant documents is used as the query vector.
-
-        """
-        if method in ['nearest-centroid', 'nearest-neighbor-1']:
-            pass
-        elif method in ['nearest-neighbor-diff', 'nearest-neighbor-combine', 'stacking']:
-            raise WrongParameter('method = {} is implemented but is not production ready and was disabled for v0.5 release'.format(method))
-        else:
-            raise NotImplementedFD()
-
-        index = np.asarray(index, dtype='int')
-        y = np.asarray(y, dtype='int')
-
-        _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
-
-        lsi = self._load_model()
-
-        d_p = lsi.transform_lsi_norm(ds)
-
-        if method.startswith('nearest-neighbor'):
-            cmod = NearestNeighborRanker(n_jobs=-1) # euclidean metric by default
-
-            cmod.fit(d_p[index], y)
-            D, _, md = cmod.kneighbors(d_p)
-            y_test = D[:]
-            y_train = D[index]
-
-        elif method == 'nearest-centroid':
-            from sklearn.neighbors import NearestCentroid
-            cmod  = NearestCentroid()
-            cmod.fit(d_p[index], y)
-            y_test = cmod.predict(d_p)
-            # other optional return values
-            md = {}
-        else:
-            raise NotImplementedFD('method={} not supported!'.format(method))
-
-        y_train = y_test[index]
-
-        return (lsi, y_train, y_test, md)
-
 
 # The below class is identical to TruncatedSVD,
 # https://github.com/scikit-learn/scikit-learn/blob/51a765a/sklearn/decomposition/truncated_svd.py#L25

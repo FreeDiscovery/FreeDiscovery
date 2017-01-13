@@ -214,50 +214,6 @@ _lsi_api_element_predict_post_args = {
         }
 
 
-class LsiApiElementPredict(Resource):
-    @use_args(_lsi_api_element_predict_post_args)
-    @marshal_with(LsiPredictSchema())
-    def post(self, mid, **args):
-        lsi = _LSIWrapper(self._cache_dir, mid=mid)
-        _, Y_train, Y_test, md  = lsi.predict(
-                method='nearest-neighbor-1', **args)
-
-        idx_train = args['index']
-        y = args['y']
-
-        res = {'prediction': Y_test.tolist()}
-        res['scores'] = categorization_score(idx_train, y, idx_train, Y_train)
-        res.update({key: val.tolist() for key, val in md.items()})
-        return res
-
-_lsi_api_element_test_post_args = {
-        # Warning this should be changed to wfields.DelimitedList
-        # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'index': wfields.List(wfields.Int(), required=True),
-        'y': wfields.List(wfields.Int(), required=True),
-        'ground_truth_filename': wfields.Str(required=True)
-        }
-
-
-class LsiApiElementTest(Resource):
-    @use_args(_lsi_api_element_test_post_args)
-    @marshal_with(ClassificationScoresSchema())
-    def post(self, mid, **args):
-        lsi = _LSIWrapper(self._cache_dir, mid=mid)
-        d_ref = parse_ground_truth_file(args["ground_truth_filename"])
-        del args['ground_truth_filename']
-        lsi_m, Y_train, Y_test, res  = lsi.predict(
-                method='nearest-neighbor-1', **args)
-
-        idx_ref = lsi.fe.search(d_ref.index.values)
-
-        idx_test = np.arange(lsi.fe.n_samples_, dtype='int')
-
-        res = categorization_score(idx_ref,
-                                   d_ref.is_relevant.values, idx_test, Y_test)
-        return res
-
-
 # ============================================================================ # 
 #                  Categorization (ML)
 # ============================================================================ # 

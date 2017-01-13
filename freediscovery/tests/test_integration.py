@@ -82,16 +82,6 @@ def test_features_hashing(use_hashing, method):
         idx_gt = lsi.fe.search(ground_truth.index.values)
         idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
 
-        for method in ['nearest-neighbor-1', 'nearest-centroid']:
-            _, Y_train, Y_pred, ND_train = lsi.predict(
-                                    idx_gt,
-                                    ground_truth.is_relevant.values,
-                                    method=method)
-            scores = categorization_score(idx_gt,
-                                ground_truth.is_relevant.values,
-                                idx_all, Y_pred)
-            assert_allclose(scores['precision'], 1, rtol=0.5)
-            assert_allclose(scores['recall'], 1, rtol=0.3)
     elif method == 'DuplicateDetection':
         dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, dsid=uuid)
         try:
