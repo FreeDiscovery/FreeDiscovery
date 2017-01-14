@@ -50,6 +50,8 @@ or by downloading the latest stable version from the [Github releases page](http
           cd build_tools
           conda_setup.bat
 
+**Note 2**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python, and install the list of dependencies (split between `script/requirements_conda.txt` and `scripts/requirements_pip*.txt` under `build_tools/`) with `pip`.
+
 
 ### 2.b. Docker Container
 1. Download and [install Docker](https://docs.docker.com/engine/installation/)

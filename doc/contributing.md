@@ -3,13 +3,26 @@
 This section aims to regroup useful information for contributing to FreeDiscovery. 
 
 
-## Installation
+## Submitting bugs
 
-A Python installation using Anaconda distribution is recommended for development (particularly on Windows), as described in the corresponding [documentation section](./installation_instructions.html). However, it is also possible to use e.g. system Python, and install the list of dependencies (split between `script/requirements_conda.txt` and `scripts/requirements_pip_*.txt` under `build_tools/`) with `pip`. 
+Please feel free to open an issue in the GitHub issue tracker at [https://github.com/FreeDiscovery/FreeDiscovery](https://github.com/FreeDiscovery/FreeDiscovery/issues) for any problem that you may encounter.
 
-The issue tracker is located at: [https://github.com/FreeDiscovery/FreeDiscovery](https://github.com/FreeDiscovery/FreeDiscovery).
+Running the test suite (cf. below) may also help in diagnosing the source of the problem.
 
-The [scikit learn developer guide](http://scikit-learn.org/stable/developers/index.html) is also worth reading.
+## Contributing
+
+This section describes the workflow for creating Pull Requests (PR). For more complex contributions, it may also be useful to create an associated issue. 
+
+ 1. Fork the main FreeDiscovery repository
+ 2. Clone this fork on your computer and [install it](https://freediscovery.github.io/doc/dev/installation_instructions.html#a-python-install)
+ 3. Make the appropriate changes
+ 4. Make sure that the tests suite (cf. below) does not produce errors
+ 5. Commit and push the changes to GitHub
+ 6. Create a Pull Request from your branch to the `master` branch of the FreeDiscovery repository so it can be reviewed and merged. 
+ 7. If any of the continuous integration services (Travis CI, Appveyor CI, Circle CI) produce an error, review the corresponding output and fix the code if appropriate. 
+ 8. After the PR is merged, this branch can be safely deleted from your fork (and a new one may be created for subsequent contributions).
+
+
 
 ## Test Suite
 

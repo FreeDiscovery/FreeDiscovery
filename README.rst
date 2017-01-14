@@ -10,7 +10,7 @@ FreeDiscovery
 
 Open Source Software for E-Discovery and Information Retrieval
 
-FreeDiscovery is build on top of existing machine learning libraries (scikit-learn) and provides REST web services for information retrieval applications. It aims to benefit existing e-discovery platforms with a focus on the following functionality, 
+FreeDiscovery is built on top of existing machine learning libraries (scikit-learn) and provides REST web services for information retrieval applications. It aims to benefit existing e-discovery platforms with a focus on the following functionality, 
 
 - binary text categorization
 - document clustering
@@ -23,7 +23,7 @@ The first release is expected for January 1, 2017, but we would very much apprec
 
 For more information see the documentation and API Reference,
 
-- development version [`master` branch| `documentation <https://freediscovery.github.io/doc/dev/>`_ ].
-- stable version 0.7 [`0.7.X` branch| `documentation <https://freediscovery.github.io/doc/0.7/>`_ ].
+- development version [``master`` branch | `documentation <https://freediscovery.github.io/doc/dev/>`_ ].
+- stable version 0.7 [``0.7.X`` branch | `documentation <https://freediscovery.github.io/doc/0.7/>`_ ].
 
 FreeDiscovery is released under the 3-clause BSD licence.
