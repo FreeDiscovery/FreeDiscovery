@@ -245,7 +245,7 @@ class _CategorizerWrapper(_BaseWrapper):
       number of K-folds used for Cross Validation
     """
 
-    _wrapper_type = "models"
+    _wrapper_type = "categorizer"
 
     def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
@@ -363,7 +363,7 @@ class _CategorizerWrapper(_BaseWrapper):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        _, d_all = self.fe.load()  #, mmap_mode='r')
+        d_all = self.pipeline.data  #, mmap_mode='r')
 
         X_train = d_all[index, :]
 
@@ -424,7 +424,7 @@ class _CategorizerWrapper(_BaseWrapper):
             raise WrongParameter('The model must be trained first, or sid must be provided to load\
                     a previously trained model!')
 
-        ds = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))  #, mmap_mode='r')
+        ds = self.pipeline.data
         n_samples = ds.shape[0]
 
         def _predict_chunk(cmod, ds, k, chunk_size):

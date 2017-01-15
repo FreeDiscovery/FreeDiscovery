@@ -63,7 +63,7 @@ class _DuplicateDetectionWrapper(_BaseWrapper):
         self.mid = mid
 
 
-        X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
+        X = self.pipeline.data
         if method == 'simhash':
             shash.fit(X)
 

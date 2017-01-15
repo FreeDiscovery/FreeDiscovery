@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 from collections import OrderedDict
+from copy import deepcopy
 
 import numpy as np
 from sklearn.externals import joblib
@@ -95,18 +96,20 @@ class PipelineFinder(OrderedDict):
       and as values the model ids
     """
 
-    def __init__(self, mid=None, cache_dir="/tmp/", ingestion_method='vectorizer', **args):
+    def __init__(self, mid=None, cache_dir="/tmp/", ingestion_method='vectorizer', steps=None):
         self.ingestion_method = ingestion_method
         self._loaded_models = {}
 
         self.mid = mid
+        if steps is None:
+            steps = OrderedDict()
 
         cache_dir = os.path.normpath(cache_dir)
         if 'ediscovery_cache' not in cache_dir:  # not very pretty
             cache_dir = os.path.join(cache_dir, "ediscovery_cache")
         self.cache_dir = cache_dir
 
-        super(PipelineFinder, self).__init__(**args)
+        super(PipelineFinder, self).__init__(steps)
 
 
     @classmethod
@@ -179,13 +182,28 @@ class PipelineFinder(OrderedDict):
             raise ValueError("Can't take the parent of a root node!")
 
         # get all the steps except the last one
-        steps = self.copy()
+        steps = deepcopy(self)
         steps.popitem(last=True)
 
         return PipelineFinder(mid=list(steps.values())[-1],
                               cache_dir=self.cache_dir,
                               ingestion_method=self.ingestion_method,
-                              **steps)
+                              steps=steps)
+
+    @property
+    def data(self):
+        """ Load the data provided by the last node of the pipeline """
+        last_node = list(self.keys())[-1]
+        ds_path = self.get_path(self[last_node])
+
+        if last_node == "vectorizer":
+            full_path = os.path.join(ds_path, 'features')
+        elif last_node == 'lsi':
+            full_path = os.path.join(ds_path, 'data')
+        return joblib.load(full_path)
+
+
+
 
     def get_path(self, mid=None, absolute=True):
         """ Find the path to the model specified by mid """

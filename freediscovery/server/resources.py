@@ -192,7 +192,7 @@ class LsiApi(Resource):
         parent_id = args['dataset_id']
         del args['dataset_id']
         lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
-        _, explained_variance = lsi.transform(**args)
+        _, explained_variance = lsi.fit_transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
 
 

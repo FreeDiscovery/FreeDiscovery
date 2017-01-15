@@ -49,7 +49,7 @@ class _LSIWrapper(_BaseWrapper):
                                           parent_id=parent_id, mid=mid)
 
 
-    def transform(self, n_components, n_iter=5):
+    def fit_transform(self, n_components, n_iter=5):
         """
         Perform the SVD decomposition
         
@@ -84,16 +84,19 @@ class _LSIWrapper(_BaseWrapper):
             os.mkdir(mid_dir_base)
         mid, mid_dir = setup_model(mid_dir_base)
 
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
-        ds = joblib.load(os.path.join(dsid_dir, 'features'))
 
+        ds = self.pipeline.data
         svd = _TruncatedSVD_LSI(n_components=n_components,
                                 n_iter=n_iter #, algorithm='arpack'
                                )
         lsi = svd
         lsi.fit(ds)
 
+        ds_p = lsi.transform_lsi_norm(ds)
+
+        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
         joblib.dump(lsi, os.path.join(mid_dir, 'model'))
+        joblib.dump(ds_p, os.path.join(mid_dir, 'data'))
 
         exp_var = lsi.explained_variance_ratio_.sum()
         self.mid = mid

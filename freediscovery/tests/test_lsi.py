@@ -11,7 +11,6 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from freediscovery.base import PipelineFinder
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
 from freediscovery.utils import categorization_score
@@ -33,7 +32,7 @@ def test_lsi():
     uuid, filenames = fe.transform()
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
-    lsi_res, exp_var = lsi.transform(n_components=n_components)  # TODO unused variables
+    lsi_res, exp_var = lsi.fit_transform(n_components=n_components)  # TODO unused variables
     lsi_id = lsi.mid
     assert lsi_res.components_.shape == (n_components, n_features)
     assert lsi.get_dsid(fe.cache_dir, lsi_id) == uuid
@@ -42,24 +41,6 @@ def test_lsi():
     lsi._load_model()
 
     # test pipeline
-    pf = PipelineFinder.by_id(lsi_id, cache_dir)
-
-    assert list(pf.keys()) == ['vectorizer', 'lsi']
-    assert list(pf.parent.keys()) == ['vectorizer']
-
-    assert pf.mid == lsi_id
-    assert pf.parent.mid == uuid
-    with pytest.raises(ValueError):
-        pf.parent.parent
-
-    for estimator_type, mid in pf.items():
-        path = pf.get_path(mid, absolute=False)
-        if estimator_type == 'vectorizer':
-            assert re.match('ediscovery_cache.*', path)
-        elif estimator_type == 'lsi':
-            assert re.match('ediscovery_cache.*lsi', path)
-        else:
-            raise ValueError
 
 
     lsi.list_models()
