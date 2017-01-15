@@ -114,10 +114,12 @@ class _BaseTextTransformer(object):
     def __getitem__(self, index):
         return np.asarray(self._pars['filenames'])[index]
 
-    def load(self, dsid):
+    def load(self, dsid=None):
         """ Load a computed features from disk"""
         if self.cache_dir is None:
             raise InitException('cache_dir is None: cannot load from cache!')
+        if dsid is None:
+            dsid = self.dsid
         dsid_dir = os.path.join(self.cache_dir, dsid)
         if not os.path.exists(dsid_dir):
             raise DatasetNotFound('dsid not found!')

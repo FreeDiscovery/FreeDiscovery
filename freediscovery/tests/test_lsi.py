@@ -53,9 +53,9 @@ def test_lsi():
         pf.parent.parent
 
     for estimator_type, mid in pf.items():
-        path = pf.get_path(mid)
+        path = pf.get_path(mid, absolute=False)
         if estimator_type == 'vectorizer':
-            assert path == 'ediscovery_cache'
+            assert re.match('ediscovery_cache.*', path)
         elif estimator_type == 'lsi':
             assert re.match('ediscovery_cache.*lsi', path)
         else:

@@ -70,7 +70,7 @@ class _LSIWrapper(_BaseWrapper):
            the explained variance of the SVD decomposition
         """
 
-        parent_id = self.parent_id
+        parent_id = self.pipeline.mid
 
         dsid_dir = self.fe.dsid_dir
         if not os.path.exists(dsid_dir):

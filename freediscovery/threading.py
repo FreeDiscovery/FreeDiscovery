@@ -76,7 +76,7 @@ class _EmailThreadingWrapper(_BaseWrapper):
         if index is None:
             index = np.arange(self.fe.n_samples_)
 
-        _, d_all = self.fe.load(self.parent_id)  #, mmap_mode='r')
+        _, d_all = self.fe.load()  #, mmap_mode='r')
 
         threads = jwzt.thread(d_all, group_by_subject)
 

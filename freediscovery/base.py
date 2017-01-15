@@ -187,7 +187,7 @@ class PipelineFinder(OrderedDict):
                               ingestion_method=self.ingestion_method,
                               **steps)
 
-    def get_path(self, mid=None):
+    def get_path(self, mid=None, absolute=True):
         """ Find the path to the model specified by mid """
         import itertools
 
@@ -197,14 +197,16 @@ class PipelineFinder(OrderedDict):
         if mid not in self.values():
             raise ValueError('{} is not a processing step current pipeline,\n {}'.format(mid, self)) 
         idx = list(self.values()).index(mid)
-        valid_keys = list(self.keys())[:idx]
+        valid_keys = list(self.keys())[:idx+1]
         path = list(itertools.chain.from_iterable(
                             [[key, self[key]] for key in valid_keys]))
-        path += [list(self.keys())[idx]]
-        path[0] = 'ediscovery_cache'
-        return os.path.join(*path)
-
-
+        if absolute:
+            del path[0] # "ediscovery_cache" is already present in cache_dir
+            rel_path = os.path.join(*path)
+            return os.path.join(self.cache_dir, rel_path)
+        else:
+            path[0] = 'ediscovery_cache'
+            return os.path.join(*path)
 
 
 class _BaseWrapper(object):
@@ -237,10 +239,12 @@ class _BaseWrapper(object):
             self.pipeline = PipelineFinder.by_id(parent_id, cache_dir)
             self.mid = None
 
+        # this is an alias that should be deprecated
         self.fe = dataset_definition(cache_dir=cache_dir,
                                      dsid=self.pipeline['vectorizer'])
 
-        self.model_dir = os.path.join(self.pipeline.get_path(), self._wrapper_type)
+        self.model_dir = os.path.join(self.pipeline.get_path(),
+                                      self._wrapper_type)
 
         if not os.path.exists(self.model_dir):
             os.mkdir(self.model_dir)

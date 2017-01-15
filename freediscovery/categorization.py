@@ -363,7 +363,7 @@ class _CategorizerWrapper(_BaseWrapper):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        _, d_all = self.fe.load(self.parent_id)  #, mmap_mode='r')
+        _, d_all = self.fe.load()  #, mmap_mode='r')
 
         X_train = d_all[index, :]
 
