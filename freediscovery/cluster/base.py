@@ -287,7 +287,7 @@ class _ClusteringWrapper(_BaseWrapper):
         return terms
 
 
-    def k_means(self, n_clusters, lsi_components=None, batch_size=1000):
+    def k_means(self, n_clusters, batch_size=1000):
         """
         Perform K-mean clustering
 
@@ -295,8 +295,6 @@ class _ClusteringWrapper(_BaseWrapper):
         ----------
         n_clusters : int
            number of clusters
-        lsi_components : int
-           apply LSA before the clustering algorithm
         batch_size : int
            the bath size for the MiniBatchKMeans algorithm
         """

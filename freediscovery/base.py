@@ -278,24 +278,6 @@ class _BaseWrapper(object):
             else:
                 self.cmod = None
 
-
-    def get_path(self, mid):
-        parent_id = self.get_dsid(self.fe.cache_dir, mid)
-        return os.path.join(self.fe.cache_dir, parent_id, self._wrapper_type, mid)
-
-
-    def get_dsid(self, cache_dir, mid):
-        if 'ediscovery_cache' not in cache_dir:  # not very pretty
-            cache_dir = os.path.join(cache_dir, "ediscovery_cache")
-        for parent_id in os.listdir(cache_dir):
-            mid_path = os.path.join(cache_dir, parent_id, self._wrapper_type)
-            if not os.path.exists(mid_path):
-                continue
-            for mid_el in os.listdir(mid_path):
-                if mid_el == mid:
-                    return parent_id
-        raise ModelNotFound('Model id {} not found in {}/*/{}!'.format(mid, cache_dir, self._wrapper_type))
-
     def delete(self):
         """ Delete a trained model"""
         import shutil
