@@ -10,7 +10,7 @@ import numpy as np
 import scipy
 from scipy.special import logit
 from sklearn.externals import joblib
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import NearestNeighbors, NearestCentroid
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
 
@@ -42,6 +42,32 @@ def _unzip_relevant(idx_id, y):
     mask = np.asarray(y) > 0.5
     idx_id = np.asarray(idx_id, dtype='int')
     return idx_id[mask], idx_id[~mask]
+
+
+# a subclass of the NearestCentroid from scikit-learn that also
+# includes the distance to the nearest centroid
+
+class NearestCentroidRanker(NearestCentroid):
+
+    def decision_function(self, X):
+        """Compute the distances to the nearest centroid for
+        an array of test vectors X.
+
+        Parameters
+        ----------
+        X : array-like, shape = [n_samples, n_features]
+        Returns
+        -------
+        C : array, shape = [n_samples]
+        """
+        from sklearn.metrics.pairwise import pairwise_distances
+        from sklearn.utils.validation import check_array, check_is_fitted
+
+        check_is_fitted(self, 'centroids_')
+
+        X = check_array(X, accept_sparse='csr')
+
+        return pairwise_distances(X, self.centroids_, metric=self.metric).min(axis=1)
 
 
 class NearestNeighborRanker(BaseEstimator, RankerMixin):
