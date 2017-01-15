@@ -95,11 +95,11 @@ class PipelineFinder(OrderedDict):
       and as values the model ids
     """
 
-    def __init__(self, uid=None, cache_dir="/tmp/", ingestion_method='vectorizer', **args):
+    def __init__(self, mid=None, cache_dir="/tmp/", ingestion_method='vectorizer', **args):
         self.ingestion_method = ingestion_method
         self._loaded_models = {}
 
-        self.uid = uid
+        self.mid = mid
 
         cache_dir = os.path.normpath(cache_dir)
         if 'ediscovery_cache' not in cache_dir:  # not very pretty
@@ -110,12 +110,12 @@ class PipelineFinder(OrderedDict):
 
 
     @classmethod
-    def by_id(cls, uid, cache_dir="/tmp/", ingestion_method='vectorizer'):
+    def by_id(cls, mid, cache_dir="/tmp/", ingestion_method='vectorizer'):
         """ Find a pipeline by id
 
         Parameters
         ----------
-        uid : str
+        mid : str
           a unique model id
         cache_dir : str
           folder where models are saved
@@ -130,7 +130,7 @@ class PipelineFinder(OrderedDict):
           and as values the model ids
         """
 
-        pipeline = cls(uid=uid, cache_dir=cache_dir,
+        pipeline = cls(mid=mid, cache_dir=cache_dir,
                        ingestion_method=ingestion_method)
 
         cache_dir_base = os.path.dirname(cache_dir)
@@ -139,7 +139,7 @@ class PipelineFinder(OrderedDict):
             root = os.path.relpath(root, cache_dir_base)
             for sdir in subdirs:
                 path = os.path.join(root, sdir)
-                path_hierarchy =  _split_path(path)
+                path_hierarchy = _split_path(path)
                 if len(path_hierarchy) % 2 == 1:
                     # the path is of the form
                     # ['ediscovery_cache']
@@ -147,14 +147,14 @@ class PipelineFinder(OrderedDict):
                     # ignore it
                     continue
 
-                if path_hierarchy[-1] == uid:
+                if path_hierarchy[-1] == mid:
                     # found the model
                     _break_flag = True
                     break
             if _break_flag:
                 break
         else:
-            raise ModelNotFound('Model id {} not found in {}!'.format(uid, cache_dir))
+            raise ModelNotFound('Model id {} not found in {}!'.format(mid, cache_dir))
 
         if path_hierarchy[0] == 'ediscovery_cache':
             path_hierarchy[0] = ingestion_method
@@ -164,7 +164,11 @@ class PipelineFinder(OrderedDict):
 
         for idx in range(len(path_hierarchy)//2):
             key, val = path_hierarchy[2*idx], path_hierarchy[2*idx+1]
-            pipeline[val] = key
+            if key in pipeline:
+                raise NotImplementedError('The current PipelineFinder class does not support'
+                                          'multiple identical processing steps'
+                                          'duplicates of {} found!'.format(key))
+            pipeline[key] = val
         return pipeline
 
     @property
@@ -175,17 +179,32 @@ class PipelineFinder(OrderedDict):
             raise ValueError("Can't take the parent of a root node!")
 
         # get all the steps except the last one
-        steps = {key: self[key] for key in list(self.keys())[:-1]}
+        steps = self.copy()
+        steps.popitem(last=True)
 
-        return PipelineFinder(uid=self.uid,
+        return PipelineFinder(mid=list(steps.values())[-1],
                               cache_dir=self.cache_dir,
                               ingestion_method=self.ingestion_method,
                               **steps)
 
-    def load(self, key):
-        """ Load a model in the pipeline by name """
+    def get_path(self, mid=None):
+        """ Find the path to the model specified by mid """
+        import itertools
 
-        #estimator_type, uid = 
+        if mid is None:
+            mid = self.mid
+
+        if mid not in self.values():
+            raise ValueError('{} is not a processing step current pipeline,\n {}'.format(mid, self)) 
+        idx = list(self.values()).index(mid)
+        valid_keys = list(self.keys())[:idx]
+        path = list(itertools.chain.from_iterable(
+                            [[key, self[key]] for key in valid_keys]))
+        path += [list(self.keys())[idx]]
+        path[0] = 'ediscovery_cache'
+        return os.path.join(*path)
+
+
 
 
 class _BaseWrapper(object):
@@ -208,19 +227,20 @@ class _BaseWrapper(object):
     def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None,
                  dataset_definition=FeatureVectorizer,
                  load_model=False):
+        if parent_id is None and mid is None:
+            raise WrongParameter('At least one of parent_id or mid should be provided!')
 
         if parent_id is None and mid is not None:
-            self.parent_id = parent_id = self.get_dsid(cache_dir, mid)
+            self.pipeline = PipelineFinder.by_id(mid, cache_dir).parent
             self.mid = mid
         elif parent_id is not None:
-            self.parent_id  = parent_id
+            self.pipeline = PipelineFinder.by_id(parent_id, cache_dir)
             self.mid = None
-        elif parent_id is None and mid is None:
-            raise WrongParameter('parent_id and mid')
 
-        self.fe = dataset_definition(cache_dir=cache_dir, dsid=parent_id)
+        self.fe = dataset_definition(cache_dir=cache_dir,
+                                     dsid=self.pipeline['vectorizer'])
 
-        self.model_dir = os.path.join(self.fe.cache_dir, parent_id, self._wrapper_type)
+        self.model_dir = os.path.join(self.pipeline.get_path(), self._wrapper_type)
 
         if not os.path.exists(self.model_dir):
             os.mkdir(self.model_dir)
@@ -240,6 +260,7 @@ class _BaseWrapper(object):
     def get_path(self, mid):
         parent_id = self.get_dsid(self.fe.cache_dir, mid)
         return os.path.join(self.fe.cache_dir, parent_id, self._wrapper_type, mid)
+
 
     def get_dsid(self, cache_dir, mid):
         if 'ediscovery_cache' not in cache_dir:  # not very pretty

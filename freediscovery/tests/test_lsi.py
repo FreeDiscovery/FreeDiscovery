@@ -5,8 +5,11 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path
+import re
+
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 from freediscovery.base import PipelineFinder
 from freediscovery.text import FeatureVectorizer
@@ -39,11 +42,25 @@ def test_lsi():
     lsi._load_model()
 
     # test pipeline
+    pf = PipelineFinder.by_id(lsi_id, cache_dir)
 
-    mod = PipelineFinder.by_id(lsi_id, cache_dir)
+    assert list(pf.keys()) == ['vectorizer', 'lsi']
+    assert list(pf.parent.keys()) == ['vectorizer']
 
-    assert list(mod.values()) == ['vectorizer', 'lsi']
-    assert list(mod.parent.values()) == ['vectorizer']
+    assert pf.mid == lsi_id
+    assert pf.parent.mid == uuid
+    with pytest.raises(ValueError):
+        pf.parent.parent
+
+    for estimator_type, mid in pf.items():
+        path = pf.get_path(mid)
+        if estimator_type == 'vectorizer':
+            assert path == 'ediscovery_cache'
+        elif estimator_type == 'lsi':
+            assert re.match('ediscovery_cache.*lsi', path)
+        else:
+            raise ValueError
+
 
     lsi.list_models()
     lsi.delete()
