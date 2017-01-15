@@ -47,7 +47,8 @@ ground_truth = parse_ground_truth_file(
                         os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
 @pytest.mark.parametrize('method, cv', itertools.product(
-                       ["LinearSVC", "LogisticRegression", 'xgboost'],
+                       ["LinearSVC", "LogisticRegression", 'xgboost',
+                       'NearestNeighbor', 'NearestCentroid'],
                         #'MLPClassifier', 'ensemble-stacking' not supported in production the moment
                        [None, 'fast']))
 def test_categorization(method, cv):
