@@ -60,6 +60,9 @@ class NearestCentroidRanker(NearestCentroid):
         -------
         C : array, shape = [n_samples]
         """
+        from sklearn.metrics.pairwise import pairwise_distances
+        from sklearn.utils.validation import check_array, check_is_fitted
+
         check_is_fitted(self, 'centroids_')
 
         X = check_array(X, accept_sparse='csr')

@@ -19,7 +19,8 @@ from sklearn.preprocessing import normalize
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.categorization import (Categorizer, _zip_relevant,
-        _unzip_relevant, NearestNeighborRanker)
+        _unzip_relevant, NearestNeighborRanker,
+        NearestCentroidRanker)
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
@@ -47,8 +48,7 @@ ground_truth = parse_ground_truth_file(
                         os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
 @pytest.mark.parametrize('method, cv', itertools.product(
-                       ["LinearSVC", "LogisticRegression", 'xgboost',
-                       'NearestNeighbor', 'NearestCentroid'],
+                       ["LinearSVC", "LogisticRegression", 'xgboost'],
                         #'MLPClassifier', 'ensemble-stacking' not supported in production the moment
                        [None, 'fast']))
 def test_categorization(method, cv):
@@ -223,3 +223,34 @@ def test_nearest_neighbor_ranker_unsupervised():
 
     assert_equal(y_pred, (1 - dist[:,0]/4))
 
+def test_nearest_centroid_ranker():
+    # in the case where there is a single point by centroid,
+    # nearest centroid should reduce to nearest neighbor
+    from sklearn.neighbors import NearestNeighbors
+    np.random.seed(0)
+
+    n_samples = 100
+    n_features = 120
+    X = np.random.rand(n_samples, n_features)
+    normalize(X, copy=False)
+    index = np.arange(n_samples, dtype='int')
+    y = np.arange(n_samples, dtype='int')
+    index_train, index_test, y_train, y_test = train_test_split(index, y)
+    X_train = X[index_train]
+    X_test = X[index_test]
+
+
+    nn = NearestNeighbors(n_neighbors=1)
+    nn.fit(X_train)
+    dist_ref, idx_ref = nn.kneighbors(X_test)
+
+    nc = NearestCentroidRanker()
+    nc.fit(X_train, y_train)
+    dist_pred = nc.decision_function(X_test)
+    y_pred = nc.predict(X_test)
+
+    # ensures that we have the same number of unique ouput points
+    # (even if absolute labels are not preserved)
+    assert np.unique(idx_ref[:,0]).shape ==  np.unique(y_pred).shape
+
+    assert_allclose(dist_pred, dist_ref[:,0])
