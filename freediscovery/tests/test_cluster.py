@@ -11,6 +11,7 @@ import pytest
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.cluster import _ClusteringWrapper, select_top_words
+from freediscovery.lsi import _LSIWrapper
 from .run_suite import check_cache
 
 
@@ -20,15 +21,19 @@ NCLUSTERS = 2
 def fd_setup():
     basename = os.path.dirname(__file__)
     cache_dir = check_cache()
+    np.random.seed(1)
     data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
     n_features = 110000
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+    dsid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features, use_hashing=False,
                          stop_words='english',
                          min_df=0.1, max_df=0.9)  # TODO unused variable 'uuid' (overwritten on the next line)
-    uuid, filenames = fe.transform()
-    return cache_dir, uuid, filenames
+    dsid, filenames = fe.transform()
+
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=dsid)
+    lsi.fit_transform(n_components=6)
+    return cache_dir, dsid, filenames, lsi.mid
 
 
 def check_cluster_consistency(labels, terms):
@@ -37,22 +42,26 @@ def check_cluster_consistency(labels, terms):
     assert len(np.unique(labels)) == len(terms)
 
 
-@pytest.mark.parametrize('method, lsi_components, args, cl_args',
+@pytest.mark.parametrize('method, use_lsi, args, cl_args',
                           [['k_means', None, {}, {}],
-                           ['k_means', 20,   {}, {}],
-                           ['birch', 20, {'threshold': 0.5}, {}],
-                           ['ward_hc', 20, {'n_neighbors': 5}, {}],
-                           ['dbscan', None, {'eps':0.5, 'min_samples': 2}, {}],
-                           ['dbscan', 20,   {'eps':0.5, 'min_samples': 2}, {}],
+                           ['k_means', True,   {}, {}],
+                           ['birch', True, {'threshold': 0.5}, {}],
+                           ['ward_hc', True, {'n_neighbors': 5}, {}],
+                           ['dbscan', False, {'eps':0.5, 'min_samples': 2}, {}],
+                           ['dbscan', True,   {'eps':0.5, 'min_samples': 2}, {}],
                           ])
-def test_clustering(method, lsi_components, args, cl_args):
+def test_clustering(method, use_lsi, args, cl_args):
 
-    return
-    cache_dir, uuid, filenames = fd_setup()
+    cache_dir, uuid, filenames, lsi_id = fd_setup()
     np.random.seed(1)
     n_top_words = 9
 
-    cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=uuid)
+    if use_lsi:
+        parent_id = lsi_id
+    else:
+        parent_id = uuid
+
+    cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=parent_id)
     cm = getattr(cat, method)
     labels, htree = cm(NCLUSTERS, **args)
 
@@ -80,8 +89,8 @@ def test_clustering(method, lsi_components, args, cl_args):
     for el in terms:
         assert len(el) == n_top_words
     cluster_indices = np.nonzero(labels == 0)
-    if lsi_components is not None:
-        # not supported for now otherwise
+    if use_lsi:
+        # use_lsi=False is not supported for now
         terms2 = cat.compute_labels(cluster_indices=cluster_indices, **cl_args)
         # 70% of the terms at least should match
         if method != 'dbscan':

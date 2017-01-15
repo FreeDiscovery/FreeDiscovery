@@ -142,6 +142,16 @@ class _BaseTextTransformer(object):
         pars = joblib.load(os.path.join(dsid_dir, 'pars'))
         return pars
 
+    def _load_model(self):
+        mid = self.dsid
+        mid_dir = os.path.join(self.cache_dir, mid)
+        if not os.path.exists(mid_dir):
+            raise ValueError('Vectorizer model id {} ({}) not found in the cache {}!'.format(
+                             mid, mid_dir))
+        cmod = joblib.load(os.path.join(mid_dir, 'vectorizer'))
+        return cmod
+
+
     def search(self, filenames):
         """ Return the document ids that correspond to the provided filenames.
 

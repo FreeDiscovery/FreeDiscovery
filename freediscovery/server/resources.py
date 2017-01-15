@@ -313,7 +313,6 @@ class ModelsApiTest(Resource):
 _k_mean_clustering_api_post_args = {
         'dataset_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
-        'lsi_components': wfields.Int(missing=-1),
         }
 
 
@@ -322,9 +321,6 @@ class KmeanClusteringApi(Resource):
     @use_args(_k_mean_clustering_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
-
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
 
@@ -337,7 +333,6 @@ class KmeanClusteringApi(Resource):
 _birch_clustering_api_post_args = {
         'dataset_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
-        'lsi_components': wfields.Int(missing=-1),
         'threshold': wfields.Number(),
         }
 
@@ -348,8 +343,6 @@ class BirchClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
         del args['dataset_id']
         cl.birch(**args)
@@ -370,9 +363,6 @@ class WardHCClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
-
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
 
         del args['dataset_id']
@@ -382,7 +372,6 @@ class WardHCClusteringApi(Resource):
 
 _dbscan_clustering_api_post_args = {
         'dataset_id': wfields.Str(required=True),
-        'lsi_components': wfields.Int(missing=-1),
         'eps': wfields.Number(missing=0.1),
         'min_samples': wfields.Int(missing=10)
         }
@@ -393,9 +382,6 @@ class DBSCANClusteringApi(Resource):
     @use_args(_dbscan_clustering_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
-
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
 
@@ -428,8 +414,6 @@ class ClusteringApiElement(Resource):
             terms = []
 
         pars = cl._load_pars()
-        if pars['lsi']:
-            pars['lsi'] = True
         return {'labels': km.labels_.tolist(), 'cluster_terms': terms,
                   'htree': htree, 'pars': pars}
 

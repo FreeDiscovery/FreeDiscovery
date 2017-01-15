@@ -293,6 +293,7 @@ class _BaseWrapper(object):
         return self._pars
 
     def _load_model(self):
+        """ Load model from disk """
         mid = self.mid
         mid_dir = os.path.join(self.model_dir, mid)
         if not os.path.exists(mid_dir):

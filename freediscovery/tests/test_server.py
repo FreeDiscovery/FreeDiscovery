@@ -82,6 +82,18 @@ def features_hashed(app):
     return dsid, pars
 
 
+def features_hashed_lsi(app):
+    dsid, pars = features_hashed(app)
+    lsi_pars = dict( n_components=101, dataset_id=dsid)
+    method = V01 + "/lsi/"
+    res = app.post(method, data=lsi_pars)
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == ['explained_variance', 'id']
+    lsi_id = data['id']
+    return dsid, lsi_id, pars
+
+
 def test_features_hashed(app):
     dsid, pars = features_hashed(app)
 
@@ -238,7 +250,7 @@ def test_get_search_emails_by_filename(app):
 
 #=============================================================================#
 #
-#                     Categorization / LSI
+#                     LSI
 #
 #=============================================================================#
 
