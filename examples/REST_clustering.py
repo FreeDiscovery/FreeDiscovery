@@ -65,18 +65,32 @@ res = requests.get(url).json()
 print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                   if "filenames" not in key]))
 
+print("\n2. Calculate LSI")
 
-# # 2. Document Clustering (LSI + K-Means)
+url = BASE_URL + '/lsi/'
+print("POST", url)
 
-print("\n2.a. Document clustering (LSI + K-means)")
+n_components = 100
+res = requests.post(url,
+                    json={'n_components': n_components,
+                          'parent_id': dsid
+                          }).json()
+
+lsi_id = res['id']
+print('  => LSI model id = {}'.format(lsi_id))
+print('  => SVD decomposition with {} dimensions explaining {:.2f} % variabilty of the data'.format(
+                        n_components, res['explained_variance']*100))
+
+# # 3. Document Clustering (LSI + K-Means)
+
+print("\n3.a. Document clustering (LSI + K-means)")
 
 url = BASE_URL + '/clustering/k-mean/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-                    json={'parent_id': dsid,
+                    json={'parent_id': lsi_id,
                           'n_clusters': 10,
-                          'lsi_components': 50
                           }).json()
 
 mid = res['id']
@@ -94,17 +108,16 @@ print('    .. computed in {:.1f}s'.format(t1 - t0))
 print(repr_clustering(np.array(res['labels']), res['cluster_terms']))
 
 
-# # 3. Document Clustering (LSI + Ward Hierarchical Clustering)
+# # 4. Document Clustering (LSI + Ward Hierarchical Clustering)
 
-print("\n3.a. Document clustering (LSI + Ward HC)")
+print("\n4.a. Document clustering (LSI + Ward HC)")
 
 url = BASE_URL + '/clustering/ward_hc/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-                    json={'parent_id': dsid,
+                    json={'parent_id': lsi_id,
                           'n_clusters': 10,
-                          'lsi_components': 50,
                           'n_neighbors': 5  # this is the connectivity constraint
                           }).json()
 
