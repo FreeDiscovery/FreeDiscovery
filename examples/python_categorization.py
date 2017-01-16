@@ -47,7 +47,7 @@ if __name__ == '__main__':
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid)
     cat.train(seed_index, seed_y)
 
-    predictions = cat.predict()
+    predictions, md = cat.predict()
 
     gt = parse_ground_truth_file( ground_truth_file)
     idx_ref = cat.fe.search(gt.index.values)

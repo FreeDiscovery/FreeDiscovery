@@ -350,7 +350,10 @@ def test_api_categorization(app, solver, cv):
     method = V01 + "/categorization/{}/predict".format(mid)
     res = app.get(method)
     data = parse_res(res)
-    assert sorted(data.keys()) == ['prediction']
+    if solver == 'NearestNeighbor':
+        assert sorted(data.keys()) == ['dist_n', 'dist_p', 'ind_n', 'ind_p', 'prediction']
+    else:
+        assert sorted(data.keys()) == ['prediction']
 
     method = V01 + "/categorization/{}/test".format(mid)
     res = app.post(method,

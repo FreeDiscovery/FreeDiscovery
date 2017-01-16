@@ -33,7 +33,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
                       DatasetSchema,
-                      LsiParsSchema, LsiPostSchema, LsiPredictSchema,
+                      LsiParsSchema, LsiPostSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
@@ -171,7 +171,7 @@ class EmailParserApiElementIndex(Resource):
         return {'index': list(idx)}
 
 # ============================================================================ # 
-#                  Categorization (LSI)
+#                  LSI decomposition
 # ============================================================================ # 
 
 _lsi_api_get_args  = {'parent_id': wfields.Str(required=True) }
@@ -225,7 +225,7 @@ _models_api_post_args = {
         'index': wfields.List(wfields.Int(), required=True),
         'y': wfields.List(wfields.Int(), required=True),
         'method': wfields.Str(required=True),
-        'cv': wfields.Boolean(missing=True),
+        'cv': wfields.Boolean(missing=False),
         'training_scores': wfields.Boolean(missing=True)
         }
 
@@ -253,7 +253,7 @@ class ModelsApi(Resource):
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
         if training_scores:
-            Y_res = cat.predict()
+            Y_res, md = cat.predict()
             idx_res = np.arange(cat.fe.n_samples_, dtype='int')
             res = categorization_score(idx_train, Y_train, idx_res, Y_res)
         else:
@@ -281,9 +281,10 @@ class ModelsApiPredict(Resource):
     def get(self, mid):
 
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
-        y_res = cat.predict()
+        y_res, md = cat.predict()
+        md = {key: val.tolist() for key, val in md.items()}
 
-        return {'prediction': y_res.tolist()}
+        return dict(prediction=y_res.tolist(), **md)
 
 
 _models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}
@@ -296,7 +297,7 @@ class ModelsApiTest(Resource):
     def post(self, mid, **args):
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
 
-        y_res = cat.predict()
+        y_res, md = cat.predict()
         d_ref = parse_ground_truth_file( args["ground_truth_filename"])
         idx_ref = cat.fe.search(d_ref.index.values)
         idx_res = np.arange(cat.fe.n_samples_, dtype='int')

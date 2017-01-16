@@ -96,7 +96,7 @@ def test_categorization(use_lsi, method, cv):
 
 
 
-    Y_pred = cat.predict()
+    Y_pred, md = cat.predict()
     X_pred = np.arange(cat.fe.n_samples_, dtype='int')
     idx_gt = cat.fe.search(ground_truth.index.values)
 
@@ -105,6 +105,13 @@ def test_categorization(use_lsi, method, cv):
                         X_pred, Y_pred)
 
     assert cat.get_params() is not None
+
+    if method == 'NearestNeighbor':
+        assert sorted(list(md.keys())) == ['dist_n', 'dist_p', 'ind_n', 'ind_p']
+        for key, val in md.items():
+            assert val.shape == Y_pred.shape
+    else:
+        assert md == {}
 
     if method in ['xgboost', 'ensemble-stacking']:
         # this parameter fail for some reason so far...

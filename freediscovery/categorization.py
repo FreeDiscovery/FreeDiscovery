@@ -426,25 +426,15 @@ class _CategorizerWrapper(_BaseWrapper):
         ds = self.pipeline.data
         n_samples = ds.shape[0]
 
-        def _predict_chunk(cmod, ds, k, chunk_size):
-            n_samples = ds.shape[0]
-            mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
-            ds_sl = ds[mslice, :]
-            if isinstance(cmod, NearestNeighborRanker):
-                res, _, md = cmod.kneighbors(ds_sl)
-            elif hasattr(cmod, 'decision_function'):
-                res = cmod.decision_function(ds_sl)
-            else:  # gradient boosting define the decision function by analogy
-                tmp = cmod.predict_proba(ds_sl)[:, 1]
-                res = logit(tmp)
-            return res
-
-        res = []
-        for k in range(n_samples//chunk_size + 1):
-            pred = _predict_chunk(cmod, ds, k, chunk_size)
-            res.append(pred)
-        res = np.concatenate(res, axis=0)
-        return res
+        md = {}
+        if isinstance(cmod, NearestNeighborRanker):
+            res, _, md = cmod.kneighbors(ds)
+        elif hasattr(cmod, 'decision_function'):
+            res = cmod.decision_function(ds)
+        else:  # gradient boosting define the decision function by analogy
+            tmp = cmod.predict_proba(ds)[:, 1]
+            res = logit(tmp)
+        return res, md
 
     def _load_pars(self, mid=None):
         """Load model parameters from disk"""
