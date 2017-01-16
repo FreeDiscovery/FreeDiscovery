@@ -74,7 +74,7 @@ url = BASE_URL + '/clustering/k-mean/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-                    json={'dataset_id': dsid,
+                    json={'parent_id': dsid,
                           'n_clusters': 10,
                           'lsi_components': 50
                           }).json()
@@ -102,7 +102,7 @@ url = BASE_URL + '/clustering/ward_hc/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-                    json={'dataset_id': dsid,
+                    json={'parent_id': dsid,
                           'n_clusters': 10,
                           'lsi_components': 50,
                           'n_neighbors': 5  # this is the connectivity constraint

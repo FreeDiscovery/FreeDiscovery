@@ -84,7 +84,7 @@ def get_features(app, hashed=True):
 
 def get_features_lsi(app, hashed=True):
     dsid, pars = get_features(app, hashed=hashed)
-    lsi_pars = dict( n_components=101, dataset_id=dsid)
+    lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, data=lsi_pars)
     assert res.status_code == 200
@@ -245,12 +245,12 @@ def test_api_lsi(app):
     method = V01 + "/lsi/"
     res = app.get(method,
             data=dict(
-                dataset_id=dsid,
+                parent_id=dsid,
                 )
             )
     assert res.status_code == 200
 
-    lsi_pars = dict( n_components=101, dataset_id=dsid)
+    lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, data=lsi_pars)
     assert res.status_code == 200
@@ -263,7 +263,7 @@ def test_api_lsi(app):
     method = V01 + "/lsi/"
     res = app.get(method,
             data=dict(
-                dataset_id=dsid,
+                parent_id=dsid,
                 )
             )
     assert res.status_code == 200
@@ -315,7 +315,7 @@ def test_api_categorization(app, solver, cv):
 
 
     pars = {
-          'dataset_id': parent_id,
+          'parent_id': parent_id,
           'index': index,
           'y': y,
           'method': solver,
@@ -392,7 +392,7 @@ def test_api_clustering(app, model, use_lsi):
     #if (model == 'birch' or model == "ward_hc"):
 
     url = V01 + "/clustering/" + model
-    pars = { 'dataset_id': parent_id, }
+    pars = { 'parent_id': parent_id, }
     if model != 'dbscan':
         pars['n_clusters'] = 2
     if model == 'dbscan':
@@ -443,7 +443,7 @@ def test_api_dupdetection(app, kind, options):
     data = parse_res(res)  # TODO unused variable
 
     url = V01 + "/duplicate-detection" 
-    pars = { 'dataset_id': dsid,
+    pars = { 'parent_id': dsid,
              'method': kind}
     res = app.post(url, data=pars)
     assert res.status_code == 200
@@ -478,7 +478,7 @@ def test_api_thread_emails(app):
     data = parse_res(res)  # TODO unused variable
 
     url = V01 + "/email-threading" 
-    pars = { 'dataset_id': dsid }
+    pars = { 'parent_id': dsid }
              
     res = app.post(url, data=pars)
     assert res.status_code == 200
@@ -568,7 +568,7 @@ def test_exception_handling(app_notest):
     with _silent('stderr'):
         res = app_notest.post(method,
                         data={
-                              'dataset_id': dsid,
+                              'parent_id': dsid,
                               'index': [0, 0, 0],       # just something wrong
                               'y': ['ds', 'dsd', 'dsd'],
                               'method': "LogisticRegression",

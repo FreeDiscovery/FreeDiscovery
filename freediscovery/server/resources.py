@@ -174,23 +174,23 @@ class EmailParserApiElementIndex(Resource):
 #                  Categorization (LSI)
 # ============================================================================ # 
 
-_lsi_api_get_args  = {'dataset_id': wfields.Str(required=True) }
-_lsi_api_post_args = {'dataset_id': wfields.Str(required=True),
+_lsi_api_get_args  = {'parent_id': wfields.Str(required=True) }
+_lsi_api_post_args = {'parent_id': wfields.Str(required=True),
                       'n_components': wfields.Int(default=100) }
 class LsiApi(Resource):
 
     @use_args(_lsi_api_get_args)
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
-        parent_id = args['dataset_id']
+        parent_id = args['parent_id']
         lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
         return lsi.list_models()
 
     @use_args(_lsi_api_post_args)
     @marshal_with(LsiPostSchema())
     def post(self, **args):
-        parent_id = args['dataset_id']
-        del args['dataset_id']
+        parent_id = args['parent_id']
+        del args['parent_id']
         lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
         _, explained_variance = lsi.fit_transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
@@ -203,7 +203,7 @@ class LsiApiElement(Resource):
         cat = _LSIWrapper(self._cache_dir, mid=mid)
 
         pars = cat._load_pars()
-        pars['dataset_id'] = pars['parent_id']
+        pars['parent_id'] = pars['parent_id']
         return pars
 
 _lsi_api_element_predict_post_args = {
@@ -219,7 +219,7 @@ _lsi_api_element_predict_post_args = {
 # ============================================================================ # 
 
 _models_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
         'index': wfields.List(wfields.Int(), required=True),
@@ -241,13 +241,13 @@ class ModelsApi(Resource):
     @marshal_with(CategorizationPostSchema())
     def post(self, **args):
         training_scores = args['training_scores']
-        parent_id = args['dataset_id']
+        parent_id = args['parent_id']
 
         if args['cv']:
             cv = 'fast'
         else:
             cv = None
-        for key in ['dataset_id', 'cv', 'training_scores']:
+        for key in ['parent_id', 'cv', 'training_scores']:
             del args[key]
         cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
         _, Y_train = cat.train(cv=cv, **args)
@@ -311,7 +311,7 @@ class ModelsApiTest(Resource):
 # ============================================================================ # 
 
 _k_mean_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
         }
 
@@ -322,16 +322,16 @@ class KmeanClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
-        del args['dataset_id']
+        del args['parent_id']
 
         labels = cl.k_means(**args)  # TODO unused variable. Remove?
         return {'id': cl.mid}
 
 
 _birch_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
         'threshold': wfields.Number(),
         }
@@ -343,14 +343,14 @@ class BirchClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
-        del args['dataset_id']
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
+        del args['parent_id']
         cl.birch(**args)
         return {'id': cl.mid}
 
 
 _wardhc_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
         'n_neighbors': wfields.Int(missing=5),
         }
@@ -362,15 +362,15 @@ class WardHCClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
-        del args['dataset_id']
+        del args['parent_id']
 
         cl.ward_hc(**args)
         return {'id': cl.mid}
 
 _dbscan_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         'eps': wfields.Number(missing=0.1),
         'min_samples': wfields.Int(missing=10)
         }
@@ -382,9 +382,9 @@ class DBSCANClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
-        del args['dataset_id']
+        del args['parent_id']
 
         cl.dbscan(**args)
         return {'id': cl.mid}
@@ -426,7 +426,7 @@ class ClusteringApiElement(Resource):
 # ============================================================================ # 
 
 _dup_detection_api_post_args = {
-        "dataset_id": wfields.Str(required=True),
+        "parent_id": wfields.Str(required=True),
         "method": wfields.Str(required=False, missing='simhash')
         }
 
@@ -438,9 +438,9 @@ class DupDetectionApi(Resource):
     def post(self, **args):
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir,
-                                           parent_id=args['dataset_id'])
+                                           parent_id=args['parent_id'])
 
-        del args['dataset_id']
+        del args['parent_id']
 
 
         model.fit(args['method'])
@@ -561,11 +561,11 @@ class MetricsDupDetectionApiElement(Resource):
 
 class EmailThreadingApi(Resource):
 
-    @use_args({ "dataset_id": wfields.Str(required=True)})
+    @use_args({ "parent_id": wfields.Str(required=True)})
     @marshal_with(EmailThreadingSchema())
     def post(self, **args):
 
-        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, parent_id=args['dataset_id'])
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
         tree =  model.thread()
 

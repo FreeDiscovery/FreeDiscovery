@@ -65,7 +65,7 @@ url = BASE_URL + '/email-threading/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-        json={'dataset_id': dsid }).json()
+        json={'parent_id': dsid }).json()
 
 mid  = res['id']
 print("     => model id = {}".format(mid))

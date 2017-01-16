@@ -101,7 +101,7 @@ if __name__ == '__main__':
     res = requests.post(url,
                         json={'index': seed_index,
                               'y': seed_y,
-                              'dataset_id': dsid,
+                              'parent_id': dsid,
                               'method': 'LinearSVC',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                               'cv': 0                          # Cross Validation
                               }).json()
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     n_components = 100
     res = requests.post(url,
                         json={'n_components': n_components,
-                              'dataset_id': dsid
+                              'parent_id': dsid
                               }).json()
 
     lid = res['id']

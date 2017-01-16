@@ -81,7 +81,7 @@ class LsiPredictSchema(ClassificationScoresSchema):
 
 
 class LsiParsSchema(Schema):
-    dataset_id = fields.Str(required=True)
+    parent_id = fields.Str(required=True)
     n_components = fields.Int(required=True)
 
 
