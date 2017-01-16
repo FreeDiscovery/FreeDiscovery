@@ -73,7 +73,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
         except OptionalDependencyMissing:
             raise SkipTest
 
-        Y_pred = cat.predict()
+        Y_pred, md = cat.predict()
         X_pred = np.arange(cat.fe.n_samples_, dtype='int')
         idx_gt = cat.fe.search(ground_truth.index.values)
 
