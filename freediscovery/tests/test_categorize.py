@@ -57,7 +57,8 @@ ground_truth = parse_ground_truth_file(
 
 _test_cases = itertools.product(
                        [False, True],
-                       ["LinearSVC", "LogisticRegression", 'xgboost', "NearestNeighbor"],
+                       ["LinearSVC", "LogisticRegression", 'xgboost', "NearestNeighbor",
+                        "NearestCentroid"],
                         #'MLPClassifier', 'ensemble-stacking' not supported in production the moment
                        [None, 'fast'])
 _test_cases = filter(lambda x: not (x[1].startswith("Nearest") and x[2]),

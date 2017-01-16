@@ -62,11 +62,11 @@ def app_notest():
 #
 #=============================================================================#
 
-def features_hashed(app):
+def get_features(app, hashed=True):
     method = V01 + "/feature-extraction/"
     pars = dict(data_dir=data_dir, n_features=100000,
                 analyzer='word', stop_words='None',
-                ngram_range=[1, 1])
+                ngram_range=[1, 1], use_hashing=hashed)
     res = app.post(method, data=pars)
 
     assert res.status_code == 200, method
@@ -82,8 +82,8 @@ def features_hashed(app):
     return dsid, pars
 
 
-def features_hashed_lsi(app):
-    dsid, pars = features_hashed(app)
+def get_features_lsi(app, hashed=True):
+    dsid, pars = get_features(app, hashed=hashed)
     lsi_pars = dict( n_components=101, dataset_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, data=lsi_pars)
@@ -94,8 +94,8 @@ def features_hashed_lsi(app):
     return dsid, lsi_id, pars
 
 
-def test_features_hashed(app):
-    dsid, pars = features_hashed(app)
+def test_get_features(app):
+    dsid, pars = get_features(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
@@ -107,28 +107,9 @@ def test_features_hashed(app):
         assert val == data[key]
 
 
-def features_non_hashed(app):
-    method = V01 + "/feature-extraction/"
-    res = app.post(method,
-            data=dict(data_dir=data_dir, n_features=100000,
-                analyzer='word', stop_words='english',
-                ngram_range=[1, 1], use_hashing=0))
-
-    assert res.status_code == 200, method
-    data = parse_res(res)
-    assert sorted(data.keys()) == ['filenames', 'id']
-    dsid = data['id']
-
-    method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.post(method)
-    assert res.status_code == 200, method
-    data = parse_res(res)
-    assert sorted(data.keys()) == ['id']
-    return dsid
-
 
 def test_delete_feature_extraction(app):
-    dsid, _ = features_hashed(app)
+    dsid, _ = get_features(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.delete(method)
@@ -147,8 +128,9 @@ def test_get_feature_extraction_all(app):
                      'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
                      'binary', 'sublinear_tf', 'use_hashing'])
 
+
 def test_get_feature_extraction(app):
-    dsid, _ = features_hashed(app)
+    dsid, _ = get_features(app)
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
@@ -162,7 +144,7 @@ def test_get_feature_extraction(app):
 
 
 def test_get_search_filenames(app):
-    dsid, _ = features_hashed(app)
+    dsid, _ = get_features(app)
 
     method = V01 + "/feature-extraction/{}/index".format(dsid)
     for pars, indices in [
@@ -255,7 +237,7 @@ def test_get_search_emails_by_filename(app):
 #=============================================================================#
 
 def test_api_lsi(app):
-    dsid, _ = features_hashed(app)
+    dsid, _ = get_features(app)
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
@@ -267,16 +249,6 @@ def test_api_lsi(app):
                 )
             )
     assert res.status_code == 200
-
-    filenames = data['filenames']
-    # we train the model on 5 samples / 6 and see what happens
-    index_filenames = filenames[:2] + filenames[3:]
-    y = [1, 1,  0, 0, 0]
-
-    method = V01 + "/feature-extraction/{}/index".format(dsid)
-    res = app.get(method, data={'filenames': index_filenames})
-    assert res.status_code == 200, method
-    index = parse_res(res)['index']
 
     lsi_pars = dict( n_components=101, dataset_id=dsid)
     method = V01 + "/lsi/"
@@ -305,15 +277,26 @@ def test_api_lsi(app):
         assert vals == data[key]
 
 
-@pytest.mark.parametrize("solver,cv", itertools.product(
-                   ["LinearSVC", "LogisticRegression", 'xgboost'],
-                   [0, 1]))
+_categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",
+                                            "NearestCentroid", "NearestNeighbor", 'xgboost'],
+                                            [0, 1])
+
+_categoriazation_pars = filter(lambda el: not ((el[0].startswith('Nearest') and el[1])),
+                               _categoriazation_pars)
+
+@pytest.mark.parametrize("solver, cv", _categoriazation_pars)
 def test_api_categorization(app, solver, cv):
 
     if 'CIRCLECI' in os.environ and cv == 1 and solver in ['LinearSVC', 'xgboost']:
         raise SkipTest # Circle CI is too slow and timesout
 
-    dsid, _ = features_hashed(app)
+    if solver.startswith('Nearest'):
+        dsid, lsi_id, _ = get_features_lsi(app)
+        parent_id = lsi_id
+    else:
+        dsid, _ = get_features(app)
+        lsi_id = None
+        parent_id = dsid
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
@@ -332,7 +315,7 @@ def test_api_categorization(app, solver, cv):
 
 
     pars = {
-          'dataset_id': dsid,
+          'dataset_id': parent_id,
           'index': index,
           'y': y,
           'method': solver,
@@ -387,44 +370,50 @@ def test_api_categorization(app, solver, cv):
 #
 #=============================================================================#
 
-@pytest.mark.parametrize("model", ['k-mean', 'birch', 'ward_hc', 'dbscan'])
-def test_api_clustering(app, model):
+@pytest.mark.parametrize("model, use_lsi", [('k-mean', False),
+                                            ('birch', True),
+                                            ('ward_hc', True),
+                                            ('dbscan', True)])
+def test_api_clustering(app, model, use_lsi):
 
-    dsid = features_non_hashed(app)
+    if use_lsi:
+        dsid, lsi_id, _ = get_features_lsi(app, hashed=False)
+        parent_id = lsi_id
+    else:
+        dsid, _ = get_features(app, hashed=False)
+        lsi_id = None
+        parent_id = dsid
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
     data = parse_res(res)  # TODO unused variable
 
-    for lsi_components in [4, -1]:
-        if lsi_components == -1 and (model == 'birch' or model == "ward_hc"):
-            continue
-        url = V01 + "/clustering/" + model
-        pars = { 'dataset_id': dsid, }
-        if model != 'dbscan':
-            pars['n_clusters'] = 2
-        if model != "k-mean":
-           pars["lsi_components"] = lsi_components 
-        if model == 'dbscan':
-            pars.update({'eps': 0.1, "min_samples": 2})
-        res = app.post(url, data=pars)
+    #if (model == 'birch' or model == "ward_hc"):
 
-        assert res.status_code == 200
-        data = parse_res(res)
-        assert sorted(data.keys()) == sorted(['id'])
-        mid = data['id']
+    url = V01 + "/clustering/" + model
+    pars = { 'dataset_id': parent_id, }
+    if model != 'dbscan':
+        pars['n_clusters'] = 2
+    if model == 'dbscan':
+        pars.update({'eps': 0.1, "min_samples": 2})
+    res = app.post(url, data=pars)
 
-        url += '/{}'.format(mid)
-        res = app.get(url)
-        assert res.status_code == 200
-        data = parse_res(res)
-        assert sorted(data.keys()) == \
-                sorted(['cluster_terms', 'labels', 'pars', 'htree'])
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == sorted(['id'])
+    mid = data['id']
 
-        if data['htree']:
-            assert sorted(data['htree'].keys()) == \
-                    sorted(['n_leaves', 'n_components', 'children'])
+    url += '/{}'.format(mid)
+    res = app.get(url)
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == \
+            sorted(['cluster_terms', 'labels', 'pars', 'htree'])
+
+    if data['htree']:
+        assert sorted(data['htree'].keys()) == \
+                sorted(['n_leaves', 'n_components', 'children'])
 
     res = app.delete(method)
     assert res.status_code == 200
@@ -446,7 +435,7 @@ def test_api_dupdetection(app, kind, options):
         except ImportError:
             raise SkipTest
 
-    dsid = features_non_hashed(app)
+    dsid, pars = get_features(app, hashed=False)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
@@ -573,7 +562,7 @@ def test_get_model_predict_404(app_notest, method):
 
 
 def test_exception_handling(app_notest):
-    dsid, _ = features_hashed(app_notest)
+    dsid, _ = get_features(app_notest)
 
     method = V01 + "/categorization/"
     with _silent('stderr'):

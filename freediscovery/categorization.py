@@ -290,8 +290,7 @@ class _CategorizerWrapper(_BaseWrapper):
                     raise OptionalDependencyMissing('freediscovery_extra')
                 cmod = make_logregr_cv_model(cv_obj, cv_scoring, **options)
         elif method == 'NearestCentroid':
-            from sklearn.neighbors import NearestCentroid
-            cmod  = NearestCentroid()
+            cmod  = NearestCentroidRanker()
         elif method == 'NearestNeighbor':
             cmod = NearestNeighborRanker(n_jobs=-1)
         elif method == 'xgboost':
@@ -346,7 +345,7 @@ class _CategorizerWrapper(_BaseWrapper):
         valid_methods = ["LinearSVC", "LogisticRegression", "xgboost",
                          "NearestCentroid", "NearestNeighbor"]
 
-        if method in ['ensemble-stacking', 'MLPClassifier', "NearestCentroid"]:
+        if method in ['ensemble-stacking', 'MLPClassifier']:
             raise WrongParameter('method={} is implemented but not production ready. It was disabled for now.'.format(method))
 
         if method not in valid_methods:

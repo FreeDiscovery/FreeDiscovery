@@ -352,7 +352,6 @@ class BirchClusteringApi(Resource):
 _wardhc_clustering_api_post_args = {
         'dataset_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
-        'lsi_components': wfields.Int(missing=-1),
         'n_neighbors': wfields.Int(missing=5),
         }
 
