@@ -5,7 +5,63 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
+
 from sklearn.metrics import pairwise_distances
+from sklearn.externals import joblib
+
+from .base import _BaseWrapper
+
+
+class _SearchWrapper(_BaseWrapper):
+    """ Document search wrapper
+
+    Parameters
+    ----------
+    cache_dir : str
+      folder where the model will be saved
+    parent_id : str, optional
+      dataset id
+    mid : str, optional
+      model id
+    """
+
+    _wrapper_type = "search"
+
+    def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None):
+
+        super(_SearchWrapper, self).__init__(cache_dir=cache_dir,
+                                          parent_id=parent_id,
+                                          mid=mid, load_model=True)
+
+    def search(self, text):
+        """
+        Search given some text query
+
+        Parameters
+        ----------
+        text : str
+          the query string
+        """
+
+        vect = self.fe._load_model()
+        vect.set_params(input='content')
+
+        X = self.pipeline.data
+
+        if "lsi" in self.pipeline:
+            lsi = joblib.load(os.path.join(
+                              self.pipeline.get_path(self.pipeline['lsi']),
+                              'model'))
+        else:
+            lsi = None
+
+        s = Search(vect, lsi)
+        s.fit(X)
+
+        dist = s.search(text)
+        return dist
+
 
 
 class Search(object):
