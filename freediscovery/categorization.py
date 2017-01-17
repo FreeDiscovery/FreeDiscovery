@@ -424,7 +424,6 @@ class _CategorizerWrapper(_BaseWrapper):
                     a previously trained model!')
 
         ds = self.pipeline.data
-        n_samples = ds.shape[0]
 
         md = {}
         if isinstance(cmod, NearestNeighborRanker):
