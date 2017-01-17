@@ -15,7 +15,7 @@ from numpy.testing import (assert_allclose, assert_equal,
 
 import pytest
 from freediscovery.utils import categorization_score
-from freediscovery.base import _split_path
+from freediscovery.pipeline import _split_path, PipelineFinder
 from .run_suite import check_cache
 
 
@@ -27,4 +27,11 @@ def test_split_path():
     #assert _split_path('//abc/test4/') ==  ["//", 'abc', 'test4']
     assert _split_path('C:\\abc\\test4', force_os=True) ==  ["C:", 'abc', 'test4']
     assert _split_path('C:\\abc\\test4\\', force_os=True) ==  ["C:", 'abc', 'test4']
+
+
+def test_normalize_cachedir():
+    _normalize_cachedir = PipelineFinder._normalize_cachedir
+
+    assert _normalize_cachedir('/tmp/') == '/tmp/ediscovery_cache'
+    assert _normalize_cachedir('/tmp/ediscovery_cache') == '/tmp/ediscovery_cache'
 

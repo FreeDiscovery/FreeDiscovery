@@ -14,6 +14,7 @@ from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
 
+from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
@@ -66,12 +67,11 @@ class _BaseTextTransformer(object):
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
         self.data_dir = None
         self.verbose = verbose
-        if cache_dir is not None:
-            self.cache_dir = cache_dir = os.path.join(cache_dir, 'ediscovery_cache')
-            if not os.path.exists(cache_dir):
-                os.mkdir(cache_dir)
-        else:
-            self.cache_dir = None
+
+
+        self.cache_dir = cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
+        if not os.path.exists(cache_dir):
+            os.mkdir(cache_dir)
         self.dsid = dsid
         if dsid is not None:
             dsid_dir = os.path.join(self.cache_dir, dsid)
