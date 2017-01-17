@@ -64,7 +64,7 @@ def test_search(kind):
                            ('death dreams', 10)]:
         dist = s.search(query)
         assert dist.shape == (X.shape[0],)
-        assert dist.argmin() == best_id
+        assert dist.argmax() == best_id
 
 
 @pytest.mark.parametrize('kind,', ['regular', 'semantic'])
@@ -86,7 +86,7 @@ def test_search_wrapper(kind):
     sw = _SearchWrapper(cache_dir=cache_dir, parent_id=parent_id)
     dist = sw.search("so that I can reserve a room")
     assert dist.shape == (fe.n_samples_,)
-    assert dist.argmin() == 1 # document 1 found by
+    assert dist.argmax() == 1 # document 1 found by
                               # grep -rn "so that I can reserve a room"
                               # freediscovery/data/ds_001/raw/
 

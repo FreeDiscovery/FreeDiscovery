@@ -125,5 +125,8 @@ class Search(object):
         dist = pairwise_distances(q, self._fit_X,
                                   'euclidean',
                                   n_jobs=self.n_jobs, squared=True)
+        dist = dist[0]
 
-        return dist[0]
+        scores = dist.max() - dist
+
+        return scores
