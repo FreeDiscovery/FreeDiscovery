@@ -85,7 +85,10 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
 
     base_url = "http://r0h.eu/d/{}.tar.gz".format(name)
 
+    # make sure we don't have "ediscovery_cache" in the path
     cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
+    cache_dir = os.path.dirname(cache_dir)
+    
 
     outdir = os.path.join(cache_dir, name)
     fname = outdir + ".tar.gz"

@@ -12,19 +12,15 @@ from .exceptions import (DatasetNotFound, InitException, ModelNotFound, WrongPar
 from sklearn.externals import joblib
 
 
-def _split_path(path, force_os=False):
+def _split_path(path):
     """ A helper function that splits the path into a list
 
     Parameters
     ----------
     path : str
       path to split
-    force_os : bool, default=False
-      replace \\ with / even on Linux 
     """
-    if (force_os or os.name == 'nt') and "\\" in path: # windows
-        # make all paths Linux like
-        path = path.replace('\\', '/')
+    path = os.path.normpath(path)
 
     head, tail = os.path.split(path)
 
