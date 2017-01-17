@@ -21,17 +21,19 @@ except:  # sklearn v0.18
 
 from ..text import FeatureVectorizer
 from ..parsers import EmailParser
-from ..lsi import LSI
-from ..categorization import Categorizer
+from ..lsi import _LSIWrapper
+from ..categorization import _CategorizerWrapper
 from ..io import parse_ground_truth_file
 from ..utils import categorization_score
-from ..cluster import Clustering
+from ..cluster import _ClusteringWrapper
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
+from ..dupdet import _DuplicateDetectionWrapper
+from ..threading import _EmailThreadingWrapper
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, FeaturesElementIndexSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
                       DatasetSchema,
-                      LsiParsSchema, LsiPostSchema, LsiPredictSchema,
+                      LsiParsSchema, LsiPostSchema,
                       ClassificationScoresSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
@@ -169,28 +171,28 @@ class EmailParserApiElementIndex(Resource):
         return {'index': list(idx)}
 
 # ============================================================================ # 
-#                  Categorization (LSI)
+#                  LSI decomposition
 # ============================================================================ # 
 
-_lsi_api_get_args  = {'dataset_id': wfields.Str(required=True) }
-_lsi_api_post_args = {'dataset_id': wfields.Str(required=True),
+_lsi_api_get_args  = {'parent_id': wfields.Str(required=True) }
+_lsi_api_post_args = {'parent_id': wfields.Str(required=True),
                       'n_components': wfields.Int(default=100) }
 class LsiApi(Resource):
 
     @use_args(_lsi_api_get_args)
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
-        dsid = args['dataset_id']
-        lsi = LSI(cache_dir=self._cache_dir, dsid=dsid)
+        parent_id = args['parent_id']
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
         return lsi.list_models()
 
     @use_args(_lsi_api_post_args)
     @marshal_with(LsiPostSchema())
     def post(self, **args):
-        dsid = args['dataset_id']
-        del args['dataset_id']
-        lsi = LSI(cache_dir=self._cache_dir, dsid=dsid)
-        _, explained_variance = lsi.transform(**args)
+        parent_id = args['parent_id']
+        del args['parent_id']
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
+        _, explained_variance = lsi.fit_transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
 
 
@@ -198,10 +200,10 @@ class LsiApiElement(Resource):
 
     @marshal_with(LsiParsSchema())
     def get(self, mid):
-        cat = LSI(self._cache_dir, mid=mid)
+        cat = _LSIWrapper(self._cache_dir, mid=mid)
 
         pars = cat._load_pars()
-        pars['dataset_id'] = pars['dsid']
+        pars['parent_id'] = pars['parent_id']
         return pars
 
 _lsi_api_element_predict_post_args = {
@@ -212,70 +214,26 @@ _lsi_api_element_predict_post_args = {
         }
 
 
-class LsiApiElementPredict(Resource):
-    @use_args(_lsi_api_element_predict_post_args)
-    @marshal_with(LsiPredictSchema())
-    def post(self, mid, **args):
-        lsi = LSI(self._cache_dir, mid=mid)
-        _, Y_train, Y_test, md  = lsi.predict(
-                method='nearest-neighbor-1', **args)
-
-        idx_train = args['index']
-        y = args['y']
-
-        res = {'prediction': Y_test.tolist()}
-        res['scores'] = categorization_score(idx_train, y, idx_train, Y_train)
-        res.update({key: val.tolist() for key, val in md.items()})
-        return res
-
-_lsi_api_element_test_post_args = {
-        # Warning this should be changed to wfields.DelimitedList
-        # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'index': wfields.List(wfields.Int(), required=True),
-        'y': wfields.List(wfields.Int(), required=True),
-        'ground_truth_filename': wfields.Str(required=True)
-        }
-
-
-class LsiApiElementTest(Resource):
-    @use_args(_lsi_api_element_test_post_args)
-    @marshal_with(ClassificationScoresSchema())
-    def post(self, mid, **args):
-        lsi = LSI(self._cache_dir, mid=mid)
-        d_ref = parse_ground_truth_file(args["ground_truth_filename"])
-        del args['ground_truth_filename']
-        lsi_m, Y_train, Y_test, res  = lsi.predict(
-                method='nearest-neighbor-1', **args)
-
-        idx_ref = lsi.fe.search(d_ref.index.values)
-
-        idx_test = np.arange(lsi.fe.n_samples_, dtype='int')
-
-        res = categorization_score(idx_ref,
-                                   d_ref.is_relevant.values, idx_test, Y_test)
-        return res
-
-
 # ============================================================================ # 
 #                  Categorization (ML)
 # ============================================================================ # 
 
 _models_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
         'index': wfields.List(wfields.Int(), required=True),
         'y': wfields.List(wfields.Int(), required=True),
         'method': wfields.Str(required=True),
-        'cv': wfields.Boolean(missing=True),
+        'cv': wfields.Boolean(missing=False),
         'training_scores': wfields.Boolean(missing=True)
         }
 
 
 class ModelsApi(Resource):
     @marshal_with(CategorizationParsSchema(many=True))
-    def get(self, dsid):
-        cat = Categorizer(dsid, self._cache_dir)
+    def get(self, parent_id):
+        cat = _CategorizerWrapper(parent_id, self._cache_dir)
 
         return cat.list_models()
 
@@ -283,19 +241,19 @@ class ModelsApi(Resource):
     @marshal_with(CategorizationPostSchema())
     def post(self, **args):
         training_scores = args['training_scores']
-        dsid = args['dataset_id']
+        parent_id = args['parent_id']
 
         if args['cv']:
             cv = 'fast'
         else:
             cv = None
-        for key in ['dataset_id', 'cv', 'training_scores']:
+        for key in ['parent_id', 'cv', 'training_scores']:
             del args[key]
-        cat = Categorizer(self._cache_dir, dsid=dsid)
+        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
         if training_scores:
-            Y_res = cat.predict()
+            Y_res, md = cat.predict()
             idx_res = np.arange(cat.fe.n_samples_, dtype='int')
             res = categorization_score(idx_train, Y_train, idx_res, Y_res)
         else:
@@ -308,12 +266,12 @@ class ModelsApi(Resource):
 class ModelsApiElement(Resource):
     @marshal_with(CategorizationParsSchema())
     def get(self, mid):
-        cat = Categorizer(self._cache_dir, mid=mid)
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         pars = cat.get_params()
         return pars
 
     def delete(self, mid):
-        cat = Categorizer(self._cache_dir, mid=mid)
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         cat.delete()
 
 
@@ -322,10 +280,11 @@ class ModelsApiPredict(Resource):
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid):
 
-        cat = Categorizer(self._cache_dir, mid=mid)
-        y_res = cat.predict()
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
+        y_res, md = cat.predict()
+        md = {key: val.tolist() for key, val in md.items()}
 
-        return {'prediction': y_res.tolist()}
+        return dict(prediction=y_res.tolist(), **md)
 
 
 _models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}
@@ -336,9 +295,9 @@ class ModelsApiTest(Resource):
     @use_args(_models_api_test)
     @marshal_with(ClassificationScoresSchema())
     def post(self, mid, **args):
-        cat = Categorizer(self._cache_dir, mid=mid)
+        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
 
-        y_res = cat.predict()
+        y_res, md = cat.predict()
         d_ref = parse_ground_truth_file( args["ground_truth_filename"])
         idx_ref = cat.fe.search(d_ref.index.values)
         idx_res = np.arange(cat.fe.n_samples_, dtype='int')
@@ -353,9 +312,8 @@ class ModelsApiTest(Resource):
 # ============================================================================ # 
 
 _k_mean_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
-        'lsi_components': wfields.Int(missing=-1),
         }
 
 
@@ -365,21 +323,17 @@ class KmeanClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
-
-        del args['dataset_id']
+        del args['parent_id']
 
         labels = cl.k_means(**args)  # TODO unused variable. Remove?
         return {'id': cl.mid}
 
 
 _birch_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
-        'lsi_components': wfields.Int(missing=-1),
         'threshold': wfields.Number(),
         }
 
@@ -390,18 +344,15 @@ class BirchClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
-        del args['dataset_id']
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
+        del args['parent_id']
         cl.birch(**args)
         return {'id': cl.mid}
 
 
 _wardhc_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
+        'parent_id': wfields.Str(required=True),
         'n_clusters': wfields.Int(required=True),
-        'lsi_components': wfields.Int(missing=-1),
         'n_neighbors': wfields.Int(missing=5),
         }
 
@@ -412,19 +363,15 @@ class WardHCClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
-
-        del args['dataset_id']
+        del args['parent_id']
 
         cl.ward_hc(**args)
         return {'id': cl.mid}
 
 _dbscan_clustering_api_post_args = {
-        'dataset_id': wfields.Str(required=True),
-        'lsi_components': wfields.Int(missing=-1),
+        'parent_id': wfields.Str(required=True),
         'eps': wfields.Number(missing=0.1),
         'min_samples': wfields.Int(missing=10)
         }
@@ -436,12 +383,9 @@ class DBSCANClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        if args['lsi_components'] < 0:
-            args['lsi_components'] = None
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
-        cl = Clustering(cache_dir=self._cache_dir, dsid=args['dataset_id'])
-
-        del args['dataset_id']
+        del args['parent_id']
 
         cl.dbscan(**args)
         return {'id': cl.mid}
@@ -458,7 +402,7 @@ class ClusteringApiElement(Resource):
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):  # TODO unused parameter 'method'
 
-        cl = Clustering(cache_dir=self._cache_dir, mid=mid)
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
 
         km = cl._load_model()
         htree = cl._get_htree(km)
@@ -470,14 +414,12 @@ class ClusteringApiElement(Resource):
             terms = []
 
         pars = cl._load_pars()
-        if pars['lsi']:
-            pars['lsi'] = True
         return {'labels': km.labels_.tolist(), 'cluster_terms': terms,
                   'htree': htree, 'pars': pars}
 
 
     def delete(self, method, mid):  # TODO unused parameter 'method'
-        cl = Clustering(cache_dir=self._cache_dir, mid=mid)
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
         cl.delete()
 
 # ============================================================================ # 
@@ -485,7 +427,7 @@ class ClusteringApiElement(Resource):
 # ============================================================================ # 
 
 _dup_detection_api_post_args = {
-        "dataset_id": wfields.Str(required=True),
+        "parent_id": wfields.Str(required=True),
         "method": wfields.Str(required=False, missing='simhash')
         }
 
@@ -495,11 +437,11 @@ class DupDetectionApi(Resource):
     @use_args(_dup_detection_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
-        from ..dupdet import DuplicateDetection
 
-        model = DuplicateDetection(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir,
+                                           parent_id=args['parent_id'])
 
-        del args['dataset_id']
+        del args['parent_id']
 
 
         model.fit(args['method'])
@@ -518,16 +460,14 @@ class DupDetectionApiElement(Resource):
     @use_args(_dupdet_api_get_args)
     @marshal_with(DuplicateDetectionSchema())
     def get(self, mid, **args):
-        from ..dupdet import DuplicateDetection
 
-        model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
+        model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
         return {'cluster_id': cluster_id}
 
     def delete(self, mid):
-        from ..dupdet import DuplicateDetection
 
-        model = DuplicateDetection(cache_dir=self._cache_dir, mid=mid)
+        model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         model.delete()
 
 
@@ -622,12 +562,11 @@ class MetricsDupDetectionApiElement(Resource):
 
 class EmailThreadingApi(Resource):
 
-    @use_args({ "dataset_id": wfields.Str(required=True)})
+    @use_args({ "parent_id": wfields.Str(required=True)})
     @marshal_with(EmailThreadingSchema())
     def post(self, **args):
-        from ..threading import EmailThreading
 
-        model = EmailThreading(cache_dir=self._cache_dir, dsid=args['dataset_id'])
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
 
         tree =  model.thread()
 
@@ -638,14 +577,12 @@ class EmailThreadingApiElement(Resource):
 
     @marshal_with(EmailThreadingParsSchema())
     def get(self, mid):
-        from ..threading import EmailThreading
 
-        model = EmailThreading(cache_dir=self._cache_dir, mid=mid)
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, mid=mid)
 
         return model.get_params()
 
     def delete(self, mid):
-        from ..threading import EmailThreading
 
-        model = EmailThreading(cache_dir=self._cache_dir, mid=mid)
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, mid=mid)
         model.delete()

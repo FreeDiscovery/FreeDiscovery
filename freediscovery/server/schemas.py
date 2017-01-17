@@ -71,17 +71,8 @@ class ClassificationScoresSchema(Schema):
     average_precision = fields.Number(required=True)
 
 
-class LsiPredictSchema(ClassificationScoresSchema):
-    prediction = fields.List(fields.Number(), required=True)
-    dist_p = fields.List(fields.Number(), required=True)
-    dist_n = fields.List(fields.Number())
-    ind_p = fields.List(fields.Int(), required=True)
-    ind_n = fields.List(fields.Int())
-    scores = fields.Nested(ClassificationScoresSchema(), required=True)
-
-
 class LsiParsSchema(Schema):
-    dataset_id = fields.Str(required=True)
+    parent_id = fields.Str(required=True)
     n_components = fields.Int(required=True)
 
 
@@ -95,6 +86,10 @@ class CategorizationPostSchema(ClassificationScoresSchema):
 
 class CategorizationPredictSchema(Schema):
     prediction = fields.List(fields.Number, required=True)
+    dist_p = fields.List(fields.Number())
+    dist_n = fields.List(fields.Number())
+    ind_p = fields.List(fields.Int())
+    ind_n = fields.List(fields.Int())
 
 
 class CategorizationParsSchema(Schema):

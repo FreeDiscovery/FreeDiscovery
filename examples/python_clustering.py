@@ -7,15 +7,16 @@ An example of clustering using the Python API
 
 import pandas as pd
 from freediscovery.text import FeatureVectorizer
-from freediscovery.cluster import Clustering
-from freediscovery.utils import _silent
+from freediscovery.cluster import _ClusteringWrapper
+from freediscovery.lsi import _LSIWrapper
 from freediscovery.datasets import load_dataset
+from freediscovery.tests.run_suite import check_cache
 from time import time
 
 pd.options.display.float_format = '{:,.3f}'.format
 
 dataset_name = "treclegal09_2k_subset"
-cache_dir = '..'
+cache_dir = check_cache()
 
 
 print("0. Load Dataset")
@@ -33,9 +34,7 @@ uuid = fe.preprocess(ds['data_dir'],
 uuid, filenames = fe.transform()
 
 
-print("\n2. Document Clustering (LSI + K-Means)\n")
 
-cat = Clustering(cache_dir=cache_dir, dsid=uuid)
 
 n_clusters = 10
 n_top_words = 6
@@ -49,26 +48,33 @@ def repr_clustering(_labels, _terms):
     out = pd.DataFrame(out).sort_values('N_documents', ascending=False)
     return out
 
+print("\n2. Computing LSI\n")
+lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
+lsi_res, exp_var = lsi.fit_transform(n_components=lsi_components)  # TODO unused variables
+
+
+
+print("\n3. Document Clustering (LSI + K-Means)\n")
+
+cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=lsi.mid)
 
 t0 = time()
-with _silent('stderr'): # ignore some deprecation warnings
-    labels, tree  = cat.k_means(n_clusters, lsi_components=lsi_components)
-    terms = cat.compute_labels(n_top_words=n_top_words)
+labels, tree  = cat.k_means(n_clusters)
+terms = cat.compute_labels(n_top_words=n_top_words)
 t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
 print(repr_clustering(labels, terms))
 
 
-print('\n3. Document Clustering (LSI + Ward Hierarchical Clustering)\n')
+print('\n4. Document Clustering (LSI + Ward Hierarchical Clustering)\n')
+
 
 t0 = time()
-with _silent('stderr'): # ignore some deprecation warnings
-    labels, tree = cat.ward_hc(n_clusters,
-                               lsi_components=lsi_components,
-                               n_neighbors=5   # this is the connectivity constraint
-                               )
-    terms = cat.compute_labels(n_top_words=n_top_words)
+labels, tree = cat.ward_hc(n_clusters,
+                           n_neighbors=5   # this is the connectivity constraint
+                           )
+terms = cat.compute_labels(n_top_words=n_top_words)
 t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))

@@ -225,7 +225,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
 
 
-class Categorizer(_BaseWrapper):
+class _CategorizerWrapper(_BaseWrapper):
     """ Document categorization model
 
     The option `use_hashing=True` must be set for the feature extraction.
@@ -235,7 +235,7 @@ class Categorizer(_BaseWrapper):
     ----------
     cache_dir : str
       folder where the model will be saved
-    dsid : str, optional
+    parent_id : str, optional
       dataset id
     mid : str, optional
       model id
@@ -245,12 +245,13 @@ class Categorizer(_BaseWrapper):
       number of K-folds used for Cross Validation
     """
 
-    _wrapper_type = "models"
+    _wrapper_type = "categorizer"
 
-    def __init__(self, cache_dir='/tmp/',  dsid=None, mid=None,
+    def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None,
             cv_scoring='roc_auc', cv_n_folds=3):
 
-        super(Categorizer, self).__init__(cache_dir=cache_dir, dsid=dsid,
+        super(_CategorizerWrapper, self).__init__(cache_dir=cache_dir,
+                                          parent_id=parent_id,
                                           mid=mid, load_model=True)
 
         self.cv_scoring = cv_scoring
@@ -288,6 +289,10 @@ class Categorizer(_BaseWrapper):
                 except ImportError:
                     raise OptionalDependencyMissing('freediscovery_extra')
                 cmod = make_logregr_cv_model(cv_obj, cv_scoring, **options)
+        elif method == 'NearestCentroid':
+            cmod  = NearestCentroidRanker()
+        elif method == 'NearestNeighbor':
+            cmod = NearestNeighborRanker(n_jobs=-1)
         elif method == 'xgboost':
             try:
                 import xgboost as xgb
@@ -337,7 +342,8 @@ class Categorizer(_BaseWrapper):
            training predictions
         """
 
-        valid_methods = ["LinearSVC", "LogisticRegression", "xgboost"]
+        valid_methods = ["LinearSVC", "LogisticRegression", "xgboost",
+                         "NearestCentroid", "NearestNeighbor"]
 
         if method in ['ensemble-stacking', 'MLPClassifier']:
             raise WrongParameter('method={} is implemented but not production ready. It was disabled for now.'.format(method))
@@ -345,6 +351,9 @@ class Categorizer(_BaseWrapper):
         if method not in valid_methods:
             raise WrongParameter('method={} is not supported, should be one of {}'.format(
                 method, valid_methods)) 
+        if cv is not None and method in ['NearestNeighbor', 'NearestCentroid']:
+            raise WrongParameter('Cross validation (cv={}) not supported with {}'.format(
+                                        cv, method))
 
         if cv not in [None, 'fast', 'full']:
             raise WrongParameter('cv')
@@ -353,7 +362,7 @@ class Categorizer(_BaseWrapper):
             if cv is not None:
                 raise WrongParameter('CV with ensemble stacking is not supported!')
 
-        _, d_all = self.fe.load(self.dsid)  #, mmap_mode='r')
+        d_all = self.pipeline.data  #, mmap_mode='r')
 
         X_train = d_all[index, :]
 
@@ -413,40 +422,26 @@ class Categorizer(_BaseWrapper):
         else:
             raise WrongParameter('The model must be trained first, or sid must be provided to load\
                     a previously trained model!')
-        #else:
-        #    mid_dir = os.path.join(self.model_dir, mid)
-        #    if not os.path.exists(mid_dir):
-        #        raise ModelNotFound('Model id {} not found in the cache!'.format(mid))
 
-        #    cmod = joblib.load(os.path.join(mid_dir, 'model'))
-
-        ds = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))  #, mmap_mode='r')
+        ds = self.pipeline.data
         n_samples = ds.shape[0]
 
-        def _predict_chunk(cmod, ds, k, chunk_size):
-            n_samples = ds.shape[0]
-            mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
-            ds_sl = ds[mslice, :]
-            if hasattr(cmod, 'decision_function'):
-                res = cmod.decision_function(ds_sl)
-            else:  # gradient boosting define the decision function by analogy
-                tmp = cmod.predict_proba(ds_sl)[:, 1]
-                res = logit(tmp)
-            return res
-
-        res = []
-        for k in range(n_samples//chunk_size + 1):
-            pred = _predict_chunk(cmod, ds, k, chunk_size)
-            res.append(pred)
-        res = np.concatenate(res, axis=0)
-        return res
+        md = {}
+        if isinstance(cmod, NearestNeighborRanker):
+            res, _, md = cmod.kneighbors(ds)
+        elif hasattr(cmod, 'decision_function'):
+            res = cmod.decision_function(ds)
+        else:  # gradient boosting define the decision function by analogy
+            tmp = cmod.predict_proba(ds)[:, 1]
+            res = logit(tmp)
+        return res, md
 
     def _load_pars(self, mid=None):
         """Load model parameters from disk"""
         if mid is None:
             mid = self.mid
         mid_dir = os.path.join(self.model_dir, mid)
-        pars = super(Categorizer, self)._load_pars(mid)
+        pars = super(_CategorizerWrapper, self)._load_pars(mid)
         cmod = joblib.load(os.path.join(mid_dir, 'model'))
         pars['options'] = cmod.get_params()
         return pars

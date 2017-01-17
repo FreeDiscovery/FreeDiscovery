@@ -70,7 +70,7 @@ url = BASE_URL + '/clustering/dbscan/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-        json={'dataset_id': dsid,
+        json={'parent_id': dsid,
               'lsi_components': 100,
               'eps': 0.1,            # 2*cosine distance for documents to be considered as duplicates
               'n_max_samples': 2
@@ -99,7 +99,7 @@ url = BASE_URL + '/duplicate-detection/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-        json={'dataset_id': dsid,
+        json={'parent_id': dsid,
               'method': 'i-match',
               }) 
 
@@ -135,7 +135,7 @@ url = BASE_URL + '/duplicate-detection/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-        json={'dataset_id': dsid,
+        json={'parent_id': dsid,
               'method': 'simhash',
               }) 
 

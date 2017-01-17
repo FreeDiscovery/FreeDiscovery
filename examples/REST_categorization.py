@@ -90,56 +90,10 @@ if __name__ == '__main__':
     res = requests.get(method, data={'filenames': seed_filenames})
     seed_index = res.json()['index']
 
-    # 2. Document categorization with ML algorithms
 
-    print("\n2.a. Train the ML categorization model")
-    print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
-    url = BASE_URL + '/categorization/'
-    print(" POST", url)
-    print(' Training...')
+    # 3. Document categorization with LSI (used for Nearest Neighbors method)
 
-    res = requests.post(url,
-                        json={'index': seed_index,
-                              'y': seed_y,
-                              'dataset_id': dsid,
-                              'method': 'LinearSVC',  # one of "LinearSVC", "LogisticRegression", 'xgboost'
-                              'cv': 0                          # Cross Validation
-                              }).json()
-
-    mid = res['id']
-    print("     => model id = {}".format(mid))
-    print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
-
-    print("\n2.b. Check the parameters used in the categorization model")
-    url = BASE_URL + '/categorization/{}'.format(mid)
-    print(" GET", url)
-    res = requests.get(url).json()
-
-    print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                      if key not in ['index', 'y']]))
-
-    print("\n2.c Categorize the complete dataset with this model")
-    url = BASE_URL + '/categorization/{}/predict'.format(mid)
-    print(" GET", url)
-    res = requests.get(url).json()
-    prediction = res['prediction']
-
-    print("    => Predicting {} relevant and {} non relevant documents".format(
-        len(list(filter(lambda x: x>0, prediction))),
-        len(list(filter(lambda x: x<0, prediction)))))
-
-    print("\n2.d Test categorization accuracy")
-    print("         using {}".format(ground_truth_file))  
-    url = BASE_URL + '/categorization/{}/test'.format(mid)
-    print("POST", url)
-    res = requests.post(url, json={'ground_truth_filename': ground_truth_file}).json()
-
-    print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
-
-
-    # 3. Document categorization with LSI
-
-    print("\n3.a. Calculate LSI")
+    print("\n2. Calculate LSI")
 
     url = BASE_URL + '/lsi/'
     print("POST", url)
@@ -147,43 +101,76 @@ if __name__ == '__main__':
     n_components = 100
     res = requests.post(url,
                         json={'n_components': n_components,
-                              'dataset_id': dsid
+                              'parent_id': dsid
                               }).json()
 
-    lid = res['id']
-    print('  => LSI model id = {}'.format(lid))
+    lsi_id = res['id']
+    print('  => LSI model id = {}'.format(lsi_id))
     print('  => SVD decomposition with {} dimensions explaining {:.2f} % variabilty of the data'.format(
                             n_components, res['explained_variance']*100))
-    print("\n3.b. Predict categorization with LSI")
-
-    url = BASE_URL + '/lsi/{}/predict'.format(lid)
-    print("POST", url)
-    res = requests.post(url,
-                        json={'index': seed_index,
-                              'y': seed_y
-                              }).json()
-    prediction = res['prediction']
-
-    print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res['scores']))
-    df = pd.DataFrame({key: res[key] for key in res if key not in ['id', 'scores']})
 
 
-    print("\n3.c. Test categorization with LSI")
-    url = BASE_URL + '/lsi/{}/test'.format(lid)
-    print(" POST", url)
+    # 3. Document categorization
 
-    res = requests.post(url,
-                        json={'index': seed_index,
-                              'y': seed_y,
-                              'ground_truth_filename': ground_truth_file
-                              }).json()
-    print(res)
-    print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+    print("\n3.a. Train the categorization model")
+    print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
+
+    for method, use_lsi in [('LinearSVC', False),
+                            ('NearestNeighbor', True)]:
+
+        print('='*80, '\n', ' '*10,
+              method, " + LSI" if use_lsi else ' ', '\n', '='*80)
+        if use_lsi:
+            # Categorization with the previously created LSI model
+            parent_id = lsi_id
+        else:
+            # Categorization with original text features
+            parent_id = dsid
+
+        url = BASE_URL + '/categorization/'
+        print(" POST", url)
+        print(' Training...')
+
+        res = requests.post(url,
+                            json={'index': seed_index,
+                                  'y': seed_y,
+                                  'parent_id': parent_id,
+                                  'method': method,  # one of "LinearSVC", "LogisticRegression", 'xgboost'
+                                  }).json()
+
+        mid = res['id']
+        print("     => model id = {}".format(mid))
+        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+
+        print("\n3.b. Check the parameters used in the categorization model")
+        url = BASE_URL + '/categorization/{}'.format(mid)
+        print(" GET", url)
+        res = requests.get(url).json()
+
+        print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
+                                                          if key not in ['index', 'y']]))
+
+        print("\n3.c Categorize the complete dataset with this model")
+        url = BASE_URL + '/categorization/{}/predict'.format(mid)
+        print(" GET", url)
+        res = requests.get(url).json()
+        prediction = res['prediction']
+
+        if method == "NearestNeighbor":
+            df = pd.DataFrame({key: res[key] for key in res if key not in ['id', 'scores']})
+
+        print("\n3.d Test categorization accuracy")
+        print("         using {}".format(ground_truth_file))  
+        url = BASE_URL + '/categorization/{}/test'.format(mid)
+        print("POST", url)
+        res = requests.post(url, json={'ground_truth_filename': ground_truth_file}).json()
+
+        print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
     print('\n', df)
 
     # 4. Cleaning
-    print("\n4.a Delete the extracted features")
+    print("\n5.a Delete the extracted features (and LSI decomposition)")
     url = BASE_URL + '/feature-extraction/{}'.format(dsid)
     print(" DELETE", url)
     requests.delete(url)

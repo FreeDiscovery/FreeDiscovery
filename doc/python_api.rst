@@ -38,9 +38,9 @@ Document categorization
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.categorization.Categorizer
+    freediscovery.categorization._CategorizerWrapper
     freediscovery.categorization.NearestNeighborRanker
-    freediscovery.lsi.LSI
+    freediscovery.lsi._LSIWrapper
 
 Document clustering
 --------------------
@@ -48,7 +48,7 @@ Document clustering
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.cluster.Clustering
+    freediscovery.cluster._ClusteringWrapper
     freediscovery.cluster.ClusterLabels
     freediscovery.cluster._DendrogramChildren
     freediscovery.cluster.utils._binary_linkage2clusters
@@ -60,7 +60,7 @@ Duplicates detection
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.dupdet.DuplicateDetection
+    freediscovery.dupdet._DuplicateDetectionWrapper
     freediscovery.dupdet.SimhashDuplicates
     freediscovery.dupdet.IMatchDuplicates
 
@@ -70,7 +70,7 @@ Email threading
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.threading.EmailThreading
+    freediscovery.threading._EmailThreadingWrapper
 
 Tools
 -----

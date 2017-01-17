@@ -15,7 +15,7 @@ from ..utils import setup_model, _rename_main_thread
 from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
                             WrongParameter)
 
-class DuplicateDetection(_BaseWrapper):
+class _DuplicateDetectionWrapper(_BaseWrapper):
     """Find near duplicates in a document collection.
 
     Currently supported backends are simhash-py and i-match.
@@ -27,7 +27,7 @@ class DuplicateDetection(_BaseWrapper):
     ----------
     cache_dir : str
        directory where to save temporary and regression files
-    dsid : str, optional
+    parent_id : str, optional
        dataset id
     mid : str, optional
        model id
@@ -35,10 +35,10 @@ class DuplicateDetection(_BaseWrapper):
 
     _wrapper_type = "dupdet"
 
-    def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None):
 
-        super(DuplicateDetection, self).__init__(cache_dir=cache_dir,
-                                                 dsid=dsid, mid=mid,
+        super(_DuplicateDetectionWrapper, self).__init__(cache_dir=cache_dir,
+                                                 parent_id=parent_id, mid=mid,
                                                  load_model=True)
 
         self.model = self.cmod
@@ -63,7 +63,7 @@ class DuplicateDetection(_BaseWrapper):
         self.mid = mid
 
 
-        X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
+        X = self.pipeline.data
         if method == 'simhash':
             shash.fit(X)
 

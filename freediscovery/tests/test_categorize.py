@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import os.path
 from unittest import SkipTest
+import re
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
@@ -17,8 +18,10 @@ import itertools
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize
 
+from freediscovery.base import PipelineFinder
 from freediscovery.text import FeatureVectorizer
-from freediscovery.categorization import (Categorizer, _zip_relevant,
+from freediscovery.lsi import _LSIWrapper
+from freediscovery.categorization import (_CategorizerWrapper, _zip_relevant,
         _unzip_relevant, NearestNeighborRanker,
         NearestCentroidRanker)
 from freediscovery.io import parse_ground_truth_file
@@ -40,18 +43,30 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 n_features = 20000
 
 fe = FeatureVectorizer(cache_dir=cache_dir)
-uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt', n_features=n_features,
-        binary=True, use_idf=False, norm=None)
-uuid, filenames  = fe.transform()
+vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+                          n_features=n_features,
+                          binary=True, use_idf=False, norm=None)
+vect_uuid, filenames  = fe.transform()
+
+
+lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
+lsi.fit_transform(n_components=6)
 
 ground_truth = parse_ground_truth_file(
                         os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
-@pytest.mark.parametrize('method, cv', itertools.product(
-                       ["LinearSVC", "LogisticRegression", 'xgboost'],
+_test_cases = itertools.product(
+                       [False, True],
+                       ["LinearSVC", "LogisticRegression", 'xgboost', "NearestNeighbor",
+                        "NearestCentroid"],
                         #'MLPClassifier', 'ensemble-stacking' not supported in production the moment
-                       [None, 'fast']))
-def test_categorization(method, cv):
+                       [None, 'fast'])
+_test_cases = filter(lambda x: not (x[1].startswith("Nearest") and x[2]),
+                     _test_cases)
+
+
+@pytest.mark.parametrize('use_lsi, method, cv', _test_cases)
+def test_categorization(use_lsi, method, cv):
 
     if 'CIRCLECI' in os.environ and cv == 'fast' and method in ['LinearSVC', 'xgboost']:
         raise SkipTest # Circle CI is too slow and timesout
@@ -62,7 +77,12 @@ def test_categorization(method, cv):
         except ImportError:
             raise SkipTest
 
-    cat = Categorizer(cache_dir=cache_dir, dsid=uuid, cv_n_folds=2)
+    if not use_lsi:
+        uuid = vect_uuid
+    else:
+        uuid = lsi.mid
+
+    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
     index = cat.fe.search(ground_truth.index.values)
 
     try:
@@ -76,7 +96,7 @@ def test_categorization(method, cv):
 
 
 
-    Y_pred = cat.predict()
+    Y_pred, md = cat.predict()
     X_pred = np.arange(cat.fe.n_samples_, dtype='int')
     idx_gt = cat.fe.search(ground_truth.index.values)
 
@@ -86,13 +106,67 @@ def test_categorization(method, cv):
 
     assert cat.get_params() is not None
 
+    if method == 'NearestNeighbor':
+        assert sorted(list(md.keys())) == ['dist_n', 'dist_p', 'ind_n', 'ind_p']
+        for key, val in md.items():
+            assert val.shape == Y_pred.shape
+    else:
+        assert md == {}
+
     if method in ['xgboost', 'ensemble-stacking']:
         # this parameter fail for some reason so far...
         return
     assert_allclose(scores['precision'], 1, rtol=0.5)
     assert_allclose(scores['recall'], 1, rtol=0.5)
-    assert_equal(cat.get_dsid(cache_dir, cat.mid), uuid )
     cat.delete()
+
+
+@pytest.mark.parametrize('n_steps', [2, 3])
+def test_pipeline(n_steps):
+    """ Test a 2 or 3 step pipelines with
+        vectorizer (+ lsi) + classifier """
+
+    if n_steps == 2:
+        uuid = vect_uuid
+    elif n_steps == 3:
+        uuid = lsi.mid
+    else:
+        raise ValueError
+
+    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
+    index = cat.fe.search(ground_truth.index.values)
+
+    coefs, Y_train = cat.train( index, ground_truth.is_relevant.values)
+
+    cat.predict()
+
+    assert len(cat.pipeline) == n_steps - 1
+
+    # additional tests
+    if n_steps == 3:
+        pf = PipelineFinder.by_id(cat.mid, cache_dir)
+
+        assert list(pf.keys()) == ['vectorizer', 'lsi', 'categorizer']
+        assert list(pf.parent.keys()) == ['vectorizer', 'lsi']
+        assert list(pf.parent.parent.keys()) == ['vectorizer']
+
+        assert pf.mid == cat.mid
+        assert pf.parent.mid == lsi.mid
+        assert pf.parent.parent.mid == vect_uuid
+        with pytest.raises(ValueError):
+            pf.parent.parent.parent
+
+        for estimator_type, mid in pf.items():
+            path = pf.get_path(mid, absolute=False)
+            if estimator_type == 'vectorizer':
+                assert re.match('ediscovery_cache.*', path)
+            elif estimator_type == 'lsi':
+                assert re.match('ediscovery_cache.*lsi', path)
+            elif estimator_type == 'categorizer':
+                assert re.match('ediscovery_cache.*lsi.*categorizer', path)
+            else:
+                raise ValueError
+
 
 
 def test_unique_label():

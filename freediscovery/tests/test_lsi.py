@@ -5,11 +5,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path
+import re
+
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.lsi import LSI, _TruncatedSVD_LSI
+from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
 from freediscovery.utils import categorization_score
 from freediscovery.io import parse_ground_truth_file
 from .run_suite import check_cache
@@ -27,33 +30,14 @@ def test_lsi():
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features)  # TODO unused variable (overwritten on the next line)
     uuid, filenames = fe.transform()
-    ground_truth = parse_ground_truth_file(
-                        os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
-    lsi = LSI(cache_dir=cache_dir, dsid=uuid)
-    lsi_res, exp_var = lsi.transform(n_components=n_components)  # TODO unused variables
-    lsi_id = lsi.mid
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
+    lsi_res, exp_var = lsi.fit_transform(n_components=n_components)  # TODO unused variables
     assert lsi_res.components_.shape == (n_components, n_features)
-    assert lsi.get_dsid(fe.cache_dir, lsi_id) == uuid
-    assert lsi.get_path(lsi_id) is not None
     assert lsi._load_pars() is not None
     lsi._load_model()
 
-    idx_gt = lsi.fe.search(ground_truth.index.values)
-    idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
-    train_mask = [0, 1,  3, 4, 5]
-
-    for method in ['nearest-neighbor-1', 'nearest-centroid']:
-                        #'nearest-diff', 'nearest-combine', 'stacking']:
-        _, Y_train, Y_pred, ND_train = lsi.predict(
-                                np.array(idx_gt)[train_mask],
-                                ground_truth.is_relevant.values[train_mask],
-                                method=method)
-        scores = categorization_score(idx_gt,
-                            ground_truth.is_relevant.values,
-                            idx_all, Y_pred)
-        assert_allclose(scores['precision'], 1, rtol=0.5)
-        assert_allclose(scores['recall'], 1, rtol=0.4)
+    # test pipeline
 
 
     lsi.list_models()

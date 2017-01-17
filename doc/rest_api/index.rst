@@ -35,15 +35,20 @@ Feature Extraction
 `/api/v0/feature-extraction/<dataset-id> <./feature_extraction_delete.html>`_           DELETE  Delete a processed dataset
 ======================================================================================  ======  ==========================================================
 
+
+Latent Semantic Indexing (LSI)
+------------------------------
+
+=================================================================================  =======  =========================================================
+`/api/v0/lsi/ <./lsi_post.html>`_                                                  POST     Construct the Latent Semantic Indexing (LSI) model
+`/api/v0/lsi/<lsi-id> <./lsi_get.html>`_                                           GET      Show LSI model parameters
+`/api/v0/lsi/<lsi-id> <./lsi_delete.html>`_                                        DELETE   Delete a LSI model
+=================================================================================  =======  =========================================================
+
 Document Categorizaiton
 -----------------------
 
 =================================================================================  =======  =========================================================
-`/api/v0/lsi/ <./lsi_post.html>`_                                                  POST     Construct the Latent Semantic Indexing (LSI) model
-`/api/v0/lsi/<lsi-id>/predict <./lsi_predict_post.html>`_                          POST     Predict categorization with LSI
-`/api/v0/lsi/<lsi-id>/test <./lsi_test_post.html>`_                                POST     Test categorization with LSI
-`/api/v0/lsi/<lsi-id> <./lsi_get.html>`_                                           GET      Show LSI model parameters
-`/api/v0/lsi/<lsi-id> <./lsi_delete.html>`_                                        DELETE   Delete a LSI model
 `/api/v0/categorization/ <./categorization_post.html>`_                            POST     Build the ML categorization model
 `/api/v0/categorization/<model-id>/predict <./categorization_predict_post.html>`_  POST     Categorize documents using different ML algorithms
 `/api/v0/categorization/<model-id>/test <./categorization_test_post.html>`_        POST     Test categorization accuracy

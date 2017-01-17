@@ -14,6 +14,7 @@ from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
 
+from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
@@ -66,17 +67,17 @@ class _BaseTextTransformer(object):
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
         self.data_dir = None
         self.verbose = verbose
-        if cache_dir is not None:
-            self.cache_dir = cache_dir = os.path.join(cache_dir, 'ediscovery_cache')
-            if not os.path.exists(cache_dir):
-                os.mkdir(cache_dir)
-        else:
-            self.cache_dir = None
+
+
+        self.cache_dir = cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
+        if not os.path.exists(cache_dir):
+            os.mkdir(cache_dir)
         self.dsid = dsid
         if dsid is not None:
             dsid_dir = os.path.join(self.cache_dir, dsid)
             if not os.path.exists(dsid_dir):
-                raise DatasetNotFound()
+                raise DatasetNotFound('Dataset {} ({}) not found in {}!'.format(
+                                            dsid, type(self).__name__, cache_dir))
             pars = self._load_pars()
         else:
             dsid_dir = None
@@ -113,10 +114,12 @@ class _BaseTextTransformer(object):
     def __getitem__(self, index):
         return np.asarray(self._pars['filenames'])[index]
 
-    def load(self, dsid):
+    def load(self, dsid=None):
         """ Load a computed features from disk"""
         if self.cache_dir is None:
             raise InitException('cache_dir is None: cannot load from cache!')
+        if dsid is None:
+            dsid = self.dsid
         dsid_dir = os.path.join(self.cache_dir, dsid)
         if not os.path.exists(dsid_dir):
             raise DatasetNotFound('dsid not found!')
@@ -138,6 +141,16 @@ class _BaseTextTransformer(object):
             raise DatasetNotFound('dsid {} not found!'.format(dsid))
         pars = joblib.load(os.path.join(dsid_dir, 'pars'))
         return pars
+
+    def _load_model(self):
+        mid = self.dsid
+        mid_dir = os.path.join(self.cache_dir, mid)
+        if not os.path.exists(mid_dir):
+            raise ValueError('Vectorizer model id {} ({}) not found in the cache {}!'.format(
+                             mid, mid_dir))
+        cmod = joblib.load(os.path.join(mid_dir, 'vectorizer'))
+        return cmod
+
 
     def search(self, filenames):
         """ Return the document ids that correspond to the provided filenames.
@@ -211,6 +224,9 @@ class FeatureVectorizer(_BaseTextTransformer):
                    'n_jobs', 'chunk_size', 'norm',
                    'analyzer', 'ngram_range', 'stop_words',
                    'use_idf', 'sublinear_tf', 'binary', 'use_hashing']
+
+    _wrapper_type = "vectorizer"
+
     def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=11000000,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=True,

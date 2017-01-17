@@ -6,10 +6,13 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+from collections import OrderedDict
+
 import numpy as np
 from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
+from .pipeline import PipelineFinder
 from .exceptions import ModelNotFound
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
@@ -42,6 +45,7 @@ class RankerMixin(object):
         return roc_auc_score(y, self.decision_function(X), sample_weight=sample_weight,)
 
 
+
 class _BaseWrapper(object):
     """Base class for wrappers in FreeDiscovery
 
@@ -49,7 +53,7 @@ class _BaseWrapper(object):
     ----------
     cache_dir : str
       folder where the model will be saved
-    dsid : str, optional
+    parent_id : str, optional
       dataset id
     mid : str, optional
       model id
@@ -59,22 +63,25 @@ class _BaseWrapper(object):
       whether the model should be loaded from disk on class
       initialization
     """
-    def __init__(self, cache_dir='/tmp/', dsid=None, mid=None,
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None,
                  dataset_definition=FeatureVectorizer,
                  load_model=False):
+        if parent_id is None and mid is None:
+            raise WrongParameter('At least one of parent_id or mid should be provided!')
 
-        if dsid is None and mid is not None:
-            self.dsid = dsid = self.get_dsid(cache_dir, mid)
+        if parent_id is None and mid is not None:
+            self.pipeline = PipelineFinder.by_id(mid, cache_dir).parent
             self.mid = mid
-        elif dsid is not None:
-            self.dsid  = dsid
+        elif parent_id is not None:
+            self.pipeline = PipelineFinder.by_id(parent_id, cache_dir)
             self.mid = None
-        elif dsid is None and mid is None:
-            raise WrongParameter('dsid and mid')
 
-        self.fe = dataset_definition(cache_dir=cache_dir, dsid=dsid)
+        # this is an alias that should be deprecated
+        self.fe = dataset_definition(cache_dir=cache_dir,
+                                     dsid=self.pipeline['vectorizer'])
 
-        self.model_dir = os.path.join(self.fe.cache_dir, dsid, self._wrapper_type)
+        self.model_dir = os.path.join(self.pipeline.get_path(),
+                                      self._wrapper_type)
 
         if not os.path.exists(self.model_dir):
             os.mkdir(self.model_dir)
@@ -89,23 +96,6 @@ class _BaseWrapper(object):
                 self.cmod = self._load_model()
             else:
                 self.cmod = None
-
-
-    def get_path(self, mid):
-        dsid = self.get_dsid(self.fe.cache_dir, mid)
-        return os.path.join(self.fe.cache_dir, dsid, self._wrapper_type, mid)
-
-    def get_dsid(self, cache_dir, mid):
-        if 'ediscovery_cache' not in cache_dir:  # not very pretty
-            cache_dir = os.path.join(cache_dir, "ediscovery_cache")
-        for dsid in os.listdir(cache_dir):
-            mid_path = os.path.join(cache_dir, dsid, self._wrapper_type)
-            if not os.path.exists(mid_path):
-                continue
-            for mid_el in os.listdir(mid_path):
-                if mid_el == mid:
-                    return dsid
-        raise ModelNotFound('Model id {} not found in {}/*/{}!'.format(mid, cache_dir, self._wrapper_type))
 
     def delete(self):
         """ Delete a trained model"""
@@ -122,6 +112,7 @@ class _BaseWrapper(object):
         return self._pars
 
     def _load_model(self):
+        """ Load model from disk """
         mid = self.mid
         mid_dir = os.path.join(self.model_dir, mid)
         if not os.path.exists(mid_dir):

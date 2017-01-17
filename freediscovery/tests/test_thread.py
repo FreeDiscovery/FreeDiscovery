@@ -8,7 +8,7 @@ from __future__ import print_function
 import os.path
 
 from freediscovery.parsers import EmailParser
-from freediscovery.threading import (EmailThreading)
+from freediscovery.threading import _EmailThreadingWrapper
 from .run_suite import check_cache
 from itertools import groupby
 
@@ -26,7 +26,7 @@ def test_threading():
     filenames, res = fe.load(uuid)
 
 
-    cat = EmailThreading(cache_dir=cache_dir, dsid=uuid)
+    cat = _EmailThreadingWrapper(cache_dir=cache_dir, parent_id=uuid)
 
     tree = cat.thread()
     cat.get_params()

@@ -12,7 +12,6 @@ import numpy as np
 from sklearn.externals import joblib
 
 from ..base import _BaseWrapper
-from ..text import FeatureVectorizer
 from ..utils import setup_model
 from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
 from .utils import _dbscan_noisy2unique
@@ -45,24 +44,6 @@ def select_top_words(word_list, n=10):
         if len(out) >= n:
             break
     return out
-
-
-def _generate_lsi(lsi_components=None):
-    from sklearn.pipeline import make_pipeline
-    from sklearn.preprocessing import Normalizer
-    #from .lsi import TruncatedSVD_LSI
-    from sklearn.decomposition import TruncatedSVD
-
-    if lsi_components is not None:
-        #svd = TruncatedSVD_LSI(lsi_components)
-        ## do normalization by the singular values
-        #svd.transform = svd.transform_lsi
-        svd = TruncatedSVD(lsi_components)
-        normalizer = Normalizer(copy=False)
-        lsi = make_pipeline(svd, normalizer)
-    else:
-        lsi = None
-    return lsi
 
 
 class ClusterLabels(object):
@@ -109,7 +90,7 @@ class ClusterLabels(object):
         if lsi is None:
             order_centroids = centroids.argsort()[:, ::-1]
         else:
-            svd = lsi.steps[0][1] # first step of the pipeline
+            svd = lsi 
             original_space_centroids = svd.inverse_transform(centroids)
             order_centroids = original_space_centroids.argsort()[:, ::-1]
         self._order_centroids = order_centroids
@@ -153,7 +134,7 @@ class ClusterLabels(object):
         #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
 
 
-class Clustering(_BaseWrapper):
+class _ClusteringWrapper(_BaseWrapper):
     """Document clustering
 
     The algorithms are adapted from scikit learn.
@@ -165,7 +146,7 @@ class Clustering(_BaseWrapper):
     ----------
     cache_dir : str
        directory where to save temporary and regression files
-    dsid : str, optional
+    parent_id : str, optional
        dataset id
     mid : str, optional
        model id
@@ -173,9 +154,10 @@ class Clustering(_BaseWrapper):
 
     _wrapper_type = "cluster"
 
-    def __init__(self, cache_dir='/tmp/', dsid=None, mid=None):
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None):
 
-        super(Clustering, self).__init__(cache_dir=cache_dir,  dsid=dsid,
+        super(_ClusteringWrapper, self).__init__(cache_dir=cache_dir,
+                                         parent_id=parent_id,
                                          mid=mid, load_model=True)
 
         if self.fe._pars['use_hashing']:
@@ -185,7 +167,7 @@ class Clustering(_BaseWrapper):
         del self.cmod
 
 
-    def _cluster_func(self, n_clusters, km, pars=None, lsi=None):
+    def _cluster_func(self, n_clusters, km, pars=None):
         """ A helper function for clustering, includes base method used by
         all clustering implementations """
         import warnings
@@ -193,20 +175,15 @@ class Clustering(_BaseWrapper):
         if pars is None:
             pars = {}
         pars.update(km.get_params(deep=True))
-        X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
+        X = self.pipeline.data
 
         mid, mid_dir = setup_model(self.model_dir)
-
-        if lsi is not None:
-            X = lsi.fit_transform(X)
-            joblib.dump(X, os.path.join(self.model_dir, mid,  'lsi_features'), compress=9)
-            pars['lsi'] = lsi
 
         with warnings.catch_warnings():
             if type(km).__name__ != "DBSCAN":
                 warnings.filterwarnings("ignore", category=DeprecationWarning)
             km.fit(X)
-        pars['lsi'] = lsi
+
         self.mid = mid
         self.mid_dir = mid_dir
 
@@ -261,24 +238,23 @@ class Clustering(_BaseWrapper):
         Returns
         -------
         cluster_labels : array [n_samples]
-
         """
-        vect = joblib.load(os.path.join(self.fe.dsid_dir, 'vectorizer'))
-        lsi = self._pars['lsi']
+        vect = self.fe._load_model()
         if cluster_indices is not None:
             args = {'indices': cluster_indices}
-            X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
-            X = X[cluster_indices]
+            X = self.pipeline.data[cluster_indices]
 
-            if lsi:
-                X = lsi.transform(X)
-            else:
-                raise NotImplementedError('This case should work, '
-                        'but it was not tested so far, disabling it')
             centroids = np.atleast_2d(X.mean(axis=0))
             args['centroids'] = centroids
         else:
             args = None
+
+        if 'lsi' in self.pipeline:
+            lsi = joblib.load(os.path.join(
+                                    self.pipeline.get_path(self.pipeline['lsi']),
+                                    'model'))
+        else:
+            lsi = None
 
         lb = ClusterLabels(vect, self.km, self._pars, lsi=lsi,
                 cluster_indices=args)
@@ -286,7 +262,7 @@ class Clustering(_BaseWrapper):
         return terms
 
 
-    def k_means(self, n_clusters, lsi_components=None, batch_size=1000):
+    def k_means(self, n_clusters, batch_size=1000):
         """
         Perform K-mean clustering
 
@@ -294,20 +270,17 @@ class Clustering(_BaseWrapper):
         ----------
         n_clusters : int
            number of clusters
-        lsi_components : int
-           apply LSA before the clustering algorithm
         batch_size : int
            the bath size for the MiniBatchKMeans algorithm
         """
         from sklearn.cluster import MiniBatchKMeans
         pars = {"batch_size": batch_size}
-        lsi = _generate_lsi(lsi_components)
         km = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', n_init=10,
                     init_size=batch_size, batch_size=batch_size)
-        return self._cluster_func(n_clusters, km, pars, lsi=lsi)
+        return self._cluster_func(n_clusters, km, pars)
 
 
-    def birch(self, n_clusters, threshold=0.5, lsi_components=None):
+    def birch(self, n_clusters, threshold=0.5):
         """
         Perform Birch clustering
 
@@ -322,18 +295,15 @@ class Clustering(_BaseWrapper):
         """
         from sklearn.cluster import Birch
         pars = {'threshold': threshold}
-        if lsi_components is None:
-            raise ValueError("lsi_components=None detected. You must use LSI with Birch \
-                    clustering for scaling reasons.")
-
-        lsi = _generate_lsi(lsi_components)
+        if 'lsi' not in self.pipeline:
+            raise ValueError("you must use lsi with birch clustering for scaling reasons.")
 
         km = Birch(n_clusters=n_clusters, threshold=threshold)
 
-        return self._cluster_func(n_clusters, km, pars, lsi=lsi)
+        return self._cluster_func(n_clusters, km, pars)
 
 
-    def ward_hc(self, n_clusters, lsi_components=None, n_neighbors=10):
+    def ward_hc(self, n_clusters, n_neighbors=10):
         """
         Perform Ward hierarchical clustering
 
@@ -349,25 +319,21 @@ class Clustering(_BaseWrapper):
         from sklearn.cluster import AgglomerativeClustering
         from sklearn.neighbors import kneighbors_graph
         pars = {'n_neighbors': n_neighbors}
-        if lsi_components is None:
-            raise ValueError("lsi_components=None detected. You must use LSI with Birch \
-                    clustering for scaling reasons.")
-
-        lsi = _generate_lsi(lsi_components)
+        if 'lsi' not in self.pipeline:
+            raise ValueError("you must use lsi with birch clustering for scaling reasons.")
 
         # This is really not efficient as it's done a second time in _cluster_func
-        X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
-        X_lsi = lsi.fit_transform(X)
-        connectivity = kneighbors_graph(X_lsi, n_neighbors=n_neighbors,
+        X = self.pipeline.data
+        connectivity = kneighbors_graph(X, n_neighbors=n_neighbors,
                                         include_self=False)
 
         km = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward',
                                      connectivity=connectivity)
 
-        return self._cluster_func(n_clusters, km, pars, lsi=lsi)
+        return self._cluster_func(n_clusters, km, pars)
 
     def dbscan(self, n_clusters=None, eps=0.5, min_samples=10, algorithm='auto',
-               leaf_size=30, lsi_components=None):
+               leaf_size=30):
         """
         Perform DBSCAN clustering
 
@@ -389,12 +355,10 @@ class Clustering(_BaseWrapper):
         from sklearn.cluster import DBSCAN
         pars = None
 
-        lsi = _generate_lsi(lsi_components)
-
         km = DBSCAN(eps=eps, min_samples=min_samples, algorithm=algorithm,
                     leaf_size=leaf_size)
 
-        return self._cluster_func(n_clusters, km, pars, lsi=lsi)
+        return self._cluster_func(n_clusters, km, pars)
 
 
     def scores(self, ref_labels, labels):

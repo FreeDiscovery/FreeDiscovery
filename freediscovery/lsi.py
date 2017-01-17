@@ -26,14 +26,14 @@ def _touch(filename):
     open(filename, 'ab').close()
 
 
-class LSI(_BaseWrapper):
+class _LSIWrapper(_BaseWrapper):
     """Document categorization using Latent Semantic Indexing (LSI)
 
     Parameters
     ----------
     cache_dir : str
        folder where the model will be saved
-    dsid : str
+    parent_id : str
        dataset id
     mid : str
        LSI model id (the dataset id will be inferred)
@@ -43,12 +43,13 @@ class LSI(_BaseWrapper):
 
     _wrapper_type = "lsi"
 
-    def __init__(self, cache_dir='/tmp/', dsid=None, mid=None, verbose=False):
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None, verbose=False):
 
-        super(LSI, self).__init__(cache_dir=cache_dir,  dsid=dsid, mid=mid)
+        super(_LSIWrapper, self).__init__(cache_dir=cache_dir,
+                                          parent_id=parent_id, mid=mid)
 
 
-    def transform(self, n_components, n_iter=5):
+    def fit_transform(self, n_components, n_iter=5):
         """
         Perform the SVD decomposition
         
@@ -63,19 +64,19 @@ class LSI(_BaseWrapper):
         -------
         mid : str
            model id
-        lsi : BaseEstimator
+        lsi : _BaseWrapper
            the TruncatedSVD object
         exp_var : float
            the explained variance of the SVD decomposition
         """
 
-        dsid = self.dsid
+        parent_id = self.pipeline.mid
 
         dsid_dir = self.fe.dsid_dir
         if not os.path.exists(dsid_dir):
             raise IOError
 
-        pars = {'dsid': dsid, 'n_components': n_components}
+        pars = {'parent_id': parent_id, 'n_components': n_components}
 
         mid_dir_base = os.path.join(dsid_dir, self._wrapper_type)
     
@@ -83,74 +84,24 @@ class LSI(_BaseWrapper):
             os.mkdir(mid_dir_base)
         mid, mid_dir = setup_model(mid_dir_base)
 
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
-        ds = joblib.load(os.path.join(dsid_dir, 'features'))
 
+        ds = self.pipeline.data
         svd = _TruncatedSVD_LSI(n_components=n_components,
                                 n_iter=n_iter #, algorithm='arpack'
                                )
         lsi = svd
         lsi.fit(ds)
 
+        ds_p = lsi.transform_lsi_norm(ds)
+
+        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
         joblib.dump(lsi, os.path.join(mid_dir, 'model'))
+        joblib.dump(ds_p, os.path.join(mid_dir, 'data'))
 
         exp_var = lsi.explained_variance_ratio_.sum()
         self.mid = mid
 
         return lsi, exp_var
-
-    def predict(self, index, y, method='nearest-neighbor-1', chunk_size=100):
-        """
-        Predict the document relevance using a previously trained LSI model
-
-        Parameters
-        ----------
-        index : array-like, shape (n_samples)
-           document indices of the training set
-        y : array-like, shape (n_samples)
-           target binary class relative to index
-        method : str, optional, default='nearest-neighbor-1'
-           if `method=="nearest-neighbor-1"` the cosine distance to the closest relevant/non relevant document is used as classification score,
-           otherwise if `method=="nearest-centroid"` the centroid of relevant documents is used as the query vector.
-
-        """
-        if method in ['nearest-centroid', 'nearest-neighbor-1']:
-            pass
-        elif method in ['nearest-neighbor-diff', 'nearest-neighbor-combine', 'stacking']:
-            raise WrongParameter('method = {} is implemented but is not production ready and was disabled for v0.5 release'.format(method))
-        else:
-            raise NotImplementedFD()
-
-        index = np.asarray(index, dtype='int')
-        y = np.asarray(y, dtype='int')
-
-        _, ds = self.fe.load(self.dsid)  #, mmap_mode='r')
-
-        lsi = self._load_model()
-
-        d_p = lsi.transform_lsi_norm(ds)
-
-        if method.startswith('nearest-neighbor'):
-            cmod = NearestNeighborRanker(n_jobs=-1) # euclidean metric by default
-
-            cmod.fit(d_p[index], y)
-            D, _, md = cmod.kneighbors(d_p)
-            y_test = D[:]
-            y_train = D[index]
-
-        elif method == 'nearest-centroid':
-            from sklearn.neighbors import NearestCentroid
-            cmod  = NearestCentroid()
-            cmod.fit(d_p[index], y)
-            y_test = cmod.predict(d_p)
-            # other optional return values
-            md = {}
-        else:
-            raise NotImplementedFD('method={} not supported!'.format(method))
-
-        y_train = y_test[index]
-
-        return (lsi, y_train, y_test, md)
 
 
 # The below class is identical to TruncatedSVD,
