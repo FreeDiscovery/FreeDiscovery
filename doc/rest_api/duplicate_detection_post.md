@@ -5,7 +5,7 @@ The option `use_hashing=False` must be set for the feature extraction. Recommend
  * **URL**: `/api/v0/duplicate-detection/`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
-    - `dataset_id`: dataset id
+    - `parent_id`: `dataset_id` or `lsi_id`
     - `method`: str, default='simhash'
          Method used for duplicate detection. One of "simhash", "i-match"
 

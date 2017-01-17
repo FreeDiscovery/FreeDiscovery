@@ -650,3 +650,22 @@ def test_dupdetection_metrics_get(app, metrics):
         assert_almost_equal(data['f1_same_duplicates'], 0.667, decimal=3)
     if 'mean_duplicates_count' in metrics:
         assert_almost_equal(data['mean_duplicates_count'], 0.75)
+
+
+
+@pytest.mark.parametrize("method", ['regular', 'semantic'])
+def test_api_clustering(app, method):
+
+    if method == 'regular':
+        dsid, lsi_id, _ = get_features_lsi(app, hashed=False)
+        parent_id = lsi_id
+    elif method == 'semantic':
+        dsid, _ = get_features(app, hashed=False)
+        lsi_id = None
+        parent_id = dsid
+
+    method = V01 + "/search/"
+    res = app.get(method, data=dict(parent_id=parent_id, query="so that I can reserve a room"))
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert sorted(data.keys()) == sorted(['prediction'])

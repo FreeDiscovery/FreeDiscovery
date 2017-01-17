@@ -154,3 +154,7 @@ class MetricsDupDetectionSchema(Schema):
     ratio_duplicates = fields.Number()
     f1_same_duplicates = fields.Number()
     mean_duplicates_count = fields.Number()
+
+
+class SearchResponseSchema(Schema):
+    prediction = fields.List(fields.Number, required=True)

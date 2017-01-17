@@ -5,12 +5,14 @@ The option `use_hashing=True` must be set for the feature extraction. Recommende
  * **URL**: `/api/v0/categorization/` 
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
-    - `dataset_id`: dataset id
+    - `parent_id`: `dataset_id` or `lsi_id`
     - `index`: [required] document indices of the training set
     - `y`: [required] target binary class relative to index
     - `method`: classification algorithm to use (default: LogisticRegression),
           * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
           * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),
+          * "NearestNeighbor": nearest neighbor classifier (requires LSI)
+          * "NearestCentroid": nearest centroid classifier (requires LSI)
           * "xgboost": [Gradient Boosting](https://xgboost.readthedocs.io/en/latest/model.html)
            (*Warning:* for the moment xgboost is not istalled for a direct install on Windows)
     - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default True).

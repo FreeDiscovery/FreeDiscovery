@@ -71,6 +71,15 @@ Email threading
     :toctree: ./generated/
 
     freediscovery.threading._EmailThreadingWrapper
+    
+Semantic search
+---------------
+.. autosummary::
+    :toctree: ./generated/
+
+    freediscovery.search.Search
+    freediscovery.search._SearchWrapper
+
 
 Tools
 -----
@@ -79,6 +88,7 @@ Tools
     :toctree: ./generated/
 
     freediscovery.base._BaseWrapper
+    freediscovery.pipeline.PipelineFinder
     freediscovery.io.parse_ground_truth_file
     freediscovery.utils.generate_uuid
     freediscovery.utils.setup_model
