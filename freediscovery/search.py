@@ -127,6 +127,7 @@ class Search(object):
                                   n_jobs=self.n_jobs, squared=True)
         dist = dist[0]
 
+        # make sure the result positive and largest for best matches
         scores = dist.max() - dist
 
         return scores

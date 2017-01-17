@@ -26,6 +26,7 @@ from ..categorization import _CategorizerWrapper
 from ..io import parse_ground_truth_file
 from ..utils import categorization_score
 from ..cluster import _ClusteringWrapper
+from ..search import _SearchWrapper
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from ..dupdet import _DuplicateDetectionWrapper
 from ..threading import _EmailThreadingWrapper
@@ -41,7 +42,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
-                      ErrorSchema, DuplicateDetectionSchema
+                      ErrorSchema, DuplicateDetectionSchema,
+                      SearchResponseSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -586,3 +588,20 @@ class EmailThreadingApiElement(Resource):
 
         model = _EmailThreadingWrapper(cache_dir=self._cache_dir, mid=mid)
         model.delete()
+
+
+# ============================================================================ # 
+#                              (Semantic) search
+# ============================================================================ # 
+
+class SearchApi(Resource):
+    @use_args({ "parent_id": wfields.Str(required=True),
+                "query": wfields.Str(required=True)})
+    @marshal_with(SearchResponseSchema())
+    def get(self, **args):
+        parent_id = args['parent_id']
+        model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
+
+        query = args['query']
+        scores = model.search(query)
+        return {'prediction': scores}

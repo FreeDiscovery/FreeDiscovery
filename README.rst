@@ -16,6 +16,7 @@ FreeDiscovery is built on top of existing machine learning libraries (scikit-lea
 - document clustering
 - duplicate detection
 - e-mail threading
+- document search and semantic search
 
 In addition, FreeDiscovery can be used as Python package and aims to expose a scikit-learn compatible API. 
 

@@ -22,6 +22,7 @@ from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementIndex
                         EmailParserApi, EmailParserApiElementIndex,
                         EmailParserApiElement,
                         EmailThreadingApi, EmailThreadingApiElement,
+                        SearchApi
                         )
 
 
@@ -71,6 +72,7 @@ def fd_app(cache_dir):
          (MetricsDupDetectionApiElement  , '/metrics/duplicate-detection')  ,
          (EmailThreadingApi       , '/email-threading/')                 ,
          (EmailThreadingApiElement, '/email-threading/<mid>')            ,
+         (SearchApi,              '/search/')                            ,
          #(CatchAll               , "/<url>")
                              ]:
         # monkeypatching, not great
