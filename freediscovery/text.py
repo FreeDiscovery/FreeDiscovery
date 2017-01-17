@@ -227,9 +227,9 @@ class FeatureVectorizer(_BaseTextTransformer):
 
     _wrapper_type = "vectorizer"
 
-    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=11000000,
+    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=100001,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
-            n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=True,
+            n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
             norm='l2', min_df=0.0, max_df=1.0):
         """Initalize the features extraction. See sklearn.feature_extraction.text for a
         detailed description of the input parameters """

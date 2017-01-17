@@ -93,7 +93,6 @@ class _DuplicateDetectionWrapper(_BaseWrapper):
 
 
         if self._pars['method'] == 'simhash':
-            from simhash import find_all  # TODO resolve reference
             from ..cluster.utils import (_binary_linkage2clusters, 
                                     _merge_clusters)
 

@@ -178,7 +178,7 @@ class EmailParserApiElementIndex(Resource):
 
 _lsi_api_get_args  = {'parent_id': wfields.Str(required=True) }
 _lsi_api_post_args = {'parent_id': wfields.Str(required=True),
-                      'n_components': wfields.Int(default=100) }
+                      'n_components': wfields.Int(default=150) }
 class LsiApi(Resource):
 
     @use_args(_lsi_api_get_args)
@@ -226,7 +226,7 @@ _models_api_post_args = {
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
         'index': wfields.List(wfields.Int(), required=True),
         'y': wfields.List(wfields.Int(), required=True),
-        'method': wfields.Str(required=True),
+        'method': wfields.Str(default='LinearSVC'),
         'cv': wfields.Boolean(missing=False),
         'training_scores': wfields.Boolean(missing=True)
         }
@@ -315,7 +315,7 @@ class ModelsApiTest(Resource):
 
 _k_mean_clustering_api_post_args = {
         'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(required=True),
+        'n_clusters': wfields.Int(default=150),
         }
 
 
@@ -335,7 +335,7 @@ class KmeanClusteringApi(Resource):
 
 _birch_clustering_api_post_args = {
         'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(required=True),
+        'n_clusters': wfields.Int(default=150),
         'threshold': wfields.Number(),
         }
 
@@ -354,7 +354,7 @@ class BirchClusteringApi(Resource):
 
 _wardhc_clustering_api_post_args = {
         'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(required=True),
+        'n_clusters': wfields.Int(default=150),
         'n_neighbors': wfields.Int(missing=5),
         }
 
@@ -451,7 +451,7 @@ class DupDetectionApi(Resource):
         return {'id': model.mid}
 
 _dupdet_api_get_args = {
-        'distance': wfields.Int(),
+        'distance': wfields.Int(default=5),
         'n_rand_lexicons': wfields.Int(),
         'rand_lexicon_ratio': wfields.Number()
         }
