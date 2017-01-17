@@ -6,8 +6,7 @@ The option `use_hashing=False` must be set for the feature extraction. Recommend
  * **URL**: `/api/v0/clustering/dbscan`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
-    - `dataset_id`: dataset id
-    - `lsi_components`: (optional) apply LSI with `lsi_components` before clustering (default None)
+    - `parent_id`: `dataset_id` or `lsi_id`
     - `eps`: (optional) float
             The maximum distance between two samples for them to be considered
              as in the same neighborhood.

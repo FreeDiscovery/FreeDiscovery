@@ -8,7 +8,7 @@ The recommended value for the `n_components` (dimensions of the SVD decompositio
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
     - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features. 
-    - `dataset_id`: dataset id
+    - `parent_id`: `dataset_id`
 
  * **Success Response**: `HTTP 200`
     

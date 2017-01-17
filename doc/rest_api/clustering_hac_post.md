@@ -11,11 +11,8 @@ The Ward Hierarchical clustering is generally slower that K-mean, however the ru
  * **URL**: `/api/v0/clustering/ward-hc`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
-    - `dataset_id`: dataset id
+    - `parent_id`: `dataset_id` or `lsi_id`
     - `n_clusters`: the number of clusters
-    - `lsi_components`: (optional) apply LSI with `lsi_components` before clustering (default None)
-                        Only k-means can function without the dimentionality reduction provided by LSI, 
-                        both "birch" and "ward_hc" require this option to be a positive integer. 
     - `n_neighbors` Number of neighbors for each sample, used to compute the connectivity matrix (see [AgglomerativeClustering](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html) and [kneighbors_graph](http://scikit-learn.org/stable/modules/generated/sklearn.neighbors.kneighbors_graph.html)
  * **Success Response**: `HTTP 200`
     

@@ -4,7 +4,7 @@
  * **URL**: `/api/v0/email_threading/`
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
-    - `dataset_id`: dataset id
+    - `parent_id`: `dataset_id`
 
  * **Success Response**: `HTTP 200`
     
