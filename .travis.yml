@@ -44,7 +44,7 @@ script:
     - | 
         cd examples/
         set -o pipefail
-        for f in ./*example*.py; do 
+        for f in ./*.py; do 
            python $f >> log.txt
         done
         cat log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt; then false; else true; fi

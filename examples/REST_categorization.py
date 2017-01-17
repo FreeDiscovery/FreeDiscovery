@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     # 3. Document categorization
 
-    print("\n2.a. Train the categorization model")
+    print("\n3.a. Train the categorization model")
     print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
 
     for method, use_lsi in [('LinearSVC', False),
@@ -142,7 +142,7 @@ if __name__ == '__main__':
         print("     => model id = {}".format(mid))
         print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
-        print("\n2.b. Check the parameters used in the categorization model")
+        print("\n3.b. Check the parameters used in the categorization model")
         url = BASE_URL + '/categorization/{}'.format(mid)
         print(" GET", url)
         res = requests.get(url).json()
@@ -150,7 +150,7 @@ if __name__ == '__main__':
         print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                           if key not in ['index', 'y']]))
 
-        print("\n2.c Categorize the complete dataset with this model")
+        print("\n3.c Categorize the complete dataset with this model")
         url = BASE_URL + '/categorization/{}/predict'.format(mid)
         print(" GET", url)
         res = requests.get(url).json()
@@ -159,7 +159,7 @@ if __name__ == '__main__':
         if method == "NearestNeighbor":
             df = pd.DataFrame({key: res[key] for key in res if key not in ['id', 'scores']})
 
-        print("\n2.d Test categorization accuracy")
+        print("\n3.d Test categorization accuracy")
         print("         using {}".format(ground_truth_file))  
         url = BASE_URL + '/categorization/{}/test'.format(mid)
         print("POST", url)
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     print('\n', df)
 
     # 4. Cleaning
-    print("\n4.a Delete the extracted features (and LSI decomposition)")
+    print("\n5.a Delete the extracted features (and LSI decomposition)")
     url = BASE_URL + '/feature-extraction/{}'.format(dsid)
     print(" DELETE", url)
     requests.delete(url)

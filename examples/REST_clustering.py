@@ -96,7 +96,7 @@ res = requests.post(url,
 mid = res['id']
 print("     => model id = {}".format(mid))
 
-print("\n2.b. Computing cluster labels")
+print("\n3.b. Computing cluster labels")
 url = BASE_URL + '/clustering/k-mean/{}'.format(mid)
 print(" GET", url)
 res = requests.get(url,
@@ -124,7 +124,7 @@ res = requests.post(url,
 mid = res['id']
 print("     => model id = {}".format(mid))
 
-print("\n3.b. Computing cluster labels")
+print("\n4.b. Computing cluster labels")
 url = BASE_URL + '/clustering/ward_hc/{}'.format(mid)
 print(" GET", url)
 res = requests.get(url,
@@ -137,7 +137,7 @@ print(repr_clustering(np.array(res['labels']), res['cluster_terms']))
 
 
 # 4. Cleaning
-print("\n4.a Delete the extracted features")
+print("\n5. Delete the extracted features")
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
 print(" DELETE", url)
 requests.delete(url)

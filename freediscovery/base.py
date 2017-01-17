@@ -181,8 +181,9 @@ class PipelineFinder(OrderedDict):
         if len(self.keys()) <= 1:
             raise ValueError("Can't take the parent of a root node!")
 
+        # create a copy
+        steps = OrderedDict(self)
         # get all the steps except the last one
-        steps = deepcopy(self)
         steps.popitem(last=True)
 
         return PipelineFinder(mid=list(steps.values())[-1],
