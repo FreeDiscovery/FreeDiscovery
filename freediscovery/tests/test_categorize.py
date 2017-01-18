@@ -240,7 +240,8 @@ def test_nearest_neighbor_ranker_supervised():
 
     rk = NearestNeighborRanker()
     rk.fit(X_train, y_train)
-    y_pred, idx, md = rk.kneighbors(X_test)
+    y_pred, idx, md = rk.kneighbors(X_test, batch_size=90) # choose a batch size smaller
+                                                           # than n_samples
 
     assert y_pred.shape == (X_test.shape[0],)
     assert y_pred.min() >= -1 and y_pred.min() <= -0.8 # as we are using cosine similarities

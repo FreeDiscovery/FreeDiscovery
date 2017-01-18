@@ -93,7 +93,7 @@ def _chunk_kneighbors(func, X, batch_size=5000, **args):
     for k in range(n_samples//batch_size + 1):
         mslice = slice(k*batch_size, min((k+1)*batch_size, n_samples))
         X_sl = X[mslice, :]
-        dist_k, ind_k = func(X, **args)
+        dist_k, ind_k = func(X_sl, **args)
         ind_arr.append(ind_k)
         dist_arr.append(dist_k)
     return (np.concatenate(dist_arr, axis=0),
