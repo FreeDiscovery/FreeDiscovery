@@ -20,6 +20,7 @@ Contents
    scaling_benchmarks
    deployment
    contributing
+   whats_new
 
 
 
