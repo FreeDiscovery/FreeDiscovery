@@ -254,7 +254,7 @@ def test_nearest_neighbor_ranker_supervised():
     # postive scores correspond to positive documents
     assert_equal((y_pred > 0), y_train[idx])
 
-    cl = KNeighborsClassifier(n_neighbors=1)
+    cl = KNeighborsClassifier(n_neighbors=1, algorithm='brute')
     cl.fit(X_train, y_train)
 
     y_ref = cl.predict(X_test)
@@ -285,7 +285,7 @@ def test_nearest_neighbor_ranker_unsupervised():
 
     assert_array_less(0, y_pred) # all distance are positive
 
-    nn = NearestNeighbors(n_neighbors=1)
+    nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
     nn.fit(X_train)
     dist, idx_ref = nn.kneighbors(X_test)
 
@@ -310,7 +310,7 @@ def test_nearest_centroid_ranker():
     X_test = X[index_test]
 
 
-    nn = NearestNeighbors(n_neighbors=1)
+    nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
     nn.fit(X_train)
     dist_ref, idx_ref = nn.kneighbors(X_test)
 

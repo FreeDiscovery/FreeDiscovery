@@ -69,6 +69,37 @@ class NearestCentroidRanker(NearestCentroid):
 
         return pairwise_distances(X, self.centroids_, metric=self.metric).min(axis=1)
 
+def _chunk_kneighbors(func, X, batch_size=5000, **args):
+    """ Chunk kneighbors computations to reduce RAM requirements
+
+    Parameters
+    ----------
+    func : function
+      the function to run
+    X : ndarray
+      the array func is applied to
+    batch_size : int
+      batch size
+
+    Returns
+    -------
+    dist : array
+       distance array
+    ind : array of indices
+    """
+    n_samples = X.shape[0]
+    ind_arr = []
+    dist_arr = []
+    for k in range(n_samples//batch_size + 1):
+        mslice = slice(k*batch_size, min((k+1)*batch_size, n_samples))
+        X_sl = X[mslice, :]
+        dist_k, ind_k = func(X, **args)
+        ind_arr.append(ind_k)
+        dist_arr.append(dist_k)
+    return (np.concatenate(dist_arr, axis=0),
+            np.concatenate(ind_arr, axis=0))
+
+
 
 class NearestNeighborRanker(BaseEstimator, RankerMixin):
     """A nearest neighbor ranker, behaves like
@@ -106,7 +137,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
     """
 
     def __init__(self, radius=1.0,
-                 algorithm='ball_tree', leaf_size=30, n_jobs=1, **kwargs):
+                 algorithm='brute', leaf_size=30, n_jobs=1, **kwargs):
 
         # define nearest neighbors search objects for positive and negative samples
         self._mod_p = NearestNeighbors(n_neighbors=1,
@@ -174,13 +205,15 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         else:
             pass
 
-    def kneighbors(self, X=None):
+    def kneighbors(self, X=None, batch_size=5000):
         """Finds the K-neighbors of a point.
         Returns indices of and distances to the neighbors of each point.
         Parameters
         ----------
         X : array-like, shape (n_samples, n_features)
             the input array
+        batch_size : int
+            the batch size
         Returns
         -------
         score : array
@@ -197,7 +230,8 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         """
         X = check_array(X, accept_sparse='csr')
 
-        D_p, idx_p_loc = self._mod_p.kneighbors(X)
+        D_p, idx_p_loc = _chunk_kneighbors(self._mod_p.kneighbors, X,
+                                           batch_size=batch_size)
 
         # only NearestNeighbor-1 (only one column in the kneighbors output)
         D_p = D_p[:,0]
@@ -209,7 +243,8 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
              }
 
         if self._mod_n._fit_method is not None:
-            D_n, idx_n_loc = self._mod_n.kneighbors(X)
+            D_n, idx_n_loc = _chunk_kneighbors(self._mod_n.kneighbors, X,
+                                               batch_size=batch_size)
             D_n = D_n[:,0]
             ind_n = self._index_n[idx_n_loc[:,0]]
             md['ind_n'] = ind_n
