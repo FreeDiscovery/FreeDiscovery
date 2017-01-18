@@ -49,7 +49,7 @@ class _LSIWrapper(_BaseWrapper):
                                           parent_id=parent_id, mid=mid)
 
 
-    def fit_transform(self, n_components, n_iter=5):
+    def fit_transform(self, n_components=150, n_iter=5):
         """
         Perform the SVD decomposition
         

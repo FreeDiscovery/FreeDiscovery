@@ -17,3 +17,4 @@
  
  * All the wrappers classes are made private in the Python API
  * The same categorization and clustering enpoints can operate ether in the document-term space or in the LSI space (PR [#57](https://github.com/FreeDiscovery/FreeDiscovery/pull/57))
+ * More rubust default parameters (PR [#65](https://github.com/FreeDiscovery/FreeDiscovery/pull/65)

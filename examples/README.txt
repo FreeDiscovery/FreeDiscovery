@@ -16,4 +16,4 @@ These examples can be run with the following steps,
      
   .. code-block:: bash
   
-     python examples/categorization_example.py
+     python examples/REST_categorization.py

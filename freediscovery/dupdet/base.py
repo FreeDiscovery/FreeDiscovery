@@ -78,7 +78,7 @@ class _DuplicateDetectionWrapper(_BaseWrapper):
 
         Parameters
         ----------
-        distance : int, default=2
+        distance : int, default=1
             Maximum number of differnet bits in the simhash
         blocks : int or 'auto', default='auto'
             number of blocks into which the simhash is split
@@ -93,11 +93,13 @@ class _DuplicateDetectionWrapper(_BaseWrapper):
 
 
         if self._pars['method'] == 'simhash':
-            from simhash import find_all  # TODO resolve reference
             from ..cluster.utils import (_binary_linkage2clusters, 
                                     _merge_clusters)
 
             shash = self.model
+
+            if 'distance' not in args:
+                args['distance'] = 1
 
             _fit_shash, cluster_id_exactdup, matches = shash.query(**args)
 

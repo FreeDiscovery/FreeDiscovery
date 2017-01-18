@@ -20,30 +20,42 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 n_features = 1100000
 
 
-# generate all possible combinations of options
-fe_cases = list(itertools.product(['word', 'char'], ['None', 'english'], [[1,1], [1, 2]],
-                [True, False], [True, False], [True, False], [True, False]))
-fe_names = 'analyzer, stop_words, ngram_range, use_idf, sublinear_tf, binary, use_hashing'
-
-
-def filter_fe_cases(x):
-    key_list = fe_names.split(', ')
-    res = dict(zip(key_list, x))
-    if res['analyzer'] != 'word' and res['stop_words'] != "None":
-        return 0
-    if not res['use_idf'] and not res['sublinear_tf']:
-        return 0 # this is not used anyway
-    return 1
-
-
-@pytest.mark.parametrize(fe_names, filter(filter_fe_cases, fe_cases))
-def test_feature_extraction(analyzer, stop_words, ngram_range, use_idf, sublinear_tf, binary, use_hashing):
+@pytest.mark.parametrize("analyzer, ngram_range, use_hashing",
+                         list(itertools.product(['word', 'char'],
+                                                [[1,1], [1, 2]],
+                                                ['hashed', 'non-hashed'])))
+def test_feature_extraction_tokenization(analyzer, ngram_range, use_hashing):
     cache_dir = check_cache()
+    use_hashing = (use_hashing == 'hashed')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt', n_features=n_features,
-            analyzer=analyzer, stop_words=stop_words, ngram_range=ngram_range,
-            use_idf=use_idf, binary=binary, use_hashing=use_hashing, sublinear_tf=sublinear_tf)  # TODO unused (overwritten on the next line)
+    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+            analyzer=analyzer, ngram_range=ngram_range, use_hashing=use_hashing)
+    uuid, filenames = fe.transform()
+
+    filenames2, res2 = fe.load(uuid)
+    assert_equal(filenames2, filenames)
+    assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), "not an array {}".format(res2)
+
+    assert np.isfinite(res2.data).all()
+    fe.delete()
+
+@pytest.mark.parametrize("sublinear_tf, use_idf, binary, use_hashing", 
+                         list(itertools.product( ['TF', 'sublinear TF'],
+                                                ['', 'IDF'],
+                                                ['binary', ''],
+                                                ['hashed', ''])))
+def test_feature_extraction_weighting(use_idf, sublinear_tf, binary, use_hashing):
+    cache_dir = check_cache()
+
+    use_idf = (use_idf == 'IDF')
+    sublinear_tf = (sublinear_tf == 'sublinear TF')
+    binary = (binary == 'binary')
+    use_hashing = (use_hashing == 'hashed')
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt', 
+            use_idf=use_idf, binary=binary, use_hashing=use_hashing, sublinear_tf=sublinear_tf)
     uuid, filenames = fe.transform()
 
     filenames2, res2 = fe.load(uuid)
@@ -52,6 +64,32 @@ def test_feature_extraction(analyzer, stop_words, ngram_range, use_idf, sublinea
 
     assert np.isfinite(res2.data).all()
 
+
+    fe.delete()
+
+@pytest.mark.parametrize("n_features, use_idf, use_hashing", 
+                         list(itertools.product([None, 4, 1000],
+                                                ['', 'IDF'],
+                                                ['hashed', ''])))
+def test_feature_extraction_nfeatures(n_features, use_idf, use_hashing):
+    cache_dir = check_cache()
+
+    use_hashing = (use_hashing == 'hashed')
+    use_idf = (use_idf == 'IDF')
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+            n_features=n_features,
+            use_idf=use_idf, use_hashing=use_hashing)
+    uuid, filenames = fe.transform()
+
+    filenames2, res2 = fe.load(uuid)
+    assert_equal(filenames2, filenames)
+    assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), "not an array {}".format(res2)
+
+    assert np.isfinite(res2.data).all()
+
+    assert res2.shape[1] == fe.n_features_
 
     fe.delete()
 

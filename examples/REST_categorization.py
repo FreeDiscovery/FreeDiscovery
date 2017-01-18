@@ -38,12 +38,8 @@ if __name__ == '__main__':
     print("\n1.a Load dataset and initalize feature extraction")
     url = BASE_URL + '/feature-extraction'
     print(" POST", url)
-    fe_opts = {'data_dir': data_dir,
-               'stop_words': 'english', 'chunk_size': 2000, 'n_jobs': -1,
-               'use_idf': 1, 'sublinear_tf': 0, 'binary': 0, 'n_features': 50001,
-               'analyzer': 'word', 'ngram_range': (1, 1), "norm": "l2"
-              }
-    res = requests.post(url, json=fe_opts).json()
+    res = requests.post(url, json={'data_dir': data_dir,
+                                   'use_hashing': True}).json()
 
     dsid = res['id']
     print("   => received {}".format(list(res.keys())))
