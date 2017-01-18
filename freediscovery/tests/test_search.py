@@ -72,8 +72,7 @@ def test_search_wrapper(kind):
     # check for syntax errors etc in the wrapper
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                              use_hashing=False)
+    vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt')
     vect_uuid, filenames  = fe.transform()
 
     if kind == 'semantic':

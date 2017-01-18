@@ -176,6 +176,7 @@ class _BaseTextTransformer(object):
         """ Number of documents in the dataset """
         return len(self._pars['filenames'])
 
+
     def list_datasets(self):
         """ List all datasets in the working directory """
         import traceback
@@ -227,12 +228,59 @@ class FeatureVectorizer(_BaseTextTransformer):
 
     _wrapper_type = "vectorizer"
 
-    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=100001,
+    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=None,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
             norm='l2', min_df=0.0, max_df=1.0):
-        """Initalize the features extraction. See sklearn.feature_extraction.text for a
-        detailed description of the input parameters """
+        """Initalize the features extraction.
+
+        See sklearn.feature_extraction.text for a detailed description of the input parameters
+
+        Parameters
+        ----------
+
+        analyzer : string, {'word', 'char'} or callable
+            Whether the feature should be made of word or character n-grams.
+            If a callable is passed it is used to extract the sequence of features
+            out of the raw, unprocessed input.
+        ngram_range : tuple (min_n, max_n)
+            The lower and upper boundary of the range of n-values for different
+            n-grams to be extracted. All values of n such that min_n <= n <= max_n
+            will be used.
+        stop_words : string {'english'}, list, or None (default)
+            If a string, it is passed to _check_stop_list and the appropriate stop
+            list is returned. 'english' is currently the only supported string
+            value.
+            If None, no stop words will be used. max_df can be set to a value
+            in the range [0.7, 1.0) to automatically detect and filter stop
+            words based on intra corpus document frequency of terms.
+        max_df : float in range [0.0, 1.0] or int, default=1.0
+            When building the vocabulary ignore terms that have a document
+            frequency strictly higher than the given threshold (corpus-specific
+            stop words).
+            If float, the parameter represents a proportion of documents, integer
+            absolute counts.
+            This parameter is ignored if vocabulary is not None.
+        min_df : float in range [0.0, 1.0] or int, default=1
+            When building the vocabulary ignore terms that have a document
+            frequency strictly lower than the given threshold. This value is also
+            called cut-off in the literature.
+            If float, the parameter represents a proportion of documents, integer
+            absolute counts.
+            This parameter is ignored if vocabulary is not None.
+        max_features : int or None, default=None or 100001
+            If not None, build a vocabulary that only consider the top
+            max_features ordered by term frequency across the corpus.
+        binary : boolean, default=False
+            If True, all non-zero term counts are set to 1. This does not mean
+            outputs will have only 0/1 values, only that the tf term in tf-idf
+            is binary. (Set idf and normalization to False to get 0/1 outputs.)
+        norm : 'l1', 'l2' or None, optional
+            Norm used to normalize term vectors. None for no normalization.
+        use_idf : boolean, default=True
+            Enable inverse-document-frequency reweighting.
+
+        """
         data_dir = os.path.normpath(data_dir)
 
         if not os.path.exists(data_dir):
@@ -251,6 +299,9 @@ class FeatureVectorizer(_BaseTextTransformer):
             raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
         if stop_words not in ['None', 'english', 'english_alphanumeric']:
             raise WrongParameter('stop_words')
+
+        if n_features is None and use_hashing:
+            n_features = 100001 # default size of the hashing table
 
         filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
         self.dsid = dsid = generate_uuid()
@@ -387,6 +438,14 @@ class FeatureVectorizer(_BaseTextTransformer):
             out.append(terms[idx])
         return out
 
+    @property
+    def n_features_(self):
+        """ Number of features of the vecotorizer"""
+        vect = self._load_model()
+        if hasattr(vect, 'vocabulary_'):
+            return len(vect.vocabulary_)
+        else:
+            print(vect)
 
 
     def _aggregate_features(self):

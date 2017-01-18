@@ -35,7 +35,8 @@ print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
 fe_opts = {'data_dir': data_dir,
-           'use_idf': 1, 'sublinear_tf': 0, 'n_features': 30001,
+           'use_idf': 1, # this is required to compute cluster labels (for now)
+           'n_features': 30001,
            'min_df': 4, 'max_df': 0.75
           }
 res = requests.post(url, json=fe_opts)
@@ -63,13 +64,25 @@ print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
 
 print("\n2. Near Duplicates detection by cosine similarity (DBSCAN)")
 
+
+# compute LSI used for DBSCAN clustering
+url = BASE_URL + '/lsi/'
+print("POST", url)
+
+n_components = 100
+res = requests.post(url,
+                    json={'n_components': n_components,
+                          'parent_id': dsid
+                          }).json()
+
+lsi_id = res['id']
+
 url = BASE_URL + '/clustering/dbscan/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-        json={'parent_id': dsid,
-              'lsi_components': 100,
-              'eps': 0.1,            # 2*cosine distance for documents to be considered as duplicates
+        json={'parent_id': lsi_id,
+              'eps': 0.35,            # 2*cosine distance for documents to be considered as duplicates
               'n_max_samples': 2
               }).json()
 
@@ -148,21 +161,7 @@ url = BASE_URL + '/duplicate-detection/{}'.format(mid)
 print(" GET", url)
 t0 = time()
 res = requests.get(url,
-        json={'distance': 1 }) 
-data = res.json()
-print('    .. computed in {:.1f}s'.format(time() - t0))
-
-labels_ = data['cluster_id']
-
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
-
-
-
-url = BASE_URL + '/duplicate-detection/{}'.format(mid)
-print(" GET", url)
-t0 = time()
-res = requests.get(url,
-        json={'distance': 1 }) 
+        json={'distance': 1 })
 data = res.json()
 print('    .. computed in {:.1f}s'.format(time() - t0))
 

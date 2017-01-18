@@ -451,7 +451,7 @@ class DupDetectionApi(Resource):
         return {'id': model.mid}
 
 _dupdet_api_get_args = {
-        'distance': wfields.Int(default=5),
+        'distance': wfields.Int(),
         'n_rand_lexicons': wfields.Int(),
         'rand_lexicon_ratio': wfields.Number()
         }
