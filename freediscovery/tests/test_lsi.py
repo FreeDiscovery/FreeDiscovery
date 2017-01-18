@@ -31,7 +31,7 @@ def test_lsi():
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
     lsi_res, exp_var = lsi.fit_transform(n_components=n_components)  # TODO unused variables
-    #assert lsi_res.components_.shape == (n_components, n_features)
+    assert lsi_res.components_.shape == (n_components, fe.n_features_)
     assert lsi._load_pars() is not None
     lsi._load_model()
 

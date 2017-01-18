@@ -13,6 +13,7 @@ from sklearn.externals import joblib
 from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
+from sklearn.pipeline import make_pipeline
 
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
@@ -43,7 +44,7 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     fe = HashingVectorizer(input='filename', norm=None, decode_error='ignore',
            non_negative=True, **hash_opts) 
     if pretend:
-        return
+        return fe
     fset_new = fe.transform(filenames[mslice])
 
     fset_new.eliminate_zeros()
@@ -365,7 +366,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         if use_hashing:
             # just make sure that we can initialize the vectorizer
             # (easier outside of the paralel loop
-            _vectorize_chunk(dsid_dir, 0, pars, pretend=True)
+            vect = _vectorize_chunk(dsid_dir, 0, pars, pretend=True)
 
         processing_lock =  os.path.join(dsid_dir, 'processing')
         _touch(processing_lock)
@@ -383,7 +384,8 @@ class FeatureVectorizer(_BaseTextTransformer):
                     tfidf = TfidfTransformer(norm=pars['norm'], use_idf=True,
                                               sublinear_tf=pars['sublinear_tf'])
                     res = tfidf.fit_transform(res)
-                self.vect = None
+                    vect = make_pipeline(vect, tfidf)
+                self.vect = vect
             else:
                 opts_tfidf = {key: val for key, val in pars.items() \
                         if key in ['stop_words', 'use_idf', 'ngram_range', 'analyzer',
@@ -394,8 +396,8 @@ class FeatureVectorizer(_BaseTextTransformer):
                             norm=pars['norm'],
                             decode_error='ignore', **opts_tfidf)
                 res = tfidf.fit_transform(pars['filenames_abs'])
-                joblib.dump(tfidf, os.path.join(dsid_dir, 'vectorizer'))
                 self.vect = tfidf
+            joblib.dump(self.vect, os.path.join(dsid_dir, 'vectorizer'))
 
             if pars['norm'] is not None:
                 res = normalize(res, norm=pars['norm'], copy=False)
@@ -441,11 +443,17 @@ class FeatureVectorizer(_BaseTextTransformer):
     @property
     def n_features_(self):
         """ Number of features of the vecotorizer"""
+        from sklearn.feature_extraction.text import HashingVectorizer
+        from sklearn.pipeline import Pipeline
         vect = self._load_model()
         if hasattr(vect, 'vocabulary_'):
             return len(vect.vocabulary_)
+        elif isinstance(vect, HashingVectorizer):
+            return vect.get_params()['n_features']
+        elif isinstance(vect, Pipeline):
+            return vect.named_steps['hashingvectorizer'].get_params()['n_features']
         else:
-            print(vect)
+            raise ValueError
 
 
     def _aggregate_features(self):
