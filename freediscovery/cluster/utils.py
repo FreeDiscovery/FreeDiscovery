@@ -58,6 +58,32 @@ def _binary_linkage2clusters(linkage, n_samples):
     return labels_renamed
 
 
+def _make_birch_hierarchy(node, depth=0):
+    """Construct a cluster hierarchy using a trained Birch model
+
+
+    Parameters
+    ----------
+    model : Birch
+      a trained Birch clustering
+
+    Returns
+    -------
+    res : a jwzthreading.Container object
+      a hierarchical structure with the resulting clustering
+    """
+    from jwzthreading import Container
+    htree = Container()
+    for el in  node.subclusters_:
+        if el.child_ is not None:
+            _make_birch_hierarchy(el.child_, depth=depth+1)
+            print('depth:', depth, el.child_)
+        else:
+            print(el.n_samples_)
+            print(dir(el))
+
+
+
 def _merge_clusters(X, rename=False):
     """
     Compute a union of all clusters

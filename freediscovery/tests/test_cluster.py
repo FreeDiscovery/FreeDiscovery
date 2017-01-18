@@ -101,6 +101,24 @@ def test_clustering(method, use_lsi, args, cl_args):
     cat.delete()
 
 
+def test_birch_make_hierarchy():
+    from freediscovery.cluster.utils import _make_birch_hierarchy 
+    from sklearn.cluster import Birch
+    from sklearn.preprocessing import normalize
+
+    np.random.seed(9999)
+
+    X = np.random.rand(3000, 50)
+    normalize(X)
+
+    mod = Birch(n_clusters=None, threshold=0.8)
+    mod.fit(X)
+
+    htree = _make_birch_hierarchy(mod.root_)
+
+
+
+
 def test_denrogram_children():
     # temporary solution for https://stackoverflow.com/questions/40239956/node-indexing-in-hierarachical-clustering-dendrograms
     import numpy as np

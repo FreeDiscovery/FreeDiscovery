@@ -262,6 +262,10 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             htree = {'n_leaves': km.n_leaves_,
                      'n_components': km.n_components_,
                      'children': km.children_}
+        elif method_name == 'Birch':
+            print(dir(km))
+            print(km.root_.subclusters_[0].child_)
+            htree = {}
         else:
             htree = {}
         return htree
