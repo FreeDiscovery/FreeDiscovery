@@ -17,6 +17,7 @@ from sklearn.pipeline import make_pipeline
 
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
+from .ingestion import _list_filenames, _prepare_data_ingestion
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
 
@@ -85,21 +86,6 @@ class _BaseTextTransformer(object):
             pars = None
         self.dsid_dir = dsid_dir
         self._pars = pars
-
-    @staticmethod
-    def _list_filenames(data_dir, dir_pattern, file_pattern):
-        import re
-        # parse all files in the folder
-        filenames = []
-        for root, subdirs, files in os.walk(data_dir):
-            #print(root, dir_pattern)
-            if re.match(dir_pattern, root):
-                for fname in files:
-                    if re.match(file_pattern, fname):
-                        filenames.append(os.path.normpath(os.path.join(root, fname)))
-
-        # make sure that sorting order is deterministic
-        return sorted(filenames)
 
     def delete(self):
         """ Delete the current dataset """
@@ -206,6 +192,7 @@ class _BaseTextTransformer(object):
         return out
 
 
+
 class FeatureVectorizer(_BaseTextTransformer):
     """Extract features from text documents
 
@@ -229,7 +216,8 @@ class FeatureVectorizer(_BaseTextTransformer):
 
     _wrapper_type = "vectorizer"
 
-    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=None,
+    def preprocess(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
+            metadata=None, n_features=None,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
             norm='l2', min_df=0.0, max_df=1.0):
@@ -239,7 +227,11 @@ class FeatureVectorizer(_BaseTextTransformer):
 
         Parameters
         ----------
-
+        data_dir : str
+            path to the data directory (used only if metadata not provided), default: None
+        metadata : list of dicts
+            a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
+            describing the data ingestion (this overwrites data_dir)
         analyzer : string, {'word', 'char'} or callable
             Whether the feature should be made of word or character n-grams.
             If a callable is passed it is used to extract the sequence of features
@@ -282,16 +274,10 @@ class FeatureVectorizer(_BaseTextTransformer):
             Enable inverse-document-frequency reweighting.
 
         """
-        data_dir = os.path.normpath(data_dir)
 
-        if not os.path.exists(data_dir):
-            raise NotFound('data_dir={} does not exist'.format(data_dir))
+        data_dir, filenames, metadata = _prepare_data_ingestion(data_dir, metadata, file_pattern, dir_pattern)
+
         self.data_dir = data_dir
-
-        filenames = self._list_filenames(data_dir, dir_pattern, file_pattern)
-
-        if not filenames: # no files were found
-            raise WrongParameter('No files to process were found!')
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
         if not isinstance(ngram_range, tuple) and not isinstance(ngram_range, list):

@@ -16,6 +16,7 @@ from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
 
 from .text import _BaseTextTransformer
+from .ingestion import _list_filenames
 from .utils import generate_uuid, _rename_main_thread
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
@@ -50,7 +51,7 @@ class EmailParser(_BaseTextTransformer):
         self.data_dir = data_dir
 
         # parse all files in the folder
-        filenames = self._list_filenames(data_dir, dir_pattern, file_pattern)
+        filenames = _list_filenames(data_dir, dir_pattern, file_pattern)
 
         if not filenames: # no files were found
             raise WrongParameter('No files to process were found!')
