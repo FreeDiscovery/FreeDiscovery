@@ -90,7 +90,8 @@ def _chunk_kneighbors(func, X, batch_size=5000, **args):
     n_samples = X.shape[0]
     ind_arr = []
     dist_arr = []
-    for k in range(n_samples//batch_size + 1):
+    # don't enter the last loop if n_sampes is a multiple of batch_size
+    for k in range(n_samples//batch_size + int(n_samples % batch_size != 0)):
         mslice = slice(k*batch_size, min((k+1)*batch_size, n_samples))
         X_sl = X[mslice, :]
         dist_k, ind_k = func(X_sl, **args)

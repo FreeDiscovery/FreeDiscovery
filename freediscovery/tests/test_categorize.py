@@ -22,8 +22,8 @@ from freediscovery.base import PipelineFinder
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper
 from freediscovery.categorization import (_CategorizerWrapper, _zip_relevant,
-        _unzip_relevant, NearestNeighborRanker,
-        NearestCentroidRanker)
+        _unzip_relevant, NearestNeighborRanker, NearestCentroidRanker,
+        _chunk_kneighbors)
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
@@ -115,6 +115,23 @@ def test_categorization(use_lsi, method, cv):
     assert_allclose(scores['precision'], 1, rtol=0.5)
     assert_allclose(scores['recall'], 1, rtol=0.68)
     cat.delete()
+
+
+@pytest.mark.parametrize('batch_size', [1, 101, 100])
+def test_nn_chunking(batch_size):
+
+    shape = (1000, 10)
+
+    X = 2*np.ones(shape)
+    def func(X):
+        assert X.shape[0] > 0 # we need at least one point
+        return X**2, X - 1
+
+    d, idx = _chunk_kneighbors(func, X, batch_size=batch_size)
+
+    assert_allclose(d, 4*np.ones(shape))
+    assert_allclose(idx, 1*np.ones(shape))
+
 
 
 @pytest.mark.parametrize('n_steps', [2, 3])
