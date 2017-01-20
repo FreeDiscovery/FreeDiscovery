@@ -17,7 +17,7 @@ from sklearn.pipeline import make_pipeline
 
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
-from .ingestion import _list_filenames, _prepare_data_ingestion
+from .ingestion import DocumentIndex
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
 
@@ -275,7 +275,11 @@ class FeatureVectorizer(_BaseTextTransformer):
 
         """
 
-        data_dir, filenames, metadata = _prepare_data_ingestion(data_dir, metadata, file_pattern, dir_pattern)
+        if metadata is not None:
+            db = DocumentIndex.from_list(metadata)
+        elif data_dir is not None:
+            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
+        data_dir, filenames, db = db.data_dir, db.filenames, db.data
 
         self.data_dir = data_dir
         if analyzer not in ['word', 'char', 'char_wb']:
@@ -290,7 +294,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         if n_features is None and use_hashing:
             n_features = 100001 # default size of the hashing table
 
-        filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
+        filenames_rel = db.file_path.values.tolist()
         self.dsid = dsid = generate_uuid()
         self.dsid_dir = dsid_dir = os.path.join(self.cache_dir, dsid)
 

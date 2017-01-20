@@ -24,27 +24,34 @@ def _list_filenames(data_dir, dir_pattern=None, file_pattern=None):
     # make sure that sorting order is deterministic
     return sorted(filenames)
 
-def _prepare_data_ingestion(data_dir, metadata, file_pattern=None, dir_pattern=None):
-    """ Do some preprocessing of the input parameters
-    of FeatureVectorizer for data ingestion
 
-    Parmaters
-    ---------
-    data_dir : str
-        path to the data directory (used only if metadata not provided), default: None
-    metadata : list of dicts
-        a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
-        describing the data ingestion (this overwrites data_dir)
+class DocumentIndex(object):
+    def __init__(self, data_dir, data, filenames):
+        self.data_dir = data_dir
+        self.data = data
+        self.filenames = filenames
 
-    Returns
-    -------
-    filenames : list
-      a list of filenames
-    db : a pandas.DataFrame
-      with at least keys 'file_path', 'internal_id', optionally 'document_id' and 'rendition_id'
-    """
+    @classmethod
+    def from_list(cls, metadata):
+        """ Create a DocumentIndex from a list of dictionaries, for instance
+        {
+            document_id: 1
+            rendition_id: 4
+            file_path: c:\dev\1.txt
+        }
 
-    if metadata is not None:
+        Parmaters
+        ---------
+        metadata : list of dicts
+            a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
+            describing the data ingestion (this overwrites data_dir)
+
+        Returns
+        -------
+        result : DocumentIndex
+            a DocumentIndex object
+        """
+
         metadata = sorted(metadata, key=lambda x: x['file_path'])
         filenames = [el['file_path'] for el in metadata]
 
@@ -61,11 +68,28 @@ def _prepare_data_ingestion(data_dir, metadata, file_pattern=None, dir_pattern=N
         filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
 
         # modify the metadata list inplace
-        for db_el, file_path in zip(metadata, filenames_rel):
+        for idx, (db_el, file_path) in enumerate(zip(metadata, filenames_rel)):
             db_el['file_path'] = file_path
+            db_el['internal_id'] = idx
         db = pd.DataFrame(metadata)
 
-    elif data_dir is not None:
+        return cls(data_dir, db, filenames)
+
+    @classmethod
+    def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None):
+        """ Create a DocumentIndex from files in data_dir
+
+        Parmaters
+        ---------
+        data_dir : str
+            path to the data directory (used only if metadata not provided), default: None
+
+        Returns
+        -------
+        result : DocumentIndex
+            a DocumentIndex object
+        """
+
         data_dir = os.path.normpath(data_dir)
 
         if not os.path.exists(data_dir):
@@ -77,8 +101,5 @@ def _prepare_data_ingestion(data_dir, metadata, file_pattern=None, dir_pattern=N
                             for idx, file_path in enumerate(filenames_rel)]
 
         db = pd.DataFrame(db)
-    else:
-        raise ValueError('At least one if data_dir, metadata must be provided')
 
-
-    return data_dir, filenames, db
+        return cls(data_dir, db, filenames)
