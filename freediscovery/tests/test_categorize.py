@@ -11,7 +11,7 @@ import re
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
-                           assert_array_less)
+                           assert_array_less, assert_array_equal)
 
 import pytest
 import itertools
@@ -237,7 +237,8 @@ def test_relevant_positives_zip():
     assert_equal(non_relevant_id2, np.array([]))
 
 
-def test_nearest_neighbor_ranker_supervised():
+@pytest.mark.parametrize('ranking', ['supervised', 'unsupervised'])
+def test_nearest_neighbor_ranker_supervised(ranking):
     # check that we have sensible results with respect to
     # NN1 binary classification (supervised, with both positive
     # and negative samples)
@@ -255,13 +256,14 @@ def test_nearest_neighbor_ranker_supervised():
     X_train = X[index_train]
     X_test = X[index_test]
 
-    rk = NearestNeighborRanker()
+    rk = NearestNeighborRanker(ranking=ranking)
     rk.fit(X_train, y_train)
     y_pred, idx, md = rk.kneighbors(X_test, batch_size=90) # choose a batch size smaller
                                                            # than n_samples
 
     assert y_pred.shape == (X_test.shape[0],)
-    assert y_pred.min() >= -1 and y_pred.min() <= -0.8 # as we are using cosine similarities
+    if ranking == 'supervised':
+        assert y_pred.min() >= -1 and y_pred.min() <= -0.8 # as we are using cosine similarities
     assert y_pred.max() <=  1 and y_pred.max() >= 0.8
     assert idx.shape == (X_test.shape[0],)
     assert sorted(md.keys()) == ['dist_n', 'dist_p', 'ind_n', 'ind_p']
@@ -270,15 +272,20 @@ def test_nearest_neighbor_ranker_supervised():
         assert_array_less(0, val) # all values are positive
 
     # postive scores correspond to positive documents
-    assert_equal((y_pred > 0), y_train[idx])
 
-    cl = KNeighborsClassifier(n_neighbors=1, algorithm='brute')
-    cl.fit(X_train, y_train)
+    if ranking == 'supervised':
+        assert_equal((y_pred > 0), y_train[idx])
 
-    y_ref = cl.predict(X_test)
+        cl = KNeighborsClassifier(n_neighbors=1, algorithm='brute')
+        cl.fit(X_train, y_train)
 
-    # make sure we get the same results as for the KNeighborsClassifier
-    assert_equal(y_ref, y_train[idx])
+        y_ref = cl.predict(X_test)
+
+        # make sure we get the same results as for the KNeighborsClassifier
+        assert_equal(y_ref, y_train[idx])
+    else:
+        assert_allclose(y_pred, 1 - md['dist_p']/4)
+        assert_array_equal(idx, md['ind_p'])
 
 def test_nearest_neighbor_ranker_unsupervised():
     # Check NearestNeighborRanker with only positive samples

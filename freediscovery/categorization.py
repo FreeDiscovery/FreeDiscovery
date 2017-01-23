@@ -135,10 +135,17 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         The number of parallel jobs to run for neighbors search.
         If ``-1``, then the number of jobs is set to the number of CPU cores.
 
+    method : str, def
+        If "unsupervised" only distances to the positive samples are used in the ranking
+        If "supervised" both the distance to the positive and negative documents are used
+        for ranking (i.e. if a document is slightly further away from a positive document
+        than from a negative one, it will be considered negative with a very low score)
+
     """
 
     def __init__(self, radius=1.0,
-                 algorithm='brute', leaf_size=30, n_jobs=1, **kwargs):
+                 algorithm='brute', leaf_size=30, n_jobs=1,
+                 ranking='unsupervised', **kwargs):
 
         # define nearest neighbors search objects for positive and negative samples
         self._mod_p = NearestNeighbors(n_neighbors=1,
@@ -153,6 +160,9 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
                                        n_jobs=n_jobs,
                                        metric='euclidean',  # euclidean metric by default
                                        **kwargs)
+        if ranking not in ['supervised', 'unsupervised']:
+            raise ValueError
+        self.ranking_ = ranking
 
     @staticmethod
     def _ranking_score(d_p, d_n=None):
@@ -243,21 +253,30 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
               'ind_p': ind_p,
              }
 
-        if self._mod_n._fit_method is not None:
+        if self._mod_n._fit_method is not None: # also corresponds to "unsupervised" method
             D_n, idx_n_loc = _chunk_kneighbors(self._mod_n.kneighbors, X,
                                                batch_size=batch_size)
             D_n = D_n[:,0]
             ind_n = self._index_n[idx_n_loc[:,0]]
             md['ind_n'] = ind_n
             md['dist_n'] = D_n
-            ind = np.where(D_p <= D_n, ind_p, ind_n)
+            if self.ranking_ == 'supervised':
+                ind = np.where(D_p <= D_n, ind_p, ind_n)
+            else:
+                ind = ind_p
         else:
             D_n = None
             ind = ind_p
 
-        score = self._ranking_score(D_p, D_n)
+        if self.ranking_ == 'supervised':
+            score = self._ranking_score(D_p, D_n)
+        elif self.ranking_ == 'unsupervised':
+            score = self._ranking_score(D_p, None)
+        else:
+            raise ValueError
 
-        return  score, ind , md
+
+        return score, ind , md
 
 
 
