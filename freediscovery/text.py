@@ -202,7 +202,7 @@ class FeatureVectorizer(_BaseTextTransformer):
     _wrapper_type = "vectorizer"
 
     def preprocess(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
-            metadata=None, n_features=None,
+            dataset_definition=None, n_features=None,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
             norm='l2', min_df=0.0, max_df=1.0):
@@ -214,7 +214,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         ----------
         data_dir : str
             path to the data directory (used only if metadata not provided), default: None
-        metadata : list of dicts
+        dataset_defintion : list of dicts
             a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
             describing the data ingestion (this overwrites data_dir)
         analyzer : string, {'word', 'char'} or callable
@@ -260,12 +260,12 @@ class FeatureVectorizer(_BaseTextTransformer):
 
         """
 
-        if metadata is not None:
-            db = DocumentIndex.from_list(metadata)
+        if dataset_definition is not None:
+            db = DocumentIndex.from_list(dataset_definition)
         elif data_dir is not None:
             db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
         else:
-            raise ValueError
+            raise ValueError('At least one of data_dir, dataset_definition must be provided')
         data_dir = db.data_dir
 
         self.data_dir = data_dir

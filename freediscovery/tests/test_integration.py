@@ -31,7 +31,7 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 
 @pytest.mark.parametrize('use_hashing, use_lsi, method', itertools.product([False, True],
                                                 [False, True],
-                                                ['Categorization', 'LSI',
+                                                ['Categorization',
                                                  'DuplicateDetection', 'Clustering']))
 def test_features_hashing(use_hashing, use_lsi, method):
     # check that models work both with and without hashing
@@ -83,11 +83,6 @@ def test_features_hashing(use_hashing, use_lsi, method):
         assert_allclose(scores['precision'], 1, rtol=0.5)
         assert_allclose(scores['recall'], 1, rtol=0.7)
         cat.delete()
-    elif method == 'LSI':
-
-        idx_gt = lsi.fe.db._search_filenames(ground_truth.index.values)
-        idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
-
     elif method == 'DuplicateDetection':
         dd = _DuplicateDetectionWrapper(cache_dir=cache_dir, parent_id=uuid)
         try:

@@ -93,6 +93,9 @@ class FeaturesApi(Resource):
             if key in args and args[key] > 1. + EPSILON: # + eps
                 args[key] = int(args[key])
 
+        if 'dataset_defintion' in args:
+            print(args['dataset_definition'])
+
         fe = FeatureVectorizer(self._cache_dir)
         dsid = fe.preprocess(**args)
         pars = fe.get_params()
