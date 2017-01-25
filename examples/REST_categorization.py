@@ -150,10 +150,26 @@ if __name__ == '__main__':
         url = BASE_URL + '/categorization/{}/predict'.format(mid)
         print(" GET", url)
         res = requests.get(url).json()
-        prediction = res['prediction']
 
         if method == "NearestNeighbor":
-            df = pd.DataFrame({key: res[key] for key in res if key not in ['id', 'scores']})
+
+            def flatten_dict(d, parent_key='', sep='__'):
+                """Flatten a nested dictionary """
+                import collections
+                items = []
+                for k, v in d.items():
+                    new_key = parent_key + sep + k if parent_key else k
+                    if isinstance(v, collections.MutableMapping):
+                        items.extend(flatten_dict(v, new_key, sep=sep).items())
+                    else:
+                        items.append((new_key, v))
+                return dict(items)
+            
+            data = [flatten_dict(el) for el in res['data']]
+        else:
+            data = res['data']
+
+        print(pd.DataFrame(data).set_index('internal_id'))
 
         print("\n3.d Test categorization accuracy")
         print("         using {}".format(ground_truth_file))  
@@ -162,8 +178,6 @@ if __name__ == '__main__':
         res = requests.post(url, json={'ground_truth_filename': ground_truth_file}).json()
 
         print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
-
-    print('\n', df)
 
     # 4. Cleaning
     print("\n5.a Delete the extracted features (and LSI decomposition)")

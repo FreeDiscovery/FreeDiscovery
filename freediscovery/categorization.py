@@ -145,7 +145,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
     def __init__(self, radius=1.0,
                  algorithm='brute', leaf_size=30, n_jobs=1,
-                 ranking='unsupervised', **kwargs):
+                 ranking='supervised', **kwargs):
 
         # define nearest neighbors search objects for positive and negative samples
         self._mod_p = NearestNeighbors(n_neighbors=1,
@@ -182,10 +182,9 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
            the ranking score in the range [-1, 1]
            For positive items score = 1 - cosine distance / 2
         """
-        # convert from eucledian distance in L2 norm space to cosine similarity
-        S_p = 1 - d_p/2
+        S_p = 1 - d_p
         if d_n is not None:
-            S_n = 1 - d_n/2
+            S_n = 1 - d_n
             return np.where(S_p > S_n,
                             S_p + 1,
                             -1 - S_n) / 2
@@ -245,7 +244,8 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
                                            batch_size=batch_size)
 
         # only NearestNeighbor-1 (only one column in the kneighbors output)
-        D_p = D_p[:,0]
+        # convert from eucledian distance in L2 norm space to cosine similarity
+        D_p = D_p[:,0] / 2
         # map local index within _index_p, _index_n to global index
         ind_p = self._index_p[idx_p_loc[:,0]]
 
@@ -256,7 +256,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         if self._mod_n._fit_method is not None: # also corresponds to "unsupervised" method
             D_n, idx_n_loc = _chunk_kneighbors(self._mod_n.kneighbors, X,
                                                batch_size=batch_size)
-            D_n = D_n[:,0]
+            D_n = D_n[:,0] / 2
             ind_n = self._index_n[idx_n_loc[:,0]]
             md['ind_n'] = ind_n
             md['dist_n'] = D_n

@@ -17,6 +17,7 @@ from sklearn.pipeline import make_pipeline
 
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
+from .ingestion import DocumentIndex
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
 
@@ -80,26 +81,15 @@ class _BaseTextTransformer(object):
                 raise DatasetNotFound('Dataset {} ({}) not found in {}!'.format(
                                             dsid, type(self).__name__, cache_dir))
             pars = self._load_pars()
+            if hasattr(self, '_load_db'):
+                self.db = self._load_db()
         else:
             dsid_dir = None
             pars = None
+            if hasattr(self, '_load_db'):
+                self.db = None
         self.dsid_dir = dsid_dir
         self._pars = pars
-
-    @staticmethod
-    def _list_filenames(data_dir, dir_pattern, file_pattern):
-        import re
-        # parse all files in the folder
-        filenames = []
-        for root, subdirs, files in os.walk(data_dir):
-            #print(root, dir_pattern)
-            if re.match(dir_pattern, root):
-                for fname in files:
-                    if re.match(file_pattern, fname):
-                        filenames.append(os.path.normpath(os.path.join(root, fname)))
-
-        # make sure that sorting order is deterministic
-        return sorted(filenames)
 
     def delete(self):
         """ Delete the current dataset """
@@ -153,25 +143,6 @@ class _BaseTextTransformer(object):
         return cmod
 
 
-    def search(self, filenames):
-        """ Return the document ids that correspond to the provided filenames.
-
-        Parameters
-        ----------
-        filenames : list[str]
-            list of filenames (relatives to the data_dir)
-
-        Returns
-        -------
-        indices : array[int]
-            corresponding list of document id (order is not preserved)
-        """
-        filenames_all = self._pars['filenames']
-        # calculate the indices of the intersection of filenames with filenames_all
-        ind_dict = dict((k,i) for i,k in enumerate(filenames_all))
-        indices = [ ind_dict[x] for x in filenames]
-        return np.array(indices)
-
     @property
     def n_samples_(self):
         """ Number of documents in the dataset """
@@ -206,6 +177,7 @@ class _BaseTextTransformer(object):
         return out
 
 
+
 class FeatureVectorizer(_BaseTextTransformer):
     """Extract features from text documents
 
@@ -229,7 +201,8 @@ class FeatureVectorizer(_BaseTextTransformer):
 
     _wrapper_type = "vectorizer"
 
-    def preprocess(self, data_dir, file_pattern='.*', dir_pattern='.*',  n_features=None,
+    def preprocess(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
+            metadata=None, n_features=None,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
             norm='l2', min_df=0.0, max_df=1.0):
@@ -239,7 +212,11 @@ class FeatureVectorizer(_BaseTextTransformer):
 
         Parameters
         ----------
-
+        data_dir : str
+            path to the data directory (used only if metadata not provided), default: None
+        metadata : list of dicts
+            a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
+            describing the data ingestion (this overwrites data_dir)
         analyzer : string, {'word', 'char'} or callable
             Whether the feature should be made of word or character n-grams.
             If a callable is passed it is used to extract the sequence of features
@@ -282,16 +259,16 @@ class FeatureVectorizer(_BaseTextTransformer):
             Enable inverse-document-frequency reweighting.
 
         """
-        data_dir = os.path.normpath(data_dir)
 
-        if not os.path.exists(data_dir):
-            raise NotFound('data_dir={} does not exist'.format(data_dir))
+        if metadata is not None:
+            db = DocumentIndex.from_list(metadata)
+        elif data_dir is not None:
+            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
+        else:
+            raise ValueError
+        data_dir = db.data_dir
+
         self.data_dir = data_dir
-
-        filenames = self._list_filenames(data_dir, dir_pattern, file_pattern)
-
-        if not filenames: # no files were found
-            raise WrongParameter('No files to process were found!')
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
         if not isinstance(ngram_range, tuple) and not isinstance(ngram_range, list):
@@ -304,7 +281,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         if n_features is None and use_hashing:
             n_features = 100001 # default size of the hashing table
 
-        filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
+        filenames_rel = db.data.file_path.values.tolist()
         self.dsid = dsid = generate_uuid()
         self.dsid_dir = dsid_dir = os.path.join(self.cache_dir, dsid)
 
@@ -324,6 +301,8 @@ class FeatureVectorizer(_BaseTextTransformer):
                }
         self._pars = pars
         joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
+        joblib.dump(db, os.path.join(dsid_dir, 'db'), compress=9)
+        self.db = db
         return dsid
 
     @staticmethod
@@ -468,6 +447,17 @@ class FeatureVectorizer(_BaseTextTransformer):
         res = scipy.sparse.vstack(out)
         return res
 
+    def _load_db(self):
+        """ Load DatasetIndex from disk"""
+        dsid = self.dsid
+        if self.cache_dir is None:
+            raise InitException('cache_dir is None: cannot load from cache!')
+        dsid_dir = os.path.join(self.cache_dir, dsid)
+        if not os.path.exists(dsid_dir):
+            raise DatasetNotFound('dsid {} not found!'.format(dsid))
+        db = joblib.load(os.path.join(dsid_dir, 'db'))
+        return db
+
 
 
 class _FeatureVectorizerSampled(FeatureVectorizer):
@@ -499,7 +489,7 @@ class _FeatureVectorizerSampled(FeatureVectorizer):
             if not isinstance(sampling_filenames, list):
                 raise TypeError('Wrong type {} for sampling_index, must be list'.format(
                             type(sampling_filenames).__name__))
-            self.sampling_index = self.search(self.sampling_filenames)
+            self.sampling_index = self.db._search_filenames(self.sampling_filenames)
         else:
             self.sampling_filenames = None
             self.sampling_index = None

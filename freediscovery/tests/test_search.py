@@ -65,6 +65,9 @@ def test_search(kind):
         dist = s.search(query)
         assert dist.shape == (X.shape[0],)
         assert dist.argmax() == best_id
+        # 2 - cosine distance should be in [0, 2]
+        assert_array_less(dist, 2.001)
+        assert_array_less(0.001, dist)
 
 
 @pytest.mark.parametrize('kind,', ['regular', 'semantic'])

@@ -14,6 +14,7 @@ import pytest
 from freediscovery.text import (FeatureVectorizer,
                                 _FeatureVectorizerSampled)
 from .run_suite import check_cache
+from freediscovery.exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
 basename = os.path.dirname(__file__)
 data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
@@ -104,19 +105,19 @@ def test_search_filenames(use_hashing):
 
     assert_equal(fe._pars['filenames'], filenames)
 
-
+    assert fe.db is not None
 
     for low, high, step in [(0, 1, 1),
                             (0, 4, 1),
                             (3, 1, -1)]:
         idx_slice = list(range(low, high, step))
         filenames_slice = [filenames[idx] for idx in idx_slice]
-        idx0 = fe.search(filenames_slice)
+        idx0 = fe.db._search_filenames(filenames_slice)
         assert_equal(idx0, idx_slice)
         assert_equal(filenames_slice, fe[idx0])
 
-    with pytest.raises(KeyError):
-        fe.search(['DOES_NOT_EXIST.txt'])
+    with pytest.raises(NotFound):
+        fe.db._search_filenames(['DOES_NOT_EXIST.txt'])
 
     if not use_hashing:
         n_top_words = 5

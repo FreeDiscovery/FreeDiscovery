@@ -42,7 +42,7 @@ if __name__ == '__main__':
     uuid = fe.preprocess(**fe_opts)
     uuid, filenames  = fe.transform()
 
-    seed_index = fe.search(seed_filenames)
+    seed_index = fe.db._search_filenames(seed_filenames)
 
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid)
     cat.train(seed_index, seed_y)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     predictions, md = cat.predict()
 
     gt = parse_ground_truth_file( ground_truth_file)
-    idx_ref = cat.fe.search(gt.index.values)
+    idx_ref = cat.fe.db._search_filenames(gt.index.values)
     idx_res = np.arange(cat.fe.n_samples_, dtype='int')
 
     scores = categorization_score(idx_ref, gt.is_relevant.values,

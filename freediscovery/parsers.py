@@ -16,6 +16,7 @@ from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
 
 from .text import _BaseTextTransformer
+from .ingestion import _list_filenames
 from .utils import generate_uuid, _rename_main_thread
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
@@ -50,7 +51,7 @@ class EmailParser(_BaseTextTransformer):
         self.data_dir = data_dir
 
         # parse all files in the folder
-        filenames = self._list_filenames(data_dir, dir_pattern, file_pattern)
+        filenames = _list_filenames(data_dir, dir_pattern, file_pattern)
 
         if not filenames: # no files were found
             raise WrongParameter('No files to process were found!')
@@ -88,3 +89,24 @@ class EmailParser(_BaseTextTransformer):
 
         #pars['filenames_abs'] = [os.path.join(data_dir, el) for el in filenames_base]
         return dsid
+
+    def search(self, filenames):
+        """ Return the document ids that correspond to the provided filenames.
+
+        .. Warning: this function is deprecated as of 0.8, use DocumentIndex.search instead
+
+        Parameters
+        ----------
+        filenames : list[str]
+            list of filenames (relatives to the data_dir)
+
+        Returns
+        -------
+        indices : array[int]
+            corresponding list of document id (order is not preserved)
+        """
+        filenames_all = self._pars['filenames']
+        # calculate the indices of the intersection of filenames with filenames_all
+        ind_dict = dict((k,i) for i,k in enumerate(filenames_all))
+        indices = [ ind_dict[x] for x in filenames]
+        return np.array(indices)

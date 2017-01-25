@@ -124,10 +124,10 @@ class Search(object):
 
         dist = pairwise_distances(q, self._fit_X,
                                   'euclidean',
-                                  n_jobs=self.n_jobs, squared=True)
+                                  n_jobs=self.n_jobs, squared=False)
         dist = dist[0]
 
-        # make sure the result positive and largest for best matches
-        scores = dist.max() - dist
+        # convert to a 2 - cosine_distance
+        scores = 2 - dist/2
 
         return scores
