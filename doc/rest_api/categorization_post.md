@@ -6,8 +6,9 @@ The option `use_hashing=True` must be set for the feature extraction. Recommende
  * **Method**: `POST` **URL Params**: None
  * **Data Params**: 
     - `parent_id`: `dataset_id` or `lsi_id`
-    - `index`: [required] document indices of the training set
-    - `y`: [required] target binary class relative to index
+    - `index`: (optional) internal document ids of the training set (can also be provided in `index_nested`)
+    - `y`: (optional) target binary class relative to index (can also be provided in `index_nested`)
+    - `index_nested`: a list of dict which have a `y` field and one or serveral fields that can be used for indexing, such as `internal_id`, `document_id`, `file_path`, `rendition_id`. 
     - `method`: classification algorithm to use (default: LogisticRegression),
           * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
           * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),
