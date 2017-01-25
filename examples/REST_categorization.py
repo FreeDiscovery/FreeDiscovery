@@ -7,9 +7,6 @@ An example to illustrate binary categorizaiton with FreeDiscovery
 
 from __future__ import print_function
 
-import os
-import sys
-import numpy as np
 from time import time, sleep
 from multiprocessing import Process
 import requests
@@ -89,10 +86,10 @@ if __name__ == '__main__':
 
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
-
-    method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    res = requests.get(method, data={'document_id': seed_document_id})
-    seed_index = res.json()['internal_id']
+    # this step is not necessary anymore
+    #method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
+    #res = requests.get(method, data={'document_id': seed_document_id})
+    #seed_internal_id = res.json()['internal_id']
 
 
     # 3. Document categorization with LSI (used for Nearest Neighbors method)
@@ -119,6 +116,9 @@ if __name__ == '__main__':
     print("\n3.a. Train the categorization model")
     print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
 
+    seed_index_nested = [{'document_id': internal_id, 'y': y} \
+                                for internal_id, y in zip(seed_document_id, seed_y)]
+
     for method, use_lsi in [('LinearSVC', False),
                             ('NearestNeighbor', True)]:
 
@@ -136,15 +136,14 @@ if __name__ == '__main__':
         print(' Training...')
 
         res = requests.post(url,
-                            json={'index': seed_index,
-                                  'y': seed_y,
-                                  'parent_id': parent_id,
+                            json={'parent_id': parent_id,
+                                  'index_nested': seed_index_nested,
                                   'method': method,  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                                   }).json()
 
         mid = res['id']
         print("     => model id = {}".format(mid))
-        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, F1= {f1:.3f}'.format(**res))
 
         print("\n3.b. Check the parameters used in the categorization model")
         url = BASE_URL + '/categorization/{}'.format(mid)

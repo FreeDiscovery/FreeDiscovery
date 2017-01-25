@@ -275,7 +275,9 @@ class DocumentIndex(object):
         data_dir = os.path.commonprefix(filenames)
         data_dir = os.path.normpath(data_dir)
 
-        if not os.path.exists(data_dir) and os.path.exists(os.path.dirname(data_dir)):
+        if os.path.exists(data_dir):
+            return data_dir
+        elif os.path.exists(os.path.dirname(data_dir)):
             return os.path.dirname(data_dir)
         else:
             raise IOError('data_dir={} does not exist!'.format(data_dir))

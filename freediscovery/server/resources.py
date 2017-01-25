@@ -31,6 +31,7 @@ from ..search import _SearchWrapper
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from ..dupdet import _DuplicateDetectionWrapper
 from ..threading import _EmailThreadingWrapper
+from ..exceptions import WrongParameter
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, DocumentIndexListSchema,
                       DocumentIndexNestedSchema,
@@ -45,7 +46,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
                       ErrorSchema, DuplicateDetectionSchema,
-                      SearchResponseSchema
+                      SearchResponseSchema, DocumentIndexSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -231,24 +232,21 @@ class LsiApiElement(Resource):
         pars['parent_id'] = pars['parent_id']
         return pars
 
-_lsi_api_element_predict_post_args = {
-        # Warning this should be changed to wfields.DelimitedList
-        # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'index': wfields.List(wfields.Int(), required=True),
-        'y': wfields.List(wfields.Int(), required=True),
-        }
-
-
 # ============================================================================ # 
 #                  Categorization (ML)
 # ============================================================================ # 
+
+class _CategorizationIndex(DocumentIndexSchema):
+    y = wfields.Int()
+
 
 _models_api_post_args = {
         'parent_id': wfields.Str(required=True),
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'index': wfields.List(wfields.Int(), required=True),
-        'y': wfields.List(wfields.Int(), required=True),
+        'index': wfields.List(wfields.Int()),
+        'y': wfields.List(wfields.Int()),
+        'index_nested': wfields.Nested(_CategorizationIndex, many=True),
         'method': wfields.Str(default='LinearSVC'),
         'cv': wfields.Boolean(missing=False),
         'training_scores': wfields.Boolean(missing=True)
@@ -267,6 +265,19 @@ class ModelsApi(Resource):
     def post(self, **args):
         training_scores = args['training_scores']
         parent_id = args['parent_id']
+        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
+
+        if 'y' in args and 'index' in args:
+            pass
+        elif 'index_nested' in args:
+            query = pd.DataFrame(args['index_nested'])
+            res_q = cat.fe.db.search(query, drop=False)
+            del args['index_nested']
+            args['index'] = res_q.internal_id.values
+            args['y'] = res_q.y.values
+        else:
+            raise WrongParameter("Either 'index_nested' or y and index must be provided!")
+
 
         if args['cv']:
             cv = 'fast'
@@ -274,7 +285,6 @@ class ModelsApi(Resource):
             cv = None
         for key in ['parent_id', 'cv', 'training_scores']:
             del args[key]
-        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
         if training_scores:
