@@ -286,8 +286,33 @@ class ModelsApiPredict(Resource):
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         y_res, md = cat.predict()
         md = {key: val.tolist() for key, val in md.items()}
+        scores_pd = pd.DataFrame({'score': y_res,
+                                  'internal_id': np.arange(cat.fe.n_samples_, dtype='int')})
+        if not md:
 
-        return dict(prediction=y_res.tolist(), **md)
+            view_data = cat.fe.db.render_dict(scores_pd)
+        else:
+            res = scores_pd.set_index('internal_id')
+            db = cat.fe.db.data.set_index('internal_id', drop=False)
+            base_keys = [key for key in cat.fe.db.data.columns if key != 'file_path']
+
+            view_data = []
+            for index, row in res.iterrows():
+                row_dict = row.to_dict()
+                db_sel = db.loc[index]
+                row_dict.update(db_sel[base_keys].to_dict())
+                row_dict['internal_id'] = index
+                for ind_key, dist_key, field_name in [('ind_p', 'dist_p', 'nn_positive'),
+                                                      ('ind_n', 'dist_n', 'nn_negative')]:
+
+                    nn_ind = md[ind_key][index]
+                    db_sel = db.loc[nn_ind]
+                    nn_tmp = db_sel[base_keys].to_dict()
+                    nn_tmp['distance'] = md[dist_key][index]
+                    row_dict[field_name] = nn_tmp
+                view_data.append(row_dict)
+
+        return dict(data=view_data)
 
 
 _models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}

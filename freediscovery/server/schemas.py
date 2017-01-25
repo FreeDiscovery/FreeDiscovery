@@ -83,13 +83,21 @@ class LsiPostSchema(IDSchema):
 class CategorizationPostSchema(ClassificationScoresSchema):
     id = fields.Str(required=True)
 
+class DocumentIndexSchema(Schema):
+    internal_id = fields.Int(required=True)
+    document_id = fields.Int()
+    render_id = fields.Int()
+
+class _NNSchemaElement(DocumentIndexSchema):
+    distance = fields.Number(required=True)
+
+class _CategorizationPredictSchemaElement(DocumentIndexSchema):
+    score = fields.Number(required=True)
+    nn_positive = fields.Nested(_NNSchemaElement)
+    nn_negative = fields.Nested(_NNSchemaElement)
 
 class CategorizationPredictSchema(Schema):
-    prediction = fields.List(fields.Number, required=True)
-    dist_p = fields.List(fields.Number())
-    dist_n = fields.List(fields.Number())
-    ind_p = fields.List(fields.Int())
-    ind_n = fields.List(fields.Int())
+    data = fields.Nested(_CategorizationPredictSchemaElement(), many=True, required=True)
 
 
 class CategorizationParsSchema(Schema):
@@ -155,10 +163,6 @@ class MetricsDupDetectionSchema(Schema):
     f1_same_duplicates = fields.Number()
     mean_duplicates_count = fields.Number()
 
-class DocumentIndexSchema(Schema):
-    internal_id = fields.Int(required=True)
-    document_id = fields.Int()
-    render_id = fields.Int()
 
 class _SearchResponseSchemaElement(DocumentIndexSchema):
     score = fields.Number(required=True)
