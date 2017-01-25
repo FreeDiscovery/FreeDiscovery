@@ -155,6 +155,13 @@ class MetricsDupDetectionSchema(Schema):
     f1_same_duplicates = fields.Number()
     mean_duplicates_count = fields.Number()
 
+class DocumentIndexSchema(Schema):
+    internal_id = fields.Int(required=True)
+    document_id = fields.Int()
+    render_id = fields.Int()
+
+class _SearchResponseSchemaElement(DocumentIndexSchema):
+    score = fields.Number(required=True)
 
 class SearchResponseSchema(Schema):
-    prediction = fields.List(fields.Number, required=True)
+    data = fields.Nested(_SearchResponseSchemaElement(), many=True, required=True)

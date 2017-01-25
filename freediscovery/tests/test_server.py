@@ -64,9 +64,7 @@ def app_notest():
 
 def get_features(app, hashed=True):
     method = V01 + "/feature-extraction/"
-    pars = dict(data_dir=data_dir, n_features=100000,
-                analyzer='word', stop_words='None',
-                ngram_range=[1, 1], use_hashing=hashed)
+    pars = dict(data_dir=data_dir, use_hashing=hashed)
     res = app.post(method, data=pars)
 
     assert res.status_code == 200, method
@@ -668,4 +666,7 @@ def test_api_clustering(app, method):
     res = app.get(method, data=dict(parent_id=parent_id, query="so that I can reserve a room"))
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['prediction'])
+    assert sorted(data.keys()) == ['data']
+    for row in data['data']:
+        assert sorted(row.keys()) == sorted(['score', 'internal_id'])
+    print(data['data'])

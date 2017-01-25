@@ -11,6 +11,7 @@ from flask_restful import abort, Resource
 from webargs import fields as wfields
 from flask_apispec import marshal_with, use_kwargs as use_args
 import numpy as np
+import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, \
                             adjusted_rand_score, adjusted_mutual_info_score, v_measure_score
 import warnings
@@ -604,4 +605,9 @@ class SearchApi(Resource):
 
         query = args['query']
         scores = model.search(query)
-        return {'prediction': scores}
+        scores_pd = pd.DataFrame({'score': scores,
+                                  'internal_id': np.arange(model.fe.n_samples_, dtype='int')})
+
+        res = model.fe.db.render_dict(scores_pd)
+
+        return {'data': res}

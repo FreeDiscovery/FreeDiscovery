@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import os.path
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
+from pandas.util.testing import assert_frame_equal
 import itertools
 import pytest
 import pandas as pd
@@ -72,6 +73,24 @@ def test_search_not_found():
     with pytest.raises(NotFound):
         sres = dbi.search(query)
 
+def test_ingestion_render_dict():
+    md = [{'file_path': '/test',  'document_id': 2},
+          {'file_path': '/test2', 'document_id': 1},
+          {'file_path': '/test3', 'document_id': 7},
+          {'file_path': '/test8', 'document_id': 9},
+          {'file_path': '/test9', 'document_id': 4},
+         ]
+
+    for idx, el in enumerate(md):
+        el['internal_id'] = idx
+
+    dbi = DocumentIndex.from_list(md)
+    res = pd.DataFrame([{'a': 2, 'internal_id': 3},
+                        {'a': 4, 'internal_id': 1}])
+    rd = dbi.render_dict(res)
+    assert_frame_equal(pd.DataFrame(rd),
+                       pd.DataFrame([{'a': 2, 'internal_id': 3, 'document_id': 9},
+                                     {'a': 4, 'internal_id': 1, 'document_id': 1}]))
 
 
 def test_search_document_id():

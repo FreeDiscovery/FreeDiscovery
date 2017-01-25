@@ -133,6 +133,33 @@ class DocumentIndex(object):
         return res.internal_id.values
 
 
+    def render_dict(self, res):
+        """
+        Parameters
+        ----------
+        res : pandas.DataFrame
+            some dataset with additional data that must contain the 'internal_id' key
+
+        Results
+        -------
+        out : dict
+
+        """
+        res = res.set_index('internal_id')
+        db = self.data.set_index('internal_id')
+        base_keys = [key for key in self.data.columns if key != 'file_path']
+
+        out = []
+        for index, row in res.iterrows():
+            row_dict = row.to_dict()
+            db_sel = db.loc[index]
+            row_dict.update(db_sel[base_keys].to_dict())
+            row_dict['internal_id'] = index
+            out.append(row_dict)
+
+        return out
+
+
     @classmethod
     def from_list(cls, metadata):
         """ Create a DocumentIndex from a list of dictionaries, for instance
