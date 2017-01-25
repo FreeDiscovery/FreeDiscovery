@@ -124,6 +124,15 @@ class DocumentIndex(object):
         return res
 
 
+    def _search_filenames(self, filenames):
+        """ A helper function that reproduces the previous behaviour in FeaturesVectorizer"""
+        #filenames_rel = [os.path.relpath(el, self.data_dir) for el in filenames]
+        query = pd.DataFrame(filenames, columns=['file_path'])
+
+        res = self.search(query)
+        return res.internal_id.values
+
+
     @classmethod
     def from_list(cls, metadata):
         """ Create a DocumentIndex from a list of dictionaries, for instance

@@ -81,9 +81,13 @@ class _BaseTextTransformer(object):
                 raise DatasetNotFound('Dataset {} ({}) not found in {}!'.format(
                                             dsid, type(self).__name__, cache_dir))
             pars = self._load_pars()
+            if hasattr(self, '_load_db'):
+                self.db = self._load_db()
         else:
             dsid_dir = None
             pars = None
+            if hasattr(self, '_load_db'):
+                self.db = None
         self.dsid_dir = dsid_dir
         self._pars = pars
 
@@ -138,27 +142,6 @@ class _BaseTextTransformer(object):
         cmod = joblib.load(os.path.join(mid_dir, 'vectorizer'))
         return cmod
 
-
-    def search(self, filenames):
-        """ Return the document ids that correspond to the provided filenames.
-
-        .. Warning: this function is deprecated as of 0.8, use DocumentIndex.search instead
-
-        Parameters
-        ----------
-        filenames : list[str]
-            list of filenames (relatives to the data_dir)
-
-        Returns
-        -------
-        indices : array[int]
-            corresponding list of document id (order is not preserved)
-        """
-        filenames_all = self._pars['filenames']
-        # calculate the indices of the intersection of filenames with filenames_all
-        ind_dict = dict((k,i) for i,k in enumerate(filenames_all))
-        indices = [ ind_dict[x] for x in filenames]
-        return np.array(indices)
 
     @property
     def n_samples_(self):
@@ -281,7 +264,9 @@ class FeatureVectorizer(_BaseTextTransformer):
             db = DocumentIndex.from_list(metadata)
         elif data_dir is not None:
             db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
-        data_dir, filenames, db = db.data_dir, db.filenames, db.data
+        else:
+            raise ValueError
+        data_dir = db.data_dir
 
         self.data_dir = data_dir
         if analyzer not in ['word', 'char', 'char_wb']:
@@ -296,7 +281,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         if n_features is None and use_hashing:
             n_features = 100001 # default size of the hashing table
 
-        filenames_rel = db.file_path.values.tolist()
+        filenames_rel = db.data.file_path.values.tolist()
         self.dsid = dsid = generate_uuid()
         self.dsid_dir = dsid_dir = os.path.join(self.cache_dir, dsid)
 
@@ -316,6 +301,8 @@ class FeatureVectorizer(_BaseTextTransformer):
                }
         self._pars = pars
         joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
+        joblib.dump(db, os.path.join(dsid_dir, 'db'), compress=9)
+        self.db = db
         return dsid
 
     @staticmethod
@@ -460,6 +447,17 @@ class FeatureVectorizer(_BaseTextTransformer):
         res = scipy.sparse.vstack(out)
         return res
 
+    def _load_db(self):
+        """ Load DatasetIndex from disk"""
+        dsid = self.dsid
+        if self.cache_dir is None:
+            raise InitException('cache_dir is None: cannot load from cache!')
+        dsid_dir = os.path.join(self.cache_dir, dsid)
+        if not os.path.exists(dsid_dir):
+            raise DatasetNotFound('dsid {} not found!'.format(dsid))
+        db = joblib.load(os.path.join(dsid_dir, 'db'))
+        return db
+
 
 
 class _FeatureVectorizerSampled(FeatureVectorizer):
@@ -491,7 +489,7 @@ class _FeatureVectorizerSampled(FeatureVectorizer):
             if not isinstance(sampling_filenames, list):
                 raise TypeError('Wrong type {} for sampling_index, must be list'.format(
                             type(sampling_filenames).__name__))
-            self.sampling_index = self.search(self.sampling_filenames)
+            self.sampling_index = self.db._search_filenames(self.sampling_filenames)
         else:
             self.sampling_filenames = None
             self.sampling_index = None

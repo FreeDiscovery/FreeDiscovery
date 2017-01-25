@@ -79,7 +79,7 @@ def test_categorization(use_lsi, method, cv):
         uuid = lsi.mid
 
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
-    index = cat.fe.search(ground_truth.index.values)
+    index = cat.fe.db._search_filenames(ground_truth.index.values)
 
     try:
         coefs, Y_train = cat.train(
@@ -94,7 +94,7 @@ def test_categorization(use_lsi, method, cv):
 
     Y_pred, md = cat.predict()
     X_pred = np.arange(cat.fe.n_samples_, dtype='int')
-    idx_gt = cat.fe.search(ground_truth.index.values)
+    idx_gt = cat.fe.db._search_filenames(ground_truth.index.values)
 
     scores = categorization_score(idx_gt,
                         ground_truth.is_relevant.values,
@@ -147,7 +147,7 @@ def test_pipeline(n_steps):
         raise ValueError
 
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
-    index = cat.fe.search(ground_truth.index.values)
+    index = cat.fe.db._search_filenames(ground_truth.index.values)
 
     coefs, Y_train = cat.train( index, ground_truth.is_relevant.values)
 

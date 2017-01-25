@@ -62,7 +62,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
             parent_id = uuid
             method = 'LogisticRegression'
         cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=parent_id, cv_n_folds=2)
-        index = cat.fe.search(ground_truth.index.values)
+        index = cat.fe.db._search_filenames(ground_truth.index.values)
 
         try:
             coefs, Y_train = cat.train(
@@ -75,7 +75,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
 
         Y_pred, md = cat.predict()
         X_pred = np.arange(cat.fe.n_samples_, dtype='int')
-        idx_gt = cat.fe.search(ground_truth.index.values)
+        idx_gt = cat.fe.db._search_filenames(ground_truth.index.values)
 
         scores = categorization_score(idx_gt,
                             ground_truth.is_relevant.values,
@@ -85,7 +85,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
         cat.delete()
     elif method == 'LSI':
 
-        idx_gt = lsi.fe.search(ground_truth.index.values)
+        idx_gt = lsi.fe.db._search_filenames(ground_truth.index.values)
         idx_all = np.arange(lsi.fe.n_samples_, dtype='int')
 
     elif method == 'DuplicateDetection':

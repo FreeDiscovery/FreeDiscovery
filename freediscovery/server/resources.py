@@ -131,7 +131,7 @@ class FeaturesApiElementIndex(Resource):
     @marshal_with(FeaturesElementIndexSchema())
     def get(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        idx = fe.search(args['filenames'])
+        idx = fe.db._search_filenames(args['filenames'])
         return {'index': list(idx)}
 
 # ============================================================================ # 
@@ -301,7 +301,7 @@ class ModelsApiTest(Resource):
 
         y_res, md = cat.predict()
         d_ref = parse_ground_truth_file( args["ground_truth_filename"])
-        idx_ref = cat.fe.search(d_ref.index.values)
+        idx_ref = cat.fe.db._search_filenames(d_ref.index.values)
         idx_res = np.arange(cat.fe.n_samples_, dtype='int')
         res = categorization_score(idx_ref,
                                    d_ref.is_relevant.values,
