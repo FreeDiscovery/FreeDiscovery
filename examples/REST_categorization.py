@@ -7,6 +7,7 @@ An example to illustrate binary categorizaiton with FreeDiscovery
 
 from __future__ import print_function
 
+import os
 from time import time, sleep
 from multiprocessing import Process
 import requests
@@ -24,21 +25,28 @@ if __name__ == '__main__':
     print(" 0. Load the test dataset")
     url = BASE_URL + '/datasets/{}'.format(dataset_name)
     print(" GET", url)
-    res = requests.get(url).json()
+    res = requests.get(url, json={'return_file_path': True}).json()
 
     # To use a custom dataset, simply specify the following variables
-    data_dir = res['data_dir']
-    seed_filenames = res['seed_filenames']
+    seed_filenames = [os.path.join(res['data_dir'], el) for el in res['seed_filenames']]
     seed_y = res['seed_y']
     ground_truth_file = res['ground_truth_file']  # (optional)
+    file_path_list = res['file_path']
 
+    # create a custom object to ingest 
+
+    dataset_definition = []
+    for idx, fname in enumerate(file_path_list):
+        dataset_definition.append({'document_id': idx + 10000, # define some external document id
+                                  'rendering_id': 0,
+                                  'file_path': fname})
 
     # 1. Feature extraction
 
     print("\n1.a Load dataset and initalize feature extraction")
     url = BASE_URL + '/feature-extraction'
     print(" POST", url)
-    res = requests.post(url, json={'data_dir': data_dir,
+    res = requests.post(url, json={'dataset_definition': dataset_definition,
                                    'use_hashing': True}).json()
 
     dsid = res['id']
@@ -81,10 +89,12 @@ if __name__ == '__main__':
 
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
+    # recompute filenames with respect to the 
+    seed_filenames = [os.path.relpath(el, res['data_dir']) for el in seed_filenames]
 
-    method = BASE_URL + "/feature-extraction/{}/index".format(dsid)
-    res = requests.get(method, data={'filenames': seed_filenames})
-    seed_index = res.json()['index']
+    method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
+    res = requests.get(method, data={'file_path': seed_filenames})
+    seed_index = res.json()['internal_id']
 
 
     # 3. Document categorization with LSI (used for Nearest Neighbors method)

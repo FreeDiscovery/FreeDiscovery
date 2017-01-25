@@ -141,8 +141,9 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
     results = {'base_dir': outdir, 'data_dir': os.path.join(outdir, 'data')}
     if name == 'legal09int':
         results['data_dir'] = results['base_dir']
+    di = DocumentIndex.from_folder(results['data_dir'])
+    results['document_id'] = [idx for idx, _ in enumerate(di.filenames)]
     if return_file_path:
-        di = DocumentIndex.from_folder(results['data_dir'])
         results['file_path'] = di.filenames
 
 
@@ -160,7 +161,8 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
             relevant_files = [el.replace('/', '\\') for el in relevant_files]
             non_relevant_files = [el.replace('/', '\\') for el in non_relevant_files]
 
-        results['seed_filenames'] = relevant_files + non_relevant_files 
+        results['seed_file_path'] = relevant_files + non_relevant_files 
+        results['seed_document_id'] = np.nonzero(np.in1d(di.filenames, relevant_files + non_relevant_files))[0]
         results['seed_y'] = list(np.concatenate((np.ones(len(relevant_files)),
                                             np.zeros(len(non_relevant_files)))).astype('int'))
         results['ground_truth_file'] = ground_truth_file

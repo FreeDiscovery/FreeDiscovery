@@ -112,13 +112,6 @@ if __name__ == '__main__':
 
     print(pd.DataFrame(data).set_index('internal_id'))
 
-    print("\n3.d Test categorization accuracy")
-    print("         using {}".format(ground_truth_file))  
-    url = BASE_URL + '/categorization/{}/test'.format(mid)
-    print("POST", url)
-    res = requests.post(url, json={'ground_truth_filename': ground_truth_file}).json()
-
-    print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
     # 4. Cleaning
     print("\n5.a Delete the extracted features (and LSI decomposition)")

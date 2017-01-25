@@ -150,10 +150,12 @@ class _DocumentIndexNestedSchemaInput(DocumentIndexNestedSchema):
 class FeaturesApiElementMappingNested(Resource):
     @use_args(_DocumentIndexNestedSchemaInput(strict=True))
     @marshal_with(DocumentIndexNestedSchema())
-    def get(self, dsid, **args):
+    def get(self, dsid, return_file_path=False, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        idx = fe.db._search_filenames(args['filenames'])
-        return {'index': list(idx)}
+        query = pd.DataFrame(args)
+        res = fe.db._search_filenames(query)
+        res_repr = fe.db.render_dict(res, return_file_path=return_file_path)
+        return {'data': res_repr}
 
 # ============================================================================ # 
 #                   Email parser                                      #

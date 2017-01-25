@@ -351,10 +351,10 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv):
     index_filenames = filenames[:3] + filenames[3:]
     y = [1, 1, 1,  0, 0, 0]
 
-    method = V01 + "/feature-extraction/{}/index".format(dsid)
-    res = app.get(method, data={'filenames': index_filenames})
+    method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
+    res = app.get(method, data={'file_path': index_filenames})
     assert res.status_code == 200, method
-    index = parse_res(res)['index']
+    index = parse_res(res)['internal_id']
 
 
     pars = {
