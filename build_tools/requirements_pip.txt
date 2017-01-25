@@ -1,5 +1,5 @@
-flask-restful
-marshmallow==2.10.2
-webargs==1.4.0
+flask-restful==0.3.5
+marshmallow==2.12.1
+webargs==1.5.2
 flask_apispec
 git+https://github.com/FreeDiscovery/jwzthreading.git
