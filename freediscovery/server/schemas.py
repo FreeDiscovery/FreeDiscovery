@@ -15,10 +15,13 @@ from marshmallow import Schema, fields
 class DatasetSchema(Schema):
     base_dir = fields.Str(required=True)
     data_dir = fields.Str(required=True)
-    ground_truth_file = fields.Str()
-    seed_filenames = fields.List(fields.Str())
+    ground_truth_y = fields.List(fields.Int())
+    seed_file_path = fields.List(fields.Str())
+    seed_document_id = fields.List(fields.Int())
     seed_y = fields.List(fields.Int())
     file_path = fields.List(fields.Str())
+    document_id = fields.List(fields.Int())
+    
 
 class IDSchema(Schema):
     id = fields.Str(required=True)
@@ -39,7 +42,7 @@ class DocumentIndexNestedSchema(Schema):
     data = fields.Nested(DocumentIndexSchema, many=True)
 
 class _DatasetDefinition(Schema):
-    dataset_id = fields.Int()
+    document_id = fields.Int()
     rendition_id = fields.Int()
     file_path = fields.Str()
 
@@ -164,6 +167,7 @@ class MetricsCategorizationSchema(Schema):
     recall = fields.Number()
     f1 = fields.Number()
     roc_auc = fields.Number()
+    average_precision = fields.Number()
 
 
 class MetricsClusteringSchema(Schema):

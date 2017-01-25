@@ -58,6 +58,10 @@ def test_search_2fields():
     assert_equal(sres.internal_id.values, [1, 2, 1])
     assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path']))
 
+    sres = dbi.search(query, drop=False)
+    assert_equal(sres.internal_id.values, [1, 2, 1])
+    assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path', 'a', 'b']))
+
     query = pd.DataFrame([{'file_path': "0.7.6.28637.txt"},
                           {'file_path': "0.7.47.117435.txt"}])
     sres = dbi.search(query)

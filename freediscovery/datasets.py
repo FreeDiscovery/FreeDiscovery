@@ -13,8 +13,8 @@ import hashlib
 import platform
 
 import numpy as np
+import pandas as pd
 from .base import PipelineFinder
-from .ingestion import DocumentIndex
 
 
 def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
@@ -68,6 +68,8 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
     """
     import tarfile
     import requests
+    from .ingestion import DocumentIndex
+    from .io import parse_ground_truth_file
 
     VALID_MD5SUM = {'treclegal09_2k_subset' : '8090cc55ac18fe5c4d5d53d82fc767a2',
                     'treclegal09_20k_subset': '43a711897ce724e873bdbc47a374a57e',
@@ -155,17 +157,22 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
         with open(os.path.join(outdir,'seed_non_relevant.txt'), 'rt') as fh:
             non_relevant_files = [el.strip() for el in fh.readlines()]
 
-        ground_truth_file = os.path.join(outdir, "ground_truth_file.txt")  
 
         if platform.system() == 'Windows':
             relevant_files = [el.replace('/', '\\') for el in relevant_files]
             non_relevant_files = [el.replace('/', '\\') for el in non_relevant_files]
 
         results['seed_file_path'] = relevant_files + non_relevant_files 
-        results['seed_document_id'] = np.nonzero(np.in1d(di.filenames, relevant_files + non_relevant_files))[0]
+        res = di.search(pd.DataFrame({'file_path': relevant_files + non_relevant_files}))
+        results['seed_document_id'] = res.internal_id.values.tolist() # document_id & internal_id are the same
         results['seed_y'] = list(np.concatenate((np.ones(len(relevant_files)),
                                             np.zeros(len(non_relevant_files)))).astype('int'))
-        results['ground_truth_file'] = ground_truth_file
+
+        ground_truth_file = os.path.join(outdir, "ground_truth_file.txt")  
+        gt = parse_ground_truth_file(ground_truth_file)
+
+        res = di.search(gt, drop=False)
+        results['ground_truth_y'] = res.is_relevant.values.tolist()
 
     return results
 

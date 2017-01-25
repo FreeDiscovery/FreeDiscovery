@@ -77,7 +77,7 @@ class DocumentIndex(object):
         self.data.set_index(index_cols, verify_integrity=True)
         return index_cols
 
-    def search(self, query, strict=True):
+    def search(self, query, strict=True, drop=True):
         """Search the filenames given by some user query
 
         Parameters
@@ -85,9 +85,10 @@ class DocumentIndex(object):
         query : pandas.DataFrame
            a DataFrame with one of the following fields "internal_id",
            ("document_id", "rendition_id"), "document_id", "file_path"
-
         strict : bool
            raise an error if some documents are not found
+        drop : bool
+           drop columns not in the dataset
 
         Returns
         -------
@@ -97,6 +98,8 @@ class DocumentIndex(object):
         """
         if not isinstance(query, pd.DataFrame):
             raise ValueError('The query {} must be a pandas DataFrame')
+        if not query.shape[0]:
+            raise ValueError('Query has zero element!')
 
         index_cols = self._check_index(query.columns)
 
@@ -105,6 +108,7 @@ class DocumentIndex(object):
         res = self.data.merge(query, on=index_cols, how='inner', suffixes=('', '_query'))
         # make sure we preserve the original order in the query
         res.sort_values(by='sort_order', inplace=True)
+        del res['sort_order']
 
         if res.shape[0] != query.shape[0]:
             # some documents were not found
@@ -118,15 +122,15 @@ class DocumentIndex(object):
             else:
                 print('Warning: '+ '\n'.join(msg))
 
-        # ignore all additional columns
-        res = res[self.data.columns]
+        if drop:
+            # ignore all additional columns
+            res = res[self.data.columns]
 
         return res
 
 
     def _search_filenames(self, filenames):
         """ A helper function that reproduces the previous behaviour in FeaturesVectorizer"""
-        #filenames_rel = [os.path.relpath(el, self.data_dir) for el in filenames]
         query = pd.DataFrame(filenames, columns=['file_path'])
 
         res = self.search(query)

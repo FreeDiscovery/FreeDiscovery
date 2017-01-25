@@ -62,7 +62,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
             parent_id = uuid
             method = 'LogisticRegression'
         cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=parent_id, cv_n_folds=2)
-        index = cat.fe.db._search_filenames(ground_truth.index.values)
+        index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
         try:
             coefs, Y_train = cat.train(
@@ -75,7 +75,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
 
         Y_pred, md = cat.predict()
         X_pred = np.arange(cat.fe.n_samples_, dtype='int')
-        idx_gt = cat.fe.db._search_filenames(ground_truth.index.values)
+        idx_gt = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
         scores = categorization_score(idx_gt,
                             ground_truth.is_relevant.values,

@@ -8,6 +8,8 @@ An example to illustrate binary categorizaiton with FreeDiscovery
 from __future__ import print_function
 
 import os
+import sys
+import numpy as np
 from time import time, sleep
 from multiprocessing import Process
 import requests
@@ -28,16 +30,14 @@ if __name__ == '__main__':
     res = requests.get(url, json={'return_file_path': True}).json()
 
     # To use a custom dataset, simply specify the following variables
-    seed_filenames = [os.path.join(res['data_dir'], el) for el in res['seed_filenames']]
+    seed_document_id = res['seed_document_id']
     seed_y = res['seed_y']
-    ground_truth_file = res['ground_truth_file']  # (optional)
-    file_path_list = res['file_path']
+    ground_truth_y = res['ground_truth_y']
 
-    # create a custom object to ingest 
-
+    # create a custom dataset definition for ingestion
     dataset_definition = []
-    for idx, fname in enumerate(file_path_list):
-        dataset_definition.append({'document_id': idx + 10000, # define some external document id
+    for document_id, fname in zip(res['document_id'], res['file_path']):
+        dataset_definition.append({'document_id': document_id,
                                   'rendering_id': 0,
                                   'file_path': fname})
 
@@ -89,11 +89,9 @@ if __name__ == '__main__':
 
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
-    # recompute filenames with respect to the 
-    seed_filenames = [os.path.relpath(el, res['data_dir']) for el in seed_filenames]
 
     method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    res = requests.get(method, data={'file_path': seed_filenames})
+    res = requests.get(method, data={'document_id': seed_document_id})
     seed_index = res.json()['internal_id']
 
 
@@ -179,13 +177,23 @@ if __name__ == '__main__':
         else:
             data = res['data']
 
-        print(pd.DataFrame(data).set_index('internal_id'))
+        df = pd.DataFrame(data).set_index('internal_id')
+        if method == "NearestNeighbor":
+            df = df[['document_id', 'nn_negative__distance', 'nn_negative__document_id',
+                  'nn_positive__distance', 'nn_positive__document_id', 'score']]
 
-        print("\n3.d Test categorization accuracy")
-        print("         using {}".format(ground_truth_file))  
-        url = BASE_URL + '/categorization/{}/test'.format(mid)
-        print("POST", url)
-        res = requests.post(url, json={'ground_truth_filename': ground_truth_file}).json()
+        print(df)
+
+        print("\n3.d Compute the categorization scores")
+        url = BASE_URL + '/metrics/categorization'
+        print(" GET", url)
+        res = requests.get(url, json={'y_true': ground_truth_y,
+                                      'y_pred': df.score.values.tolist(),
+                                     } ).json()
+
+
+
+
 
         print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 

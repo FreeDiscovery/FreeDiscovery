@@ -349,7 +349,7 @@ class ModelsApiTest(Resource):
 
         y_res, md = cat.predict()
         d_ref = parse_ground_truth_file( args["ground_truth_filename"])
-        idx_ref = cat.fe.db._search_filenames(d_ref.index.values)
+        idx_ref = cat.fe.db._search_filenames(d_ref.file_path.values)
         idx_res = np.arange(cat.fe.n_samples_, dtype='int')
         res = categorization_score(idx_ref,
                                    d_ref.is_relevant.values,
@@ -527,31 +527,38 @@ class DupDetectionApiElement(Resource):
 # ============================================================================ #
 _metrics_categorization_api_get_args  = {
     'y_true': wfields.List(wfields.Int(), required=True),
-    'y_pred': wfields.List(wfields.Int(), required=True),
-    'metrics': wfields.List(wfields.Str(), required=True)
+    'y_pred': wfields.List(wfields.Number(), required=True),
+    'metrics': wfields.List(wfields.Str())
 }
 
 class MetricsCategorizationApiElement(Resource):
     @use_args(_metrics_categorization_api_get_args)
     @marshal_with(MetricsCategorizationSchema())
     def get(self, **args):
-        output_metrics = dict()
-        y_true = args['y_true']
-        y_pred = args['y_pred']
-        metrics = args['metrics']
+        output_metrics = {}
+        y_true = np.array(args['y_true'], dtype='int')
+        y_pred = np.array(args['y_pred'], dtype='float')
+        threshold = 0
+        y_pred_b = (y_pred > threshold).astype('int')
+        if 'metrics' in args:
+            metrics = args['metrics']
+        else:
+            metrics = ['precision', 'recall', 'roc_auc', 'f1', 'average_precision']
 
         # wrapping metrics calculations, as for example F1 score can frequently print warnings
         # "F-score is ill defined and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
             if 'precision' in metrics:
-                output_metrics['precision'] = precision_score(y_true, y_pred)
+                output_metrics['precision'] = precision_score(y_true, y_pred_b)
             if 'recall' in metrics:
-                output_metrics['recall'] = recall_score(y_true, y_pred)
+                output_metrics['recall'] = recall_score(y_true, y_pred_b)
             if 'f1' in metrics:
-                output_metrics['f1'] = f1_score(y_true, y_pred)
+                output_metrics['f1'] = f1_score(y_true, y_pred_b)
             if 'roc_auc' in metrics:
                 output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
+            if 'average_precision' in metrics:
+                output_metrics['average_precision'] = roc_auc_score(y_true, y_pred)
         return output_metrics
 
 
