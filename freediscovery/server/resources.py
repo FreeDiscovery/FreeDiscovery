@@ -55,11 +55,12 @@ EPSILON = 1e-3 # small numeric value
 
 class DatasetsApiElement(Resource):
 
+    @use_args({'return_file_path': wfields.Boolean()})
     @marshal_with(DatasetSchema())
-    def get(self, name):
+    def get(self, name, **args):
         from ..datasets import load_dataset
         res = load_dataset(name, self._cache_dir, verbose=True,
-                load_ground_truth=True, verify_checksum=False)
+                load_ground_truth=True, verify_checksum=False, **args)
         return res
 
 

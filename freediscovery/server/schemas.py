@@ -18,6 +18,7 @@ class DatasetSchema(Schema):
     ground_truth_file = fields.Str()
     seed_filenames = fields.List(fields.Str())
     seed_y = fields.List(fields.Int())
+    file_path = fields.List(fields.Str())
 
 class IDSchema(Schema):
     id = fields.Str(required=True)

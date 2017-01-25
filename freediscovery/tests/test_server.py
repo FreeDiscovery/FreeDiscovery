@@ -411,8 +411,13 @@ def test_api_categorization(app, ingestion_method, solver, cv):
 
 @pytest.mark.parametrize("ingestion_method", ['data_dir', "dataset_definition", None])
 def test_api_categorization_ingestion_method(app, ingestion_method):
-    if ingestion_method is not None:
+    
+    if ingestion_method == 'data_dir':
         _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False)
+    elif ingestion_method == 'dataset_definition':
+        # Internal testing doesn't currently support nested dicts cf.
+        # https://github.com/pallets/werkzeug/blob/master/werkzeug/test.py#L233
+        raise SkipTest
     else:
         with pytest.raises(ValueError):
             _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False)

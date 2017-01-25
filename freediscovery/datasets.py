@@ -14,10 +14,12 @@ import platform
 
 import numpy as np
 from .base import PipelineFinder
+from .ingestion import DocumentIndex
 
 
 def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
                  force=False, verbose=True,
+                 return_file_path=False,
                  load_ground_truth=False, verify_checksum=False):
     """ Download a benchmark dataset.
 
@@ -49,6 +51,8 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
     force : bool, default=False
        download again if the dataset already exists.
        Warning: this will remove previously downloaded files!
+    return_file_path : bool, default=False
+       also return a list of all filenames
     load_ground_truth : bool, default=False
        parse the ground truth files present in the dataset
     verbose : bool, default=False
@@ -137,6 +141,10 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
     results = {'base_dir': outdir, 'data_dir': os.path.join(outdir, 'data')}
     if name == 'legal09int':
         results['data_dir'] = results['base_dir']
+    if return_file_path:
+        di = DocumentIndex.from_folder(results['data_dir'])
+        results['file_path'] = di.filenames
+
 
 
     if load_ground_truth and 'treclegal09' in name:
