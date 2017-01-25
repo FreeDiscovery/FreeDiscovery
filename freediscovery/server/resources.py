@@ -152,8 +152,8 @@ class FeaturesApiElementMappingNested(Resource):
     @marshal_with(DocumentIndexNestedSchema())
     def get(self, dsid, return_file_path=False, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        query = pd.DataFrame(args)
-        res = fe.db._search_filenames(query)
+        query = pd.DataFrame(args['data'])
+        res = fe.db.search(query)
         res_repr = fe.db.render_dict(res, return_file_path=return_file_path)
         return {'data': res_repr}
 

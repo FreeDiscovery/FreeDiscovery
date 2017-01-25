@@ -39,7 +39,7 @@ class DocumentIndexListSchema(Schema):
     file_path = fields.List(fields.Str())
 
 class DocumentIndexNestedSchema(Schema):
-    data = fields.Nested(DocumentIndexSchema, many=True)
+    data = fields.Nested(DocumentIndexSchema, many=True, required=True)
 
 class _DatasetDefinition(Schema):
     document_id = fields.Int()
