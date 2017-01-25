@@ -15,7 +15,7 @@ def parse_ground_truth_file(filename):
     Replace '/' by '\' when running in Windows """
     df = pandas.read_csv(filename, sep='[\s\t]+', names=['file_path', 'is_relevant'], engine='python')
     if platform.system() == 'Windows':
-        df.index = df.index.map(lambda path: path.replace('/', '\\'))
+        df.file_path = df.file_path.map(lambda path: path.replace('/', '\\'))
     return df
 
 

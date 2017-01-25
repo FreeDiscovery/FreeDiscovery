@@ -66,14 +66,15 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
     mask = np.in1d(idx, idx_out)
 
     Y_ref = Y_ref[mask_ref]
-    Y = (Y > threshold)[mask]
+    Y = Y[mask]
+    Y_bin = (Y > threshold)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UndefinedMetricWarning)
 
-        m_recall_score = recall_score(Y_ref, Y)
-        m_precision_score = precision_score(Y_ref, Y)
-        m_f1_score = f1_score(Y_ref, Y)
+        m_recall_score = recall_score(Y_ref, Y_bin)
+        m_precision_score = precision_score(Y_ref, Y_bin)
+        m_f1_score = f1_score(Y_ref, Y_bin)
     if len(np.unique(Y)) == 2:
         m_roc_auc = roc_auc_score(Y_ref, Y)
     else:
