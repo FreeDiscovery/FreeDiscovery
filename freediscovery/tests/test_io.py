@@ -15,7 +15,7 @@ def test_parse_ground_truth_file():
     basename = os.path.dirname(__file__)
     filename = os.path.join(basename, "..","data", "ds_001", "ground_truth_file.txt")
     res = parse_ground_truth_file(filename)
-    assert_allclose(res.values[:,0] , [1, 1, 1, 0, 0, 0])
+    assert_allclose(res.is_relevant.values, [1, 1, 1, 0, 0, 0])
 
 
 def test_parse_smart_stemmed():

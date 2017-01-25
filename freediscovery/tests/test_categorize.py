@@ -79,7 +79,7 @@ def test_categorization(use_lsi, method, cv):
         uuid = lsi.mid
 
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
-    index = cat.fe.db._search_filenames(ground_truth.index.values)
+    index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
     try:
         coefs, Y_train = cat.train(
@@ -94,7 +94,7 @@ def test_categorization(use_lsi, method, cv):
 
     Y_pred, md = cat.predict()
     X_pred = np.arange(cat.fe.n_samples_, dtype='int')
-    idx_gt = cat.fe.db._search_filenames(ground_truth.index.values)
+    idx_gt = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
     scores = categorization_score(idx_gt,
                         ground_truth.is_relevant.values,
@@ -147,7 +147,7 @@ def test_pipeline(n_steps):
         raise ValueError
 
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
-    index = cat.fe.db._search_filenames(ground_truth.index.values)
+    index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
     coefs, Y_train = cat.train( index, ground_truth.is_relevant.values)
 
@@ -185,7 +185,7 @@ def test_pipeline(n_steps):
 def test_unique_label():
     """Check that testing works with only one label in the training test"""
     np.random.seed(10)
-    Nshape = ground_truth.index.values.shape
+    Nshape = ground_truth.file_path.values.shape
     is_relevant = np.zeros(Nshape).astype(int)
 
     idx = np.arange(len(is_relevant), dtype='int')

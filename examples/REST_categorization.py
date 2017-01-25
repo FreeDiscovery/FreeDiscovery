@@ -24,21 +24,26 @@ if __name__ == '__main__':
     print(" 0. Load the test dataset")
     url = BASE_URL + '/datasets/{}'.format(dataset_name)
     print(" GET", url)
-    res = requests.get(url).json()
+    res = requests.get(url, json={'return_file_path': True}).json()
 
     # To use a custom dataset, simply specify the following variables
-    data_dir = res['data_dir']
-    seed_filenames = res['seed_filenames']
+    seed_document_id = res['seed_document_id']
     seed_y = res['seed_y']
-    ground_truth_file = res['ground_truth_file']  # (optional)
+    ground_truth_y = res['ground_truth_y']
 
+    # create a custom dataset definition for ingestion
+    dataset_definition = []
+    for document_id, fname in zip(res['document_id'], res['file_path']):
+        dataset_definition.append({'document_id': document_id,
+                                  'rendering_id': 0,
+                                  'file_path': fname})
 
     # 1. Feature extraction
 
     print("\n1.a Load dataset and initalize feature extraction")
     url = BASE_URL + '/feature-extraction'
     print(" POST", url)
-    res = requests.post(url, json={'data_dir': data_dir,
+    res = requests.post(url, json={'dataset_definition': dataset_definition,
                                    'use_hashing': True}).json()
 
     dsid = res['id']
@@ -81,10 +86,10 @@ if __name__ == '__main__':
 
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
-
-    method = BASE_URL + "/feature-extraction/{}/index".format(dsid)
-    res = requests.get(method, data={'filenames': seed_filenames})
-    seed_index = res.json()['index']
+    # this step is not necessary anymore
+    #method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
+    #res = requests.get(method, data={'document_id': seed_document_id})
+    #seed_internal_id = res.json()['internal_id']
 
 
     # 3. Document categorization with LSI (used for Nearest Neighbors method)
@@ -111,6 +116,9 @@ if __name__ == '__main__':
     print("\n3.a. Train the categorization model")
     print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
 
+    seed_index_nested = [{'document_id': internal_id, 'y': y} \
+                                for internal_id, y in zip(seed_document_id, seed_y)]
+
     for method, use_lsi in [('LinearSVC', False),
                             ('NearestNeighbor', True)]:
 
@@ -128,15 +136,14 @@ if __name__ == '__main__':
         print(' Training...')
 
         res = requests.post(url,
-                            json={'index': seed_index,
-                                  'y': seed_y,
-                                  'parent_id': parent_id,
+                            json={'parent_id': parent_id,
+                                  'index_nested': seed_index_nested,
                                   'method': method,  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                                   }).json()
 
         mid = res['id']
         print("     => model id = {}".format(mid))
-        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, F1= {f1:.3f}'.format(**res))
 
         print("\n3.b. Check the parameters used in the categorization model")
         url = BASE_URL + '/categorization/{}'.format(mid)
@@ -169,13 +176,23 @@ if __name__ == '__main__':
         else:
             data = res['data']
 
-        print(pd.DataFrame(data).set_index('internal_id'))
+        df = pd.DataFrame(data).set_index('internal_id')
+        if method == "NearestNeighbor":
+            df = df[['document_id', 'nn_negative__distance', 'nn_negative__document_id',
+                  'nn_positive__distance', 'nn_positive__document_id', 'score']]
 
-        print("\n3.d Test categorization accuracy")
-        print("         using {}".format(ground_truth_file))  
-        url = BASE_URL + '/categorization/{}/test'.format(mid)
-        print("POST", url)
-        res = requests.post(url, json={'ground_truth_filename': ground_truth_file}).json()
+        print(df)
+
+        print("\n3.d Compute the categorization scores")
+        url = BASE_URL + '/metrics/categorization'
+        print(" GET", url)
+        res = requests.get(url, json={'y_true': ground_truth_y,
+                                      'y_pred': df.score.values.tolist(),
+                                     } ).json()
+
+
+
+
 
         print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 

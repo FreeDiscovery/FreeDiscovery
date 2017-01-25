@@ -14,6 +14,7 @@ from numpy.testing import assert_equal, assert_almost_equal
 
 from ..server import fd_app
 from ..utils import _silent
+from ..ingestion import DocumentIndex
 from ..exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
 
@@ -29,6 +30,19 @@ data_dir = os.path.join(data_dir, "..", "data", "ds_001", "raw")
 #                     Helper functions / features
 #
 #=============================================================================#
+
+def _internal2document_id(value):
+    """A custom internal_id to document_id mapping used in tests"""
+    return 2*value + 1
+
+def _document2internal_id(value):
+    """A custom internal_id to document_id mapping used in tests"""
+    return (value - 1)//2
+
+def test_consistent_id_mapping():
+    internal_id = 2
+    document_id = _internal2document_id(internal_id)
+    assert _document2internal_id(document_id) == internal_id
 
 
 def parse_res(res):
@@ -62,9 +76,25 @@ def app_notest():
 #
 #=============================================================================#
 
-def get_features(app, hashed=True):
+def get_features(app, hashed=True, ingestion_method='data_dir'):
     method = V01 + "/feature-extraction/"
-    pars = dict(data_dir=data_dir, use_hashing=hashed)
+    pars = { "use_hashing": hashed}
+    if ingestion_method == 'data_dir':
+        pars["data_dir"] = data_dir
+    elif ingestion_method == 'dataset_definition':
+
+        index = DocumentIndex.from_folder(data_dir)
+        pars["dataset_definition"] = []
+        for idx, file_path in enumerate(index.filenames):
+            row = {'file_path': file_path,
+                   'document_id': _internal2document_id(idx)}
+            pars["dataset_definition"].append(row)
+    elif ingestion_method is None:
+        pass # don't provide data_dir and dataset_definition
+    else:
+        raise NotImplementedError('ingestion_method={} is not implemented')
+
+
     res = app.post(method, data=pars)
 
     assert res.status_code == 200, method
@@ -80,8 +110,9 @@ def get_features(app, hashed=True):
     return dsid, pars
 
 
-def get_features_lsi(app, hashed=True):
-    dsid, pars = get_features(app, hashed=hashed)
+def get_features_lsi(app, hashed=True, ingestion_method='data_dir'):
+    dsid, pars = get_features(app, hashed=hashed,
+                              ingestion_method=ingestion_method)
     lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, data=lsi_pars)
@@ -141,19 +172,32 @@ def test_get_feature_extraction(app):
                  'max_df', 'min_df'])
 
 
-def test_get_search_filenames(app):
+@pytest.mark.parametrize('return_file_path', ['return_file_path', 'dont_return_file_path'])
+def test_get_search_filenames(app, return_file_path):
+
+    return_file_path = (return_file_path == 'return_file_path')
+
     dsid, _ = get_features(app)
 
-    method = V01 + "/feature-extraction/{}/index".format(dsid)
+    method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
     for pars, indices in [
-            ({ 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
-            ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:
+            ({ 'file_path': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
+            ({ 'file_path': ['0.7.6.28638.txt']}, [5])]:
+        if return_file_path:
+            pars['return_file_path'] = True
+        else:
+            pass # default to false
+
 
         res = app.get(method, data=pars)
         assert res.status_code == 200
         data = parse_res(res)
-        assert sorted(data.keys()) ==  sorted(['index'])
-        assert_equal(data['index'], indices)
+        if return_file_path:
+            assert sorted(data.keys()) ==  sorted(['internal_id', 'file_path'])
+        else:
+            assert sorted(data.keys()) ==  sorted(['internal_id'])
+        assert_equal(data['internal_id'], indices)
+
 
 #=============================================================================#
 #
@@ -275,24 +319,25 @@ def test_api_lsi(app):
         assert vals == data[key]
 
 
-_categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",
+_categoriazation_pars = itertools.product(  ['data_dir'],
+                                            ["LinearSVC", "LogisticRegression",
                                             "NearestCentroid", "NearestNeighbor", 'xgboost'],
                                             [0, 1])
 
-_categoriazation_pars = filter(lambda el: not ((el[0].startswith('Nearest') and el[1])),
+_categoriazation_pars = filter(lambda el: not ((el[1].startswith('Nearest') and el[2])),
                                _categoriazation_pars)
 
-@pytest.mark.parametrize("solver, cv", _categoriazation_pars)
-def test_api_categorization(app, solver, cv):
+
+def _api_categorization_wrapper(app, ingestion_method, solver, cv):
 
     if 'CIRCLECI' in os.environ and cv == 1 and solver in ['LinearSVC', 'xgboost']:
         raise SkipTest # Circle CI is too slow and timesout
 
     if solver.startswith('Nearest'):
-        dsid, lsi_id, _ = get_features_lsi(app)
+        dsid, lsi_id, _ = get_features_lsi(app, ingestion_method=ingestion_method)
         parent_id = lsi_id
     else:
-        dsid, _ = get_features(app)
+        dsid, _ = get_features(app, ingestion_method=ingestion_method)
         lsi_id = None
         parent_id = dsid
 
@@ -306,10 +351,10 @@ def test_api_categorization(app, solver, cv):
     index_filenames = filenames[:3] + filenames[3:]
     y = [1, 1, 1,  0, 0, 0]
 
-    method = V01 + "/feature-extraction/{}/index".format(dsid)
-    res = app.get(method, data={'filenames': index_filenames})
+    method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
+    res = app.get(method, data={'file_path': index_filenames})
     assert res.status_code == 200, method
-    index = parse_res(res)['index']
+    index = parse_res(res)['internal_id']
 
 
     pars = {
@@ -371,6 +416,23 @@ def test_api_categorization(app, solver, cv):
     method = V01 + "/categorization/{}".format(mid)
     res = app.delete(method)
     assert res.status_code == 200
+
+@pytest.mark.parametrize("ingestion_method, solver, cv", _categoriazation_pars)
+def test_api_categorization(app, ingestion_method, solver, cv):
+    _api_categorization_wrapper(app, ingestion_method, solver, cv)
+
+@pytest.mark.parametrize("ingestion_method", ['data_dir', "dataset_definition", None])
+def test_api_categorization_ingestion_method(app, ingestion_method):
+    
+    if ingestion_method == 'data_dir':
+        _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False)
+    elif ingestion_method == 'dataset_definition':
+        # Internal testing doesn't currently support nested dicts cf.
+        # https://github.com/pallets/werkzeug/blob/master/werkzeug/test.py#L233
+        raise SkipTest
+    else:
+        with pytest.raises(ValueError):
+            _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False)
 
 #=============================================================================#
 #

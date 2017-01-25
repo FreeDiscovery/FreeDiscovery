@@ -31,8 +31,10 @@ from ..search import _SearchWrapper
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from ..dupdet import _DuplicateDetectionWrapper
 from ..threading import _EmailThreadingWrapper
+from ..exceptions import WrongParameter
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema, FeaturesElementIndexSchema,
+                      FeaturesSchema, DocumentIndexListSchema,
+                      DocumentIndexNestedSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
                       DatasetSchema,
                       LsiParsSchema, LsiPostSchema,
@@ -44,7 +46,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
                       ErrorSchema, DuplicateDetectionSchema,
-                      SearchResponseSchema
+                      SearchResponseSchema, DocumentIndexSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -55,11 +57,12 @@ EPSILON = 1e-3 # small numeric value
 
 class DatasetsApiElement(Resource):
 
+    @use_args({'return_file_path': wfields.Boolean()})
     @marshal_with(DatasetSchema())
-    def get(self, name):
+    def get(self, name, **args):
         from ..datasets import load_dataset
         res = load_dataset(name, self._cache_dir, verbose=True,
-                load_ground_truth=True, verify_checksum=False)
+                load_ground_truth=True, verify_checksum=False, **args)
         return res
 
 
@@ -92,6 +95,9 @@ class FeaturesApi(Resource):
         for key in ['min_df', 'max_df']:
             if key in args and args[key] > 1. + EPSILON: # + eps
                 args[key] = int(args[key])
+
+        if 'dataset_defintion' in args:
+            print(args['dataset_definition'])
 
         fe = FeatureVectorizer(self._cache_dir)
         dsid = fe.preprocess(**args)
@@ -126,14 +132,31 @@ class FeaturesApiElement(Resource):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         fe.delete()
 
-_features_api_index_get_args = {'filenames': wfields.List(wfields.Str(), required=True)}
-class FeaturesApiElementIndex(Resource):
-    @use_args(_features_api_index_get_args)
-    @marshal_with(FeaturesElementIndexSchema())
-    def get(self, dsid, **args):
+class _DocumentIndexListSchemaInput(DocumentIndexListSchema):
+    return_file_path = wfields.Boolean()
+
+class FeaturesApiElementMappingFlat(Resource):
+    @use_args(_DocumentIndexListSchemaInput(strict=True))
+    @marshal_with(DocumentIndexListSchema())
+    def get(self, dsid, return_file_path=False, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        idx = fe.db._search_filenames(args['filenames'])
-        return {'index': list(idx)}
+        query = pd.DataFrame(args)
+        res = fe.db.search(query)
+        res_repr = fe.db.render_list(res, return_file_path=return_file_path)
+        return res_repr
+
+class _DocumentIndexNestedSchemaInput(DocumentIndexNestedSchema):
+    return_file_path = wfields.Boolean()
+
+class FeaturesApiElementMappingNested(Resource):
+    @use_args(_DocumentIndexNestedSchemaInput(strict=True))
+    @marshal_with(DocumentIndexNestedSchema())
+    def get(self, dsid, return_file_path=False, **args):
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        query = pd.DataFrame(args['data'])
+        res = fe.db.search(query)
+        res_repr = fe.db.render_dict(res, return_file_path=return_file_path)
+        return {'data': res_repr}
 
 # ============================================================================ # 
 #                   Email parser                                      #
@@ -209,24 +232,21 @@ class LsiApiElement(Resource):
         pars['parent_id'] = pars['parent_id']
         return pars
 
-_lsi_api_element_predict_post_args = {
-        # Warning this should be changed to wfields.DelimitedList
-        # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'index': wfields.List(wfields.Int(), required=True),
-        'y': wfields.List(wfields.Int(), required=True),
-        }
-
-
 # ============================================================================ # 
 #                  Categorization (ML)
 # ============================================================================ # 
+
+class _CategorizationIndex(DocumentIndexSchema):
+    y = wfields.Int()
+
 
 _models_api_post_args = {
         'parent_id': wfields.Str(required=True),
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'index': wfields.List(wfields.Int(), required=True),
-        'y': wfields.List(wfields.Int(), required=True),
+        'index': wfields.List(wfields.Int()),
+        'y': wfields.List(wfields.Int()),
+        'index_nested': wfields.Nested(_CategorizationIndex, many=True),
         'method': wfields.Str(default='LinearSVC'),
         'cv': wfields.Boolean(missing=False),
         'training_scores': wfields.Boolean(missing=True)
@@ -245,6 +265,19 @@ class ModelsApi(Resource):
     def post(self, **args):
         training_scores = args['training_scores']
         parent_id = args['parent_id']
+        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
+
+        if 'y' in args and 'index' in args:
+            pass
+        elif 'index_nested' in args:
+            query = pd.DataFrame(args['index_nested'])
+            res_q = cat.fe.db.search(query, drop=False)
+            del args['index_nested']
+            args['index'] = res_q.internal_id.values
+            args['y'] = res_q.y.values
+        else:
+            raise WrongParameter("Either 'index_nested' or y and index must be provided!")
+
 
         if args['cv']:
             cv = 'fast'
@@ -252,7 +285,6 @@ class ModelsApi(Resource):
             cv = None
         for key in ['parent_id', 'cv', 'training_scores']:
             del args[key]
-        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
         if training_scores:
@@ -327,7 +359,7 @@ class ModelsApiTest(Resource):
 
         y_res, md = cat.predict()
         d_ref = parse_ground_truth_file( args["ground_truth_filename"])
-        idx_ref = cat.fe.db._search_filenames(d_ref.index.values)
+        idx_ref = cat.fe.db._search_filenames(d_ref.file_path.values)
         idx_res = np.arange(cat.fe.n_samples_, dtype='int')
         res = categorization_score(idx_ref,
                                    d_ref.is_relevant.values,
@@ -505,31 +537,38 @@ class DupDetectionApiElement(Resource):
 # ============================================================================ #
 _metrics_categorization_api_get_args  = {
     'y_true': wfields.List(wfields.Int(), required=True),
-    'y_pred': wfields.List(wfields.Int(), required=True),
-    'metrics': wfields.List(wfields.Str(), required=True)
+    'y_pred': wfields.List(wfields.Number(), required=True),
+    'metrics': wfields.List(wfields.Str())
 }
 
 class MetricsCategorizationApiElement(Resource):
     @use_args(_metrics_categorization_api_get_args)
     @marshal_with(MetricsCategorizationSchema())
     def get(self, **args):
-        output_metrics = dict()
-        y_true = args['y_true']
-        y_pred = args['y_pred']
-        metrics = args['metrics']
+        output_metrics = {}
+        y_true = np.array(args['y_true'], dtype='int')
+        y_pred = np.array(args['y_pred'], dtype='float')
+        threshold = 0
+        y_pred_b = (y_pred > threshold).astype('int')
+        if 'metrics' in args:
+            metrics = args['metrics']
+        else:
+            metrics = ['precision', 'recall', 'roc_auc', 'f1', 'average_precision']
 
         # wrapping metrics calculations, as for example F1 score can frequently print warnings
         # "F-score is ill defined and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
             if 'precision' in metrics:
-                output_metrics['precision'] = precision_score(y_true, y_pred)
+                output_metrics['precision'] = precision_score(y_true, y_pred_b)
             if 'recall' in metrics:
-                output_metrics['recall'] = recall_score(y_true, y_pred)
+                output_metrics['recall'] = recall_score(y_true, y_pred_b)
             if 'f1' in metrics:
-                output_metrics['f1'] = f1_score(y_true, y_pred)
+                output_metrics['f1'] = f1_score(y_true, y_pred_b)
             if 'roc_auc' in metrics:
                 output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
+            if 'average_precision' in metrics:
+                output_metrics['average_precision'] = roc_auc_score(y_true, y_pred)
         return output_metrics
 
 

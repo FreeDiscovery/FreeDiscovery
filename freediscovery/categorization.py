@@ -347,7 +347,7 @@ class _CategorizerWrapper(_BaseWrapper):
         elif method == 'NearestCentroid':
             cmod  = NearestCentroidRanker()
         elif method == 'NearestNeighbor':
-            cmod = NearestNeighborRanker(n_jobs=-1)
+            cmod = NearestNeighborRanker()
         elif method == 'xgboost':
             try:
                 import xgboost as xgb

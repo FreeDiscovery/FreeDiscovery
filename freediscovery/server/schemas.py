@@ -15,16 +15,40 @@ from marshmallow import Schema, fields
 class DatasetSchema(Schema):
     base_dir = fields.Str(required=True)
     data_dir = fields.Str(required=True)
-    ground_truth_file = fields.Str()
-    seed_filenames = fields.List(fields.Str())
+    ground_truth_y = fields.List(fields.Int())
+    seed_file_path = fields.List(fields.Str())
+    seed_document_id = fields.List(fields.Int())
     seed_y = fields.List(fields.Int())
+    file_path = fields.List(fields.Str())
+    document_id = fields.List(fields.Int())
+    
 
 class IDSchema(Schema):
     id = fields.Str(required=True)
 
+class DocumentIndexSchema(Schema):
+    internal_id = fields.Int()
+    document_id = fields.Int()
+    render_id = fields.Int()
+    file_path = fields.Str()
+
+class DocumentIndexListSchema(Schema):
+    internal_id = fields.List(fields.Int())
+    document_id = fields.List(fields.Int())
+    render_id = fields.List(fields.Int())
+    file_path = fields.List(fields.Str())
+
+class DocumentIndexNestedSchema(Schema):
+    data = fields.Nested(DocumentIndexSchema, many=True, required=True)
+
+class _DatasetDefinition(Schema):
+    document_id = fields.Int()
+    rendition_id = fields.Int()
+    file_path = fields.Str()
 
 class FeaturesParsSchema(Schema):
-    data_dir = fields.Str(required=True)
+    data_dir = fields.Str()
+    dataset_definition = fields.Nested(_DatasetDefinition, many=True)
     dir_pattern = fields.Str()
     n_features = fields.Int(missing=100001)
     analyzer = fields.Str(missing='word')
@@ -50,9 +74,6 @@ class FeaturesSchema(FeaturesParsSchema):
     id = fields.Str(required=True)
     filenames = fields.List(fields.Str())
 
-
-class FeaturesElementIndexSchema(Schema):
-    index = fields.List(fields.Int(), required=True)
 
 
 class EmailParserSchema(FeaturesParsSchema):
@@ -83,10 +104,6 @@ class LsiPostSchema(IDSchema):
 class CategorizationPostSchema(ClassificationScoresSchema):
     id = fields.Str(required=True)
 
-class DocumentIndexSchema(Schema):
-    internal_id = fields.Int(required=True)
-    document_id = fields.Int()
-    render_id = fields.Int()
 
 class _NNSchemaElement(DocumentIndexSchema):
     distance = fields.Number(required=True)
@@ -150,6 +167,7 @@ class MetricsCategorizationSchema(Schema):
     recall = fields.Number()
     f1 = fields.Number()
     roc_auc = fields.Number()
+    average_precision = fields.Number()
 
 
 class MetricsClusteringSchema(Schema):

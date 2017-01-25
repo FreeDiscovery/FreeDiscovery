@@ -58,6 +58,10 @@ def test_search_2fields():
     assert_equal(sres.internal_id.values, [1, 2, 1])
     assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path']))
 
+    sres = dbi.search(query, drop=False)
+    assert_equal(sres.internal_id.values, [1, 2, 1])
+    assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path', 'a', 'b']))
+
     query = pd.DataFrame([{'file_path': "0.7.6.28637.txt"},
                           {'file_path': "0.7.47.117435.txt"}])
     sres = dbi.search(query)
@@ -73,7 +77,19 @@ def test_search_not_found():
     with pytest.raises(NotFound):
         sres = dbi.search(query)
 
-def test_ingestion_render_dict():
+@pytest.mark.parametrize('return_file_path', ['return_file_path', 'dont_return_file_path'])
+def test_ingestion_render(return_file_path):
+
+    def _process_results(rd):
+        rd = pd.DataFrame(rd)
+        if return_file_path:
+            assert 'file_path' in rd.columns
+            del rd['file_path']
+        return rd
+
+    # make it a binary variable
+    return_file_path = (return_file_path == 'return_file_path')
+
     md = [{'file_path': '/test',  'document_id': 2},
           {'file_path': '/test2', 'document_id': 1},
           {'file_path': '/test3', 'document_id': 7},
@@ -85,12 +101,31 @@ def test_ingestion_render_dict():
         el['internal_id'] = idx
 
     dbi = DocumentIndex.from_list(md)
-    res = pd.DataFrame([{'a': 2, 'internal_id': 3},
+    query = pd.DataFrame([{'a': 2, 'internal_id': 3},
                         {'a': 4, 'internal_id': 1}])
-    rd = dbi.render_dict(res)
+    res = pd.DataFrame([{'a': 2, 'internal_id': 3, 'document_id': 9},
+                        {'a': 4, 'internal_id': 1, 'document_id': 1}])
+
+    rd = dbi.render_dict(query, return_file_path=return_file_path)
+    rd = _process_results(rd)
+    assert_frame_equal(rd, res)
+    rd = dbi.render_dict(return_file_path=return_file_path)
+    rd = _process_results(rd)
+    assert_frame_equal(rd.loc[[0]],
+            pd.DataFrame([{'internal_id': 0, 'document_id': 2}]))
+    assert len(rd) == len(md)
+
+    rd = dbi.render_list(res, return_file_path=return_file_path)
+    rd = _process_results(rd)
+    assert sorted(rd.keys()) == sorted(['internal_id', 'document_id', 'a'])
     assert_frame_equal(pd.DataFrame(rd),
                        pd.DataFrame([{'a': 2, 'internal_id': 3, 'document_id': 9},
                                      {'a': 4, 'internal_id': 1, 'document_id': 1}]))
+
+
+
+    rd = dbi.render_list()
+    assert sorted(rd.keys()) == sorted(['internal_id', 'document_id'])
 
 
 def test_search_document_id():
@@ -159,13 +194,6 @@ def test_search_document_rendition_id():
 
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [0, 2, 3])
-
-    #query = pd.DataFrame([{'document_id': 0, 'rendition_id': 0},
-    #                      {'document_id': 1, 'rendition_id': 0},
-    #                      {'document_id': 2, 'rendition_id': 0}])
-
-    #sres = dbi.search(query)
-    #assert_equal(sres.internal_id.values, [0, 2, 3])
 
 
 def test_bad_search_document_rendition_id():

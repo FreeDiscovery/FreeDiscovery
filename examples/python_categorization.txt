@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     # To use a custom dataset, simply specify the following variables
     data_dir = ds['data_dir']
-    seed_filenames = ds['seed_filenames']
+    seed_filenames = ds['seed_']
     seed_y = ds['seed_y']
     ground_truth_file = ds['ground_truth_file']  # (optional)
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     uuid = fe.preprocess(**fe_opts)
     uuid, filenames  = fe.transform()
 
-    seed_index = fe.db._search_filenames(seed_filenames)
+    seed_index = fe.db.search(pd.DataFrame({''seed_filenames)
 
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid)
     cat.train(seed_index, seed_y)
