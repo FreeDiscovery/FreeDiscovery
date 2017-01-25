@@ -31,13 +31,106 @@ class DocumentIndex(object):
         self.data = data
         self.filenames = filenames
 
+
+    def _check_index(self, keys=None):
+        """ Given a list of keys check which keys will be used for indexing
+        and whether these keys could be used for an index
+
+        Parameters
+        ----------
+        keys : list
+          one or multiple choices among "internal_id", "document_id", "rendition_id", "file_path".
+          default=["internal_id"]
+        Returns
+        -------
+        index_cols : list
+          a subset of keys that would be used for an index
+        """
+
+        if keys is None:
+            keys = ['internal_id']
+
+        if "internal_id" in keys:
+            index_cols = ['internal_id',]
+        elif "document_id" in keys and \
+             "document_id" in self.data.columns and \
+             "rendition_id" in keys and \
+             "rendition_id" in self.data.columns:
+            index_cols = ['document_id', 'rendition_id']
+        elif "document_id" in keys and \
+             "document_id" in self.data.columns:
+            if self.data.document_id.is_unique:
+                index_cols = ['document_id',]
+            else:
+                raise ValueError('document_id cannot be used as an index, since it has duplicates'
+                                 ' (and rendition_id has duplicates)')
+        elif "file_path" in keys and \
+             "file_path" in self.data.columns:
+            index_cols = ['file_path']
+        else:
+            raise ValueError('The query columns {} cannot be used as an index'.format(list(keys)))
+
+        if len(index_cols) == 1:
+            index_cols = index_cols[0]
+
+        # make sure we can use the selected columns as an index
+        self.data.set_index(index_cols, verify_integrity=True)
+        return index_cols
+
+    def search(self, query, strict=True):
+        """Search the filenames given by some user query
+
+        Parameters
+        ----------
+        query : pandas.DataFrame
+           a DataFrame with one of the following fields "internal_id",
+           ("document_id", "rendition_id"), "document_id", "file_path"
+
+        strict : bool
+           raise an error if some documents are not found
+
+        Returns
+        -------
+        df : pd.DataFrame
+            the response dataframe with fields
+            "internal_id", "file_path" and optionally "document_id" and "rendition_id"
+        """
+        if not isinstance(query, pd.DataFrame):
+            raise ValueError('The query {} must be a pandas DataFrame')
+
+        index_cols = self._check_index(query.columns)
+
+        query['sort_order'] = query.index.values
+
+        res = self.data.merge(query, on=index_cols, how='inner', suffixes=('', '_query'))
+        # make sure we preserve the original order in the query
+        res.sort_values(by='sort_order', inplace=True)
+
+        if res.shape[0] != query.shape[0]:
+            # some documents were not found
+            msg = ['Query elements not found:']
+            for index, row in query.iterrows():
+                if row[index_cols] not in self.data[index_cols].values:
+                    msg.append('   * {}'.format(row.to_dict()))
+
+            if strict:
+                raise NotFound('\n'.join(msg))
+            else:
+                print('Warning: '+ '\n'.join(msg))
+
+        # ignore all additional columns
+        res = res[self.data.columns]
+
+        return res
+
+
     @classmethod
     def from_list(cls, metadata):
         """ Create a DocumentIndex from a list of dictionaries, for instance
         {
-            document_id: 1
-            rendition_id: 4
-            file_path: c:\dev\1.txt
+            document_id: 1,
+            rendition_id: 4,
+            file_path: "c:\dev\1.txt"
         }
 
         Parmaters
@@ -74,6 +167,7 @@ class DocumentIndex(object):
         db = pd.DataFrame(metadata)
 
         return cls(data_dir, db, filenames)
+
 
     @classmethod
     def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None):

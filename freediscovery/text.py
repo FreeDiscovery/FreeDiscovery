@@ -142,6 +142,8 @@ class _BaseTextTransformer(object):
     def search(self, filenames):
         """ Return the document ids that correspond to the provided filenames.
 
+        .. Warning: this function is deprecated as of 0.8, use DocumentIndex.search instead
+
         Parameters
         ----------
         filenames : list[str]
