@@ -1,8 +1,8 @@
 """
-Categorization Example [REST API]
+Data Ingestion Example [REST API]
 ---------------------------------
 
-An example to illustrate binary categorizaiton with FreeDiscovery
+An example illustrating the data ingestion in FreeDiscovery
 """
 
 from __future__ import print_function

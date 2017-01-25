@@ -14,6 +14,7 @@ Datasets
     :toctree: ./generated/
 
     freediscovery.datasets.load_dataset
+    freediscovery.ingestion.DocumentIndex
 
 Parsers
 ---------------
