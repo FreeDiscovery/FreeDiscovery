@@ -145,7 +145,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
     def __init__(self, radius=1.0,
                  algorithm='brute', leaf_size=30, n_jobs=1,
-                 ranking='unsupervised', **kwargs):
+                 ranking='supervised', **kwargs):
 
         # define nearest neighbors search objects for positive and negative samples
         self._mod_p = NearestNeighbors(n_neighbors=1,

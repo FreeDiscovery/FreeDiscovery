@@ -284,7 +284,7 @@ def test_nearest_neighbor_ranker_supervised(ranking):
         # make sure we get the same results as for the KNeighborsClassifier
         assert_equal(y_ref, y_train[idx])
     else:
-        assert_allclose(y_pred, 1 - md['dist_p']/4)
+        assert_allclose(y_pred, 1 - md['dist_p']/2)
         assert_array_equal(idx, md['ind_p'])
 
 def test_nearest_neighbor_ranker_unsupervised():

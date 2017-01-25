@@ -676,4 +676,3 @@ def test_api_clustering(app, method):
     assert sorted(data.keys()) == ['data']
     for row in data['data']:
         assert sorted(row.keys()) == sorted(['score', 'internal_id'])
-    print(data['data'])
