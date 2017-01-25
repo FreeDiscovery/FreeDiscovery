@@ -32,7 +32,8 @@ from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_dup
 from ..dupdet import _DuplicateDetectionWrapper
 from ..threading import _EmailThreadingWrapper
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema, FeaturesElementIndexSchema,
+                      FeaturesSchema, DocumentIndexListSchema,
+                      DocumentIndexNestedSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
                       DatasetSchema,
                       LsiParsSchema, LsiPostSchema,
@@ -130,10 +131,25 @@ class FeaturesApiElement(Resource):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         fe.delete()
 
-_features_api_index_get_args = {'filenames': wfields.List(wfields.Str(), required=True)}
-class FeaturesApiElementIndex(Resource):
-    @use_args(_features_api_index_get_args)
-    @marshal_with(FeaturesElementIndexSchema())
+class _DocumentIndexListSchemaInput(DocumentIndexListSchema):
+    return_file_path = wfields.Boolean()
+
+class FeaturesApiElementMappingFlat(Resource):
+    @use_args(_DocumentIndexListSchemaInput(strict=True))
+    @marshal_with(DocumentIndexListSchema())
+    def get(self, dsid, return_file_path=False, **args):
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        query = pd.DataFrame(args)
+        res = fe.db.search(query)
+        res_repr = fe.db.render_list(res, return_file_path=return_file_path)
+        return res_repr
+
+class _DocumentIndexNestedSchemaInput(DocumentIndexNestedSchema):
+    return_file_path = wfields.Boolean()
+
+class FeaturesApiElementMappingNested(Resource):
+    @use_args(_DocumentIndexNestedSchemaInput(strict=True))
+    @marshal_with(DocumentIndexNestedSchema())
     def get(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         idx = fe.db._search_filenames(args['filenames'])

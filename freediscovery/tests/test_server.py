@@ -172,19 +172,31 @@ def test_get_feature_extraction(app):
                  'max_df', 'min_df'])
 
 
-def test_get_search_filenames(app):
+@pytest.mark.parametrize('return_file_path', ['return_file_path', 'dont_return_file_path'])
+def test_get_search_filenames(app, return_file_path):
+
+    return_file_path = (return_file_path == 'return_file_path')
+
     dsid, _ = get_features(app)
 
-    method = V01 + "/feature-extraction/{}/index".format(dsid)
+    method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
     for pars, indices in [
-            ({ 'filenames': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
-            ({ 'filenames': ['0.7.6.28638.txt']}, [5])]:
+            ({ 'file_path': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
+            ({ 'file_path': ['0.7.6.28638.txt']}, [5])]:
+        if return_file_path:
+            pars['return_file_path'] = True
+        else:
+            pass # default to false
+
 
         res = app.get(method, data=pars)
         assert res.status_code == 200
         data = parse_res(res)
-        assert sorted(data.keys()) ==  sorted(['index'])
-        assert_equal(data['index'], indices)
+        if return_file_path:
+            assert sorted(data.keys()) ==  sorted(['internal_id', 'file_path'])
+        else:
+            assert sorted(data.keys()) ==  sorted(['internal_id'])
+        assert_equal(data['internal_id'], indices)
 
 
 #=============================================================================#

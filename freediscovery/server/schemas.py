@@ -23,6 +23,20 @@ class DatasetSchema(Schema):
 class IDSchema(Schema):
     id = fields.Str(required=True)
 
+class DocumentIndexSchema(Schema):
+    internal_id = fields.Int()
+    document_id = fields.Int()
+    render_id = fields.Int()
+    file_path = fields.Str()
+
+class DocumentIndexListSchema(Schema):
+    internal_id = fields.List(fields.Int())
+    document_id = fields.List(fields.Int())
+    render_id = fields.List(fields.Int())
+    file_path = fields.List(fields.Str())
+
+class DocumentIndexNestedSchema(Schema):
+    data = fields.Nested(DocumentIndexSchema, many=True)
 
 class _DatasetDefinition(Schema):
     dataset_id = fields.Int()
@@ -58,9 +72,6 @@ class FeaturesSchema(FeaturesParsSchema):
     filenames = fields.List(fields.Str())
 
 
-class FeaturesElementIndexSchema(Schema):
-    index = fields.List(fields.Int(), required=True)
-
 
 class EmailParserSchema(FeaturesParsSchema):
     id = fields.Str(required=True)
@@ -90,10 +101,6 @@ class LsiPostSchema(IDSchema):
 class CategorizationPostSchema(ClassificationScoresSchema):
     id = fields.Str(required=True)
 
-class DocumentIndexSchema(Schema):
-    internal_id = fields.Int(required=True)
-    document_id = fields.Int()
-    render_id = fields.Int()
 
 class _NNSchemaElement(DocumentIndexSchema):
     distance = fields.Number(required=True)
