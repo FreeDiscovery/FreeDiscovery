@@ -13,7 +13,8 @@ from flask_apispec import marshal_with, use_kwargs as use_args
 import numpy as np
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, \
-                            adjusted_rand_score, adjusted_mutual_info_score, v_measure_score
+                            adjusted_rand_score, adjusted_mutual_info_score,\
+                            v_measure_score, average_precision_score
 import warnings
 try:  # sklearn v0.17
     from sklearn.exceptions import UndefinedMetricWarning
@@ -559,16 +560,15 @@ class MetricsCategorizationApiElement(Resource):
         # "F-score is ill defined and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
-            if 'precision' in metrics:
-                output_metrics['precision'] = precision_score(y_true, y_pred_b)
-            if 'recall' in metrics:
-                output_metrics['recall'] = recall_score(y_true, y_pred_b)
-            if 'f1' in metrics:
-                output_metrics['f1'] = f1_score(y_true, y_pred_b)
-            if 'roc_auc' in metrics:
-                output_metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
-            if 'average_precision' in metrics:
-                output_metrics['average_precision'] = roc_auc_score(y_true, y_pred)
+            for func, y_targ in [(precision_score, y_pred_b),
+                                 (recall_score, y_pred_b),
+                                 (f1_score, y_pred_b),
+                                 (roc_auc_score, y_pred),
+                                 (average_precision_score, y_pred)]:
+                name = func.__name__.replace('_score', '')
+                if name in metrics:
+                    output_metrics[name] = func(y_true, y_targ)
+
         return output_metrics
 
 
@@ -590,9 +590,9 @@ class MetricsClusteringApiElement(Resource):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
             if 'adjusted_rand' in metrics:
-               output_metrics['adjusted_rand'] = adjusted_rand_score(labels_true, labels_pred)
+                output_metrics['adjusted_rand'] = adjusted_rand_score(labels_true, labels_pred)
             if 'adjusted_mutual_info' in metrics:
-               output_metrics['adjusted_mutual_info'] = adjusted_mutual_info_score(labels_true, labels_pred)
+                output_metrics['adjusted_mutual_info'] = adjusted_mutual_info_score(labels_true, labels_pred)
             if 'v_measure' in metrics:
                 output_metrics['v_measure'] = v_measure_score(labels_true, labels_pred)
         return output_metrics
@@ -612,10 +612,10 @@ class MetricsDupDetectionApiElement(Resource):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
             if 'ratio_duplicates' in metrics:
-               output_metrics['ratio_duplicates'] = \
+                output_metrics['ratio_duplicates'] = \
                    ratio_duplicates_score(np.array(labels_true), np.array(labels_pred))
             if 'f1_same_duplicates' in metrics:
-               output_metrics['f1_same_duplicates'] = \
+                output_metrics['f1_same_duplicates'] = \
                    f1_same_duplicates_score(np.array(labels_true), np.array(labels_pred))
             if 'mean_duplicates_count' in metrics:
                 output_metrics['mean_duplicates_count'] = \
