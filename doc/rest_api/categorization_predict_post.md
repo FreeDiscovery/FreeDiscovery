@@ -7,4 +7,16 @@ Predict document categorization with a previously trained model
 
  * **Success Response**: `HTTP 200`
 
-        {"prediction": <list[int]>}
+        {"data" : [
+                    {"internal_id": <int> , "document_id": <int>,
+                     "rendition_id": <int>, "score": <float>,
+                     "nn_positive": {"internal_id": <int> ,
+                                     "document_id": <int>,
+                                     "rendition_id": <int>,
+                                     "distane": <float>
+                                    },
+                     "nn_negative": {...}
+                    },
+                    {...}
+                   ]
+         }

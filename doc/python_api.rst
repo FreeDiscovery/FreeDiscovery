@@ -14,6 +14,7 @@ Datasets
     :toctree: ./generated/
 
     freediscovery.datasets.load_dataset
+    freediscovery.ingestion.DocumentIndex
 
 Parsers
 ---------------
@@ -89,9 +90,18 @@ Tools
 
     freediscovery.base._BaseWrapper
     freediscovery.pipeline.PipelineFinder
-    freediscovery.io.parse_ground_truth_file
     freediscovery.utils.generate_uuid
     freediscovery.utils.setup_model
+
+
+IO
+--
+
+.. autosummary::
+    :toctree: ./generated/
+
+    freediscovery.io.parse_ground_truth_file
+    freediscovery.io.parse_rcv1_smart_tokens
 
 Metrics
 -------

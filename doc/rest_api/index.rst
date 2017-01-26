@@ -3,7 +3,6 @@ REST API Reference
 
 This REST API allows to use FreeDiscovery from any supported programming language. 
 
-Following resources are defined,
 
 Load Benchmark Dataset
 ----------------------
@@ -26,14 +25,15 @@ Parsers
 Feature Extraction 
 ------------------
 
-======================================================================================  ======  ==========================================================
-`/api/v0/feature-extraction/ <./feature_extraction_post.html>`_                         POST    Load a dataset and initialize feature extraction
-`/api/v0/feature-extraction/ <./feature_extraction_get.html>`_                          GET     List processed datasets
-`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_post.html>`_     POST    Run feature extraction on a dataset
-`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_get.html>`_      GET     Load extracted features (and obtain the processing status)
-`/api/v0/feature-extraction/<dataset-id>/index <./feature_extraction_index_get.html>`_  GET     Query document index for a list of filenames
-`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_delete.html>`_           DELETE  Delete a processed dataset
-======================================================================================  ======  ==========================================================
+====================================================================================================   ======  ==========================================================
+`/api/v0/feature-extraction/ <./feature_extraction_post.html>`_                                        POST    Load a dataset and initialize feature extraction
+`/api/v0/feature-extraction/ <./feature_extraction_get.html>`_                                         GET     List processed datasets
+`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_post.html>`_                    POST    Run feature extraction on a dataset
+`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_element_get.html>`_                     GET     Load extracted features (and obtain the processing status)
+`/api/v0/feature-extraction/<dataset-id>/id-mapping/flat <./feature_extraction_id_map_flat.html>`_     GET     Compute correspondence between id fields (flat)
+`/api/v0/feature-extraction/<dataset-id>/id-mapping/nested <./feature_extraction_id_map_nest.html>`_   GET     Compute correspondence between id fields (nested)
+`/api/v0/feature-extraction/<dataset-id> <./feature_extraction_delete.html>`_                          DELETE  Delete a processed dataset
+====================================================================================================   ======  ==========================================================
 
 
 Latent Semantic Indexing (LSI)
@@ -51,7 +51,6 @@ Document Categorizaiton
 =================================================================================  =======  =========================================================
 `/api/v0/categorization/ <./categorization_post.html>`_                            POST     Build the ML categorization model
 `/api/v0/categorization/<model-id>/predict <./categorization_predict_post.html>`_  POST     Categorize documents using different ML algorithms
-`/api/v0/categorization/<model-id>/test <./categorization_test_post.html>`_        POST     Test categorization accuracy
 `/api/v0/categorization/<model-id> <./categorization_element_get.html>`_           GET      Load categorization model parameters
 `/api/v0/categorization/<model-id> <./categorization_element_delete.html>`_        DELETE   Delete the categorization model
 =================================================================================  =======  =========================================================

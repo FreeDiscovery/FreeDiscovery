@@ -203,7 +203,7 @@ class FeatureVectorizer(_BaseTextTransformer):
 
     def preprocess(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
             dataset_definition=None, n_features=None,
-            chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words='None',
+            chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words=None,
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
             norm='l2', min_df=0.0, max_df=1.0):
         """Initalize the features extraction.
@@ -275,7 +275,7 @@ class FeatureVectorizer(_BaseTextTransformer):
             raise WrongParameter('not a valid input ngram_range={}: should be a list or a typle!'.format(ngram_range))
         if not len(ngram_range) == 2:
             raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
-        if stop_words not in ['None', 'english', 'english_alphanumeric']:
+        if stop_words not in [None, 'english', 'english_alphanumeric']:
             raise WrongParameter('stop_words')
 
         if n_features is None and use_hashing:
@@ -310,7 +310,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
         import string
         from itertools import product
-        if stop_words in ['None']:
+        if stop_words in [None]:
             return None
         elif stop_words == 'english':
             return stop_words

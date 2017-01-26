@@ -6,7 +6,14 @@ Perform document search (if `dataset_id` is provided) or a semantic search (if `
  * **Method**: `GET` **URL Params**: None
  * **Data Params**: 
     - `parent_id`: `dataset_id` or `lsi_id`
+    - `query`: the text of the query
 
  * **Success Response**: `HTTP 200`
     
-        {"prediction": <list[float]> }
+        {"data" : [
+                    {"internal_id": <int> , "document_id": <int>,
+                     "rendition_id": <int>, "score": <float>,
+                    }
+                     {...}
+                   ]
+         }
