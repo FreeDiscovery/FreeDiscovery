@@ -2,7 +2,7 @@
 
 ## Version 0.8
 
-**In developpement**
+**Feb. 25, 2017**
 
 ### New features  
 

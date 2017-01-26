@@ -25,6 +25,6 @@ The first release is expected for January 1, 2017, but we would very much apprec
 For more information see the documentation and API Reference,
 
 - development version [``master`` branch | `documentation <https://freediscovery.github.io/doc/dev/>`_ ].
-- stable version 0.7 [``0.7.X`` branch | `documentation <https://freediscovery.github.io/doc/0.7/>`_ ].
+- stable version 0.8 [``0.8.X`` branch | `documentation <https://freediscovery.github.io/doc/stable/>`_ ].
 
 FreeDiscovery is released under the 3-clause BSD licence.
