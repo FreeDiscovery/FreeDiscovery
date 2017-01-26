@@ -1,0 +1,37 @@
+# Data ingestion
+
+
+## Format of processed files
+
+FreeDiscovery can process document collections, where files are stored within a folder hierarchy, with the assumption that each separate file corresponds to a document.
+
+For ingesting a custom dataset, it is necessary is to place the data collection on the FreeDiscovery server (or within the folder mounted inside the Docker container) and provide either the name of the folder where the data is located (`data_dir`) or individual paths to every file in the collection (`file_path`).
+
+
+**Note:** the `data_dir` and `file_path` should be absolute paths.
+
+
+## Document indexing 
+
+Each document in the collection is given a unique numerical `internal_id` that is used to identify documents. In addition, the following fields can also be used for indexing,
+
+ * `file_path`: the path to the file relative to the `data_dir`. Note that when FreeDiscovery is provided with a list of `file_path`, the `data_dir` will be recomputed as the longest common path (and `file_path` will be changed accordingly).
+ * `document_id`: an external numeric document id provided in the `POST /api/v0/feature-extraction/<id>` step
+ * `document_id` together with a `rendition_id`, where the latter is also provided in the `POST /api/v0/feature-extraction/<id>` processing step
+
+To use a field (or a group of fields) as a index, it must be unique, meaning that duplicates are not supported. The only field that is unique by construction is `internal_id`, all the rest being user provided. Additional information regarding data ingestion and indexing can be found in the [`REST_data_ingestion`](`../examples/REST_data_ingestion.html) example. The main API endpoints that allow mapping between different fields are,
+ * [`POST /api/v0/feature-extraction/<id>/id-mapping/flat`](../rest_api/feature_extraction_id_map_flat.html)
+ * and [`POST /api/v0/feature-extraction/<id>/id-mapping/nested`](../rest_api/feature_extraction_id_map_nested.html)
+the training of the categorization model also uses a similar mechanism to identify training set documents.
+
+**Note:** the different fields above can always be associated to the processed documents, however attempting to index (e.g. select) a subset of documents using a field (or a group of fields) with duplicates will result in an error.
+
+## Sample datasets
+
+A [few sample datasets](../rest_api/dataset_get.html) (subsets of the TREC Legal 2009 collection) can be automatically downloaded by FreeDiscovery with the following command,
+```
+GET /api/v0/dataset/<dataset-name>
+
+```
+These datasets are in particular used in [the examples](../examples/index.html) and contain the ground truth classification labels.
+
