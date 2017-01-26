@@ -32,7 +32,7 @@ then git clone "git@github.com:FreeDiscovery/"$DOC_REPO".git";
 fi
 cd $DOC_REPO
 git checkout master #$CIRCLE_BRANCH
-git reset --hard origin/$CIRCLE_BRANCH
+#git reset --hard origin/$CIRCLE_BRANCH
 git rm -rf doc/$dir/ && rm -rf doc/$dir/
 mkdir -p doc
 cp -R $HOME/FreeDiscovery/doc/_build/html doc/$dir
