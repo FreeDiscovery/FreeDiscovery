@@ -652,12 +652,13 @@ def test_exception_handling(app_notest):
 
 
 @pytest.mark.parametrize('metrics',
-                         itertools.combinations(['precision', 'recall', 'f1', 'roc_auc'], 3))
+                         itertools.combinations(['precision', 'recall', 'f1',
+                                                 'roc_auc', 'average_precision'], 3))
 def test_categorization_metrics_get(app, metrics):
     metrics = list(metrics)
     url = V01 + '/metrics/categorization'
-    y_true = [0, 0, 0, 1, 1, 0, 1, 0]
-    y_pred = [0, 0, 1, 1, 1, 0, 1, 1]
+    y_true = [0, 0, 0, 1, 1, 0, 1, 0, 1]
+    y_pred = [0.1, 0, 1, 1, 1, 0, 1, 1, 1]
 
     pars = {'y_true': y_true, 'y_pred': y_pred, 'metrics': metrics}
     res = app.get(url, data=pars)
@@ -665,14 +666,10 @@ def test_categorization_metrics_get(app, metrics):
 
     data = parse_res(res)
     assert sorted(data.keys()) == sorted(metrics)
-    if 'precision' in metrics:
-        assert_almost_equal(data['precision'], 0.6)
-    if 'recall' in metrics:
-        assert_almost_equal(data['recall'], 1.0)
-    if 'f1' in metrics:
-        assert_almost_equal(data['f1'], 0.75)
-    if 'roc_auc' in metrics:
-        assert_almost_equal(data['roc_auc'], 0.8)
+    for key in metrics:
+        assert data[key] > 0.5
+        assert data[key] <= 1.0
+
 
 
 @pytest.mark.parametrize('metrics',
