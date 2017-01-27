@@ -99,7 +99,7 @@ sphinx_gallery_conf = {
 
 # General information about the project.
 project = 'FreeDiscovery'
-copyright = '2016, Grossman Labs LLC'
+copyright = '2016 - 2017, Grossman Labs LLC'
 author = 'Grossman Labs LLC'
 
 # The version info for the project you're documenting, acts as replacement for
