@@ -1,5 +1,20 @@
 # Release history
 
+## Version 0.9
+
+**In developpement**
+
+### New features  
+
+
+
+### Enhancements
+ 
+
+### API Changes
+ 
+
+
 ## Version 0.8
 
 **Feb. 25, 2017**
