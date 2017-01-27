@@ -401,23 +401,6 @@ class FeatureVectorizer(_BaseTextTransformer):
         _touch(os.path.join(dsid_dir, 'processing_finished'))
         return dsid, filenames_base
 
-    def query_features(self, indices, n_top_words=10):
-        """ Query the features with most weight"""
-
-        # this should raise a warning when used with wrong weights
-        X = joblib.load(os.path.join(self.dsid_dir, 'features'))
-        X = X[indices]
-
-        centroid = X.sum(axis=0).view(type=np.ndarray)[0] / len(indices)
-        order_centroid = centroid.argsort()[::-1]
-        terms = self.vect.get_feature_names()
-
-        out = []
-        for ridx, idx in enumerate(order_centroid):
-            if ridx >= n_top_words:
-                break
-            out.append(terms[idx])
-        return out
 
     @property
     def n_features_(self):
@@ -433,6 +416,23 @@ class FeatureVectorizer(_BaseTextTransformer):
             return vect.named_steps['hashingvectorizer'].get_params()['n_features']
         else:
             raise ValueError
+
+    def query_features(self, indices, n_top_words=10, remove_stop_words=False):
+        """ Query the features with most weight
+
+        Parameters
+        ----------
+        indices : list or ndarray
+          indices for the subcluster
+        n_top_words : int
+          the number of workds to return
+        remove_stop_words : bool
+          remove stop words
+        """
+        from .utils import _query_features
+
+        X = joblib.load(os.path.join(self.dsid_dir, 'features'))
+        return _query_features(self.vect, X, indices, n_top_words, remove_stop_words)
 
 
     def _aggregate_features(self):

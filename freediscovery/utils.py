@@ -122,3 +122,39 @@ def setup_model(base_path):
         os.remove(mid_dir)  # removing the old folder nevertheless
     os.mkdir(mid_dir)
     return mid, mid_dir
+
+
+def _query_features(vect, X, indices, n_top_words=10, remove_stop_words=False):
+    """ Query the features with most weight
+
+    Parameters
+    ----------
+    vect : TfidfVectorizer
+       the vectorizer object
+    X : ndarray
+       the document term tfidf array
+    indices : list or ndarray
+      indices for the subcluster
+    n_top_words : int
+      the number of workds to return
+    remove_stop_words : bool
+      remove stop words
+    """
+    from .cluster.base import select_top_words
+
+    # this should raise a warning when used with wrong weights
+    X = X[indices]
+
+    centroid = X.sum(axis=0).view(type=np.ndarray)[0] / len(indices)
+    order_centroid = centroid.argsort()[::-1]
+    terms = vect.get_feature_names()
+
+    out = []
+    for ridx, idx in enumerate(order_centroid):
+        if len(out) >= n_top_words:
+            break
+        if remove_stop_words:
+            out += select_top_words([terms[idx]])
+        else:
+            out.append(terms[idx])
+    return out

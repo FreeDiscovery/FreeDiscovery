@@ -27,6 +27,7 @@ def select_top_words(word_list, n=10):
     """ Filter out cluster term names"""
     import re
     from nltk.stem.porter import PorterStemmer
+    from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
     st = PorterStemmer()
     out_st = []
     out = []
@@ -37,6 +38,7 @@ def select_top_words(word_list, n=10):
                 re.match('[^a-zA-Z0-9]', word_st) or\
                         word in COMMON_FIRST_NAMES or \
                         word in CUSTOM_STOP_WORDS or\
+                        word in ENGLISH_STOP_WORDS or \
                         word_st in out_st: # ignore stemming duplicate
             continue
         out_st.append(word_st)
