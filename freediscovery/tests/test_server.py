@@ -266,13 +266,19 @@ def test_api_lsi(app):
             )
     assert res.status_code == 200
     data = parse_res(res)  # TODO unused variable
-
+    
     method = V01 + "/lsi/{}".format(lid)
     res = app.get(method)
     assert res.status_code == 200
     data = parse_res(res)
     for key, vals in lsi_pars.items():
         assert vals == data[key]
+
+    assert sorted(data.keys()) == \
+            sorted(["n_components", "parent_id"])
+    
+    for key in data.keys():
+        assert data[key] == lsi_pars[key]
 
 
 _categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",
