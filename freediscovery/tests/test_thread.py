@@ -8,7 +8,7 @@ from __future__ import print_function
 import os.path
 
 from freediscovery.parsers import EmailParser
-from freediscovery.threading import _EmailThreadingWrapper
+from freediscovery.email_threading import _EmailThreadingWrapper
 from .run_suite import check_cache
 from itertools import groupby
 
