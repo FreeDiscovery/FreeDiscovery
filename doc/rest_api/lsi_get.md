@@ -4,3 +4,5 @@
  * **Method**: `GET`,  **URL Params**: None
  * **Success Response**: `HTTP 200`
 
+        {"n_components": <int>,
+         "parent_id": <str> }
