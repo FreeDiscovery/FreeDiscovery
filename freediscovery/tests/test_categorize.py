@@ -116,6 +116,23 @@ def test_categorization(use_lsi, method, cv):
     assert_allclose(scores['recall'], 1, rtol=0.68)
     cat.delete()
 
+def test_explain_categorization():
+    from freediscovery.categorization import explain_binary_categorization
+
+    uuid = vect_uuid
+
+    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
+    index = cat.fe.db._search_filenames(ground_truth.file_path.values)
+
+    model, _ = cat.train(index,
+                         ground_truth.is_relevant.values,
+                         method='LogisticRegression')
+    _, X = cat.fe.load()
+    vect = cat.fe._load_model()
+
+    weights = explain_binary_categorization(model, vect.vocabulary_, X[0, :])
+    assert len(weights.keys()) < len(vect.vocabulary_) # not all vocabulary keys are returned
+
 
 @pytest.mark.parametrize('batch_size', [1, 101, 100])
 def test_nn_chunking(batch_size):
