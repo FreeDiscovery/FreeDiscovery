@@ -724,7 +724,7 @@ def test_dupdetection_metrics_get(app, metrics):
 
 
 @pytest.mark.parametrize("method", ['regular', 'semantic'])
-def test_api_clustering(app, method):
+def test_api_search(app, method):
 
     if method == 'regular':
         dsid, lsi_id, _ = get_features_lsi(app, hashed=False)

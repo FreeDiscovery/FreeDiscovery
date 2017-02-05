@@ -7,7 +7,8 @@ from __future__ import print_function
 import os.path
 
 from flask import Flask
-from flask_restful import Api, Resource
+#from flask_restful import Api, Resource
+from flask_apispec import FlaskApiSpec
 from flask import jsonify
 
 from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementMappingFlat,
@@ -27,13 +28,13 @@ from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementMappi
                         )
 
 
-class CatchAll(Resource):
-
-    def get(self, url):
-        print("accessing", url)
-
-    def post(self, url):
-        print("accessing", url)
+#class CatchAll(Resource):
+#
+#    def get(self, url):
+#        print("accessing", url)
+#
+#    def post(self, url):
+#        print("accessing", url)
 
 
 def fd_app(cache_dir):
@@ -42,7 +43,9 @@ def fd_app(cache_dir):
     if not os.path.exists(cache_dir):
         raise ValueError('Cache_dir {} does not exist!'.format(cache_dir))
     app = Flask('freediscovery_api')
-    api = Api(app)
+    app.url_map.strict_slashes = False
+
+    docs = FlaskApiSpec(app)
     #app.config['DEBUG'] = False
 
 
@@ -79,7 +82,12 @@ def fd_app(cache_dir):
                              ]:
         # monkeypatching, not great
         resource_el._cache_dir = cache_dir
-        api.add_resource(resource_el, '/api/v0' + url, strict_slashes=False)
+        resource_el.methods = ['GET', 'POST', 'DELETE']
+        #api.add_resource(resource_el, '/api/v0' + url, strict_slashes=False)
+
+        ressource_name = resource_el.__name__
+        app.add_url_rule('/api/v0' + url, view_func=resource_el.as_view(ressource_name))
+        docs.register(resource_el, endpoint=ressource_name)
 
     @app.errorhandler(500)
     def handle_error(error):
@@ -98,6 +106,13 @@ def fd_app(cache_dir):
     def handle_400_error(error):
         response = jsonify({"message": str(error)})
         response.status_code = 400
+        return response
+
+    @app.errorhandler(422)
+    def handle_422_error(error):
+        # marshmallow error
+        response = jsonify(error.data)
+        response.status_code = 422
         return response
 
     return app
