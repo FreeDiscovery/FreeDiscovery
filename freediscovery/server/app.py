@@ -7,9 +7,10 @@ from __future__ import print_function
 import os.path
 
 from flask import Flask
-#from flask_restful import Api, Resource
-from flask_apispec import FlaskApiSpec
 from flask import jsonify
+from flask_apispec import FlaskApiSpec
+
+from apispec import APISpec
 
 from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementMappingFlat,
                         FeaturesApiElementMappingNested,
@@ -44,8 +45,14 @@ def fd_app(cache_dir):
         raise ValueError('Cache_dir {} does not exist!'.format(cache_dir))
     app = Flask('freediscovery_api')
     app.url_map.strict_slashes = False
+    app.config.update(
+         {'APISPEC_SPEC': APISpec(title='FreeDiscovery',
+                                  version='v0',
+                                  plugins=['apispec.ext.marshmallow']),
+          'APISPEC_SWAGGER_URL': '/swagger/'})
 
     docs = FlaskApiSpec(app)
+
     #app.config['DEBUG'] = False
 
 
@@ -87,13 +94,17 @@ def fd_app(cache_dir):
 
         ressource_name = resource_el.__name__
         app.add_url_rule('/api/v0' + url, view_func=resource_el.as_view(ressource_name))
-        docs.register(resource_el, endpoint=ressource_name)
+        if ressource_name not in [ "ModelsApi", "EmailThreadingApi" ]:
+            # the above two cases fail for some reason
+            docs.register(resource_el, endpoint=ressource_name)
+
+
 
     @app.errorhandler(500)
     def handle_error(error):
         #response = jsonify(error.to_dict())
-        response = jsonify({'message': 'help'})
-        response.status_code = error.status_code
+        response = jsonify({'message': str(error)})
+        response.status_code = 500
         return response
 
     @app.errorhandler(404)
