@@ -39,7 +39,7 @@ html = '<span style="background-color:red;"> test</span>'
 if 'CI' in os.environ:
     # rendering example in sphinx-gallery
     # a hack to render HTML
-    with open('../doc/examples/out.html', 'wt') as fh:
+    with open(os.path.join('..', 'doc', 'examples', 'out.html'), 'wt') as fh:
         fh.write(html)
 
     ####################################
