@@ -5,7 +5,8 @@ Initialize the feature extraction on a document collection.
  * **URL**: `/api/v0/feature-extraction/`
  * **Method**: `POST`,                **URL Params**: None
  * **Data Params**: (following the [sklearn.feature_extraction.text.HashingVectorizer](http://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html) API)
-    - `data_dir`: [required] relative path to the directory with the input files 
+    - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
+    - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.
     - `n_features`: [optional] number of features (overlapping character/word n-grams that are hashed). 
                     n_features refers to the number of buckets in the hash.  The larger the number, the fewer collisions.   (default: 1100000)
     - `analyzer`: 'word', 'char', 'char_wb'
