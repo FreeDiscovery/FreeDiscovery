@@ -7,9 +7,10 @@ from __future__ import print_function
 import os
 from glob import glob
 
-from flask_restful import abort, Resource
+#from flask_restful import Resource
 from webargs import fields as wfields
-from flask_apispec import marshal_with, use_kwargs as use_args
+from flask_apispec import (marshal_with, use_kwargs as use_args,
+                           MethodResource as Resource)
 import numpy as np
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, \
@@ -51,6 +52,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       )
 
 EPSILON = 1e-3 # small numeric value
+
+
 
 # ============================================================================ # 
 #                         Datasets download                                    #

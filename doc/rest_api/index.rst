@@ -3,6 +3,13 @@ REST API Reference
 
 This REST API allows to use FreeDiscovery from any supported programming language. 
 
+A manually updated REST API specification listed below. 
+
+FreeDiscovery also generates,
+  * an OpenAPI / Swagger API specification accessible at `/swagger/`
+  * a Swagger User interface from the generated specification at `/swagger-ui/`
+(though the generation of REST API documentation is still experimental).
+
 
 Load Benchmark Dataset
 ----------------------
