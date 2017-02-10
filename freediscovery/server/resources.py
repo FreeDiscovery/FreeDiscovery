@@ -48,7 +48,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
                       ErrorSchema, DuplicateDetectionSchema,
-                      SearchResponseSchema, DocumentIndexSchema
+                      SearchResponseSchema, DocumentIndexSchema,
+                      EmptySchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -132,9 +133,11 @@ class FeaturesApiElement(Resource):
         dsid, _ = fe.transform()
         return {'id': dsid}
 
+    @marshal_with(EmptySchema())
     def delete(self, dsid):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         fe.delete()
+        return {}
 
 class _DocumentIndexListSchemaInput(DocumentIndexListSchema):
     return_file_path = wfields.Boolean()
@@ -187,9 +190,11 @@ class EmailParserApiElement(Resource):
         out = fe.get_params()
         return out
 
+    @marshal_with(EmptySchema())
     def delete(self, dsid):
         fe = EmailParser(self._cache_dir, dsid=dsid)
         fe.delete()
+        return {}
 
 
 class EmailParserApiElementIndex(Resource):
@@ -309,9 +314,11 @@ class ModelsApiElement(Resource):
         pars = cat.get_params()
         return pars
 
+    @marshal_with(EmptySchema())
     def delete(self, mid):
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         cat.delete()
+        return {}
 
 
 class ModelsApiPredict(Resource):
@@ -486,9 +493,11 @@ class ClusteringApiElement(Resource):
                   'htree': htree, 'pars': pars}
 
 
+    @marshal_with(EmptySchema())
     def delete(self, method, mid):  # TODO unused parameter 'method'
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
         cl.delete()
+        return {}
 
 # ============================================================================ # 
 #                              Duplicate detection
@@ -533,10 +542,12 @@ class DupDetectionApiElement(Resource):
         cluster_id = model.query(**args)
         return {'cluster_id': cluster_id}
 
+    @marshal_with(EmptySchema())
     def delete(self, mid):
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         model.delete()
+        return {}
 
 
 
@@ -656,10 +667,12 @@ class EmailThreadingApiElement(Resource):
 
         return model.get_params()
 
+    @marshal_with(EmptySchema())
     def delete(self, mid):
 
         model = _EmailThreadingWrapper(cache_dir=self._cache_dir, mid=mid)
         model.delete()
+        return {}
 
 
 # ============================================================================ # 

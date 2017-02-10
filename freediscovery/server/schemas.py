@@ -23,6 +23,9 @@ class DatasetSchema(Schema):
     document_id = fields.List(fields.Int())
     
 
+class EmptySchema(Schema):
+    pass
+
 class IDSchema(Schema):
     id = fields.Str(required=True)
 
