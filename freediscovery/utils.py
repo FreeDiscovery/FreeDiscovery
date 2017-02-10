@@ -75,7 +75,7 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
         m_recall_score = recall_score(Y_ref, Y_bin)
         m_precision_score = precision_score(Y_ref, Y_bin)
         m_f1_score = f1_score(Y_ref, Y_bin)
-    if len(np.unique(Y)) == 2:
+    if len(np.unique(Y_ref)) == 2:
         m_roc_auc = roc_auc_score(Y_ref, Y)
     else:
         m_roc_auc = np.nan # ROC not defined in this case

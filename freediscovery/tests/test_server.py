@@ -322,13 +322,15 @@ def test_api_lsi(app):
 _categoriazation_pars = itertools.product(  ['data_dir'],
                                             ["LinearSVC", "LogisticRegression",
                                             "NearestCentroid", "NearestNeighbor", 'xgboost'],
-                                            [0, 1])
+                                            ['', 'cv'])
 
-_categoriazation_pars = filter(lambda el: not ((el[1].startswith('Nearest') and el[2])),
+_categoriazation_pars = filter(lambda args: not (args[1].startswith('Nearest') and args[2] == 'cv'),
                                _categoriazation_pars)
 
 
-def _api_categorization_wrapper(app, ingestion_method, solver, cv):
+def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_mode):
+
+    cv = (cv == 'cv')
 
     if 'CIRCLECI' in os.environ and cv == 1 and solver in ['LinearSVC', 'xgboost']:
         raise SkipTest # Circle CI is too slow and timesout
@@ -349,7 +351,11 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv):
     filenames = data['filenames']
     # we train the model on 5 samples / 6 and see what happens
     index_filenames = filenames[:3] + filenames[3:]
-    y = [1, 1, 1,  0, 0, 0]
+    if supervision_mode == 'supervised':
+        y = [1, 1, 1, 0, 0, 0]
+    else:
+        y = [1, 1, 1, 1, 1, 1]
+
 
     method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
     res = app.get(method, data={'file_path': index_filenames})
@@ -405,13 +411,14 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv):
         for row in data['data']:
             assert sorted(row.keys()) == sorted(['internal_id', 'score'])
 
-    method = V01 + "/categorization/{}/test".format(mid)
-    res = app.post(method,
-            data={'ground_truth_filename':
-                os.path.join(data_dir, '..', 'ground_truth_file.txt')})
-    data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['precision', 'recall',
-                        'f1', 'roc_auc', 'average_precision'])
+    if supervision_mode == 'supervised':
+        method = V01 + "/categorization/{}/test".format(mid)
+        res = app.post(method,
+                data={'ground_truth_filename':
+                    os.path.join(data_dir, '..', 'ground_truth_file.txt')})
+        data = parse_res(res)
+        assert sorted(data.keys()) == sorted(['precision', 'recall',
+                            'f1', 'roc_auc', 'average_precision'])
 
     method = V01 + "/categorization/{}".format(mid)
     res = app.delete(method)
@@ -419,20 +426,26 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv):
 
 @pytest.mark.parametrize("ingestion_method, solver, cv", _categoriazation_pars)
 def test_api_categorization(app, ingestion_method, solver, cv):
-    _api_categorization_wrapper(app, ingestion_method, solver, cv)
+    _api_categorization_wrapper(app, ingestion_method, solver, cv, 'supervised')
 
 @pytest.mark.parametrize("ingestion_method", ['data_dir', "dataset_definition", None])
 def test_api_categorization_ingestion_method(app, ingestion_method):
     
     if ingestion_method == 'data_dir':
-        _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False)
+        _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', '', 'supervised')
     elif ingestion_method == 'dataset_definition':
         # Internal testing doesn't currently support nested dicts cf.
         # https://github.com/pallets/werkzeug/blob/master/werkzeug/test.py#L233
         raise SkipTest
     else:
         with pytest.raises(ValueError):
-            _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False)
+            _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False, 'supervised')
+
+
+@pytest.mark.parametrize('supervision_mode', ['supervised', 'unsupervised'])
+def test_api_categorization_supervision_mode(app, supervision_mode):
+    _api_categorization_wrapper(app, 'data_dir', 'NearestNeighbor', '', supervision_mode)
+
 
 #=============================================================================#
 #

@@ -338,11 +338,15 @@ class ModelsApiPredict(Resource):
                 for ind_key, dist_key, field_name in [('ind_p', 'dist_p', 'nn_positive'),
                                                       ('ind_n', 'dist_n', 'nn_negative')]:
 
-                    nn_ind = md[ind_key][index]
-                    db_sel = db.loc[nn_ind]
-                    nn_tmp = db_sel[base_keys].to_dict()
-                    nn_tmp['distance'] = md[dist_key][index]
-                    row_dict[field_name] = nn_tmp
+                    if ind_key not in md:
+                        # we are in unsupervised mode, there is no negative samples
+                        row_dict[field_name] = {}
+                    else:
+                        nn_ind = md[ind_key][index]
+                        db_sel = db.loc[nn_ind]
+                        nn_tmp = db_sel[base_keys].to_dict()
+                        nn_tmp['distance'] = md[dist_key][index]
+                        row_dict[field_name] = nn_tmp
                 view_data.append(row_dict)
 
         return dict(data=view_data)
