@@ -107,6 +107,20 @@ class LsiPostSchema(IDSchema):
 class CategorizationPostSchema(ClassificationScoresSchema):
     id = fields.Str(required=True)
 
+class _CategorizationIndex(DocumentIndexSchema):
+    y = fields.Int()
+
+class _CategorizationInputSchema(Schema):
+    parent_id = fields.Str(required=True)
+        # Warning this should be changed to wfields.DelimitedList
+        # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
+    index = fields.List(fields.Int())
+    y = fields.List(fields.Int())
+    index_nested = fields.Nested(_CategorizationIndex, many=True)
+    method =  fields.Str(default='LinearSVC')
+    cv = fields.Boolean(missing=False)
+    training_scores = fields.Boolean(missing=True)
+
 
 class _NNSchemaElement(DocumentIndexSchema):
     distance = fields.Number(required=True)

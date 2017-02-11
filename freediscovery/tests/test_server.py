@@ -665,7 +665,7 @@ def test_exception_handling(app_notest):
                               })
     data = parse_res(res)
     assert res.status_code in [500, 422]
-    assert sorted(data.keys()) == ['messages']
+    assert sorted(data.keys()) == ['message']
     #assert 'ValueError' in data['message'] # check that the error message has the traceback
 
 

@@ -43,7 +43,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
                       DatasetSchema,
                       LsiParsSchema, LsiPostSchema,
-                      ClassificationScoresSchema,
+                      ClassificationScoresSchema, _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       ErrorSchema, DuplicateDetectionSchema,
@@ -323,21 +323,6 @@ class LsiApiElement(Resource):
 #                  Categorization (ML)
 # ============================================================================ # 
 
-class _CategorizationIndex(DocumentIndexSchema):
-    y = wfields.Int()
-
-
-_models_api_post_args = {
-        'parent_id': wfields.Str(required=True),
-        # Warning this should be changed to wfields.DelimitedList
-        # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-        'index': wfields.List(wfields.Int()),
-        'y': wfields.List(wfields.Int()),
-        'index_nested': wfields.Nested(_CategorizationIndex(), many=True),
-        'method': wfields.Str(default='LinearSVC'),
-        'cv': wfields.Boolean(missing=False),
-        'training_scores': wfields.Boolean(missing=True)
-        }
 
 
 class ModelsApi(Resource):
@@ -367,7 +352,7 @@ class ModelsApi(Resource):
             - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default True).
             - `training_scores`: binary, compute the efficiency scores on the training dataset (default True).
           """))
-    @use_args(_models_api_post_args)
+    @use_args(_CategorizationInputSchema())
     @marshal_with(CategorizationPostSchema())
     def post(self, **args):
         training_scores = args['training_scores']
