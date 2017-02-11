@@ -15,6 +15,7 @@ from numpy.testing import assert_allclose, assert_equal
 import scipy.sparse
 import itertools
 import pytest
+from textwrap import dedent
 
 
 def test_count_duplicates():
@@ -24,4 +25,13 @@ def test_count_duplicates():
 
     y = _count_duplicates(x)
     assert_equal(y, np.array([2, 3, 2, 3, 3, 1]))
+
+
+def test_docstring_description():
+    from freediscovery.utils import _docstring_description
+    from freediscovery.datasets import load_dataset
+
+    res = _docstring_description(dedent(load_dataset.__doc__))
+
+    assert len(res.splitlines()) == 21
 

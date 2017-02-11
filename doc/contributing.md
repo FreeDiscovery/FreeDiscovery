@@ -57,5 +57,8 @@ Alternatively  `make latexpdf` generates documentation in .pdf format (requires 
 
 The rest API documentation can be generated with,
 
-    wget http://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/2.2.1/swagger-codegen-cli-2.2.1.jar -O swagger-codegen-cli.jar
-    java -jar ../swagger-codegen-cli.jar generate -i http://0.0.0.0:5001/swagger/ -l html2 -o swagger_docs
+    sudo npm install -g bootprint 
+    sudo npm install -g bootprint-openapi
+    bootprint openapi http://0.0.0.0:5001/swagger/ openapi_reference
+
+    cp -r openapi_reference/ _build/html/

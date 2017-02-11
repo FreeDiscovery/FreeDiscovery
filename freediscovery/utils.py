@@ -124,6 +124,17 @@ def setup_model(base_path):
     return mid, mid_dir
 
 
+def _docstring_description(docstring):
+    """ Given a function docstring, return only the text prior
+    to the "Parameters" section"""
+
+    res = []
+    for line in docstring.splitlines():
+        if line.strip() == 'Parameters':
+            break
+        res.append(line)
+    return '\n'.join(res)
+
 def _query_features(vect, X, indices, n_top_words=10, remove_stop_words=False):
     """ Query the features with most weight
 

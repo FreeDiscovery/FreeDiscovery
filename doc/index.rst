@@ -14,7 +14,7 @@ Contents
 
 
    installation_instructions
-   rest_api/index
+   rest_api
    python_api
    examples/index
    user_manual/index

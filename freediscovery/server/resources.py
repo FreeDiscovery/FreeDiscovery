@@ -6,11 +6,13 @@ from __future__ import print_function
 
 import os
 from glob import glob
+from textwrap import dedent
 
 #from flask_restful import Resource
 from webargs import fields as wfields
 from flask_apispec import (marshal_with, use_kwargs as use_args,
                            MethodResource as Resource)
+from flask_apispec.annotations import doc
 import numpy as np
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, \
@@ -27,12 +29,13 @@ from ..parsers import EmailParser
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..io import parse_ground_truth_file
-from ..utils import categorization_score
+from ..utils import categorization_score, _docstring_description
 from ..cluster import _ClusteringWrapper
 from ..search import _SearchWrapper
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from ..dupdet import _DuplicateDetectionWrapper
 from ..threading import _EmailThreadingWrapper
+from ..datasets import load_dataset
 from ..exceptions import WrongParameter
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, DocumentIndexListSchema,
@@ -62,10 +65,10 @@ EPSILON = 1e-3 # small numeric value
 
 class DatasetsApiElement(Resource):
 
+    @doc(description=_docstring_description(dedent(load_dataset.__doc__)))
     @use_args({'return_file_path': wfields.Boolean()})
     @marshal_with(DatasetSchema())
     def get(self, name, **args):
-        from ..datasets import load_dataset
         res = load_dataset(name, self._cache_dir, verbose=True,
                 load_ground_truth=True, verify_checksum=False, **args)
         return res
@@ -82,11 +85,13 @@ error_schema = ErrorSchema()
 
 class FeaturesApi(Resource):
 
+    @doc(description='View parameters used for the feature extraction')
     @marshal_with(FeaturesSchema(many=True))
     def get(self):
         fe = FeatureVectorizer(self._cache_dir)
         return fe.list_datasets()
 
+    @doc(description="Initialize the feature extraction on a document collection.")
     @use_args(FeaturesParsSchema(strict=True))
     @marshal_with(FeaturesSchema())
     def post(self, **args):
@@ -111,6 +116,7 @@ class FeaturesApi(Resource):
 
 
 class FeaturesApiElement(Resource):
+    @doc(description="Load extracted features (and obtain the processing status)")
     def get(self, dsid):
         sc = FeaturesSchema()
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
@@ -127,12 +133,14 @@ class FeaturesApiElement(Resource):
         else:
             return error_schema.dump({"message": "Processing failed, see server logs!"}).data, 520
 
+    @doc(description="Run feature extraction on a dataset")
     @marshal_with(IDSchema())
     def post(self, dsid):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         dsid, _ = fe.transform()
         return {'id': dsid}
 
+    @doc(description='Delete a processed dataset')
     @marshal_with(EmptySchema())
     def delete(self, dsid):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
@@ -143,6 +151,9 @@ class _DocumentIndexListSchemaInput(DocumentIndexListSchema):
     return_file_path = wfields.Boolean()
 
 class FeaturesApiElementMappingFlat(Resource):
+    @doc(description='Compute correspondence between id fields (flat). '
+           'At least one of the fields used for indexing must be provided,'
+           'and all the rest will be computed (if available)')
     @use_args(_DocumentIndexListSchemaInput(strict=True))
     @marshal_with(DocumentIndexListSchema())
     def get(self, dsid, return_file_path=False, **args):
@@ -156,6 +167,9 @@ class _DocumentIndexNestedSchemaInput(DocumentIndexNestedSchema):
     return_file_path = wfields.Boolean()
 
 class FeaturesApiElementMappingNested(Resource):
+    @doc(description='Compute correspondence between id fields (nested). '
+           'At least one of the fields used for indexing must be provided,'
+           'and all the rest will be computed (if available)')
     @use_args(_DocumentIndexNestedSchemaInput(strict=True))
     @marshal_with(DocumentIndexNestedSchema())
     def get(self, dsid, return_file_path=False, **args):
@@ -221,6 +235,19 @@ class LsiApi(Resource):
         lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
         return lsi.list_models()
 
+    @doc(description=dedent("""
+           Build a Latent Semantic Indexing (LSI) model 
+
+           The option `use_hashing=True` must be set for the feature extraction.
+           Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+           The recommended value for the `n_components` (dimensions of the SVD decompositions) is
+           in the [100, 200] range.
+
+           **Parameters**
+             - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features. 
+             - `parent_id`: `dataset_id`
+          """))
     @use_args(_lsi_api_post_args)
     @marshal_with(LsiPostSchema())
     def post(self, **args):
@@ -233,6 +260,7 @@ class LsiApi(Resource):
 
 class LsiApiElement(Resource):
 
+    @doc(description='Show Latent Semantic Indexing (LSI) model parameters')
     @marshal_with(LsiParsSchema())
     def get(self, mid):
         cat = _LSIWrapper(self._cache_dir, mid=mid)
@@ -240,6 +268,13 @@ class LsiApiElement(Resource):
         pars = cat._load_pars()
         pars['parent_id'] = pars['parent_id']
         return pars
+
+    @doc(description='Delete a Latent Semantic Indexing (LSI) model')
+    @marshal_with(EmptySchema())
+    def delete(self, mid):
+        cat = _LSIWrapper(self._cache_dir, mid=mid)
+        cat.delete()
+        return {}
 
 # ============================================================================ # 
 #                  Categorization (ML)
@@ -314,6 +349,7 @@ class ModelsApiElement(Resource):
         pars = cat.get_params()
         return pars
 
+    @doc(description='Delete the categorization model')
     @marshal_with(EmptySchema())
     def delete(self, mid):
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
@@ -493,6 +529,7 @@ class ClusteringApiElement(Resource):
                   'htree': htree, 'pars': pars}
 
 
+    @doc(description='Delete a clustering model')
     @marshal_with(EmptySchema())
     def delete(self, method, mid):  # TODO unused parameter 'method'
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
@@ -542,6 +579,7 @@ class DupDetectionApiElement(Resource):
         cluster_id = model.query(**args)
         return {'cluster_id': cluster_id}
 
+
     @marshal_with(EmptySchema())
     def delete(self, mid):
 
@@ -561,6 +599,16 @@ _metrics_categorization_api_get_args  = {
 }
 
 class MetricsCategorizationApiElement(Resource):
+    @doc(description=dedent("""
+          Compute categorization metrics to assess the quality
+          of categorization, comparing the groud truth labels with the predicted ones.
+
+          **Parameters**
+            - y_true: [required] list of int. Ground truth labels
+            - y_pred: [required] list of int. Predicted labels
+            - metrics: [required] list of str. Metrics to compute, any combination of 
+                         "precision", "recall", "f1", "roc_auc"
+          """))
     @use_args(_metrics_categorization_api_get_args)
     @marshal_with(MetricsCategorizationSchema())
     def get(self, **args):
@@ -597,6 +645,16 @@ _metrics_clustering_api_get_args  = {
 }
 
 class MetricsClusteringApiElement(Resource):
+    @doc(description=dedent("""
+          Compute clustering metrics to assess the quality
+          of categorization, comparing the groud truth labels with the predicted ones.
+
+          **Parameters**
+            - labels_true: [required] list of int. Ground truth clustering labels
+            - labels_pred: [required] list of int. Predicted clustering labels
+            - metrics: [required] list of str. Metrics to compute, any combination of 
+                         "adjusted_rand", "adjusted_mutual_info", "v_measure"
+          """))
     @use_args(_metrics_clustering_api_get_args)
     @marshal_with(MetricsClusteringSchema())
     def get(self, **args):
@@ -617,6 +675,16 @@ class MetricsClusteringApiElement(Resource):
 
 
 class MetricsDupDetectionApiElement(Resource):
+    @doc(description=dedent("""
+          Compute duplicate detection metrics to assess the quality
+          of categorization, comparing the groud truth labels with the predicted ones.
+
+          **Parameters**
+            - labels_true: [required] list of int. Ground truth clustering labels
+            - labels_pred: [required] list of int. Predicted clustering labels
+            - metrics: [required] list of str. Metrics to compute, any combination of 
+                      "ratio_duplicates", "f1_same_duplicates", "mean_duplicates_count"
+          """))
     @use_args(_metrics_clustering_api_get_args)  # Arguments are the same as for clustering
     @marshal_with(MetricsDupDetectionSchema())
     def get(self, **args):
@@ -667,6 +735,7 @@ class EmailThreadingApiElement(Resource):
 
         return model.get_params()
 
+    @doc(description='Delete a processed dataset')
     @marshal_with(EmptySchema())
     def delete(self, mid):
 
@@ -679,10 +748,14 @@ class EmailThreadingApiElement(Resource):
 #                              (Semantic) search
 # ============================================================================ # 
 
+
 class SearchApi(Resource):
+    @doc(description="Perform document search (if `parent_id` is a `dataset_id`)"
+                     " or a semantic search (if `parent_id` is a `lsi_id`).")
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True)})
-    @marshal_with(SearchResponseSchema())
+    @marshal_with(SearchResponseSchema(),
+                  description='This is the overall response description')
     def get(self, **args):
         parent_id = args['parent_id']
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)

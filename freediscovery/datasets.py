@@ -21,21 +21,22 @@ def load_dataset(name='treclegal09_2k_subset', cache_dir='/tmp',
                  force=False, verbose=True,
                  return_file_path=False,
                  load_ground_truth=False, verify_checksum=False):
-    """ Download a benchmark dataset.
+    """
+    Download a benchmark dataset.
 
     The currently supported datasets are listed below,
 
     1. TREC 2009 legal collection
 
-       - treclegal09_2k_subset  :   2 400 documents,   2 MB
-       - treclegal09_20k_subset :  20 000 documents,  30 MB
-       - treclegal09_37k_subset :  37 000 documents,  55 MB
-       - treclegal09            : 700 000 documents, 1.2 GB
+       - `treclegal09_2k_subset`  :   2 400 documents,   2 MB
+       - `treclegal09_20k_subset` :  20 000 documents,  30 MB
+       - `treclegal09_37k_subset` :  37 000 documents,  55 MB
+       - `treclegal09`            : 700 000 documents, 1.2 GB
 
        The ground truth files for categorization are adapted from TAR Toolkit.
 
     2. Fedora mailing list (2009-2009)
-       - fedora_ml_
+       - `fedora_ml`
 
     If you encounter any issues for downloads with this function,
     you can also manually download and extract the required dataset to `cache_dir` (the
