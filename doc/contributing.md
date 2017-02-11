@@ -41,7 +41,9 @@ It is automatically run as part of the installation procedure locally. The Conti
 
 ## Building Documentation
 
-This html documentation can be built from sources with,
+### 1. Sphinx documentation 
+
+The html documentation can be built from sources with,
      
     # starting the FreeDiscovery server at localhost
     cd FreeDiscovery/doc/
@@ -50,3 +52,13 @@ This html documentation can be built from sources with,
 which requires to install dependencies in `build_tools/requirements_extra_pip.txt`. This would also run and include examples using `sphinx-gallery`.
 
 Alternatively  `make latexpdf` generates documentation in .pdf format (requires `pdflatex`). 
+
+## 2. REST API documentation
+
+The rest API documentation can be generated with,
+
+    sudo npm install -g bootprint 
+    sudo npm install -g bootprint-openapi
+    bootprint openapi http://0.0.0.0:5001/openapi-specs.json openapi_docs
+
+    cp -r openapi_docs/ _build/html/

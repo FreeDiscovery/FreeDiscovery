@@ -9,10 +9,13 @@
 
 
 ### Enhancements
+
+ * The REST API documentation is generated automatically from the code (using an OpenAPI specification of the API) which allows to enforce consistency between the code and the docs (PR [#85](https://github.com/FreeDiscovery/FreeDiscovery/pull/85))
  
 
 ### API Changes
  
+
 
 
 ## Version 0.8

@@ -665,7 +665,7 @@ def test_exception_handling(app_notest):
                               })
     data = parse_res(res)
     assert res.status_code in [500, 422]
-    assert sorted(data.keys()) == ['messages']
+    assert sorted(data.keys()) == ['message']
     #assert 'ValueError' in data['message'] # check that the error message has the traceback
 
 
@@ -754,3 +754,9 @@ def test_api_search(app, method):
     assert sorted(data.keys()) == ['data']
     for row in data['data']:
         assert sorted(row.keys()) == sorted(['score', 'internal_id'])
+
+def test_api_openapi_specs(app):
+    res = app.get('/openapi-specs.json')
+    data = parse_res(res)
+    assert data['swagger'] == '2.0'
+
