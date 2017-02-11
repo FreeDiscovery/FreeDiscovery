@@ -49,7 +49,8 @@ def fd_app(cache_dir):
          {'APISPEC_SPEC': APISpec(title='FreeDiscovery',
                                   version='v0',
                                   plugins=['apispec.ext.marshmallow']),
-          'APISPEC_SWAGGER_URL': '/swagger/'})
+          'APISPEC_SWAGGER_URL': '/openapi-specs.json',
+          'APISPEC_SWAGGER_UI_URL': '/swagger-ui.html'})
 
     docs = FlaskApiSpec(app)
 
@@ -94,8 +95,8 @@ def fd_app(cache_dir):
 
         ressource_name = resource_el.__name__
         app.add_url_rule('/api/v0' + url, view_func=resource_el.as_view(ressource_name))
-        if ressource_name not in [ "ModelsApi", "EmailThreadingApi" ]:
-            # the above two cases fail for some reason
+        if ressource_name not in [ "EmailThreadingApi" ]:
+            # the above two cases fail due to recursion limit
             docs.register(resource_el, endpoint=ressource_name)
 
 

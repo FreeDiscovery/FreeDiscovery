@@ -59,6 +59,6 @@ The rest API documentation can be generated with,
 
     sudo npm install -g bootprint 
     sudo npm install -g bootprint-openapi
-    bootprint openapi http://0.0.0.0:5001/swagger/ openapi_reference
+    bootprint openapi http://0.0.0.0:5001/openapi-specs.json openapi_docs
 
-    cp -r openapi_reference/ _build/html/
+    cp -r openapi_docs/ _build/html/

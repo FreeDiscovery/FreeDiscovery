@@ -11,6 +11,8 @@ dependencies:
     - sleep 20
     # The pipefail is requested to propagate exit code
     - set -o pipefail && cd doc && make html 2>&1 | tee ~/log.txt
+    - npm install -g bootprint && npm install -g bootprint-openapi
+    - bootprint openapi http://0.0.0.0:5001/openapi-specs.json openapi-docs && openapi-docs/ _build/html/
 
 test:
   # Grep error on the documentation

@@ -333,7 +333,7 @@ _models_api_post_args = {
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
         'index': wfields.List(wfields.Int()),
         'y': wfields.List(wfields.Int()),
-        'index_nested': wfields.Nested(_CategorizationIndex, many=True),
+        'index_nested': wfields.Nested(_CategorizationIndex(), many=True),
         'method': wfields.Str(default='LinearSVC'),
         'cv': wfields.Boolean(missing=False),
         'training_scores': wfields.Boolean(missing=True)

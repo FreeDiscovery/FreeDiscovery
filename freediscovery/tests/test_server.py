@@ -754,3 +754,9 @@ def test_api_search(app, method):
     assert sorted(data.keys()) == ['data']
     for row in data['data']:
         assert sorted(row.keys()) == sorted(['score', 'internal_id'])
+
+def test_api_openapi_specs(app):
+    res = app.get('/openapi-specs.json')
+    data = parse_res(res)
+    assert data['swagger'] == '2.0'
+
