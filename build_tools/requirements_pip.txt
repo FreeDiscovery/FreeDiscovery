@@ -1,4 +1,0 @@
-marshmallow==2.12.1
-webargs==1.5.2
-flask_apispec
-git+https://github.com/FreeDiscovery/jwzthreading.git
