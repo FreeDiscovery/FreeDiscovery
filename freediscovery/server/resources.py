@@ -91,7 +91,33 @@ class FeaturesApi(Resource):
         fe = FeatureVectorizer(self._cache_dir)
         return fe.list_datasets()
 
-    @doc(description="Initialize the feature extraction on a document collection.")
+    @doc(description=dedent("""
+            Initialize the feature extraction on a document collection.
+
+            **Parameters**
+             - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
+             - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.
+             - `n_features`: [optional] number of features (overlapping character/word n-grams that are hashed).
+                             n_features refers to the number of buckets in the hash.  The larger the number, the fewer collisions.   (default: 1100000)
+             - `analyzer`: 'word', 'char', 'char_wb'
+                           Whether the feature should be made of word or character n-grams.
+                           Option ‘char_wb’ creates character n-grams only from text inside word boundaries.  ( default: 'word')
+             - `ngram_range` : tuple (min_n, max_n), default=(1, 1)
+                           The lower and upper boundary of the range of n-values for different n-grams to be extracted. All values of n such that min_n <= n <= max_n will be used.
+
+             - `stop_words`: "english" or "None"
+                             Remove stop words from the resulting tokens. Only applies for the "word" analyzer.
+                             If "english", a built-in stop word list for English is used. ( default: "None")
+             - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
+             - `norm`: The normalization to use after the feature weighting ('None', 'l1', 'l2') (default: 'None')
+             - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
+             - `binary`: If set to 1, all non zero counts are set to 1. (default: True)
+             - `use_idf`: Enable inverse-document-frequency reweighting (default: False).
+             - `sublinear_tf`: Apply sublinear tf scaling, i.e. replace tf with log(1 + tf) (default: False).
+             - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True)
+             - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
+             - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
+            """))
     @use_args(FeaturesParsSchema(strict=True))
     @marshal_with(FeaturesSchema())
     def post(self, **args):
@@ -185,10 +211,19 @@ class FeaturesApiElementMappingNested(Resource):
 
 class EmailParserApi(Resource):
 
+    @doc(description='List processed datasets')
     def get(self):
         fe = EmailParser(self._cache_dir)
         return fe.list_datasets()
 
+    @doc(description=dedent("""
+           Load a dataset and parse emails
+
+           Initialize the feature extraction on a document collection.
+
+           **Parameters**
+            - `data_dir`: [required] relative path to the directory with the input files
+          """))
     @use_args({'data_dir': wfields.Str(required=True)})
     @marshal_with(EmailParserSchema())
     def post(self, **args):
@@ -199,6 +234,7 @@ class EmailParserApi(Resource):
 
 
 class EmailParserApiElement(Resource):
+    @doc(description='Load parsed emails')
     def get(self, dsid):
         fe = EmailParser(self._cache_dir, dsid=dsid)
         out = fe.get_params()
@@ -212,6 +248,13 @@ class EmailParserApiElement(Resource):
 
 
 class EmailParserApiElementIndex(Resource):
+    @doc(description=dedent("""
+           Query document index for a list of filenames
+
+           **Parameters**
+            - `filenames`: [required] list of filenames
+
+          """))
     @use_args({'filenames': wfields.List(wfields.Str(), required=True)})
     @marshal_with(EmailParserElementIndexSchema())
     def get(self, dsid, **args):
@@ -304,6 +347,26 @@ class ModelsApi(Resource):
 
         return cat.list_models()
 
+    @doc(description=dedent("""
+           Build the categorization ML model
+
+           The option `use_hashing=True` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+           **Parameters**
+            - `parent_id`: `dataset_id` or `lsi_id`
+            - `index`: (optional) internal document ids of the training set (can also be provided in `index_nested`)
+            - `y`: (optional) target binary class relative to index (can also be provided in `index_nested`)
+            - `index_nested`: a list of dict which have a `y` field and one or several fields that can be used for indexing, such as `internal_id`, `document_id`, `file_path`, `rendition_id`.
+            - `method`: classification algorithm to use (default: LogisticRegression),
+              * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
+              * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),
+              * "NearestNeighbor": nearest neighbor classifier (requires LSI)
+              * "NearestCentroid": nearest centroid classifier (requires LSI)
+              * "xgboost": [Gradient Boosting](https://xgboost.readthedocs.io/en/latest/model.html)
+                   (*Warning:* for the moment xgboost is not istalled for a direct install on Windows)
+            - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default True).
+            - `training_scores`: binary, compute the efficiency scores on the training dataset (default True).
+          """))
     @use_args(_models_api_post_args)
     @marshal_with(CategorizationPostSchema())
     def post(self, **args):
@@ -343,6 +406,7 @@ class ModelsApi(Resource):
 
 
 class ModelsApiElement(Resource):
+    @doc(description='Load categorization model parameters')
     @marshal_with(CategorizationParsSchema())
     def get(self, mid):
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
@@ -359,6 +423,7 @@ class ModelsApiElement(Resource):
 
 class ModelsApiPredict(Resource):
 
+    @doc(description='Predict document categorization with a previously trained model')
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid):
 
@@ -403,6 +468,13 @@ _models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}
 
 class ModelsApiTest(Resource):
 
+    @doc(description=dedent("""
+           Test the categorization model
+
+           **Parameters**
+            - `ground_truth_filename`: [required] tab-delimited file name with a unique document ID followed by a 1 for relevant or 0 for non-relevant document
+
+          """))
     @use_args(_models_api_test)
     @marshal_with(ClassificationScoresSchema())
     def post(self, mid, **args):
@@ -430,6 +502,15 @@ _k_mean_clustering_api_post_args = {
 
 class KmeanClusteringApi(Resource):
 
+    @doc(description=dedent("""
+           Compute K-mean clustering
+
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+           **Parameters**
+            - `parent_id`: `dataset_id` or `lsi_id`
+            - `n_clusters`: the number of clusters
+           """))
     @use_args(_k_mean_clustering_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
@@ -451,6 +532,16 @@ _birch_clustering_api_post_args = {
 
 class BirchClusteringApi(Resource):
 
+    @doc(description=dedent("""
+           Compute birch clustering
+
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+           **Parameters**
+            - `parent_id`: `dataset_id` or `lsi_id`
+            - `n_clusters`: the number of clusters
+            - `threshold`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
+           """))
     @use_args(_birch_clustering_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
@@ -470,6 +561,22 @@ _wardhc_clustering_api_post_args = {
 
 class WardHCClusteringApi(Resource):
 
+    @doc(description=dedent("""
+           Compute Ward Hierarchical Clustering.
+
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+           The Ward Hierarchical clustering is generally slower that K-mean, however the run time can be reduced by decreasing the following parameters,
+
+            - `lsi_components`: the number of dimensions used for the Latent Semantic Indexing decomposition (e.g. from 150 to 50)
+            - `n_neighbors`:  the number of neighbors used to construct the connectivity (e.g. from 10 to 5)
+
+           **Parameters**
+            - `parent_id`: `dataset_id` or `lsi_id`
+            - `n_clusters`: the number of clusters
+            - `n_neighbors` Number of neighbors for each sample, used to compute the connectivity matrix (see [AgglomerativeClustering](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html) and [kneighbors_graph](http://scikit-learn.org/stable/modules/generated/sklearn.neighbors.kneighbors_graph.html)
+
+           """))
     @use_args(_wardhc_clustering_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
@@ -490,6 +597,16 @@ _dbscan_clustering_api_post_args = {
 
 class DBSCANClusteringApi(Resource):
 
+    @doc(description=dedent("""
+           Compute clustering (DBSCAN)
+
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+
+           **Parameters**
+             - `parent_id`: `dataset_id` or `lsi_id`
+             - `eps`: (optional) float The maximum distance between two samples for them to be considered as in the same neighborhood.
+             - `min_samples`: (optional) int The number of samples (or total weight) in a neighborhood for a point to be considered as a core point. This includes the point itself.
+            """))
     @use_args(_dbscan_clustering_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
@@ -509,6 +626,13 @@ _clustering_api_get_args = {
 
 class ClusteringApiElement(Resource):
 
+    @doc(description=dedent("""
+           Compute cluster labels
+
+           **Parameters**
+            - `n_top_words`: keep only most relevant `n_top_words` words
+            - `label_method`: str, default='centroid-frequency' the method used for computing the cluster labels
+            """))
     @use_args(_clustering_api_get_args)
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):  # TODO unused parameter 'method'
@@ -548,6 +672,13 @@ _dup_detection_api_post_args = {
 
 class DupDetectionApi(Resource):
 
+    @doc(description=dedent("""
+           Compute near duplicates
+
+           **Parameters**
+            - `parent_id`: `dataset_id` or `lsi_id`
+            - `method`: str, default='simhash' Method used for duplicate detection. One of "simhash", "i-match"
+          """))
     @use_args(_dup_detection_api_post_args)
     @marshal_with(IDSchema())
     def post(self, **args):
@@ -571,6 +702,14 @@ _dupdet_api_get_args = {
 
 class DupDetectionApiElement(Resource):
 
+    @doc(description=dedent("""
+           Query duplicates
+
+           **Parameters**
+            - distance : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only) - n_rand_lexicons : int, default=1
+              number of random lexicons used for duplicate detection (I-Match method only)
+            - rand_lexicon_ratio: float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
+          """))
     @use_args(_dupdet_api_get_args)
     @marshal_with(DuplicateDetectionSchema())
     def get(self, mid, **args):
@@ -606,8 +745,7 @@ class MetricsCategorizationApiElement(Resource):
           **Parameters**
             - y_true: [required] list of int. Ground truth labels
             - y_pred: [required] list of int. Predicted labels
-            - metrics: [required] list of str. Metrics to compute, any combination of 
-                         "precision", "recall", "f1", "roc_auc"
+            - metrics: [required] list of str. Metrics to compute, any combination of "precision", "recall", "f1", "roc_auc"
           """))
     @use_args(_metrics_categorization_api_get_args)
     @marshal_with(MetricsCategorizationSchema())
@@ -652,8 +790,7 @@ class MetricsClusteringApiElement(Resource):
           **Parameters**
             - labels_true: [required] list of int. Ground truth clustering labels
             - labels_pred: [required] list of int. Predicted clustering labels
-            - metrics: [required] list of str. Metrics to compute, any combination of 
-                         "adjusted_rand", "adjusted_mutual_info", "v_measure"
+            - metrics: [required] list of str. Metrics to compute, any combination of "adjusted_rand", "adjusted_mutual_info", "v_measure"
           """))
     @use_args(_metrics_clustering_api_get_args)
     @marshal_with(MetricsClusteringSchema())
@@ -682,8 +819,7 @@ class MetricsDupDetectionApiElement(Resource):
           **Parameters**
             - labels_true: [required] list of int. Ground truth clustering labels
             - labels_pred: [required] list of int. Predicted clustering labels
-            - metrics: [required] list of str. Metrics to compute, any combination of 
-                      "ratio_duplicates", "f1_same_duplicates", "mean_duplicates_count"
+            - metrics: [required] list of str. Metrics to compute, any combination of "ratio_duplicates", "f1_same_duplicates", "mean_duplicates_count"
           """))
     @use_args(_metrics_clustering_api_get_args)  # Arguments are the same as for clustering
     @marshal_with(MetricsDupDetectionSchema())
@@ -715,6 +851,7 @@ class MetricsDupDetectionApiElement(Resource):
 
 class EmailThreadingApi(Resource):
 
+    @doc(description='Compute email threading')
     @use_args({ "parent_id": wfields.Str(required=True)})
     @marshal_with(EmailThreadingSchema())
     def post(self, **args):
@@ -728,6 +865,7 @@ class EmailThreadingApi(Resource):
 
 class EmailThreadingApiElement(Resource):
 
+    @doc(description='Get email threading parameters')
     @marshal_with(EmailThreadingParsSchema())
     def get(self, mid):
 
@@ -754,8 +892,7 @@ class SearchApi(Resource):
                      " or a semantic search (if `parent_id` is a `lsi_id`).")
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True)})
-    @marshal_with(SearchResponseSchema(),
-                  description='This is the overall response description')
+    @marshal_with(SearchResponseSchema())
     def get(self, **args):
         parent_id = args['parent_id']
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
