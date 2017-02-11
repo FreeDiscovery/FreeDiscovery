@@ -42,7 +42,7 @@ class EmailParser(_BaseTextTransformer):
               encoding='latin-1'):
         """Parse all emails in data_dir"""
         from email.parser import Parser
-        from jwzthreading import Message
+        from .externals.jwzthreading import Message
 
         data_dir = os.path.normpath(data_dir)
 
