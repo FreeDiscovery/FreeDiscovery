@@ -20,7 +20,7 @@ BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 if __name__ == '__main__':
 
     print(" 0. Load the test dataset")
-    url = BASE_URL + '/datasets/{}'.format(dataset_name)
+    url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
     print(" GET", url)
     res = requests.get(url, json={'return_file_path': True}).json()
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     url = BASE_URL + '/search/'
     print(" POST", url)
 
-    res = requests.get(url,
+    res = requests.post(url,
                         json={'parent_id': lsi_id,
                               'query': query
                               }).json()

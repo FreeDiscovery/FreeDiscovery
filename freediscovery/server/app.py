@@ -19,7 +19,7 @@ from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementMappi
                         ClusteringApiElement, KmeanClusteringApi,
                         BirchClusteringApi, WardHCClusteringApi, DBSCANClusteringApi,
                         DupDetectionApi, DupDetectionApiElement,
-                        DatasetsApiElement,
+                        ExampleDatasetApi,
                         MetricsCategorizationApiElement, MetricsClusteringApiElement,
                         MetricsDupDetectionApiElement,
                         EmailParserApi, EmailParserApiElementIndex,
@@ -59,7 +59,7 @@ def fd_app(cache_dir):
 
     ## Actually setup the Api resource routing here
     for resource_el, url in [
-         (DatasetsApiElement              , "/datasets/<name>")                             , 
+         (ExampleDatasetApi               , "/example-dataset/<name>")                             , 
          (FeaturesApi                     , "/feature-extraction")                          , 
          (FeaturesApiElement              , '/feature-extraction/<dsid>')                   , 
          (FeaturesApiElementMappingFlat   , '/feature-extraction/<dsid>/id-mapping/flat')   , 

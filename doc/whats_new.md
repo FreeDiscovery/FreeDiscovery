@@ -10,12 +10,18 @@
 
 ### Enhancements
 
- * The REST API documentation is generated automatically from the code (using an OpenAPI specification of the API) which allows to enforce consistency between the code and the docs (PR [#85](https://github.com/FreeDiscovery/FreeDiscovery/pull/85))
+ * The REST API documentation is generated automatically from the code (using an OpenAPI specification) which allows to enforce consistency between the code and the docs (PR [#85](https://github.com/FreeDiscovery/FreeDiscovery/pull/85))
  
 
 ### API Changes
  
-
+ * The following endpoints accepting a request body are modified from `GET` to `POST` method (PR [#94](https://github.com/FreeDiscovery/FreeDiscovery/pull/94)), in accordance with the HTTP/1.1 spec, section 4.3,
+    - `/api/v0/metrics/categorization`
+    - `/api/v0/metrics/clustering`
+    - `/api/v0/metrics/duplicate-detection`
+    - `/api/v0/feature-extraction/{dsid}/id-mapping/flat`
+    - `/api/v0/feature-extraction/{dsid}/id-mapping/nested`
+    - `/api/v0/email-parser/{dsid}/index`
 
 
 ## Version 0.8

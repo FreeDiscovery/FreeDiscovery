@@ -22,7 +22,7 @@ dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
 print(" 0. Load the test dataset")
-url = BASE_URL + '/datasets/{}'.format(dataset_name)
+url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
 print(" GET", url)
 res = requests.get(url)
 res = res.json()

@@ -21,8 +21,8 @@ BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
 if __name__ == '__main__':
 
-    print(" 0. Load the test dataset")
-    url = BASE_URL + '/datasets/{}'.format(dataset_name)
+    print(" 0. Load the example dataset")
+    url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
     print(" GET", url)
     res = requests.get(url, json={'return_file_path': True}).json()
 
@@ -186,7 +186,7 @@ if __name__ == '__main__':
         print("\n3.d Compute the categorization scores")
         url = BASE_URL + '/metrics/categorization'
         print(" GET", url)
-        res = requests.get(url, json={'y_true': ground_truth_y,
+        res = requests.post(url, json={'y_true': ground_truth_y,
                                       'y_pred': df.score.values.tolist(),
                                      } ).json()
 

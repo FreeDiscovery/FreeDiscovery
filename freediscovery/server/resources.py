@@ -41,7 +41,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, DocumentIndexListSchema,
                       DocumentIndexNestedSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
-                      DatasetSchema,
+                      ExampleDatasetSchema,
                       LsiParsSchema, LsiPostSchema,
                       ClassificationScoresSchema, _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
@@ -63,11 +63,11 @@ EPSILON = 1e-3 # small numeric value
 #                         Datasets download                                    #
 # ============================================================================ # 
 
-class DatasetsApiElement(Resource):
+class ExampleDatasetApi(Resource):
 
     @doc(description=_docstring_description(dedent(load_dataset.__doc__)))
     @use_args({'return_file_path': wfields.Boolean()})
-    @marshal_with(DatasetSchema())
+    @marshal_with(ExampleDatasetSchema())
     def get(self, name, **args):
         res = load_dataset(name, self._cache_dir, verbose=True,
                 load_ground_truth=True, verify_checksum=False, **args)
@@ -97,18 +97,11 @@ class FeaturesApi(Resource):
             **Parameters**
              - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
              - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.
-             - `n_features`: [optional] number of features (overlapping character/word n-grams that are hashed).
-                             n_features refers to the number of buckets in the hash.  The larger the number, the fewer collisions.   (default: 1100000)
-             - `analyzer`: 'word', 'char', 'char_wb'
-                           Whether the feature should be made of word or character n-grams.
-                           Option ‘char_wb’ creates character n-grams only from text inside word boundaries.  ( default: 'word')
-             - `ngram_range` : tuple (min_n, max_n), default=(1, 1)
-                           The lower and upper boundary of the range of n-values for different n-grams to be extracted. All values of n such that min_n <= n <= max_n will be used.
+             - `n_features`: [optional] number of features (overlapping character/word n-grams that are hashed).  n_features refers to the number of buckets in the hash.  The larger the number, the fewer collisions.   (default: 1100000)
+             - `analyzer`: 'word', 'char', 'char_wb' Whether the feature should be made of word or character n-grams.  Option ‘char_wb’ creates character n-grams only from text inside word boundaries.  ( default: 'word')
+             - `ngram_range` : tuple (min_n, max_n), default=(1, 1) The lower and upper boundary of the range of n-values for different n-grams to be extracted. All values of n such that min_n <= n <= max_n will be used.
 
-             - `stop_words`: "english" or "None"
-                             Remove stop words from the resulting tokens. Only applies for the "word" analyzer.
-                             If "english", a built-in stop word list for English is used. ( default: "None")
-             - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
+             - `stop_words`: "english" or "None" Remove stop words from the resulting tokens. Only applies for the "word" analyzer.  If "english", a built-in stop word list for English is used. ( default: "None") - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
              - `norm`: The normalization to use after the feature weighting ('None', 'l1', 'l2') (default: 'None')
              - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
              - `binary`: If set to 1, all non zero counts are set to 1. (default: True)
@@ -182,7 +175,7 @@ class FeaturesApiElementMappingFlat(Resource):
            'and all the rest will be computed (if available)')
     @use_args(_DocumentIndexListSchemaInput(strict=True))
     @marshal_with(DocumentIndexListSchema())
-    def get(self, dsid, return_file_path=False, **args):
+    def post(self, dsid, return_file_path=False, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         query = pd.DataFrame(args)
         res = fe.db.search(query)
@@ -198,7 +191,7 @@ class FeaturesApiElementMappingNested(Resource):
            'and all the rest will be computed (if available)')
     @use_args(_DocumentIndexNestedSchemaInput(strict=True))
     @marshal_with(DocumentIndexNestedSchema())
-    def get(self, dsid, return_file_path=False, **args):
+    def post(self, dsid, return_file_path=False, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         query = pd.DataFrame(args['data'])
         res = fe.db.search(query)
@@ -257,7 +250,7 @@ class EmailParserApiElementIndex(Resource):
           """))
     @use_args({'filenames': wfields.List(wfields.Str(), required=True)})
     @marshal_with(EmailParserElementIndexSchema())
-    def get(self, dsid, **args):
+    def post(self, dsid, **args):
         fe = EmailParser(self._cache_dir, dsid=dsid)
         idx = fe.search(args['filenames'])
         return {'index': list(idx)}
@@ -734,7 +727,7 @@ class MetricsCategorizationApiElement(Resource):
           """))
     @use_args(_metrics_categorization_api_get_args)
     @marshal_with(MetricsCategorizationSchema())
-    def get(self, **args):
+    def post(self, **args):
         output_metrics = {}
         y_true = np.array(args['y_true'], dtype='int')
         y_pred = np.array(args['y_pred'], dtype='float')
@@ -779,7 +772,7 @@ class MetricsClusteringApiElement(Resource):
           """))
     @use_args(_metrics_clustering_api_get_args)
     @marshal_with(MetricsClusteringSchema())
-    def get(self, **args):
+    def post(self, **args):
         output_metrics = dict()
         labels_true = args['labels_true']
         labels_pred = args['labels_pred']
@@ -808,7 +801,7 @@ class MetricsDupDetectionApiElement(Resource):
           """))
     @use_args(_metrics_clustering_api_get_args)  # Arguments are the same as for clustering
     @marshal_with(MetricsDupDetectionSchema())
-    def get(self, **args):
+    def post(self, **args):
         output_metrics = dict()
         labels_true = args['labels_true']
         labels_pred = args['labels_pred']
@@ -878,7 +871,7 @@ class SearchApi(Resource):
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True)})
     @marshal_with(SearchResponseSchema())
-    def get(self, **args):
+    def post(self, **args):
         parent_id = args['parent_id']
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
 

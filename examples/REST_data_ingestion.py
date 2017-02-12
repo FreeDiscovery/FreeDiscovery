@@ -21,7 +21,7 @@ BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 if __name__ == '__main__':
 
     print(" 0. Load the test dataset")
-    url = BASE_URL + '/datasets/{}'.format(dataset_name)
+    url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
     print(" GET", url)
     res = requests.get(url, json={'return_file_path': True}).json()
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     print(' GET', method)
     data = {'internal_id': seed_document_id[:3]}
     print('   DATA:', json.dumps(data))
-    res = requests.get(method, data=data).json()
+    res = requests.post(method, data=data).json()
 
     print(' Response:')
     print('  ', json.dumps(res))
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     print('\n GET', method)
     data = {'data': [{'internal_id': el} for el in seed_document_id[:3]]}
     print('   DATA', json.dumps(data))
-    res = requests.get(method, json=data).json()
+    res = requests.post(method, json=data).json()
 
     print(' Response:')
     print('  ', json.dumps(res, indent=4))
