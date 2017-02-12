@@ -186,7 +186,7 @@ if __name__ == '__main__':
         print("\n3.d Compute the categorization scores")
         url = BASE_URL + '/metrics/categorization'
         print(" GET", url)
-        res = requests.get(url, json={'y_true': ground_truth_y,
+        res = requests.post(url, json={'y_true': ground_truth_y,
                                       'y_pred': df.score.values.tolist(),
                                      } ).json()
 

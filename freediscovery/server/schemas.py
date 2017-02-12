@@ -5,12 +5,18 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from marshmallow import Schema, fields
+from marshmallow import Schema as BaseSchema, fields
 
 
 # This file defines marshmallow schemas for REST API output formatting
 # Occasionally the same class can be used for input validation
 # As webargs (used for input validation) is just a wrapper around marshmallow
+
+class Schema(BaseSchema):
+
+    class Meta:
+        strict = True
+
 
 class DatasetSchema(Schema):
     base_dir = fields.Str(required=True)
@@ -69,8 +75,6 @@ class FeaturesParsSchema(Schema):
     min_df = fields.Number(required=False)
     max_df = fields.Number(required=False)
 
-    class Meta:
-        strict = True
 
 
 class FeaturesSchema(FeaturesParsSchema):

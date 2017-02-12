@@ -84,7 +84,7 @@ if __name__ == '__main__':
     url = BASE_URL + '/search/'
     print(" POST", url)
 
-    res = requests.get(url,
+    res = requests.post(url,
                         json={'parent_id': lsi_id,
                               'query': query
                               }).json()

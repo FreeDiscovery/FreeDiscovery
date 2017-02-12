@@ -613,7 +613,7 @@ class ClusteringApiElement(Resource):
             """))
     @use_args(_clustering_api_get_args)
     @marshal_with(ClusteringSchema())
-    def post(self, method, mid, **args):  # TODO unused parameter 'method'
+    def get(self, method, mid, **args):  # TODO unused parameter 'method'
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
 
@@ -690,7 +690,7 @@ class DupDetectionApiElement(Resource):
           """))
     @use_args(_dupdet_api_get_args)
     @marshal_with(DuplicateDetectionSchema())
-    def post(self, mid, **args):
+    def get(self, mid, **args):
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)

@@ -189,7 +189,7 @@ def test_get_search_filenames(app, return_file_path):
             pass # default to false
 
 
-        res = app.get(method, data=pars)
+        res = app.post(method, data=pars)
         assert res.status_code == 200
         data = parse_res(res)
         if return_file_path:
@@ -266,7 +266,7 @@ def test_get_search_emails_by_filename(app):
             ({ 'filenames': ['1', '2']}, [0, 1]),
             ({ 'filenames': ['5']}, [4])]:
 
-        res = app.get(method, data=pars)
+        res = app.post(method, data=pars)
         assert res.status_code == 200
         data = parse_res(res)
         assert sorted(data.keys()) ==  sorted(['index'])
@@ -364,7 +364,7 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
 
 
     method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    res = app.get(method, data={'file_path': index_filenames})
+    res = app.post(method, data={'file_path': index_filenames})
     assert res.status_code == 200, method
     index = parse_res(res)['internal_id']
 
@@ -665,7 +665,7 @@ def test_exception_handling(app_notest):
                               })
     data = parse_res(res)
     assert res.status_code in [500, 422]
-    assert sorted(data.keys()) == ['message']
+    assert sorted(data.keys()) == ['messages']
     #assert 'ValueError' in data['message'] # check that the error message has the traceback
 
 
@@ -673,14 +673,14 @@ def test_exception_handling(app_notest):
 @pytest.mark.parametrize('metrics',
                          itertools.combinations(['precision', 'recall', 'f1',
                                                  'roc_auc', 'average_precision'], 3))
-def test_categorization_metrics_get(app, metrics):
+def test_categorization_metrics(app, metrics):
     metrics = list(metrics)
     url = V01 + '/metrics/categorization'
     y_true = [0, 0, 0, 1, 1, 0, 1, 0, 1]
     y_pred = [0.1, 0, 1, 1, 1, 0, 1, 1, 1]
 
     pars = {'y_true': y_true, 'y_pred': y_pred, 'metrics': metrics}
-    res = app.get(url, data=pars)
+    res = app.post(url, data=pars)
     assert res.status_code == 200
 
     data = parse_res(res)
@@ -693,14 +693,14 @@ def test_categorization_metrics_get(app, metrics):
 
 @pytest.mark.parametrize('metrics',
                          itertools.combinations(['adjusted_rand', 'adjusted_mutual_info', 'v_measure'], 2))
-def test_clustering_metrics_get(app, metrics):
+def test_clustering_metrics(app, metrics):
     metrics = list(metrics)
     url = V01 + '/metrics/clustering'
     labels_true = [0, 0, 1, 2]
     labels_pred = [0, 0, 1, 1]
 
     pars = {'labels_true': labels_true, 'labels_pred': labels_pred, 'metrics': metrics}
-    res = app.get(url, data=pars)
+    res = app.post(url, data=pars)
     assert res.status_code == 200
 
     data = parse_res(res)
@@ -715,14 +715,14 @@ def test_clustering_metrics_get(app, metrics):
 
 @pytest.mark.parametrize('metrics',
                          itertools.combinations(['ratio_duplicates', 'f1_same_duplicates', 'mean_duplicates_count'], 2))
-def test_dupdetection_metrics_get(app, metrics):
+def test_dupdetection_metrics(app, metrics):
     metrics = list(metrics)
     url = V01 + '/metrics/duplicate-detection'
     labels_true = [0, 1, 1, 2, 3, 2]
     labels_pred = [0, 1, 3, 2, 5, 2]
 
     pars = {'labels_true': labels_true, 'labels_pred': labels_pred, 'metrics': metrics}
-    res = app.get(url, data=pars)
+    res = app.post(url, data=pars)
     assert res.status_code == 200
 
     data = parse_res(res)
@@ -748,7 +748,7 @@ def test_api_search(app, method):
         parent_id = dsid
 
     method = V01 + "/search/"
-    res = app.get(method, data=dict(parent_id=parent_id, query="so that I can reserve a room"))
+    res = app.post(method, data=dict(parent_id=parent_id, query="so that I can reserve a room"))
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == ['data']
