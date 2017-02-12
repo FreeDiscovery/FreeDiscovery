@@ -3,5 +3,6 @@ sphinx==1.5b1
 recommonmark==0.4.0
 sphinxcontrib-napoleon==0.5.3
 sphinx_rtd_theme==0.1.10a0
-sphinx_gallery==0.1.5
+sphinx-gallery==0.1.5
 pillow==3.4.2
+mock

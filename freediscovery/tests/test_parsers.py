@@ -12,7 +12,7 @@ import itertools
 import pytest
 
 from freediscovery.parsers import EmailParser
-from jwzthreading import Message
+from freediscovery.externals.jwzthreading import Message
 from .run_suite import check_cache
 
 basename = os.path.dirname(__file__)

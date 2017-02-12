@@ -32,12 +32,9 @@ pushd .
 
 pip install --upgrade pip
 pip install --upgrade numpy
-pip install -r ./build_tools/requirements_conda.txt
-pip install -r ./build_tools/requirements_pip.txt
+pip install -r requirements.txt
 pip install -r ./build_tools/requirements_pip_comp.txt
 pip install -r ./build_tools/requirements_extra_pip.txt
-pip install mock
-pip install sphinx-gallery pillow
 
 # Build and install scikit-learn in dev mode
 python setup.py develop

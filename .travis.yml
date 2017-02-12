@@ -3,9 +3,9 @@ sudo: required # this is necessary to get gcc-4.8 for some reason (otherwise gcc
 dist: trusty
 matrix:
     include:
-    - python: "3.5"
+    - python: "3.6"
       env: SKLEARN="0.18.1"
-    - python: "3.4" 
+    - python: "3.5" 
       env: SKLEARN="0.18.1"
     - python: "2.7" 
       env: SKLEARN="0.18.1"
@@ -21,8 +21,7 @@ before_install:
 
 install: 
     - conda config --append channels conda-forge
-    - conda install --yes --file ./build_tools/requirements_conda.txt python=${TRAVIS_PYTHON_VERSION}
-    - pip install -r ./build_tools/requirements_pip.txt
+    - conda install --yes --file requirements.txt python=${TRAVIS_PYTHON_VERSION}
     - pip install -r ./build_tools/requirements_pip_comp.txt
     # reinstall the tested version of SKLEARN
     - | 

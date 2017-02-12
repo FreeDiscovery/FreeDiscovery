@@ -18,7 +18,7 @@ from .utils import setup_model, INT_NAN
 from .exceptions import (ModelNotFound, WrongParameter,
              NotImplementedFD, OptionalDependencyMissing)
 
-from jwzthreading import jwzthreading as jwzt
+from .externals import jwzthreading as jwzt
 
 
 class _EmailThreadingWrapper(_BaseWrapper):
