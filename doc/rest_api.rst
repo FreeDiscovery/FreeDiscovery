@@ -32,4 +32,4 @@ REST API reference
 
 The REST API reference can be found `here <./openapi-docs/index.html>`_.
 
-FreeDiscovery server also exposes the [OpenAPI specification](https://www.openapis.org/about) for the REST API at `/openapi-specs.json`, and the automatic documentation with Swagger UI at `/swagger-ui.html`.
+FreeDiscovery server also exposes the `OpenAPI specification <https://www.openapis.org/about>`_ for the REST API at `/openapi-specs.json`, and the automatic documentation with Swagger UI at `/swagger-ui.html`.
