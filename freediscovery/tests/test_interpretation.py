@@ -43,10 +43,13 @@ def test_overlap_deduplication():
 def test_explain_categorization():
     from freediscovery.interpretation import explain_categorization, _create_random_weights
 
-    fname = 'freediscovery/data/ds_001/raw/0.7.6.28635.txt'
-    words_weights = _create_random_weights(fname, 0.2)
-    with open(fname, encoding='utf-8') as in_file:
-        document_text = in_file.read().replace(u'\ufeff','')
+    document_text = """
+    Hello world\nthis is test\n
+    From:           Eric Bass </o=teneo-test/ou=first administrative group/cn=recipients/cn=bass_eric>
+    Sent:           Wed Jul 12 2000 15:30:00 GMT
+    CC:             Subject:        Draft Order Determined
+    """
+    words_weights = _create_random_weights(document_text, 0.2)
 
     def colormap_mock(x):
        return (1.0, 1.0, 1.0, 1.0)

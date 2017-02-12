@@ -231,14 +231,14 @@ def _score_to_rgb(score, colormap):
     return r, g, b, mapped_rgba[-1]
 
 
-def _create_random_weights(filename, perc_keywords=0.5):
+def _create_random_weights(text, perc_keywords=0.5):
     """Create random weights for keywords.
     Keywords is a random subset of perc_keywords out of all words in the document.
 
     Parameters
     ----------
-    filename : str
-        name of a file to be read
+    text : str
+        document text
     perc_keywords : float
         ratio of keywords of the whole vocabulary
     Returns
@@ -250,8 +250,8 @@ def _create_random_weights(filename, perc_keywords=0.5):
     import random
     from sklearn.feature_extraction.text import CountVectorizer
 
-    vect = CountVectorizer(input="filename")
-    _ = vect.fit([filename])
+    vect = CountVectorizer(input="content")
+    _ = vect.fit([text])
     vocabulary = vect.vocabulary_
     nb_keywords = int(perc_keywords * len(vocabulary))
     keywords = random.sample(vocabulary.keys(), nb_keywords)
@@ -261,10 +261,9 @@ def _create_random_weights(filename, perc_keywords=0.5):
 
 if __name__ == "__main__":
     fname = 'data/ds_001/raw/0.7.6.28635.txt'
-    words_weights = _create_random_weights(fname, 0.2)
-
-    with open(fname, encoding='utf-8') as in_file:
+    with open(fname) as in_file:  #, encoding='utf-8') as in_file:
         document_text = in_file.read().replace(u'\ufeff','')
+    words_weights = _create_random_weights(document_text, 0.2)
 
     COLORMAP = _make_cmap()
     document_text_decorated = explain_categorization(words_weights, document_text, COLORMAP)
