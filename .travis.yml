@@ -32,8 +32,11 @@ install:
     - python setup.py install
     - pwd
 
-script: 
+script:
+    # run tests
     - python -c "import freediscovery.tests as ft; ft.run_cli()"
+    # install matplotlib which we don't add as a core dependency but which is used in examples
+    - pip install matplotlib==1.5.3
     # now start the server and run the examples
     - | 
         mkdir -p ../freediscovery_shared;
