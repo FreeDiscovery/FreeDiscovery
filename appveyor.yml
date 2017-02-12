@@ -34,7 +34,7 @@ install:
   # create a conda virtual environement 
   - "cd C:\\projects\\freediscovery"
   - conda config --append channels conda-forge
-  - "conda create -n freediscovery-env --yes --file .\\build_tools\\requirements.txt python=%PYTHON_VERSION%"
+  - "conda create -n freediscovery-env --yes --file requirements.txt python=%PYTHON_VERSION%"
   - activate freediscovery-env
   - python setup.py develop 
 
