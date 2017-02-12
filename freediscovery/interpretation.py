@@ -26,9 +26,14 @@ def explain_categorization(weights, text, colormap):
     str
         HTML string representing document's text decorated with <span> tags
     """
+    try:
+        from html import escape  # python 3.x
+    except ImportError:
+        from cgi import escape  # python 2.x
+    text = escape(text)  # in order to have a valid HTML output after adding <span> tags
+
     document_html_lines = list()
     for line in text.splitlines():
-        line = line.replace('<', '',).replace('>', '')  # in order to have a valid HTML output after adding <span> tags
         line_decorated = _replace_with_color_spans(line, weights, colormap)
         document_html_lines.append(line_decorated)
     return "<br/>".join(document_html_lines)
@@ -242,7 +247,7 @@ if __name__ == "__main__":
     #print(list(words_weights.items())[:3])
 
     with open(fname, encoding='utf-8') as in_file:
-        document_text = in_file.read()
+        document_text = in_file.read().replace(u'\ufeff','')
 
     COLORMAP = _make_cmap()
     document_text_decorated = explain_categorization(words_weights, document_text, COLORMAP)
