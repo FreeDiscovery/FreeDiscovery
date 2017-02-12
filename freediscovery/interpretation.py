@@ -231,20 +231,37 @@ def _score_to_rgb(score, colormap):
     return r, g, b, mapped_rgba[-1]
 
 
+def _create_random_weights(filename, perc_keywords=0.5):
+    """Create random weights for keywords.
+    Keywords is a random subset of perc_keywords out of all words in the document.
 
-import numpy.random as rnd
-from sklearn.feature_extraction.text import CountVectorizer
+    Parameters
+    ----------
+    filename : str
+        name of a file to be read
+    perc_keywords : float
+        ratio of keywords of the whole vocabulary
+    Returns
+    -------
+    dict[str: float]
+        keywords as keys, their random weights as values
+    """
+    import numpy.random as rnd
+    import random
+    from sklearn.feature_extraction.text import CountVectorizer
 
-def _create_weights(filename):
     vect = CountVectorizer(input="filename")
     _ = vect.fit([filename])
-    features_weight = {word: rnd.random() for word in vect.vocabulary_}
+    vocabulary = vect.vocabulary_
+    nb_keywords = int(perc_keywords * len(vocabulary))
+    keywords = random.sample(vocabulary.keys(), nb_keywords)
+    features_weight = {word: rnd.random() for word in keywords}
     return features_weight
+
 
 if __name__ == "__main__":
     fname = 'data/ds_001/raw/0.7.6.28635.txt'
-    words_weights = _create_weights(fname)
-    #print(list(words_weights.items())[:3])
+    words_weights = _create_random_weights(fname, 0.2)
 
     with open(fname, encoding='utf-8') as in_file:
         document_text = in_file.read().replace(u'\ufeff','')

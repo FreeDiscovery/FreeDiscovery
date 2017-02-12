@@ -37,4 +37,19 @@ def test_overlap_deduplication():
 
     positions = [(0, 14), (2, 6), (15, 18), (15, 24)]
     deduplicated_positions = _keep_longest_overlapping_substrings(positions)
-    assert(deduplicated_positions ==  [(0, 14), (15, 24)])
+    assert(deduplicated_positions == [(0, 14), (15, 24)])
+
+
+def test_explain_categorization():
+    from freediscovery.interpretation import explain_categorization, _create_random_weights
+
+    fname = 'freediscovery/data/ds_001/raw/0.7.6.28635.txt'
+    words_weights = _create_random_weights(fname, 0.2)
+    with open(fname, encoding='utf-8') as in_file:
+        document_text = in_file.read().replace(u'\ufeff','')
+
+    def colormap_mock(x):
+       return (1.0, 1.0, 1.0, 1.0)
+
+    document_html = explain_categorization(words_weights, document_text, colormap=colormap_mock)
+    assert len(document_html) > 0
