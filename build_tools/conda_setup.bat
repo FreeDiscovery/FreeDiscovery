@@ -6,6 +6,5 @@ call deactivate
 conda env remove --yes -n freediscovery-env
 conda create -n freediscovery-env --yes --file requirements.txt python=3.6
 call activate freediscovery-env
-pip install -r ./build_tools/requirements_pip_win.txt
 python setup.py develop
 python -c "import freediscovery.tests as ft; ft.run()"

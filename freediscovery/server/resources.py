@@ -34,7 +34,7 @@ from ..cluster import _ClusteringWrapper
 from ..search import _SearchWrapper
 from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
 from ..dupdet import _DuplicateDetectionWrapper
-from ..threading import _EmailThreadingWrapper
+from ..email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
 from ..exceptions import WrongParameter
 from .schemas import (IDSchema, FeaturesParsSchema,
@@ -59,7 +59,7 @@ EPSILON = 1e-3 # small numeric value
 
 
 
-# ============================================================================ # 
+# ============================================================================ #
 #                         Datasets download                                    #
 # ============================================================================ # 
 
@@ -279,7 +279,7 @@ class LsiApi(Resource):
         return lsi.list_models()
 
     @doc(description=dedent("""
-           Build a Latent Semantic Indexing (LSI) model 
+           Build a Latent Semantic Indexing (LSI) model
 
            The option `use_hashing=True` must be set for the feature extraction.
            Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
@@ -288,7 +288,7 @@ class LsiApi(Resource):
            in the [100, 200] range.
 
            **Parameters**
-             - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features. 
+             - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features.
              - `parent_id`: `dataset_id`
           """))
     @use_args(_lsi_api_post_args)
@@ -319,7 +319,7 @@ class LsiApiElement(Resource):
         cat.delete()
         return {}
 
-# ============================================================================ # 
+# ============================================================================ #
 #                  Categorization (ML)
 # ============================================================================ # 
 
