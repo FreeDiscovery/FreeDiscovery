@@ -175,7 +175,7 @@ class FeaturesApiElementMappingFlat(Resource):
            'and all the rest will be computed (if available)')
     @use_args(_DocumentIndexListSchemaInput(strict=True))
     @marshal_with(DocumentIndexListSchema())
-    def get(self, dsid, return_file_path=False, **args):
+    def post(self, dsid, return_file_path=False, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         query = pd.DataFrame(args)
         res = fe.db.search(query)
@@ -191,7 +191,7 @@ class FeaturesApiElementMappingNested(Resource):
            'and all the rest will be computed (if available)')
     @use_args(_DocumentIndexNestedSchemaInput(strict=True))
     @marshal_with(DocumentIndexNestedSchema())
-    def get(self, dsid, return_file_path=False, **args):
+    def post(self, dsid, return_file_path=False, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         query = pd.DataFrame(args['data'])
         res = fe.db.search(query)
@@ -250,7 +250,7 @@ class EmailParserApiElementIndex(Resource):
           """))
     @use_args({'filenames': wfields.List(wfields.Str(), required=True)})
     @marshal_with(EmailParserElementIndexSchema())
-    def get(self, dsid, **args):
+    def post(self, dsid, **args):
         fe = EmailParser(self._cache_dir, dsid=dsid)
         idx = fe.search(args['filenames'])
         return {'index': list(idx)}
@@ -613,7 +613,7 @@ class ClusteringApiElement(Resource):
             """))
     @use_args(_clustering_api_get_args)
     @marshal_with(ClusteringSchema())
-    def get(self, method, mid, **args):  # TODO unused parameter 'method'
+    def post(self, method, mid, **args):  # TODO unused parameter 'method'
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
 
@@ -690,7 +690,7 @@ class DupDetectionApiElement(Resource):
           """))
     @use_args(_dupdet_api_get_args)
     @marshal_with(DuplicateDetectionSchema())
-    def get(self, mid, **args):
+    def post(self, mid, **args):
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
@@ -727,7 +727,7 @@ class MetricsCategorizationApiElement(Resource):
           """))
     @use_args(_metrics_categorization_api_get_args)
     @marshal_with(MetricsCategorizationSchema())
-    def get(self, **args):
+    def post(self, **args):
         output_metrics = {}
         y_true = np.array(args['y_true'], dtype='int')
         y_pred = np.array(args['y_pred'], dtype='float')
@@ -772,7 +772,7 @@ class MetricsClusteringApiElement(Resource):
           """))
     @use_args(_metrics_clustering_api_get_args)
     @marshal_with(MetricsClusteringSchema())
-    def get(self, **args):
+    def post(self, **args):
         output_metrics = dict()
         labels_true = args['labels_true']
         labels_pred = args['labels_pred']
@@ -801,7 +801,7 @@ class MetricsDupDetectionApiElement(Resource):
           """))
     @use_args(_metrics_clustering_api_get_args)  # Arguments are the same as for clustering
     @marshal_with(MetricsDupDetectionSchema())
-    def get(self, **args):
+    def post(self, **args):
         output_metrics = dict()
         labels_true = args['labels_true']
         labels_pred = args['labels_pred']
@@ -871,7 +871,7 @@ class SearchApi(Resource):
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True)})
     @marshal_with(SearchResponseSchema())
-    def get(self, **args):
+    def post(self, **args):
         parent_id = args['parent_id']
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
 
