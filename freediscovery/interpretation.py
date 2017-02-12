@@ -6,36 +6,52 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
-import matplotlib as mpl
-import matplotlib.cm as cm
 import numpy as np
 
 
-def explain_logistic_regression(weights, textlines):
-    """
-    Generate decorated HTML by adding <span> tags with background color to keywords depending on word's weight.
+def explain_categorization(weights, text, colormap):
+    """Generate decorated HTML by adding <span> tags with background color to keywords depending on word's weight.
 
     Parameters
     ----------
-    weights: [dict] {vocabulary : weights} with words [str] as keys, weights (scores) [float] as values
-    textlines [list of str] list of text lines representing raw document text
+    weights : dict[str, float]
+        words as keys, weights (scores) as values
+    text : str
+        document's raw text
+    colormap : matplotlib.colors.LinearSegmentedColormap
+        color map used to decorate keywords with background color
 
     Returns
     -------
-    [str] HTML string representing document's text decorated with <span> tags
+    str
+        HTML string representing document's text decorated with <span> tags
     """
-    document_html = ''
-    for line in textlines:
+    document_html_lines = list()
+    for line in text.splitlines():
         line = line.replace('<', '',).replace('>', '')  # in order to have a valid HTML output after adding <span> tags
-        line_html = _replace_with_color_spans(line, weights)
-        document_html += line_html + '<br/>'
-    return document_html
+        line_decorated = _replace_with_color_spans(line, weights, colormap)
+        document_html_lines.append(line_decorated)
+    return "<br/>".join(document_html_lines)
 
 
 def _make_cmap(cmap_name='jet', alpha=0.2):
+    """Create a colormap which will be used to adding color spans to text
+
+    Parameters
+    ----------
+    cmap_name : str
+        name of colormap, see here for all possible values: http://matplotlib.org/users/colormaps.html
+    alpha : float
+        color's transparency
+
+    Returns
+    -------
+    matplotlib.colors.LinearSegmentedColormap
+        final color map with transparency
     """
-    Create a colormap which will be used to adding color spans to text
-    """
+    import matplotlib as mpl
+    import matplotlib.cm as cm
+
     cmap = cm.get_cmap(cmap_name)
 
     # Extract colormap's colors and set new alpha
@@ -47,13 +63,23 @@ def _make_cmap(cmap_name='jet', alpha=0.2):
     return cmap_with_trancparency
 
 
-COLORMAP = _make_cmap()  # TODO another way to instanciate a colormap, not on the class level?
-
-
-def _replace_with_color_spans(textline, weights):
-    """
-    Given a line of text and a dictionary of word weights,
+def _replace_with_color_spans(textline, weights, colormap):
+    """Given a line of text and a dictionary of word weights,
     add color span tag to those words in the textline that are present in the dictionary
+
+    Parameters
+    ----------
+    textline : str
+        text of one document's line
+    weights : dict[str, float]
+        words as keys, words' scores (weights) as values
+    colormap : matplotlib.colors.LinearSegmentedColormap
+        color map used to map the word's score to the background color of a <span>
+
+    Returns
+    -------
+    str
+        HTML string representing the word wrapped into a <span> tag with background color
     """
     html = textline
     positions = _get_keyword_positions(textline, weights.keys())
@@ -70,19 +96,32 @@ def _replace_with_color_spans(textline, weights):
         # We assume that dictionary has only lowercase words ('eric') in this case.
         key = source_word.lower()
         score = weights[key]
-        colored_word = _wrap_in_colored_span(source_word, score)
-        print(word_start, word_end, source_word, " ==> ", colored_word)
+        colored_word = _wrap_in_colored_span(source_word, score, colormap)
+        # print(word_start, word_end, source_word, " ==> ", colored_word)
         html = html[:word_start] + colored_word + html[word_end:]
     return html
 
 
 def _get_keyword_positions(textline, keywords):
-    """
-    Given a textline and a list of keywords, get a sorted list of positions of keywords found in the textline.
-    Example:
-        textline: "Hello world, this is Eric."
-        keywords: ["world", "eric"]
-        would return [(6, 11), (21, 25)]. Each tuple represents word start and end index in the given string.
+    """Given a textline and a list of keywords, get a sorted list of positions of keywords found in the textline.
+
+    Example
+    -------
+    textline: "Hello world, this is Eric."
+    keywords: ["world", "eric"]
+    would return [(6, 11), (21, 25)]. Each tuple represents word start and end index in the given string.
+
+    Parameters
+    ----------
+    textline : str
+        text of one document's line
+    keywords : list[str]
+        list of keywords for which we have scores (weights)
+
+    Returns
+    -------
+    list[(int, int)]
+        each tuple corresponds to a pair of (start, end) positions of a keyword inside a given line of text
     """
     positions_list = list()
     for word in keywords:
@@ -96,10 +135,10 @@ def _get_keyword_positions(textline, keywords):
 
 
 def _keep_longest_overlapping_substrings(positions):
-    """
-    Deduplicate overlapping positions by keeping the longest possible keywords.
+    """Deduplicate overlapping positions by keeping the longest possible keywords.
 
-    Example 1:
+    Example
+    -------
         document text contains string "email me at eric_bass@some-email.com"
         keywords vocabulary has "eric", "bass", "eric_bass"
         Thus keywords positions will have three tuples [(12, 16), (17, 21), (12, 21)].
@@ -108,13 +147,24 @@ def _keep_longest_overlapping_substrings(positions):
         We make a choice to keep the longest possible substring, deleting every other keyword overlapping with it.
         In this example the final output after deduplication will be [(12, 21].
 
-    Example 2:
+    Example
+    -------
         document text contains string "administrative procedures"
         keywords vocabulary has "administrative", "mini", "procedure", "pro"
         Thus keywords positions are [(0, 14), (2, 6), (15, 24), (15, 18)].
         Keeping longest possible keywords will eliminate "mini" and "pro" keywords,
         which were just accidentally matched and would represent a noise if kept.
         So, after deduplication only two tuples are left: [(0, 14), (15, 24)]
+
+    Parameters
+    ----------
+    positions : list[(int, int)]
+        each tuple corresponds to a pair of (start, end) positions of a keyword inside a given line of text
+
+    Returns
+    -------
+    list[(int, int)]
+        deduplicated version of keywords positions inside the text
     """
     overlap = True
     while overlap:
@@ -135,18 +185,48 @@ def _keep_longest_overlapping_substrings(positions):
     return sorted(positions)
 
 
-def _wrap_in_colored_span(word, score):
-    rgba = _score_to_rgb(score, COLORMAP)
+def _wrap_in_colored_span(word, score, colormap):
+    """Wrap a given word into an HTML <span> tag.
+
+    Parameters
+    ----------
+    word : str
+        word to be wrapped in a <span> tag with background color
+    score : float
+        word's score (weight)
+    colormap : matplotlib.colors.LinearSegmentedColormap
+        color map used to map the word's score to a background color of the span
+
+    Returns
+    -------
+    str
+        HTML tag <span> wrapped around the word to decorate it with a background color
+    """
+    rgba = _score_to_rgb(score, colormap)
     return '<span style="background-color: rgba({}, {}, {}, {});">{word}</span>'.format(*rgba, word=word)
 
 
 def _score_to_rgb(score, colormap):
+    """Convert word's score (weight) into an RGBa color.
+
+    Parameters
+    ----------
+    score : float
+        word's score (weight) from a dictionary
+    colormap : matplotlib.colors.LinearSegmentedColormap
+        color map used to map the word's score to an RGBa color
+
+    Returns
+    -------
+    (int, int, int, float)
+        RGBa representation of resulting color
+    """
     mapped_rgba = colormap(score)
     r, g, b = [int(255*x) for x in list(mapped_rgba)[:3]]
     return r, g, b, mapped_rgba[-1]
 
 
-"""
+
 import numpy.random as rnd
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -159,12 +239,12 @@ def _create_weights(filename):
 if __name__ == "__main__":
     fname = 'data/ds_001/raw/0.7.6.28635.txt'
     words_weights = _create_weights(fname)
-    print(list(words_weights.items())[:3])
+    #print(list(words_weights.items())[:3])
 
     with open(fname, encoding='utf-8') as in_file:
-        document_lines = [line.strip() for line in in_file.readlines()]
+        document_text = in_file.read()
 
-    document_html = explain_logistic_regression(words_weights, document_lines)
+    COLORMAP = _make_cmap()
+    document_text_decorated = explain_categorization(words_weights, document_text, COLORMAP)
     with open('{}_decorated.html'.format(fname), 'w') as out_file:
-        out_file.write(document_html)
-"""
+        out_file.write(document_text_decorated)
