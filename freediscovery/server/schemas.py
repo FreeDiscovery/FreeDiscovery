@@ -18,7 +18,7 @@ class Schema(BaseSchema):
         strict = True
 
 
-class DatasetSchema(Schema):
+class ExampleDatasetSchema(Schema):
     base_dir = fields.Str(required=True)
     data_dir = fields.Str(required=True)
     ground_truth_y = fields.List(fields.Int())

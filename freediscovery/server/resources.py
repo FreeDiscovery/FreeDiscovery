@@ -41,7 +41,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, DocumentIndexListSchema,
                       DocumentIndexNestedSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
-                      DatasetSchema,
+                      ExampleDatasetSchema,
                       LsiParsSchema, LsiPostSchema,
                       ClassificationScoresSchema, _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
@@ -63,11 +63,11 @@ EPSILON = 1e-3 # small numeric value
 #                         Datasets download                                    #
 # ============================================================================ # 
 
-class DatasetsApiElement(Resource):
+class ExampleDatasetApi(Resource):
 
     @doc(description=_docstring_description(dedent(load_dataset.__doc__)))
     @use_args({'return_file_path': wfields.Boolean()})
-    @marshal_with(DatasetSchema())
+    @marshal_with(ExampleDatasetSchema())
     def get(self, name, **args):
         res = load_dataset(name, self._cache_dir, verbose=True,
                 load_ground_truth=True, verify_checksum=False, **args)
