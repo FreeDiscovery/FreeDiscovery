@@ -15,15 +15,11 @@ from numpy.testing import (assert_allclose, assert_equal,
 
 import pytest
 import itertools
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import normalize
 
 from freediscovery.base import PipelineFinder
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper
-from freediscovery.categorization import (_CategorizerWrapper, _zip_relevant,
-        _unzip_relevant, NearestNeighborRanker, NearestCentroidRanker,
-        _chunk_kneighbors)
+from freediscovery.categorization import _CategorizerWrapper
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.utils import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
@@ -134,20 +130,6 @@ def test_explain_categorization():
     assert len(weights.keys()) < len(vect.vocabulary_) # not all vocabulary keys are returned
 
 
-@pytest.mark.parametrize('batch_size', [1, 101, 100])
-def test_nn_chunking(batch_size):
-
-    shape = (1000, 10)
-
-    X = 2*np.ones(shape)
-    def func(X):
-        assert X.shape[0] > 0 # we need at least one point
-        return X**2, X - 1
-
-    d, idx = _chunk_kneighbors(func, X, batch_size=batch_size)
-
-    assert_allclose(d, 4*np.ones(shape))
-    assert_allclose(idx, 1*np.ones(shape))
 
 
 
@@ -231,138 +213,3 @@ def test_categorization_score():
     scores2 = categorization_score(idx_ref2, y_ref2, idx, y)
     assert scores['average_precision'] == scores2['average_precision']
 
-def test_relevant_zip():
-    relevant_id = [2, 3, 5]
-    non_relevant_id = [1, 7, 10]
-    idx_id = [2, 3, 5, 1, 7, 10]
-    y = [1, 1, 1, 0, 0, 0]
-
-    idx_id2, y2 = _zip_relevant(relevant_id, non_relevant_id)
-    assert_equal(idx_id, idx_id2)
-    assert_equal(y, y2)
-
-    relevant_id2, non_relevant_id2 = _unzip_relevant(idx_id2, y2)
-    assert_equal(relevant_id2, relevant_id)
-    assert_equal(non_relevant_id2, non_relevant_id)
-
-def test_relevant_positives_zip():
-    # Check that _unzip_relavant works with only relevant files
-    idx_id = [2, 3, 5, 1, 7, 10]
-    y = [1, 1, 1, 1, 1, 1]
-    relevant_id2, non_relevant_id2 = _unzip_relevant(idx_id, y)
-    assert_equal(relevant_id2, idx_id)
-    assert_equal(non_relevant_id2, np.array([]))
-
-
-@pytest.mark.parametrize('ranking', ['supervised', 'unsupervised'])
-def test_nearest_neighbor_ranker_supervised(ranking):
-    # check that we have sensible results with respect to
-    # NN1 binary classification (supervised, with both positive
-    # and negative samples)
-    from sklearn.neighbors import KNeighborsClassifier
-    np.random.seed(0)
-
-    n_samples = 1000
-    n_features = 10
-
-    X = np.random.rand(n_samples, n_features)
-    normalize(X, copy=False)
-    index = np.arange(n_samples, dtype='int')
-    y = np.random.randint(0, 2, size=(n_samples,))
-    index_train, index_test, y_train, y_test = train_test_split(index, y)
-    X_train = X[index_train]
-    X_test = X[index_test]
-
-    rk = NearestNeighborRanker(ranking=ranking)
-    rk.fit(X_train, y_train)
-    y_pred, idx, md = rk.kneighbors(X_test, batch_size=90) # choose a batch size smaller
-                                                           # than n_samples
-
-    assert y_pred.shape == (X_test.shape[0],)
-    if ranking == 'supervised':
-        assert y_pred.min() >= -1 and y_pred.min() <= -0.8 # as we are using cosine similarities
-    assert y_pred.max() <=  1 and y_pred.max() >= 0.8
-    assert idx.shape == (X_test.shape[0],)
-    assert sorted(md.keys()) == ['dist_n', 'dist_p', 'ind_n', 'ind_p']
-    for key, val in md.items():
-        assert val.shape == (X_test.shape[0],)
-        assert_array_less(0, val) # all values are positive
-
-    # postive scores correspond to positive documents
-
-    if ranking == 'supervised':
-        assert_equal((y_pred > 0), y_train[idx])
-
-        cl = KNeighborsClassifier(n_neighbors=1, algorithm='brute')
-        cl.fit(X_train, y_train)
-
-        y_ref = cl.predict(X_test)
-
-        # make sure we get the same results as for the KNeighborsClassifier
-        assert_equal(y_ref, y_train[idx])
-    else:
-        assert_allclose(y_pred, 1 - md['dist_p']/2)
-        assert_array_equal(idx, md['ind_p'])
-
-def test_nearest_neighbor_ranker_unsupervised():
-    # Check NearestNeighborRanker with only positive samples
-    # (unsupervised)
-    from sklearn.neighbors import NearestNeighbors
-    np.random.seed(0)
-
-    n_samples = 1000
-    n_features = 120
-
-    X = np.random.rand(n_samples, n_features)
-    normalize(X, copy=False)
-    index = np.arange(n_samples, dtype='int')
-    y = np.ones(n_samples, dtype=np.int)
-    index_train, index_test, y_train, y_test = train_test_split(index, y)
-    X_train = X[index_train]
-    X_test = X[index_test]
-
-    rk = NearestNeighborRanker()
-    rk.fit(X_train, y_train)
-    y_pred, idx, md = rk.kneighbors(X_test)
-
-    assert_array_less(0, y_pred) # all distance are positive
-
-    nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
-    nn.fit(X_train)
-    dist, idx_ref = nn.kneighbors(X_test)
-
-    assert_equal(idx, idx_ref[:,0])
-
-    assert_equal(y_pred, (1 - dist[:,0]/4))
-
-def test_nearest_centroid_ranker():
-    # in the case where there is a single point by centroid,
-    # nearest centroid should reduce to nearest neighbor
-    from sklearn.neighbors import NearestNeighbors
-    np.random.seed(0)
-
-    n_samples = 100
-    n_features = 120
-    X = np.random.rand(n_samples, n_features)
-    normalize(X, copy=False)
-    index = np.arange(n_samples, dtype='int')
-    y = np.arange(n_samples, dtype='int')
-    index_train, index_test, y_train, y_test = train_test_split(index, y)
-    X_train = X[index_train]
-    X_test = X[index_test]
-
-
-    nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
-    nn.fit(X_train)
-    dist_ref, idx_ref = nn.kneighbors(X_test)
-
-    nc = NearestCentroidRanker()
-    nc.fit(X_train, y_train)
-    dist_pred = nc.decision_function(X_test)
-    y_pred = nc.predict(X_test)
-
-    # ensures that we have the same number of unique ouput points
-    # (even if absolute labels are not preserved)
-    assert np.unique(idx_ref[:,0]).shape ==  np.unique(y_pred).shape
-
-    assert_allclose(dist_pred, dist_ref[:,0])
