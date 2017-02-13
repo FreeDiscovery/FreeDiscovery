@@ -95,7 +95,7 @@ def get_features(app, hashed=True, ingestion_method='data_dir'):
         raise NotImplementedError('ingestion_method={} is not implemented')
 
 
-    res = app.post(method, data=pars)
+    res = app.post(method, json=pars)
 
     assert res.status_code == 200, method
     data = parse_res(res)
@@ -115,7 +115,7 @@ def get_features_lsi(app, hashed=True, ingestion_method='data_dir'):
                               ingestion_method=ingestion_method)
     lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
-    res = app.post(method, data=lsi_pars)
+    res = app.post(method, json=lsi_pars)
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == ['explained_variance', 'id']
@@ -189,7 +189,7 @@ def test_get_search_filenames(app, return_file_path):
             pass # default to false
 
 
-        res = app.post(method, data=pars)
+        res = app.post(method, json=pars)
         assert res.status_code == 200
         data = parse_res(res)
         if return_file_path:
@@ -209,7 +209,7 @@ def parse_emails(app):
     method = V01 + "/email-parser/"
     pars = dict(data_dir=email_data_dir)
 
-    res = app.post(method, data=pars)
+    res = app.post(method, json=pars)
 
     assert res.status_code == 200, method
     data = parse_res(res)
@@ -266,7 +266,7 @@ def test_get_search_emails_by_filename(app):
             ({ 'filenames': ['1', '2']}, [0, 1]),
             ({ 'filenames': ['5']}, [4])]:
 
-        res = app.post(method, data=pars)
+        res = app.post(method, json=pars)
         assert res.status_code == 200
         data = parse_res(res)
         assert sorted(data.keys()) ==  sorted(['index'])
@@ -294,7 +294,7 @@ def test_api_lsi(app):
 
     lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
-    res = app.post(method, data=lsi_pars)
+    res = app.post(method, json=lsi_pars)
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == ['explained_variance', 'id']
@@ -364,7 +364,7 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
 
 
     method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    res = app.post(method, data={'file_path': index_filenames})
+    res = app.post(method, json={'file_path': index_filenames})
     assert res.status_code == 200, method
     index = parse_res(res)['internal_id']
 
@@ -378,7 +378,7 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
 
     method = V01 + "/categorization/"
     try:
-        res = app.post(method, data=pars)
+        res = app.post(method, json=pars)
     except OptionalDependencyMissing:
         raise SkipTest
 
@@ -415,12 +415,16 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
             assert sorted(nn_p.keys()) == sorted(['internal_id', 'distance'])
     else:
         for row in data['data']:
-            assert sorted(row.keys()) == sorted(['internal_id', 'score'])
+            if 'document_id' in row.keys():
+                assert sorted(row.keys()) == sorted(['document_id', 'internal_id', 'score'])
+            else:
+                assert sorted(row.keys()) == sorted(['internal_id', 'score'])
+
 
     if supervision_mode == 'supervised':
         method = V01 + "/categorization/{}/test".format(mid)
         res = app.post(method,
-                data={'ground_truth_filename':
+                json={'ground_truth_filename':
                     os.path.join(data_dir, '..', 'ground_truth_file.txt')})
         data = parse_res(res)
         assert sorted(data.keys()) == sorted(['precision', 'recall',
@@ -440,9 +444,7 @@ def test_api_categorization_ingestion_method(app, ingestion_method):
     if ingestion_method == 'data_dir':
         _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', '', 'supervised')
     elif ingestion_method == 'dataset_definition':
-        # Internal testing doesn't currently support nested dicts cf.
-        # https://github.com/pallets/werkzeug/blob/master/werkzeug/test.py#L233
-        raise SkipTest
+        _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', '', 'supervised')
     else:
         with pytest.raises(ValueError):
             _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False, 'supervised')
@@ -486,7 +488,7 @@ def test_api_clustering(app, model, use_lsi):
         pars['n_clusters'] = 2
     if model == 'dbscan':
         pars.update({'eps': 0.1, "min_samples": 2})
-    res = app.post(url, data=pars)
+    res = app.post(url, json=pars)
 
     assert res.status_code == 200
     data = parse_res(res)
@@ -534,7 +536,7 @@ def test_api_dupdetection(app, kind, options):
     url = V01 + "/duplicate-detection" 
     pars = { 'parent_id': dsid,
              'method': kind}
-    res = app.post(url, data=pars)
+    res = app.post(url, json=pars)
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == sorted(['id'])
@@ -569,7 +571,7 @@ def test_api_thread_emails(app):
     url = V01 + "/email-threading" 
     pars = { 'parent_id': dsid }
              
-    res = app.post(url, data=pars)
+    res = app.post(url, json=pars)
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == sorted(['data', 'id'])
@@ -656,7 +658,7 @@ def test_exception_handling(app_notest):
     method = V01 + "/categorization/"
     with _silent('stderr'):
         res = app_notest.post(method,
-                        data={
+                        json={
                               'parent_id': dsid,
                               'index': [0, 0, 0],       # just something wrong
                               'y': ['ds', 'dsd', 'dsd'],
@@ -680,7 +682,7 @@ def test_categorization_metrics(app, metrics):
     y_pred = [0.1, 0, 1, 1, 1, 0, 1, 1, 1]
 
     pars = {'y_true': y_true, 'y_pred': y_pred, 'metrics': metrics}
-    res = app.post(url, data=pars)
+    res = app.post(url, json=pars)
     assert res.status_code == 200
 
     data = parse_res(res)
@@ -700,7 +702,7 @@ def test_clustering_metrics(app, metrics):
     labels_pred = [0, 0, 1, 1]
 
     pars = {'labels_true': labels_true, 'labels_pred': labels_pred, 'metrics': metrics}
-    res = app.post(url, data=pars)
+    res = app.post(url, json=pars)
     assert res.status_code == 200
 
     data = parse_res(res)
@@ -722,7 +724,7 @@ def test_dupdetection_metrics(app, metrics):
     labels_pred = [0, 1, 3, 2, 5, 2]
 
     pars = {'labels_true': labels_true, 'labels_pred': labels_pred, 'metrics': metrics}
-    res = app.post(url, data=pars)
+    res = app.post(url, json=pars)
     assert res.status_code == 200
 
     data = parse_res(res)
@@ -748,7 +750,7 @@ def test_api_search(app, method):
         parent_id = dsid
 
     method = V01 + "/search/"
-    res = app.post(method, data=dict(parent_id=parent_id, query="so that I can reserve a room"))
+    res = app.post(method, json=dict(parent_id=parent_id, query="so that I can reserve a room"))
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == ['data']

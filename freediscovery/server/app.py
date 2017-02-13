@@ -6,8 +6,8 @@ from __future__ import print_function
 
 import os.path
 
-from flask import Flask
-from flask import jsonify
+from flask import Flask, jsonify, json
+from flask.testing import FlaskClient
 from flask_apispec import FlaskApiSpec
 
 from apispec import APISpec
@@ -37,6 +37,14 @@ from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementMappi
 #    def post(self, url):
 #        print("accessing", url)
 
+class TestClient(FlaskClient):
+    # Addresses https://github.com/pallets/flask/issues/2176
+    def open(self, *args, **kwargs):
+        if 'json' in kwargs:
+            kwargs['data'] = json.dumps(kwargs.pop('json'))
+            kwargs['content_type'] = 'application/json'
+        return super(TestClient, self).open(*args, **kwargs)
+
 
 def fd_app(cache_dir):
     """ API app for FreeDiscovery """
@@ -51,6 +59,8 @@ def fd_app(cache_dir):
                                   plugins=['apispec.ext.marshmallow']),
           'APISPEC_SWAGGER_URL': '/openapi-specs.json',
           'APISPEC_SWAGGER_UI_URL': '/swagger-ui.html'})
+
+    app.test_client_class = TestClient
 
     docs = FlaskApiSpec(app)
 
