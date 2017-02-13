@@ -13,6 +13,7 @@ from sklearn.externals import joblib
 from sklearn.neighbors import NearestNeighbors, NearestCentroid
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
+from sklearn.preprocessing import LabelEncoder
 
 
 from .base import _BaseWrapper, RankerMixin
@@ -424,7 +425,7 @@ class _CategorizerWrapper(_BaseWrapper):
         index : array-like, shape (n_samples)
            document indices of the training set
         y : array-like, shape (n_samples)
-           target binary class relative to index
+           target class relative to index (string or int)
         method : str
            the ML algorithm to use (one of "LogisticRegression", "LinearSVC", 'xgboost')
         cv : str
@@ -440,7 +441,7 @@ class _CategorizerWrapper(_BaseWrapper):
         valid_methods = ["LinearSVC", "LogisticRegression", "xgboost",
                          "NearestCentroid", "NearestNeighbor"]
 
-        if method in ['ensemble-stacking', 'MLPClassifier']:
+        if method in ['MLPClassifier']:
             raise WrongParameter('method={} is implemented but not production ready. It was disabled for now.'.format(method))
 
         if method not in valid_methods:
@@ -453,32 +454,16 @@ class _CategorizerWrapper(_BaseWrapper):
         if cv not in [None, 'fast', 'full']:
             raise WrongParameter('cv')
 
-        if method == 'ensemble-stacking':
-            if cv is not None:
-                raise WrongParameter('CV with ensemble stacking is not supported!')
-
-        d_all = self.pipeline.data  #, mmap_mode='r')
+        d_all = self.pipeline.data
 
         X_train = d_all[index, :]
 
-        Y_train = y
+        Y_labels = y
 
-        if method != 'ensemble-stacking':
-            cmod = self._build_estimator(Y_train, method, cv, self.cv_scoring, self.cv_n_folds)
-        else:
-            from freediscovery.private import _EnsembleStacking
+        self.le = LabelEncoder()
+        Y_train = self.le.fit_transform(Y_labels)
 
-            cmod_logregr = self._build_estimator(Y_train, 'LogisticRegression', 'full',
-                                             self.cv_scoring, self.cv_n_folds)
-            cmod_svm = self._build_estimator(Y_train, 'LinearSVC', 'full',
-                                             self.cv_scoring, self.cv_n_folds)
-            cmod_xgboost = self._build_estimator(Y_train, 'xgboost', None,
-                                             self.cv_scoring, self.cv_n_folds)
-            cmod_xgboost.transform = cmod_xgboost.predict
-            cmod = _EnsembleStacking([('logregr', cmod_logregr),
-                                      ('svm', cmod_svm),
-                                      ('xgboost', cmod_xgboost)
-                                      ])
+        cmod = self._build_estimator(Y_train, method, cv, self.cv_scoring, self.cv_n_folds)
 
         mid, mid_dir = setup_model(self.model_dir)
 
@@ -487,16 +472,20 @@ class _CategorizerWrapper(_BaseWrapper):
         else:
             cmod.fit(X_train, Y_train)
 
-        joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
+
+
+        joblib.dump(self.le, os.path.join(mid_dir, 'label_encoder'))
+        joblib.dump(cmod, os.path.join(mid_dir, 'model'))
 
         pars = {
             'method': method,
             'index': index,
-            'y': y
+            'y': y,
+            'categories': self.le.classes_
             }
         pars['options'] = cmod.get_params()
         self._pars = pars
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
+        joblib.dump(pars, os.path.join(mid_dir, 'pars'))
 
         self.mid = mid
         self.cmod = cmod
