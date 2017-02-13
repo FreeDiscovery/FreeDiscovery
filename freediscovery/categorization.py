@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import os
 import numpy as np
 import scipy
-from scipy.special import logit
+from scipy.special import logit, expit
 from sklearn.externals import joblib
 from sklearn.preprocessing import LabelEncoder
 
@@ -17,8 +17,6 @@ from .base import _BaseWrapper
 from .utils import setup_model, _rename_main_thread
 from .neighbors import NearestCentroidRanker, NearestNeighborRanker
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
-
-
 
 
 def explain_binary_categorization(estimator, vocabulary, X_row):
@@ -60,8 +58,6 @@ def explain_binary_categorization(estimator, vocabulary, X_row):
         return weights_dict
     else:
         raise NotImplementedError()
-
-
 
 
 class _CategorizerWrapper(_BaseWrapper):
@@ -234,7 +230,7 @@ class _CategorizerWrapper(_BaseWrapper):
         self.cmod = cmod
         return cmod, Y_train
 
-    def predict(self, chunk_size=5000):
+    def predict(self, chunk_size=5000, kind='probability'):
         """
         Predict the relevance using a previously trained model
 
@@ -242,7 +238,22 @@ class _CategorizerWrapper(_BaseWrapper):
         ----------
         chunck_size : int
            chunck size
+
+        kind : str
+           type of the output in ['decision_function', 'probability'], only affects ML methods. The nearest Neighbor ranker always return cosine similarities in any case.
+
+        Returns
+        -------
+        res : ndarray [n_samples, n_classes]
+           the score for each class
+        nn_ind : {ndarray [n_samples, n_classes], None}
+           the index of the nearest neighbor for each class (when the NearestNeighborRanker is used)
         """
+        if kind not in ['probability', 'decision_function']:
+            raise ValueError("Wrong input value kind={}, must be one of ['probability', 'decision_function']".format(kind))
+
+        if kind == 'probability':
+            kind = 'predict_proba'
 
         if self.cmod is not None:
             cmod = self.cmod
@@ -252,15 +263,32 @@ class _CategorizerWrapper(_BaseWrapper):
 
         ds = self.pipeline.data
 
-        md = {}
+        nn_ind = None
         if isinstance(cmod, NearestNeighborRanker):
-            res, md = cmod.kneighbors(ds)
+            res, nn_ind = cmod.kneighbors(ds)
+        elif hasattr(cmod, kind):
+            res = getattr(cmod, kind)(ds)
         elif hasattr(cmod, 'decision_function'):
+            # and we need predict_proba
             res = cmod.decision_function(ds)
-        else:  # gradient boosting define the decision function by analogy
-            tmp = cmod.predict_proba(ds)[:, 1]
-            res = logit(tmp)
-        return res, md
+            res = expit(res)
+        elif hasattr(cmod, 'predict_proba'):
+            # and we need decision_function
+            res = cmod.predict_proba(ds)
+            res = logit(res)
+        else:
+            raise ValueError('Model {} has neither decision_function nor predict_proba methods!'.format(cmod))
+
+        # handle the case of binary categorization
+        if res.ndim == 1:
+            if kind == 'decision_function':
+                res_p = res
+                res_n = - res
+            else:
+                res_p = res
+                res_n = 1 - res
+            res = np.hstack((res_n[:,None], res_p[:, None]))
+        return res, nn_ind
 
     def _load_pars(self, mid=None):
         """Load model parameters from disk"""

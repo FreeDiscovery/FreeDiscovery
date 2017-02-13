@@ -46,13 +46,3 @@ def test_euclidean2cosine():
     D_seuc = pairwise_distances(x, y, metric='euclidean', squared=True)[0, 0]
 
     assert_allclose(S_cos, seuclidean_dist2cosine_sim(D_seuc))
-
-
-
-
-
-
-
-
-
-

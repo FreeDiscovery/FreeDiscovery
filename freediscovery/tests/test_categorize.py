@@ -78,7 +78,7 @@ def test_categorization(use_lsi, method, cv):
     index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
     try:
-        coefs, Y_train = cat.train(
+        model, Y_train = cat.train(
                                 index,
                                 ground_truth.is_relevant.values,
                                 method=method,
@@ -94,16 +94,16 @@ def test_categorization(use_lsi, method, cv):
 
     scores = categorization_score(idx_gt,
                         ground_truth.is_relevant.values,
-                        X_pred, Y_pred)
+                        X_pred, np.argmax(Y_pred, axis=1))
 
     assert cat.get_params() is not None
 
+    assert Y_pred.shape == (cat.fe.n_samples_, len(np.unique(ground_truth.is_relevant.values)))
+
     if method == 'NearestNeighbor':
-        assert sorted(list(md.keys())) == ['dist_n', 'dist_p', 'ind_n', 'ind_p']
-        for key, val in md.items():
-            assert val.shape == Y_pred.shape
+        assert md.shape == Y_pred.shape
     else:
-        assert md == {}
+        assert md is None
 
     if method in ['xgboost', 'ensemble-stacking']:
         # this parameter fail for some reason so far...
