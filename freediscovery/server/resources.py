@@ -332,9 +332,7 @@ class ModelsApi(Resource):
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
-            - `index`: (optional) internal document ids of the training set (can also be provided in `index_nested`)
-            - `y`: (optional) target binary class relative to index (can also be provided in `index_nested`)
-            - `index_nested`: a list of dict which have a `y` field and one or several fields that can be used for indexing, such as `internal_id`, `document_id`, `file_path`, `rendition_id`.
+            - `data`: a list of dict which have a `category` field and one or several fields that can be used for indexing, such as `internal_id`, `document_id`, `file_path`, `rendition_id`.
             - `method`: classification algorithm to use (default: LogisticRegression),
               * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
               * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),
@@ -352,17 +350,12 @@ class ModelsApi(Resource):
         parent_id = args['parent_id']
         cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
 
-        if 'y' in args and 'index' in args:
-            pass
-        elif 'index_nested' in args:
-            query = pd.DataFrame(args['index_nested'])
-            res_q = cat.fe.db.search(query, drop=False)
-            del args['index_nested']
-            args['index'] = res_q.internal_id.values
-            args['y'] = res_q.y.values
-        else:
-            raise WrongParameter("Either 'index_nested' or y and index must be provided!")
+        query = pd.DataFrame(args['data'])
+        res_q = cat.fe.db.search(query, drop=False)
+        del args['data']
 
+        args['index'] = res_q.internal_id.values
+        args['y'] = res_q.category.values
 
         if args['cv']:
             cv = 'fast'
@@ -372,14 +365,12 @@ class ModelsApi(Resource):
             del args[key]
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
+        res = {'id': cat.mid}
         if training_scores:
             Y_res, md = cat.predict()
             idx_res = np.arange(cat.fe.n_samples_, dtype='int')
-            res = categorization_score(idx_train, Y_train, idx_res, Y_res)
-        else:
-            res = {"recall": -1, "precision": -1 , "f1": -1, 
-                'auc_roc': -1, 'average_precision': -1}
-        res['id'] = cat.mid
+            res.update(categorization_score(idx_train, Y_train,
+                                       idx_res, np.argmax(Y_res, axis=1)))
         return res
 
 
@@ -402,43 +393,16 @@ class ModelsApiElement(Resource):
 class ModelsApiPredict(Resource):
 
     @doc(description='Predict document categorization with a previously trained model')
+    @use_args({'max_result_categories': wfields.Int(default=1),
+               'sort': wfields.Boolean(default=False)})
     @marshal_with(CategorizationPredictSchema())
-    def get(self, mid):
+    def get(self, mid, **args):
 
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
-        y_res, md = cat.predict()
-        md = {key: val.tolist() for key, val in md.items()}
-        scores_pd = pd.DataFrame({'score': y_res,
-                                  'internal_id': np.arange(cat.fe.n_samples_, dtype='int')})
-        if not md:
-
-            view_data = cat.fe.db.render_dict(scores_pd)
-        else:
-            res = scores_pd.set_index('internal_id')
-            db = cat.fe.db.data.set_index('internal_id', drop=False)
-            base_keys = [key for key in cat.fe.db.data.columns if key != 'file_path']
-
-            view_data = []
-            for index, row in res.iterrows():
-                row_dict = row.to_dict()
-                db_sel = db.loc[index]
-                row_dict.update(db_sel[base_keys].to_dict())
-                row_dict['internal_id'] = index
-                for ind_key, dist_key, field_name in [('ind_p', 'dist_p', 'nn_positive'),
-                                                      ('ind_n', 'dist_n', 'nn_negative')]:
-
-                    if ind_key not in md:
-                        # we are in unsupervised mode, there is no negative samples
-                        row_dict[field_name] = {}
-                    else:
-                        nn_ind = md[ind_key][index]
-                        db_sel = db.loc[nn_ind]
-                        nn_tmp = db_sel[base_keys].to_dict()
-                        nn_tmp['distance'] = md[dist_key][index]
-                        row_dict[field_name] = nn_tmp
-                view_data.append(row_dict)
-
-        return dict(data=view_data)
+        y_res, nn_res = cat.predict(**args)
+        res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
+                                          cat.fe.db.data)
+        return res
 
 
 _models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}

@@ -69,5 +69,14 @@ def mean_duplicates_count_score(x, y):
     return np.mean(score)
 
 
+def seuclidean_dist2cosine_sim(x):
+    """Given an squared euclidean distance on L2 normalized data,
+    convert it to the cosine similarity
+
+    Warning: this function would give completely wrong results if,
+      * the euclidean distance is not squared
+      * the data is initially not L2 normalized
+    """
+    return 1 - x/2.
 
 

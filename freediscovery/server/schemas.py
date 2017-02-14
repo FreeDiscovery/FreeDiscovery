@@ -41,6 +41,9 @@ class DocumentIndexSchema(Schema):
     render_id = fields.Int()
     file_path = fields.Str()
 
+class DocumentIndexFullSchema(DocumentIndexSchema):
+    file_path = fields.Str()
+
 class DocumentIndexListSchema(Schema):
     internal_id = fields.List(fields.Int())
     document_id = fields.List(fields.Int())
@@ -48,7 +51,7 @@ class DocumentIndexListSchema(Schema):
     file_path = fields.List(fields.Str())
 
 class DocumentIndexNestedSchema(Schema):
-    data = fields.Nested(DocumentIndexSchema, many=True, required=True)
+    data = fields.Nested(DocumentIndexFullSchema, many=True, required=True)
 
 class _DatasetDefinition(Schema):
     document_id = fields.Int()
@@ -112,27 +115,25 @@ class CategorizationPostSchema(ClassificationScoresSchema):
     id = fields.Str(required=True)
 
 class _CategorizationIndex(DocumentIndexSchema):
-    y = fields.Int()
+    category = fields.Int()
 
 class _CategorizationInputSchema(Schema):
     parent_id = fields.Str(required=True)
         # Warning this should be changed to wfields.DelimitedList
         # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
-    index = fields.List(fields.Int())
-    y = fields.List(fields.Int())
-    index_nested = fields.Nested(_CategorizationIndex, many=True)
+    data = fields.Nested(_CategorizationIndex, many=True)
     method =  fields.Str(default='LinearSVC')
     cv = fields.Boolean(missing=False)
     training_scores = fields.Boolean(missing=True)
 
+class _CategorizationScoreSchemaElement(DocumentIndexSchema):
+    category = fields.Str(required=True)
+    score = fields.Number(required=True)
 
-class _NNSchemaElement(DocumentIndexSchema):
-    distance = fields.Number(required=True)
 
 class _CategorizationPredictSchemaElement(DocumentIndexSchema):
-    score = fields.Number(required=True)
-    nn_positive = fields.Nested(_NNSchemaElement)
-    nn_negative = fields.Nested(_NNSchemaElement)
+    scores = fields.Nested(_CategorizationScoreSchemaElement(), many=True, required=True)
+
 
 class CategorizationPredictSchema(Schema):
     data = fields.Nested(_CategorizationPredictSchemaElement(), many=True, required=True)

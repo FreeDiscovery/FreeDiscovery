@@ -13,7 +13,7 @@ from unittest import SkipTest
 from numpy.testing import assert_equal, assert_almost_equal
 
 from ..server import fd_app
-from ..utils import _silent
+from ..utils import _silent, dict2type, sdict_keys
 from ..ingestion import DocumentIndex
 from ..exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
@@ -76,12 +76,12 @@ def app_notest():
 #
 #=============================================================================#
 
-def get_features(app, hashed=True, ingestion_method='data_dir'):
+def get_features(app, hashed=True, metadata_fields='data_dir'):
     method = V01 + "/feature-extraction/"
     pars = { "use_hashing": hashed}
-    if ingestion_method == 'data_dir':
+    if metadata_fields == 'data_dir':
         pars["data_dir"] = data_dir
-    elif ingestion_method == 'dataset_definition':
+    elif metadata_fields == 'dataset_definition':
 
         index = DocumentIndex.from_folder(data_dir)
         pars["dataset_definition"] = []
@@ -89,36 +89,36 @@ def get_features(app, hashed=True, ingestion_method='data_dir'):
             row = {'file_path': file_path,
                    'document_id': _internal2document_id(idx)}
             pars["dataset_definition"].append(row)
-    elif ingestion_method is None:
+    elif metadata_fields is None:
         pass # don't provide data_dir and dataset_definition
     else:
-        raise NotImplementedError('ingestion_method={} is not implemented')
+        raise NotImplementedError('metadata_fields={} is not implemented')
 
 
     res = app.post(method, json=pars)
 
     assert res.status_code == 200, method
     data = parse_res(res)
-    assert sorted(data.keys()) ==  ['filenames', 'id']
+    assert dict2type(data, collapse_lists=True) == {'filenames': ['str'], 'id': 'str'}
     dsid = data['id']
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.post(method)
     assert res.status_code == 200, method
     data = parse_res(res)
-    assert sorted(data.keys()) == ['id']
+    assert dict2type(data) == {'id': 'str'}
     return dsid, pars
 
 
-def get_features_lsi(app, hashed=True, ingestion_method='data_dir'):
+def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
     dsid, pars = get_features(app, hashed=hashed,
-                              ingestion_method=ingestion_method)
+                              metadata_fields=metadata_fields)
     lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, json=lsi_pars)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == ['explained_variance', 'id']
+    assert dict2type(data) == {'explained_variance': 'float', 'id': 'str'}
     lsi_id = data['id']
     return dsid, lsi_id, pars
 
@@ -151,11 +151,13 @@ def test_get_feature_extraction_all(app):
     assert res.status_code == 200
     data = parse_res(res)
     for row in data:
-        assert sorted(row.keys()) == \
-                 sorted(['analyzer', 'ngram_range', 'stop_words',
-                     'n_jobs', 'chunk_size', 'norm',
-                     'data_dir', 'id', 'n_samples', 'n_features', 'use_idf',
-                     'binary', 'sublinear_tf', 'use_hashing'])
+        del row['norm']
+        assert sdict_keys(row) == sdict_keys({'analyzer': 'str',
+                     'ngram_range': ['int'], 'stop_words': 'NoneType',
+                     'n_jobs': 'int', 'chunk_size': 'int',
+                     'data_dir': 'str', 'id': 'str', 'n_samples': 'int',
+                     'n_features': 'int', 'use_idf': 'bool',
+                     'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool'})
 
 
 def test_get_feature_extraction(app):
@@ -164,12 +166,14 @@ def test_get_feature_extraction(app):
     res = app.get(method)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == \
-             sorted(['data_dir', 'filenames', 'n_samples', 'norm',
-                 'n_samples_processed', 'n_features', 'n_jobs', 'chunk_size',
-                 'analyzer', 'ngram_range', 'stop_words', 'use_idf',
-                 'binary', 'sublinear_tf', 'use_hashing',
-                 'max_df', 'min_df'])
+    assert dict2type(data, collapse_lists=True) == {'analyzer': 'str',
+                     'ngram_range': ['int'], 'stop_words': 'NoneType',
+                     'n_jobs': 'int', 'chunk_size': 'int', 'norm': 'NoneType',
+                     'data_dir': 'str', 'n_samples': 'int',
+                     'n_features': 'int', 'use_idf': 'bool',
+                     'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool',
+                     'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
+                     'n_samples_processed': 'int'}
 
 
 @pytest.mark.parametrize('return_file_path', ['return_file_path', 'dont_return_file_path'])
@@ -192,10 +196,12 @@ def test_get_search_filenames(app, return_file_path):
         res = app.post(method, json=pars)
         assert res.status_code == 200
         data = parse_res(res)
+        response_ref = {'internal_id': ['int']}
+
         if return_file_path:
-            assert sorted(data.keys()) ==  sorted(['internal_id', 'file_path'])
-        else:
-            assert sorted(data.keys()) ==  sorted(['internal_id'])
+            response_ref['file_path'] = ['str']
+
+        assert dict2type(data, collapse_lists=True) == response_ref
         assert_equal(data['internal_id'], indices)
 
 
@@ -334,7 +340,7 @@ _categoriazation_pars = filter(lambda args: not (args[1].startswith('Nearest') a
                                _categoriazation_pars)
 
 
-def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_mode):
+def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
 
     cv = (cv == 'cv')
 
@@ -342,10 +348,10 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
         raise SkipTest # Circle CI is too slow and timesout
 
     if solver.startswith('Nearest'):
-        dsid, lsi_id, _ = get_features_lsi(app, ingestion_method=ingestion_method)
+        dsid, lsi_id, _ = get_features_lsi(app, metadata_fields=metadata_fields)
         parent_id = lsi_id
     else:
-        dsid, _ = get_features(app, ingestion_method=ingestion_method)
+        dsid, _ = get_features(app, metadata_fields=metadata_fields)
         lsi_id = None
         parent_id = dsid
 
@@ -357,10 +363,13 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
     filenames = data['filenames']
     # we train the model on 5 samples / 6 and see what happens
     index_filenames = filenames[:3] + filenames[3:]
-    if supervision_mode == 'supervised':
-        y = [1, 1, 1, 0, 0, 0]
-    else:
+    if n_categories == 1:
         y = [1, 1, 1, 1, 1, 1]
+    elif n_categories == 2:
+        y = [1, 1, 1, 0, 0, 0]
+    elif n_categories == 3:
+        y = [1, 2, 1, 0, 0, 0]
+
 
 
     method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
@@ -368,11 +377,12 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
     assert res.status_code == 200, method
     index = parse_res(res)['internal_id']
 
+    data_request = [{'internal_id': internal_id, 'category': str(cat_id)} \
+                     for (internal_id, cat_id) in zip(index, y)]
 
     pars = {
           'parent_id': parent_id,
-          'index': index,
-          'y': y,
+          'data': data_request,
           'method': solver,
           'cv': cv}
 
@@ -392,67 +402,63 @@ def _api_categorization_wrapper(app, ingestion_method, solver, cv, supervision_m
     res = app.get(method)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == \
-            sorted(["index", "y",
-                    "method", "options"])
+    #assert dict2data.keys()) == \
+    #        sorted(["index", "y",
+    #                "method", "options"])
 
     for key in ["index", "y", "method"]:
         if key in ['index', 'y']:
-            assert len(pars[key]) == len(data[key])
+            assert len(pars['data']) == len(data[key])
         else:
             assert pars[key] == data[key]
 
     method = V01 + "/categorization/{}/predict".format(mid)
     res = app.get(method)
     data = parse_res(res)
-    assert sorted(data.keys()) == ['data']
     assert len(data['data']) == len(y)
+    response_ref = {'internal_id': 'int',
+                     'scores': [ {'category': 'str',
+                                  'score': 'float',
+                                 }
+                               ]}
+    if metadata_fields == 'dataset_definition':
+        response_ref['document_id'] = 'int'
+
     if solver == 'NearestNeighbor':
-        for row in data['data']:
-            assert sorted(row.keys()) == sorted(['internal_id', 'score',
-                                                 'nn_positive', 'nn_negative'])
-            nn_p = row['nn_positive']
-            assert sorted(nn_p.keys()) == sorted(['internal_id', 'distance'])
-    else:
-        for row in data['data']:
-            if 'document_id' in row.keys():
-                assert sorted(row.keys()) == sorted(['document_id', 'internal_id', 'score'])
-            else:
-                assert sorted(row.keys()) == sorted(['internal_id', 'score'])
+        response_ref['scores'][0]['internal_id'] = 'int'
+        if metadata_fields == 'dataset_definition':
+            response_ref['scores'][0]['document_id'] = 'int'
 
 
-    if supervision_mode == 'supervised':
-        method = V01 + "/categorization/{}/test".format(mid)
-        res = app.post(method,
-                json={'ground_truth_filename':
-                    os.path.join(data_dir, '..', 'ground_truth_file.txt')})
-        data = parse_res(res)
-        assert sorted(data.keys()) == sorted(['precision', 'recall',
-                            'f1', 'roc_auc', 'average_precision'])
+    for row in data['data']:
+        assert dict2type(row) == response_ref
+
+   #     method = V01 + "/categorization/{}/test".format(mid)
+   #     res = app.post(method,
+   #             json={'ground_truth_filename':
+   #                 os.path.join(data_dir, '..', 'ground_truth_file.txt')})
+   #     data = parse_res(res)
+   #     assert sorted(data.keys()) == sorted(['precision', 'recall',
+   #                         'f1', 'roc_auc', 'average_precision'])
 
     method = V01 + "/categorization/{}".format(mid)
     res = app.delete(method)
     assert res.status_code == 200
 
-@pytest.mark.parametrize("ingestion_method, solver, cv", _categoriazation_pars)
-def test_api_categorization(app, ingestion_method, solver, cv):
-    _api_categorization_wrapper(app, ingestion_method, solver, cv, 'supervised')
+@pytest.mark.parametrize("metadata_fields, solver, cv", _categoriazation_pars)
+def test_api_categorization(app, metadata_fields, solver, cv):
+    _api_categorization_wrapper(app, metadata_fields, solver, cv, 2)
 
-@pytest.mark.parametrize("ingestion_method", ['data_dir', "dataset_definition", None])
-def test_api_categorization_ingestion_method(app, ingestion_method):
+@pytest.mark.parametrize("metadata_fields", ["data_dir", "dataset_definition", None])
+def test_api_categorization_metadata_fields(app, metadata_fields):
     
-    if ingestion_method == 'data_dir':
-        _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', '', 'supervised')
-    elif ingestion_method == 'dataset_definition':
-        _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', '', 'supervised')
+    if metadata_fields == 'data_dir':
+        _api_categorization_wrapper(app, metadata_fields, 'LogisticRegression', '', 2)
+    elif metadata_fields == 'dataset_definition':
+        _api_categorization_wrapper(app, metadata_fields, 'LogisticRegression', '', 2)
     else:
         with pytest.raises(ValueError):
-            _api_categorization_wrapper(app, ingestion_method, 'LogisticRegression', False, 'supervised')
-
-
-@pytest.mark.parametrize('supervision_mode', ['supervised', 'unsupervised'])
-def test_api_categorization_supervision_mode(app, supervision_mode):
-    _api_categorization_wrapper(app, 'data_dir', 'NearestNeighbor', '', supervision_mode)
+            _api_categorization_wrapper(app, metadata_fields, 'LogisticRegression', False, 2)
 
 
 #=============================================================================#
@@ -624,7 +630,7 @@ def test_get_model_404(app_notest, method):
     assert res.status_code in [500, 404] # depends on the url
     #assert '500' in data['message']
 
-    assert sorted(data.keys()) == sorted(['message'])
+    assert sorted(data.keys()) == sorted(['messages'])
 
 
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
