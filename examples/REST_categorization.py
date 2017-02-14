@@ -116,7 +116,7 @@ if __name__ == '__main__':
     print("\n3.a. Train the categorization model")
     print("   {} relevant, {} non-relevant files".format(seed_y.count(1), seed_y.count(0)))
 
-    seed_index_nested = [{'document_id': internal_id, 'y': y} \
+    seed_index_nested = [{'document_id': internal_id, 'category': y} \
                                 for internal_id, y in zip(seed_document_id, seed_y)]
 
     for method, use_lsi in [('LinearSVC', False),
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
         res = requests.post(url,
                             json={'parent_id': parent_id,
-                                  'index_nested': seed_index_nested,
+                                  'data': seed_index_nested,
                                   'method': method,  # one of "LinearSVC", "LogisticRegression", 'xgboost'
                                   }).json()
 
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         res = requests.get(url).json()
 
         print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                          if key not in ['index', 'y']]))
+                                                          if key not in ['index', 'category']]))
 
         print("\n3.c Categorize the complete dataset with this model")
         url = BASE_URL + '/categorization/{}/predict'.format(mid)
@@ -159,20 +159,7 @@ if __name__ == '__main__':
         res = requests.get(url).json()
 
         if method == "NearestNeighbor":
-
-            def flatten_dict(d, parent_key='', sep='__'):
-                """Flatten a nested dictionary """
-                import collections
-                items = []
-                for k, v in d.items():
-                    new_key = parent_key + sep + k if parent_key else k
-                    if isinstance(v, collections.MutableMapping):
-                        items.extend(flatten_dict(v, new_key, sep=sep).items())
-                    else:
-                        items.append((new_key, v))
-                return dict(items)
-            
-            data = [flatten_dict(el) for el in res['data']]
+            data = res['data']
         else:
             data = res['data']
 
@@ -183,18 +170,15 @@ if __name__ == '__main__':
 
         print(df)
 
-        print("\n3.d Compute the categorization scores")
-        url = BASE_URL + '/metrics/categorization'
-        print(" GET", url)
-        res = requests.post(url, json={'y_true': ground_truth_y,
-                                      'y_pred': df.score.values.tolist(),
-                                     } ).json()
+        #print("\n3.d Compute the categorization scores")
+        #url = BASE_URL + '/metrics/categorization'
+        #print(" GET", url)
+        #res = requests.post(url, json={'y_true': ground_truth_y,
+        #                              'y_pred': df.score.values.tolist(),
+        #                             } ).json()
 
 
-
-
-
-        print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+        #print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
     # 4. Cleaning
     print("\n5.a Delete the extracted features (and LSI decomposition)")

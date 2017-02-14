@@ -79,7 +79,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
 
         scores = categorization_score(idx_gt,
                             ground_truth.is_relevant.values,
-                            X_pred, Y_pred)
+                            X_pred, np.argmax(Y_pred, axis=1))
         assert_allclose(scores['precision'], 1, rtol=0.5)
         assert_allclose(scores['recall'], 1, rtol=0.7)
         cat.delete()

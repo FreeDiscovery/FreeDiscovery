@@ -13,6 +13,7 @@ import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_array_less, assert_array_equal)
 
+import pandas as pd
 import pytest
 import itertools
 
@@ -111,6 +112,107 @@ def test_categorization(use_lsi, method, cv):
     assert_allclose(scores['precision'], 1, rtol=0.5)
     assert_allclose(scores['recall'], 1, rtol=0.68)
     cat.delete()
+
+@pytest.mark.parametrize('max_result_categories, sort, has_nn', [(1, '', True),
+                                                             (1, 'sort', True),
+                                                             (1, '', False),
+                                                             (2, '', True), (3, '', True)])
+def test_categorization2dict(max_result_categories, sort, has_nn):
+    import json
+    sort = (sort == 'sort')
+    Y_pred = np.array([[1.0, 0.0],
+                       [0.6, 0.4],
+                       [0.0, 1.0],
+                       [0.65, 0.35],
+                       [1.3, -0.3]])
+
+    if has_nn:
+        D_nn = np.array([[0, 2],
+                         [0, 2],
+                         [0, 2],
+                         [0, 2],
+                         [0, 2]])
+    else:
+        D_nn = None
+    id_mapping = pd.DataFrame([{'internal_id': idx, 'document_id': idx**2} \
+                    for idx in range(Y_pred.shape[0])])
+    res = _CategorizerWrapper.to_dict(Y_pred, D_nn,
+                                     ['negative', 'positive'], id_mapping,
+                                     max_result_categories=max_result_categories,
+                                     sort=sort)
+    assert list(res.keys()) == ['data']
+    if has_nn:
+        if max_result_categories >= 2 and not sort:
+            assert res['data'][0] == {
+                                        "internal_id": 0,
+                                        "document_id": 0,
+                                        "scores": [
+                                            {
+                                                "score": 1.0,
+                                                "internal_id": 0,
+                                                "category": "negative",
+                                                "document_id": 0
+                                            },
+                                            {
+                                                "score": 0.0,
+                                                "internal_id": 2,
+                                                "category": "positive",
+                                                "document_id": 0
+                                            }
+                                        ]
+                                      }
+        elif max_result_categories == 1 and not sort:
+            assert res['data'][0] == {
+                                        "internal_id": 0,
+                                        "document_id": 0,
+                                        "scores": [
+                                            {
+                                                "score": 1.0,
+                                                "internal_id": 0,
+                                                "category": "negative",
+                                                "document_id": 0
+                                            },
+                                        ]
+                                      }
+
+        elif max_result_categories == 1 and sort:
+            assert res['data'][0] == {
+                                        "internal_id": 4,
+                                        "document_id": 16,
+                                        "scores": [
+                                            {
+                                                "score": 1.3,
+                                                "internal_id": 0,
+                                                "category": "negative",
+                                                "document_id": 16
+                                            }
+                                        ]
+                                    }
+        elif max_result_categories == 0 and not sort:
+            assert res['data'][0]['scores'] == []
+        else:
+            raise NotImplementedError
+    else:
+        if max_result_categories == 1 and not sort:
+            assert res['data'][0] == {
+                                        "internal_id": 0,
+                                        "document_id": 0,
+                                        "scores": [
+                                            {
+                                                "score": 1.0,
+                                                "category": "negative",
+                                            },
+                                        ]
+                                      }
+        else:
+            raise NotImplementedError
+
+    for row in res['data']:
+        # we are in decreasing order
+        assert (np.diff([el['score'] for el in row['scores']]) < 0.0).all()
+
+    # check that we are picklable
+    json.dumps(res)
 
 def test_explain_categorization():
     from freediscovery.categorization import explain_binary_categorization

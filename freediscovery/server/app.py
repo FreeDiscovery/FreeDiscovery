@@ -114,19 +114,19 @@ def fd_app(cache_dir):
     @app.errorhandler(500)
     def handle_error(error):
         #response = jsonify(error.to_dict())
-        response = jsonify({'message': str(error)})
+        response = jsonify({'messages': str(error)})
         response.status_code = 500
         return response
 
     @app.errorhandler(404)
     def handle_404_error(error):
-        response = jsonify({"message": str(error)})
+        response = jsonify({"messages": str(error)})
         response.status_code = 404 
         return response
 
     @app.errorhandler(400)
     def handle_400_error(error):
-        response = jsonify({"message": str(error)})
+        response = jsonify({"messages": str(error)})
         response.status_code = 400
         return response
 

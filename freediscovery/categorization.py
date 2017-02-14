@@ -89,6 +89,8 @@ class _CategorizerWrapper(_BaseWrapper):
                                           parent_id=parent_id,
                                           mid=mid, load_model=True)
 
+        if mid is not None:
+            self.le = joblib.load(os.path.join(self.model_dir, mid, 'label_encoder'))
         self.cv_scoring = cv_scoring
         self.cv_n_folds = cv_n_folds
 
@@ -289,6 +291,70 @@ class _CategorizerWrapper(_BaseWrapper):
                 res_n = 1 - res
             res = np.hstack((res_n[:,None], res_p[:, None]))
         return res, nn_ind
+
+    @staticmethod
+    def to_dict(Y_pred, nn_pred, labels, id_mapping,
+                max_result_categories=1, sort=False):
+        """
+        Create a nested dictionary result that would be returned by 
+        the REST API given the categorization results
+
+        Parameters
+        ----------
+        Y_pred : ndarray [n_samples, n_categories]
+           the score for each class
+        nn_ind : {ndarray [n_samples, n_classes], None}
+           the index of the nearest neighbor for each class (when the NearestNeighborRanker is used)
+        labels : list
+           list of categories label
+        id_mapping : a pd.DataFrame
+           the metadata mapping from freediscovery.ingestion.DocumentIndex.data
+        max_result_categories : int
+           the maximum number of categories in the results
+        sort : bool
+           sort by the score of the most likely class
+        """
+        if max_result_categories <= 0:
+            raise ValueError('the max_result_categories={} must be strictly positive'.format(max_result_categories))
+
+        # have to cast to object as otherwise we get serializing np.int64 issues...
+        base_keys = [key for key in id_mapping.columns if key in ['internal_id',
+                                                                  'document_id',
+                                                                  'rendition_id']]
+        id_mapping = id_mapping[base_keys].set_index('internal_id', drop=True).astype('object')
+
+        def sort_func(x):
+            return x[0]
+
+        if nn_pred is not None:
+            outer_container = zip(Y_pred.tolist(), nn_pred.tolist())
+        else:
+            outer_container = ((y_row, None) for y_row in Y_pred.tolist())
+
+        res = []
+        for idx, (Y_row, nn_row) in enumerate(outer_container):
+            ires = {'internal_id': idx}
+            ires.update(id_mapping.loc[idx].to_dict())
+            iscores = []
+            if nn_row is not None:
+                # we have nearest neighbors results
+                for Y_el, nn_el, label_el in sorted(zip(Y_row, nn_row, labels),
+                                                    key=sort_func, reverse=True)[:max_result_categories]:
+                    iiel = {'score': Y_el, 'internal_id': nn_el, 'category': label_el}
+                    iiel.update(id_mapping.loc[idx].to_dict())
+                    iscores.append(iiel)
+            else:
+                # no nearest neighbors available
+                for Y_el, label_el in sorted(zip(Y_row, labels),
+                                                    key=sort_func, reverse=True)[:max_result_categories]:
+                    iiel = {'score': Y_el, 'category': label_el}
+                    iscores.append(iiel)
+            ires['scores'] = iscores
+            res.append(ires)
+        if sort:
+            res = sorted(res, key=lambda x: x['scores'][0]['score'], reverse=True)
+        return {'data': res}
+
 
     def _load_pars(self, mid=None):
         """Load model parameters from disk"""
