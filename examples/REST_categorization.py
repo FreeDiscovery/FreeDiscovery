@@ -164,9 +164,9 @@ if __name__ == '__main__':
             data = res['data']
 
         df = pd.DataFrame(data).set_index('internal_id')
-        if method == "NearestNeighbor":
-            df = df[['document_id', 'nn_negative__distance', 'nn_negative__document_id',
-                  'nn_positive__distance', 'nn_positive__document_id', 'score']]
+        #if method == "NearestNeighbor":
+        #    df = df[['document_id', 'nn_negative__distance', 'nn_negative__document_id',
+        #          'nn_positive__distance', 'nn_positive__document_id', 'score']]
 
         print(df)
 
