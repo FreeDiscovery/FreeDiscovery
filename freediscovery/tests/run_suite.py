@@ -3,7 +3,7 @@
 import os
 import sys
 
-base_dir = os.path.dirname(__file__)
+base_dir = os.path.dirname(os.path.dirname(__file__))
 
 
 def run(coverage=False):

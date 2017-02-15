@@ -50,7 +50,7 @@ def test_load_20newsgoups_dataset(name):
             if 'file_path' in set_fields:
                 response_ref['file_path'] = 'str'
             if 'internal_id' in set_fields:
-                response_ref['internal_id'] = 'int'
+                response_ref['internal_id']= 'int'
 
 
 

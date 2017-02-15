@@ -20,6 +20,7 @@ class Schema(BaseSchema):
 class DocumentIndexSchema(Schema):
     document_id = fields.Int()
     render_id = fields.Int()
+    internal_id = fields.Int()
 
 class DocumentIndexFullSchema(DocumentIndexSchema):
     file_path = fields.Str()
