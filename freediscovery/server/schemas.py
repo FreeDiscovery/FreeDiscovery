@@ -17,17 +17,25 @@ class Schema(BaseSchema):
     class Meta:
         strict = True
 
+class DocumentIndexSchema(Schema):
+    document_id = fields.Int()
+    render_id = fields.Int()
+    internal_id = fields.Int()
+
+class DocumentIndexFullSchema(DocumentIndexSchema):
+    file_path = fields.Str()
+
+class _ExampleDatasetElementSchema(DocumentIndexFullSchema):
+    category = fields.Str()
+
+class _ExampleDatasetMetadataSchema(Schema):
+    data_dir = fields.Str(required=True)
+    name = fields.Str(required=True)
 
 class ExampleDatasetSchema(Schema):
-    base_dir = fields.Str(required=True)
-    data_dir = fields.Str(required=True)
-    ground_truth_y = fields.List(fields.Int())
-    seed_file_path = fields.List(fields.Str())
-    seed_document_id = fields.List(fields.Int())
-    seed_y = fields.List(fields.Int())
-    file_path = fields.List(fields.Str())
-    document_id = fields.List(fields.Int())
-    
+    metadata = fields.Nested(_ExampleDatasetMetadataSchema(), required=True)
+    training_set = fields.Nested(_ExampleDatasetElementSchema(), many=True)
+    dataset = fields.Nested(_ExampleDatasetElementSchema(), many=True, required=True)
 
 class EmptySchema(Schema):
     pass
@@ -35,14 +43,6 @@ class EmptySchema(Schema):
 class IDSchema(Schema):
     id = fields.Str(required=True)
 
-class DocumentIndexSchema(Schema):
-    internal_id = fields.Int()
-    document_id = fields.Int()
-    render_id = fields.Int()
-    file_path = fields.Str()
-
-class DocumentIndexFullSchema(DocumentIndexSchema):
-    file_path = fields.Str()
 
 class DocumentIndexListSchema(Schema):
     internal_id = fields.List(fields.Int())
@@ -115,7 +115,7 @@ class CategorizationPostSchema(ClassificationScoresSchema):
     id = fields.Str(required=True)
 
 class _CategorizationIndex(DocumentIndexSchema):
-    category = fields.Int()
+    category = fields.Str(required=True)
 
 class _CategorizationInputSchema(Schema):
     parent_id = fields.Str(required=True)
@@ -141,8 +141,6 @@ class CategorizationPredictSchema(Schema):
 
 class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
-    index = fields.List(fields.Int(), required=True)
-    y = fields.List(fields.Int(), required=True)
     options = fields.Str(required=True)
 
 

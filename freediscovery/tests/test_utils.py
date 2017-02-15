@@ -33,7 +33,7 @@ def test_docstring_description():
 
     res = _docstring_description(dedent(load_dataset.__doc__))
 
-    assert len(res.splitlines()) == 21
+    assert len(res.splitlines()) == 24
 
 def test_dictkey2type():
     from freediscovery.utils import dict2type
@@ -41,6 +41,11 @@ def test_dictkey2type():
     assert dict2type('djsk')  == 'str'
     assert dict2type(['t', 1]) == ['str', 'int']
     assert dict2type({'t': {'b': 0.1}}) == {'t': {'b': 'float'}}
+
+    # make sure we don't change the original object
+    x = {'x': {'a': 3}}
+    dict2type(x)
+    assert x == {'x': {'a': 3}}
 
 
 def test_check_dict():

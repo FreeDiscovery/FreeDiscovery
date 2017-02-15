@@ -7,6 +7,7 @@ An example of Semantic Search
 
 from __future__ import print_function
 
+import os.path
 import requests
 import pandas as pd
 
@@ -22,19 +23,13 @@ if __name__ == '__main__':
     print(" 0. Load the test dataset")
     url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
     print(" GET", url)
-    res = requests.get(url, json={'return_file_path': True}).json()
-
-    # To use a custom dataset, simply specify the following variables
-    seed_document_id = res['seed_document_id']
-    seed_y = res['seed_y']
-    ground_truth_y = res['ground_truth_y']
+    input_ds = requests.get(url).json()
 
     # create a custom dataset definition for ingestion
-    dataset_definition = []
-    for document_id, fname in zip(res['document_id'], res['file_path']):
-        dataset_definition.append({'document_id': document_id,
-                                  'rendering_id': 0,
-                                  'file_path': fname})
+    data_dir = input_ds['metadata']['data_dir']
+    dataset_definition = [{'document_id': row['document_id'],
+                           'file_path': os.path.join(data_dir, row['file_path'])} \
+                                   for row in input_ds['dataset']]
 
     # 1. Feature extraction
 
