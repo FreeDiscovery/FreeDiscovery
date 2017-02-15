@@ -8,6 +8,8 @@ from __future__ import unicode_literals
 import os
 import os.path
 
+from sklearn.externals.joblib import dump, load
+
 CUSTOM_STOP_WORDS = ['com']
 
 # List of common english first names
@@ -179,30 +181,34 @@ class _StopWordsWrapper(object):
     _wrapper_type = "stop_words"
 
     def __init__(self, cache_dir='/tmp/'):
-        self.cache_dir = cache_dir   # the path to dir
+        self.cache_dir = cache_dir
+        print('self.cache_dir = cache_dir --->', self.cache_dir)
 
     def save(self, name, stop_words):
         """Allow to save the stop_words list of strings with joblib.save
            under $CACHE_DIR/stop_words/<name>.pkl
+
+            Parameters
+            ----------
+            name : str
+                stop words name / identifier
+            stop_words : list
+                list of stop words
         """
-        self.name = name # the name (tag) for custom stop words list
-        self.stop_words = stop_words
-        if os.name == 'nt':
-            self.path_to_sw_dir = self.cache_dir + 'stop_words\\'
-        else:
-            self.path_to_sw_dir = self.cache_dir + 'stop_words/'
-        os.makedirs(self.path_to_sw_dir)
-        os.chdir(self.path_to_sw_dir)
-        sw_name = self.name + '.pkl'
-        with open(sw_name, 'w') as sw:
-            for stop_word in self.stop_words:
-                sw.write(stop_word + '\n')
+
+        self.stop_words = stop_words # list of stop words
+
+        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
+        self.name = os.path.join(self.model_dir, name + '.pkl') # the name (tag) for custom stop words list
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
+
+        # dump(self.stop_words, self.name)
+        dump(self.stop_words, self.name)
 
     def load(self, name):
         """Allow to retrive the stop_words list of strings
         """
-        self.path_to_sw = self.path_to_sw_dir + name + '.pkl'
-        with open(self.path_to_sw, 'r') as sw:
-            sw_list = sw.read().split('\n')
-            stop_words = sw_list[:-1]
-        return (stop_words)
+        # self.name = name # the name of stop words list that must be loaded
+        self.stop_words = load(self.name)
+        return (self.stop_words)

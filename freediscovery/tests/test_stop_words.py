@@ -7,43 +7,44 @@ from __future__ import print_function
 import os
 import os.path
 import shutil
+import pytest
 
 from unittest import SkipTest
 from freediscovery.stop_words import (_StopWordsWrapper)
+from .run_suite import check_cache
+from sklearn.externals.joblib import dump, load
 
+from freediscovery.stop_words import CUSTOM_STOP_WORDS as csw
+from freediscovery.stop_words import COMMON_FIRST_NAMES as cfns
 
 basename = os.path.dirname(__file__)
-current_point = os.getcwd()
 
-if os.name == 'nt': # on windows
-    cache_dir = os.getcwd() + '\\acsw\\'
-else:
-    cache_dir = os.getcwd() + '/acsw/'
+cache_dir = check_cache()
 
-custom_sw = _StopWordsWrapper(cache_dir = cache_dir)
+tested_stop_words = ['one', 'two', 'three', 'foure', 'five', 'six']
 
-stop_words_for_test = ['one', 'two', 'three']
 
-def test_custom_stop_words():
-    """Test to save and retrive the stop_words list of strings"""
-    custom_sw.save(name = 'test_acstw', stop_words = stop_words_for_test)
-    if os.name == 'nt':
-        assert(os.path.isfile(cache_dir + '\\stop_words\\test_acstw.pkl') == True)
-    else:
-        assert(os.path.isfile(cache_dir + '/stop_words/test_acstw.pkl') == True)
-    if os.name == 'nt':
-        with open(cache_dir + '\\stop_words\\test_acstw.pkl', 'r') as acsw_file:
-            sw_list = acsw_file.read().split('\n')[:-1]
-            assert(sw_list == stop_words_for_test)
-    else:
-        with open(cache_dir + '/stop_words/test_acstw.pkl', 'r') as acsw_file:
-            sw_list = acsw_file.read().split('\n')[:-1]
-            assert(sw_list == stop_words_for_test)
+@pytest.mark.parametrize('csw_name, csw_list', [
+                        ('test_acstw', tested_stop_words),
+                        ('common_first_names', cfns),
+                         ])
+def test_custom_stop_words_param(csw_name, csw_list):
+    """Test to save and retrive the custom stop words
+
+       tested_stop_words - list of custom stop words,
+       cfns - list of common first names imported from stop_words.py
+              to use as a custom stop words in testing
+    """
+    custom_sw = _StopWordsWrapper(cache_dir = cache_dir)
+    custom_sw.save(name = csw_name, stop_words = csw_list)
+    custom_stop_words = custom_sw.load(name = csw_name)
+    assert(custom_stop_words == csw_list)
+    assert(len(custom_stop_words)==len(csw_list))
+    i = 0
+    for word in custom_stop_words:
+        assert word == csw_list[i]
+        i+=1
+
     # clearing from temporary testing data
-    os.chdir(current_point)
-    if os.name == 'nt':
-        if os.path.isfile(os.getcwd() + '\\acsw\\stop_words\\test_acstw.pkl'):
-            shutil.rmtree(os.getcwd() + '\\acsw\\', ignore_errors=True, onerror=None)
-    else:
-        if os.path.isfile(os.getcwd() + '/acsw/stop_words/test_acstw.pkl'):
-            shutil.rmtree(os.getcwd() + '/acsw/', ignore_errors=True, onerror=None)
+    if os.path.isdir(os.path.join(cache_dir, 'stop_words')):
+        shutil.rmtree(os.path.join(cache_dir, 'stop_words'), ignore_errors=True)
