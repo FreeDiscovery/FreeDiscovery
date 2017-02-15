@@ -36,13 +36,13 @@ res = requests.get(url)
 res = res.json()
 
 # To use a custom dataset, simply specify the following variables
-data_dir = res['data_dir']
+data_dir = res['metadata']['data_dir']
+
 
 print("\n1.a Parse emails")
 url = BASE_URL + '/email-parser'
 print(" POST", url)
-fe_opts = {'data_dir': data_dir }
-res = requests.post(url, json=fe_opts)
+res = requests.post(url, json={'data_dir': data_dir })
 
 dsid = res.json()['id']
 print("   => received {}".format(list(res.json().keys())))

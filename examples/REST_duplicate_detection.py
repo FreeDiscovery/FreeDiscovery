@@ -24,11 +24,12 @@ BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 print(" 0. Load the test dataset")
 url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
 print(" GET", url)
-res = requests.get(url)
-res = res.json()
+input_ds = requests.get(url).json()
+
 
 # To use a custom dataset, simply specify the following variables
-data_dir = res['data_dir']
+data_dir = input_ds['metadata']['data_dir']
+
 # # 1. Feature extraction (non hashed)
 
 print("\n1.a Load dataset and initalize feature extraction")

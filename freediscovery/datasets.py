@@ -97,13 +97,12 @@ def _compute_document_id(internal_id, mode):
         raise NotImplementedError
 
 
-def filter_dict(d, keys):
-    return {key: d[key] for key in keys}
+def filter_dict(d, valid_keys):
+    return [{key: row[key] for key in row if key in valid_keys} for row in d]
 
 
 def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
                  force=False, verbose=False, verify_checksum=False,
-                 training_set_fields=[], test_set_fields=['document_id'],
                  document_id_generation='squared', categories=None
                  ):
     """
@@ -144,10 +143,6 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
        print download progress
     verify_checksum : bool, default=False
        verify the checksum of the downloaded archive
-    training_set_fields : list, default=None
-       fields to return in the training set (of None no training set would be returned)
-    test_set_fields : list, default=['document_id']
-       fields to return in the test_set
     document_id_generation : str
        specifies how the document_id is computed from internal_id
        must be one of ['identity', 'squared']
@@ -160,25 +155,20 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
 
     metadata: dict
        a dictionary containing metadata corresponding to the dataset
-    training_set : dict
-       a list of dictionaries each containing at least ['category']
-    test_set : {dict, None}
-       a list of dictionaries each containing at least ['category']
+    training_set : {dict, None}
+       a list of dictionaries for the training set
+    test_set : dict
+       a list of dictionaries for the test set
     """
     from .ingestion import DocumentIndex
     from .io import parse_ground_truth_file
 
-    valid_fields = ['document_id', 'file_path', 'rendition_id']
-
-    for fields in [test_set_fields, training_set_fields]:
-        for key in training_set_fields:
-            if key not in valid_fields:
-                raise ValueError('Input field {} from {} is not in {}'.format(key, fields, valid_fields))
-
-
     if name not in VALID_MD5SUM:
         raise ValueError('Dataset name {} not known!'.format(name))
 
+    valid_fields = ['document_id', 'internal_id', 'file_path', 'category']
+
+    has_categories = '20newsgroups' in name or 'treclegal09' in name
 
 
     # make sure we don't have "ediscovery_cache" in the path
@@ -212,68 +202,55 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
         else:
             _download_dataset(cache_dir, fname, name, verify_checksum, verbose)
 
-    if 'legal09int' in name:
+    if 'treclegal09' in name or 'fedora_ml' in name:
         data_dir = os.path.join(outdir, 'data')
     else:
         data_dir = outdir
     md = {'data_dir': data_dir, 'name': name}
 
     di = DocumentIndex.from_folder(data_dir)
-    all_fields = list(set(training_set_fields + test_set_fields))
-
 
     training_set = None
-    test_set = None
 
     if 'treclegal09' in name:
             negative_files, positive_files = _load_erdm_ground_truth(outdir)
-
-            results['seed_file_path'] = positive_files + negative_files 
-            res = di.search(pd.DataFrame({'file_path': positive_files + negative_files}))
-            results['seed_document_id'] = res.internal_id.values.tolist() # document_id & internal_id are the same
-            results['seed_y'] = list(np.concatenate((np.ones(len(positive_files)),
-                                                np.zeros(len(negative_files)))).astype('int'))
 
             ground_truth_file = os.path.join(outdir, "ground_truth_file.txt")  
             gt = parse_ground_truth_file(ground_truth_file)
 
             res = di.search(gt, drop=False)
-            results['ground_truth_y'] = res.is_relevant.values.tolist()
+            di.data['category'] = res.is_relevant
+            di.data['category'] = di.data['category'].apply(
+                                      lambda x: 'positive' if x == 1 else 'negative')
+            di.data['is_train'] = False
+            res = di.search(pd.DataFrame({'file_path': positive_files + negative_files}))
+            di.data.loc[res.internal_id.values, 'is_train'] = True
     elif '20newsgroups' in name:
         di.data['category'] = np.array(twenty_news.target_names)[twenty_news.target]
         di.data['is_train'] = ['-train' in el for el in twenty_news.filenames]
 
-
-        #print(twenty_news.target)
-        #print(twenty_news)
-
-    if categories is not None:
+    if categories is not None and has_categories:
         mask = di.data.category.isin(categories)
         di.data = di.data[mask]
         di.data['internal_id'] = np.arange(len(di.data['internal_id']))
-        di.data.set_index('internal_id', drop=False, inplace=True)
 
-    if 'document_id' in all_fields:
-        di.data['document_id'] = _compute_document_id(di.data['internal_id'],
-                                                      document_id_generation)
+    di.data.set_index('internal_id', drop=False, inplace=True)
+
+    di.data['document_id'] = _compute_document_id(di.data['internal_id'],
+                                                  document_id_generation)
     di.data = di.data.astype('object')
 
-    if training_set_fields:
-        mask = di.data['is_train'] 
-        if 'category' in di.data.columns:
-            training_set_fields.append('category')
+    if has_categories:
+        mask = di.data['is_train']
         training_set = di.render_dict(di.data[mask],
-                             return_file_path=('file_path' in training_set_fields))
-        training_set = [filter_dict(el, training_set_fields) for el in training_set]
+                             return_file_path=True)
+        training_set = filter_dict(training_set, valid_fields)
 
-    if 'category' in di.data.columns:
-        test_set_fields.append('category')
+    dataset = di.render_dict(return_file_path=True)
 
-    test_set = di.render_dict(return_file_path=('file_path' in test_set_fields))
+    dataset = filter_dict(dataset, valid_fields)
 
-    test_set = [filter_dict(el, test_set_fields) for el in test_set]
-
-    return md, training_set, test_set
+    return md, training_set, dataset
 
 
 

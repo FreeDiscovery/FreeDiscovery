@@ -5,6 +5,7 @@ Clustering Example [REST API]
 Cluster documents into clusters
 """
 
+import os.path
 import numpy as np
 import pandas as pd
 from time import time
@@ -26,18 +27,21 @@ BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
 print(" 0. Load the example dataset")
 url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
-print(" POST", url)
-res = requests.get(url).json()
+print(" GET", url)
+input_ds = requests.get(url).json()
 
 # To use a custom dataset, simply specify the following variables
-data_dir = res['data_dir']
+data_dir = input_ds['metadata']['data_dir']
+dataset_definition = [{'document_id': row['document_id'],
+                       'file_path': os.path.join(data_dir, row['file_path'])} \
+                               for row in input_ds['dataset']]
 
 # # 1. Feature extraction (non hashed)
 
 print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-fe_opts = {'data_dir': data_dir,
+fe_opts = {'dataset_definition': dataset_definition,
            'use_idf': 1, 'n_features': 30001,
            'min_df': 4, 'max_df': 0.75 # filter out unfrequent / too frequent words
            }

@@ -10,6 +10,7 @@ from __future__ import print_function
 import requests
 import pandas as pd
 import json
+import os.path
 
 pd.options.display.float_format = '{:,.3f}'.format
 pd.options.display.expand_frame_repr = False
@@ -23,20 +24,15 @@ if __name__ == '__main__':
     print(" 0. Load the test dataset")
     url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
     print(" GET", url)
-    res = requests.get(url, json={'return_file_path': True}).json()
+    input_ds = requests.get(url).json()
 
     # To use a custom dataset, simply specify the following variables
-    seed_document_id = res['seed_document_id']
-    seed_y = res['seed_y']
-    ground_truth_y = res['ground_truth_y']
-    data_dir = res['data_dir']
-
     # create a custom dataset definition for ingestion
-    dataset_definition = []
-    for internal_id, fname in zip(res['document_id'], res['file_path']):
-        dataset_definition.append({'document_id': internal_id + 10, 
-                                  'rendering_id': 0,
-                                  'file_path': fname})
+    data_dir = input_ds['metadata']['data_dir']
+    dataset_definition = [{'document_id': row['document_id'],
+                           'file_path': os.path.join(data_dir, row['file_path'])} \
+                                   for row in input_ds['dataset']]
+
 
     # 1. Ingest a dataset specified by folder path
 
@@ -88,7 +84,7 @@ if __name__ == '__main__':
 
     method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
     print(' GET', method)
-    data = {'internal_id': seed_document_id[:3]}
+    data = {'internal_id': [row['internal_id'] for row in input_ds['dataset'][:3]]}
     print('   DATA:', json.dumps(data))
     res = requests.post(method, data=data).json()
 
@@ -97,7 +93,7 @@ if __name__ == '__main__':
 
     method = BASE_URL + "/feature-extraction/{}/id-mapping/nested".format(dsid)
     print('\n GET', method)
-    data = {'data': [{'internal_id': el} for el in seed_document_id[:3]]}
+    data = {'data': [{'internal_id': row['internal_id']} for row in input_ds['dataset'][:3]]}
     print('   DATA', json.dumps(data))
     res = requests.post(method, json=data).json()
 

@@ -166,11 +166,8 @@ def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
     #        sorted(["index", "y",
     #                "method", "options"])
 
-    for key in ["index", "y", "method"]:
-        if key in ['index', 'y']:
-            assert len(pars['data']) == len(data[key])
-        else:
-            assert pars[key] == data[key]
+    for key in ["method"]:
+        assert pars[key] == data[key]
 
     method = V01 + "/categorization/{}/predict".format(mid)
     res = app.get(method)

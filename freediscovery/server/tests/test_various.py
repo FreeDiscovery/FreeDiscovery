@@ -22,7 +22,7 @@ from .base import parse_res, V01, app, app_notest, get_features, get_features_ls
 
 
 @pytest.mark.parametrize("method", ['regular', 'semantic'])
-def test_api_search(app, method):
+def test_search(app, method):
 
     if method == 'regular':
         dsid, lsi_id, _ = get_features_lsi(app, hashed=False)
@@ -40,7 +40,27 @@ def test_api_search(app, method):
     for row in data['data']:
         assert sorted(row.keys()) == sorted(['score', 'internal_id'])
 
-def test_api_openapi_specs(app):
+def test_example_dataset(app):
+    res = app.get(V01 + '/example-dataset/20newsgroups_micro')
+    data = parse_res(res)
+    assert dict2type(data, max_depth=1) == {'dataset': 'list',
+                                            'training_set': 'list',
+                                            'metadata': 'dict'}
+    assert dict2type(data['metadata']) == {'data_dir': 'str',
+                                           'name': 'str'}
+    assert dict2type(data['training_set'][0]) == {'category': 'str',
+                                               'document_id': 'int',
+                                               'internal_id': 'int',
+                                               'file_path': 'str'}
+    assert dict2type(data['dataset'][0]) == {'category': 'str',
+                                           'document_id': 'int',
+                                           'internal_id': 'int',
+                                           'file_path': 'str'
+                                          }
+
+
+
+def test_openapi_specs(app):
     res = app.get('/openapi-specs.json')
     data = parse_res(res)
     assert data['swagger'] == '2.0'

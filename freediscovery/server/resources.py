@@ -66,13 +66,11 @@ EPSILON = 1e-3 # small numeric value
 class ExampleDatasetApi(Resource):
 
     @doc(description=_docstring_description(dedent(load_dataset.__doc__)))
-    @use_args({'training_set': wfields.List(wfields.Str(), missing=[]),
-               'test_set': wfields.List(wfields.Str(), missing=['document_id'])})
     @marshal_with(ExampleDatasetSchema())
-    def get(self, name, **args):
+    def get(self, name):
         md, training_set, test_set = load_dataset(name, self._cache_dir, verbose=True,
-                load_ground_truth=True, verify_checksum=False, **args)
-        return {'metadata': md, 'training_set': training_set, 'test_set': test_set}
+                                                  verify_checksum=False)
+        return {'metadata': md, 'training_set': training_set, 'dataset': test_set}
 
 
 # Definine the response formatting schemas

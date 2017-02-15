@@ -28,10 +28,14 @@ class DocumentIndexFullSchema(DocumentIndexSchema):
 class _ExampleDatasetElementSchema(DocumentIndexFullSchema):
     category = fields.Str()
 
-class ExampleDatasetSchema(Schema):
+class _ExampleDatasetMetadataSchema(Schema):
     data_dir = fields.Str(required=True)
+    name = fields.Str(required=True)
+
+class ExampleDatasetSchema(Schema):
+    metadata = fields.Nested(_ExampleDatasetMetadataSchema(), required=True)
     training_set = fields.Nested(_ExampleDatasetElementSchema(), many=True)
-    test_set = fields.Nested(_ExampleDatasetElementSchema(), many=True, required=True)
+    dataset = fields.Nested(_ExampleDatasetElementSchema(), many=True, required=True)
 
 class EmptySchema(Schema):
     pass
@@ -137,8 +141,6 @@ class CategorizationPredictSchema(Schema):
 
 class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
-    index = fields.List(fields.Int(), required=True)
-    y = fields.List(fields.Int(), required=True)
     options = fields.Str(required=True)
 
 

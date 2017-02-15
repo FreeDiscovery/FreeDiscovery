@@ -8,6 +8,7 @@ import os.path
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
+import pandas as pd
 
 from .run_suite import check_cache
 from ..utils import dict2type
@@ -18,41 +19,35 @@ import json
 
 cache_dir = check_cache()
 
-@pytest.mark.parametrize('name', ['20newsgroups_micro'])
+@pytest.mark.parametrize('name', ['20newsgroups_micro'])#, 'treclegal09_2k_subset'])
 def test_load_20newsgoups_dataset(name):
-    md, training_set, test_set = load_dataset(name, force=True, cache_dir=cache_dir,
-                                training_set_fields=[], test_set_fields=['document_id'])
+    md, training_set, dataset = load_dataset(name, force=True, cache_dir=cache_dir)
+                                
+
+    response_ref = { "document_id": 'int',
+                     "file_path": "str",
+                     "internal_id": "int"
+                     }
+    if '20newsgroups' in name or 'treclegal09' in name:
+        response_ref["category"] = "str"
 
     assert dict2type(md) == {'data_dir': 'str', 'name': 'str'}
 
-    assert dict2type(test_set[0]) == { "document_id": 'int',
-                                       "category": "str" }
-    assert training_set is None
+    assert dict2type(dataset[0]) == response_ref
+    assert dict2type(training_set[1]) == response_ref
 
-    categories = sorted(list(set([row['category'] for row in test_set])))
-    for training_set_fields, test_set_fields, categories_sel in \
-            [(['document_id'], ['document_id'], [categories[0]]),
-             (['file_path'],  ['document_id'], [categories[0]]),
-             (['document_id', 'file_path'],  ['document_id'], [categories[0], categories[1]]),
-             (['document_id', 'file_path'],  ['document_id', 'internal_id'], [categories[1]]),
-             (['file_path'],  ['document_id'], categories)]:
+    categories = sorted(list(set([row['category'] for row in dataset])))
+    for categories_sel in \
+            [[categories[0]],
+             [categories[1]],
+             [categories[0], categories[1]],
+             [categories[1]],
+             categories]:
 
-        md, training_set, test_set = load_dataset(name, cache_dir=cache_dir,
-                                    training_set_fields=training_set_fields,
-                                    test_set_fields=test_set_fields,
+        md, training_set, dataset = load_dataset(name, cache_dir=cache_dir,
                                     categories=categories_sel)
 
-        for resp, set_fields in [(training_set, training_set_fields),
-                                (test_set, test_set_fields)]:
-            response_ref = { "category": "str" }
-            if 'document_id' in set_fields:
-                response_ref['document_id'] = 'int'
-            if 'file_path' in set_fields:
-                response_ref['file_path'] = 'str'
-            if 'internal_id' in set_fields:
-                response_ref['internal_id']= 'int'
-
-
+        for resp in [training_set, dataset]:
 
             assert dict2type(resp[0]) ==  response_ref
             result_fields = list(set([el['category'] for el in resp]))
@@ -60,6 +55,24 @@ def test_load_20newsgoups_dataset(name):
             # the opposite if not always true (e.g. for small training sets)
             for key in result_fields:
                 assert key in categories_sel
+
+        training_set = pd.DataFrame(training_set)
+        dataset = pd.DataFrame(dataset)
+        if name == 'treclegal09_2k_subset':
+            if categories_sel == ['positive']:
+                assert dataset.shape[0] == 12
+            elif categories_sel == categories:
+                assert dataset.shape[0] == 2465
+                assert (training_set.category=='positive').sum() == 5
+        elif name == '20newsgroups_micro':
+            if categories_sel == ['comp.graphics']:
+                assert dataset.shape[0] == 3
+            elif categories_sel == categories:
+                assert dataset.shape[0] == 7
+                assert training_set.shape[0] == 4
+
+
+
 
 
 
