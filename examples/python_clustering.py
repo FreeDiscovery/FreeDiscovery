@@ -21,14 +21,14 @@ cache_dir = check_cache()
 
 print("0. Load Dataset")
 
-ds = load_dataset(dataset_name, cache_dir=cache_dir)
+md, training_set, dataset = load_dataset(dataset_name, cache_dir=cache_dir)
 
 
 print("\n1. Feature extraction (non hashed)\n")
 
 n_features = 30000
 fe = FeatureVectorizer(cache_dir=cache_dir)
-uuid = fe.preprocess(ds['data_dir'],
+uuid = fe.preprocess(md['data_dir'],
                      n_features=n_features, use_hashing=False,
                      use_idf=True, stop_words='english')
 uuid, filenames = fe.transform()

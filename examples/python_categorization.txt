@@ -22,14 +22,11 @@ cache_dir = check_cache()
 
 if __name__ == '__main__':
 
-    ds = load_dataset(dataset_name, load_ground_truth=True, cache_dir=cache_dir)
+    md, dataset,  = load_dataset(dataset_name, load_ground_truth=True, cache_dir=cache_dir)
 
 
     # To use a custom dataset, simply specify the following variables
     data_dir = ds['data_dir']
-    seed_filenames = ds['seed_']
-    seed_y = ds['seed_y']
-    ground_truth_file = ds['ground_truth_file']  # (optional)
 
     fe_opts = {'data_dir': data_dir,
                'stop_words': 'english', 'chunk_size': 2000, 'n_jobs': -1,
