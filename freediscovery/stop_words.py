@@ -182,7 +182,6 @@ class _StopWordsWrapper(object):
 
     def __init__(self, cache_dir='/tmp/'):
         self.cache_dir = cache_dir
-        print('self.cache_dir = cache_dir --->', self.cache_dir)
 
     def save(self, name, stop_words):
         """Allow to save the stop_words list of strings with joblib.save

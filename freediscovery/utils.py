@@ -170,6 +170,13 @@ def _query_features(vect, X, indices, n_top_words=10, remove_stop_words=False):
             out.append(terms[idx])
     return out
 
+def _type_mapper(mtype):
+    mapper = {'unicode': 'str', 'long': 'str'}
+    if mtype in mapper:
+        return mapper[mtype]
+    else:
+        return mtype
+
 def dict2type(d, collapse_lists=False, max_depth=10):
     """Recursively walk though the object
     and replace all dict values by their type
@@ -182,10 +189,7 @@ def dict2type(d, collapse_lists=False, max_depth=10):
       maximum depth on which the typing would be computed
     """
     if max_depth == 0:
-        res = type(d).__name__
-        if res == 'unicode':
-            res = 'str'
-        return res
+        return _type_mapper(type(d).__name__)
 
     if isinstance(d, dict):
         res = {}
@@ -198,10 +202,7 @@ def dict2type(d, collapse_lists=False, max_depth=10):
             res = list(set(res))
         return res
     else:
-        res = type(d).__name__
-        if res == 'unicode':
-            res = 'str'
-        return res
+        return _type_mapper(type(d).__name__)
 
 def sdict_keys(x):
     """Sorted dictionary keys of x"""
