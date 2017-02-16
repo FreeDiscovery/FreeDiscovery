@@ -260,7 +260,7 @@ class EmailParserApiElementIndex(Resource):
 
 _lsi_api_get_args  = {'parent_id': wfields.Str(required=True) }
 _lsi_api_post_args = {'parent_id': wfields.Str(required=True),
-                      'n_components': wfields.Int(default=150) }
+                      'n_components': wfields.Int(missing=150) }
 class LsiApi(Resource):
 
     @use_args(_lsi_api_get_args)
@@ -392,15 +392,21 @@ class ModelsApiElement(Resource):
 class ModelsApiPredict(Resource):
 
     @doc(description='Predict document categorization with a previously trained model')
-    @use_args({'max_result_categories': wfields.Int(default=1),
-               'sort': wfields.Boolean(default=False)})
+    @use_args({'max_result_categories': wfields.Int(missing=1),
+               'sort': wfields.Boolean(missing=False),
+               'ml_output': wfields.Str(missing='probability'),
+               'nn_metric': wfields.Str(missing='jaccard_norm')})
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
+        sort = args.pop('sort')
+        max_result_categories  = args.pop('max_result_categories')
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         y_res, nn_res = cat.predict(**args)
         res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
-                                          cat.fe.db.data)
+                                          cat.fe.db.data,
+                                          sort=sort,
+                                          max_result_categories=max_result_categories)
         return res
 
 
@@ -437,7 +443,7 @@ class ModelsApiTest(Resource):
 
 _k_mean_clustering_api_post_args = {
         'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(default=150),
+        'n_clusters': wfields.Int(missing=150),
         }
 
 
@@ -466,7 +472,7 @@ class KmeanClusteringApi(Resource):
 
 _birch_clustering_api_post_args = {
         'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(default=150),
+        'n_clusters': wfields.Int(missing=150),
         'threshold': wfields.Number(),
         }
 
@@ -495,7 +501,7 @@ class BirchClusteringApi(Resource):
 
 _wardhc_clustering_api_post_args = {
         'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(default=150),
+        'n_clusters': wfields.Int(missing=150),
         'n_neighbors': wfields.Int(missing=5),
         }
 

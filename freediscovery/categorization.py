@@ -16,6 +16,7 @@ from sklearn.preprocessing import LabelEncoder
 from .base import _BaseWrapper
 from .utils import setup_model, _rename_main_thread
 from .neighbors import NearestCentroidRanker, NearestNeighborRanker
+from .metrics import _scale_cosine_similarity
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
 
@@ -232,17 +233,18 @@ class _CategorizerWrapper(_BaseWrapper):
         self.cmod = cmod
         return cmod, Y_train
 
-    def predict(self, chunk_size=5000, kind='probability'):
+    def predict(self, chunk_size=5000, ml_output='probability', nn_metric='cosine'):
         """
         Predict the relevance using a previously trained model
 
         Parameters
         ----------
         chunck_size : int
-           chunck size
-
-        kind : str
-           type of the output in ['decision_function', 'probability'], only affects ML methods. The nearest Neighbor ranker always return cosine similarities in any case.
+           chunk size
+        ml_output : str
+           type of the output in ['decision_function', 'probability'], only affects ML methods. default: 'probability'
+        nn_metric : str   
+            The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']. default: 'cosine'
 
         Returns
         -------
@@ -251,11 +253,11 @@ class _CategorizerWrapper(_BaseWrapper):
         nn_ind : {ndarray [n_samples, n_classes], None}
            the index of the nearest neighbor for each class (when the NearestNeighborRanker is used)
         """
-        if kind not in ['probability', 'decision_function']:
-            raise ValueError("Wrong input value kind={}, must be one of ['probability', 'decision_function']".format(kind))
+        if ml_output not in ['probability', 'decision_function']:
+            raise ValueError("Wrong input value ml_output={}, must be one of ['probability', 'decision_function']".format(ml_output))
 
-        if kind == 'probability':
-            kind = 'predict_proba'
+        if ml_output == 'probability':
+            ml_output = 'predict_proba'
 
         if self.cmod is not None:
             cmod = self.cmod
@@ -268,8 +270,9 @@ class _CategorizerWrapper(_BaseWrapper):
         nn_ind = None
         if isinstance(cmod, NearestNeighborRanker):
             res, nn_ind = cmod.kneighbors(ds)
-        elif hasattr(cmod, kind):
-            res = getattr(cmod, kind)(ds)
+            res = _scale_cosine_similarity(res, metric=nn_metric)
+        elif hasattr(cmod, ml_output):
+            res = getattr(cmod, ml_output)(ds)
         elif hasattr(cmod, 'decision_function'):
             # and we need predict_proba
             res = cmod.decision_function(ds)
@@ -283,7 +286,7 @@ class _CategorizerWrapper(_BaseWrapper):
 
         # handle the case of binary categorization
         if res.ndim == 1:
-            if kind == 'decision_function':
+            if ml_output == 'decision_function':
                 res_p = res
                 res_n = - res
             else:
