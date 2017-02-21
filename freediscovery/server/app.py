@@ -25,7 +25,8 @@ from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementMappi
                         EmailParserApi, EmailParserApiElementIndex,
                         EmailParserApiElement,
                         EmailThreadingApi, EmailThreadingApiElement,
-                        SearchApi
+                        SearchApi,
+                        CustomStopWordsApi, CustomStopWordsLoadApi,
                         )
 
 
@@ -69,33 +70,35 @@ def fd_app(cache_dir):
 
     ## Actually setup the Api resource routing here
     for resource_el, url in [
-         (ExampleDatasetApi               , "/example-dataset/<name>")                             , 
-         (FeaturesApi                     , "/feature-extraction")                          , 
-         (FeaturesApiElement              , '/feature-extraction/<dsid>')                   , 
-         (FeaturesApiElementMappingFlat   , '/feature-extraction/<dsid>/id-mapping/flat')   , 
-         (FeaturesApiElementMappingNested , '/feature-extraction/<dsid>/id-mapping/nested') , 
-         (EmailParserApi                  , "/email-parser")                                , 
-         (EmailParserApiElement           , '/email-parser/<dsid>')                         , 
-         (EmailParserApiElementIndex      , '/email-parser/<dsid>/index')                   , 
-         (ModelsApi                       , '/categorization/')                             , 
-         (ModelsApiElement                , '/categorization/<mid>')                        , 
-         (ModelsApiPredict                , '/categorization/<mid>/predict')                , 
-         (ModelsApiTest                   , "/categorization/<mid>/test")                   , 
-         (LsiApi                          , '/lsi/')                                        , 
-         (LsiApiElement                   , '/lsi/<mid>')                                   , 
-         (KmeanClusteringApi              , '/clustering/k-mean/')                          , 
-         (BirchClusteringApi              , '/clustering/birch')                            , 
-         (WardHCClusteringApi             , '/clustering/ward_hc')                          , 
-         (DBSCANClusteringApi             , '/clustering/dbscan')                           , 
-         (ClusteringApiElement            , '/clustering/<method>/<mid>')                   , 
-         (DupDetectionApi                 , '/duplicate-detection/')                        , 
-         (DupDetectionApiElement          , '/duplicate-detection/<mid>')                   , 
-         (MetricsCategorizationApiElement , '/metrics/categorization')                      , 
-         (MetricsClusteringApiElement     , '/metrics/clustering')                          , 
-         (MetricsDupDetectionApiElement   , '/metrics/duplicate-detection')                 , 
-         (EmailThreadingApi               , '/email-threading/')                            , 
-         (EmailThreadingApiElement        , '/email-threading/<mid>')                       , 
-         (SearchApi                       , '/search/')                                     , 
+         (ExampleDatasetApi               , "/example-dataset/<name>")                      ,
+         (FeaturesApi                     , "/feature-extraction")                          ,
+         (FeaturesApiElement              , '/feature-extraction/<dsid>')                   ,
+         (FeaturesApiElementMappingFlat   , '/feature-extraction/<dsid>/id-mapping/flat')   ,
+         (FeaturesApiElementMappingNested , '/feature-extraction/<dsid>/id-mapping/nested') ,
+         (EmailParserApi                  , "/email-parser")                                ,
+         (EmailParserApiElement           , '/email-parser/<dsid>')                         ,
+         (EmailParserApiElementIndex      , '/email-parser/<dsid>/index')                   ,
+         (ModelsApi                       , '/categorization/')                             ,
+         (ModelsApiElement                , '/categorization/<mid>')                        ,
+         (ModelsApiPredict                , '/categorization/<mid>/predict')                ,
+         (ModelsApiTest                   , "/categorization/<mid>/test")                   ,
+         (LsiApi                          , '/lsi/')                                        ,
+         (LsiApiElement                   , '/lsi/<mid>')                                   ,
+         (KmeanClusteringApi              , '/clustering/k-mean/')                          ,
+         (BirchClusteringApi              , '/clustering/birch')                            ,
+         (WardHCClusteringApi             , '/clustering/ward_hc')                          ,
+         (DBSCANClusteringApi             , '/clustering/dbscan')                           ,
+         (ClusteringApiElement            , '/clustering/<method>/<mid>')                   ,
+         (DupDetectionApi                 , '/duplicate-detection/')                        ,
+         (DupDetectionApiElement          , '/duplicate-detection/<mid>')                   ,
+         (MetricsCategorizationApiElement , '/metrics/categorization')                      ,
+         (MetricsClusteringApiElement     , '/metrics/clustering')                          ,
+         (MetricsDupDetectionApiElement   , '/metrics/duplicate-detection')                 ,
+         (EmailThreadingApi               , '/email-threading/')                            ,
+         (EmailThreadingApiElement        , '/email-threading/<mid>')                       ,
+         (SearchApi                       , '/search/')                                     ,
+         (CustomStopWordsApi              , '/stop-words/')                                 ,
+         (CustomStopWordsLoadApi          , '/stop-words/<name>')                           ,
          #(CatchAll                       , "/<url>")
                              ]:
         # monkeypatching, not great
@@ -121,7 +124,7 @@ def fd_app(cache_dir):
     @app.errorhandler(404)
     def handle_404_error(error):
         response = jsonify({"messages": str(error)})
-        response.status_code = 404 
+        response.status_code = 404
         return response
 
     @app.errorhandler(400)

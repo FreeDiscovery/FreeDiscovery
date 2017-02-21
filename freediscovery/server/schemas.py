@@ -153,7 +153,7 @@ class _HTreeSchema(Schema):
 class ClusteringSchema(Schema):
     labels = fields.List(fields.Int(), required=True)
     cluster_terms = fields.List(fields.Str(), required=True)
-    htree = fields.Nested(_HTreeSchema()) 
+    htree = fields.Nested(_HTreeSchema())
     pars = fields.Str(required=True)
 
 class DuplicateDetectionSchema(Schema):
@@ -207,3 +207,8 @@ class _SearchResponseSchemaElement(DocumentIndexSchema):
 
 class SearchResponseSchema(Schema):
     data = fields.Nested(_SearchResponseSchemaElement(), many=True, required=True)
+
+
+class CustomStopWordsSchema(Schema):
+    name = fields.Str()
+    stop_words = fields.List(fields.Str())
