@@ -54,7 +54,7 @@ def test_api_dupdetection(app, kind, options):
     mid = data['id']
 
     url += '/{}'.format(mid)
-    res = app.get(url, data=options)
+    res = app.get(url, query_string=options)
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == sorted(['cluster_id'])
