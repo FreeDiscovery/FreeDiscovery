@@ -60,11 +60,13 @@ def test_api_clustering(app, model, use_lsi):
     mid = data['id']
 
     url += '/{}'.format(mid)
-    res = app.get(url)
+    n_top_words = 2
+    res = app.get(url, query_string={'n_top_words': n_top_words})
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == \
             sorted(['cluster_terms', 'labels', 'pars', 'htree'])
+    assert len(data['cluster_terms'][0]) == 2
 
     if data['htree']:
         assert sorted(data['htree'].keys()) == \

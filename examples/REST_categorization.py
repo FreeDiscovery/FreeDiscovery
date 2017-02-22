@@ -25,7 +25,7 @@ if __name__ == '__main__':
     print(" 0. Load the example dataset")
     url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
     print(" GET", url)
-    input_ds = requests.get(url, json={'train_set_fields': ['document_id']}).json()
+    input_ds = requests.get(url, params={'train_set_fields': ['document_id']}).json()
 
 
     data_dir = input_ds['metadata']['data_dir']
