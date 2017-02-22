@@ -391,22 +391,35 @@ class ModelsApiElement(Resource):
 
 class ModelsApiPredict(Resource):
 
-    @doc(description='Predict document categorization with a previously trained model')
+    @doc(description=dedent("""
+            Predict document categorization with a previously trained model
+
+            Parameters
+            ----------
+            max_result_categories : the maximum number of categories in the results
+            sort : sort by the score of the most likely class
+            ml_output : type of the output in ['decision_function', 'probability'], only affects ML methods.
+            nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            min_score : filter out results below a score threashold
+            """))
     @use_args({'max_result_categories': wfields.Int(missing=1),
                'sort': wfields.Boolean(missing=False),
                'ml_output': wfields.Str(missing='probability'),
-               'nn_metric': wfields.Str(missing='jaccard_norm')})
+               'nn_metric': wfields.Str(missing='jaccard_norm'),
+               'min_score': wfields.Int(missing=-100)})
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
         sort = args.pop('sort')
         max_result_categories  = args.pop('max_result_categories')
+        min_score = args.pop("min_score")
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         y_res, nn_res = cat.predict(**args)
         res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
                                           cat.fe.db.data,
                                           sort=sort,
-                                          max_result_categories=max_result_categories)
+                                          max_result_categories=max_result_categories,
+                                          min_score=min_score)
         return res
 
 
@@ -835,20 +848,34 @@ class EmailThreadingApiElement(Resource):
 
 
 class SearchApi(Resource):
-    @doc(description="Perform document search (if `parent_id` is a `dataset_id`)"
-                     " or a semantic search (if `parent_id` is a `lsi_id`).")
+    @doc(description=dedent("""
+            Perform document search (if `parent_id` is a `dataset_id`) or a semantic search (if `parent_id` is a `lsi_id`).")
+
+            Parameters
+            ----------
+            sort : sort by the score of the most likely class
+            nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            min_score : filter out results below a score threashold
+            """))
     @use_args({ "parent_id": wfields.Str(required=True),
-                "query": wfields.Str(required=True)})
+                "query": wfields.Str(required=True),
+                'sort': wfields.Boolean(missing=False),
+                'nn_metric': wfields.Str(missing='jaccard_norm'),
+                'min_score': wfields.Int(missing=-100),
+                })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
         parent_id = args['parent_id']
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
 
         query = args['query']
-        scores = model.search(query)
+        scores = model.search(query, metric=args['nn_metric'])
         scores_pd = pd.DataFrame({'score': scores,
                                   'internal_id': np.arange(model.fe.n_samples_, dtype='int')})
 
         res = model.fe.db.render_dict(scores_pd)
+        res = [row for row in res if row['score'] > args['min_score']]
+        if args['sort']:
+            res = sorted(res, key=lambda row: row['score'], reverse=True)
 
         return {'data': res}

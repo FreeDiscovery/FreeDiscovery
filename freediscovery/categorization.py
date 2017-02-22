@@ -285,7 +285,7 @@ class _CategorizerWrapper(_BaseWrapper):
             raise ValueError('Model {} has neither decision_function nor predict_proba methods!'.format(cmod))
 
         # handle the case of binary categorization
-        # as multiclass
+        # as two classes categorization
         if res.ndim == 1:
             if ml_output == 'decision_function':
                 res_p = res
@@ -298,7 +298,7 @@ class _CategorizerWrapper(_BaseWrapper):
 
     @staticmethod
     def to_dict(Y_pred, nn_pred, labels, id_mapping,
-                max_result_categories=1, sort=False):
+                max_result_categories=1, sort=False, min_score=None):
         """
         Create a nested dictionary result that would be returned by 
         the REST API given the categorization results
@@ -317,6 +317,8 @@ class _CategorizerWrapper(_BaseWrapper):
            the maximum number of categories in the results
         sort : bool
            sort by the score of the most likely class
+        min_score : {int, None}
+           filter out results below a score threashold
         """
         if max_result_categories <= 0:
             raise ValueError('the max_result_categories={} must be strictly positive'.format(max_result_categories))
@@ -326,6 +328,9 @@ class _CategorizerWrapper(_BaseWrapper):
                                                                   'document_id',
                                                                   'rendition_id']]
         id_mapping = id_mapping[base_keys].set_index('internal_id', drop=True).astype('object')
+
+        if min_score is None:
+            min_score = -1e9
 
         def sort_func(x):
             return x[0]
@@ -337,6 +342,8 @@ class _CategorizerWrapper(_BaseWrapper):
 
         res = []
         for idx, (Y_row, nn_row) in enumerate(outer_container):
+            if max(Y_row) < min_score:
+                continue
             ires = {'internal_id': idx}
             ires.update(id_mapping.loc[idx].to_dict())
             iscores = []
