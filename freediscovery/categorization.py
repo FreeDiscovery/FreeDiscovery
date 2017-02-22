@@ -285,6 +285,7 @@ class _CategorizerWrapper(_BaseWrapper):
             raise ValueError('Model {} has neither decision_function nor predict_proba methods!'.format(cmod))
 
         # handle the case of binary categorization
+        # as multiclass
         if res.ndim == 1:
             if ml_output == 'decision_function':
                 res_p = res

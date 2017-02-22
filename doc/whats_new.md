@@ -6,10 +6,11 @@
 
 ### New features  
 
-
+ * Support for multi-class categorization and non integer class labels (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files)) 
 
 ### Enhancements
- * Support for multi-class categorization (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files)) 
+
+ * Categorization and semantic search support sorting and filtering of documents below a user provided threashold. It also enforces the resulting score in the `[0, 1]` range (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files), [#101](https://github.com/FreeDiscovery/FreeDiscovery/pull/100/files))
 
  * The REST API documentation is generated automatically from the code (using an OpenAPI specification) which allows to enforce consistency between the code and the docs (PR [#85](https://github.com/FreeDiscovery/FreeDiscovery/pull/85))
  
