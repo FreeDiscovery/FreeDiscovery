@@ -54,7 +54,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ErrorSchema, DuplicateDetectionSchema,
                       SearchResponseSchema, DocumentIndexSchema,
                       EmptySchema,
-                      CustomStopWordsSchema
+                      CustomStopWordsSchema, CustomStopWordsLoadSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -861,18 +861,17 @@ class CustomStopWordsApi(Resource):
                "stop_words" : wfields.List(wfields.Str(), required=True)})
     @marshal_with(CustomStopWordsSchema())
     def post(self, **args):
-        self.name = args['name']
-        self.stop_words = args['stop_words']
-        self.model = _StopWordsWrapper(cache_dir=self._cache_dir)
-        self.model.save(name = self.name, stop_words = self.stop_words)
-        return self.model
+        name = args['name']
+        stop_words = args['stop_words']
+        model = _StopWordsWrapper(cache_dir=self._cache_dir)
+        model.save(name = name, stop_words = stop_words)
+        return {'name': name}
+
 
 class CustomStopWordsLoadApi(Resource):
     @doc(description="Loading a custom stop words")
+    @marshal_with(CustomStopWordsLoadSchema())
     def get(self, **args):
         name = args['name']
-        from sklearn.externals.joblib import load
-        model_dir = os.path.join(self._cache_dir, 'stop_words')
-        n = os.path.join(model_dir, name + '.pkl')
-        stop_words = load(n)
-        return stop_words
+
+        return {'name': name, 'stop_words': _StopWordsWrapper().load(name)}

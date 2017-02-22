@@ -210,5 +210,10 @@ class SearchResponseSchema(Schema):
 
 
 class CustomStopWordsSchema(Schema):
-    name = fields.Str()
-    stop_words = fields.List(fields.Str())
+    name = fields.Str(required=True)
+    stop_words = fields.List(fields.Str(), required=True)
+
+
+class CustomStopWordsLoadSchema(Schema):
+    name = fields.Str(required=True)
+    stop_words = fields.List(fields.Str(), required=True)

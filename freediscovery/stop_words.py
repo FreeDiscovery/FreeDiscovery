@@ -182,7 +182,6 @@ class _StopWordsWrapper(object):
 
     def __init__(self, cache_dir='/tmp/'):
         self.cache_dir = cache_dir
-        print('self.cache_dir = cache_dir --->', self.cache_dir)
 
     def save(self, name, stop_words):
         """Allow to save the stop_words list of strings with joblib.save
@@ -196,19 +195,19 @@ class _StopWordsWrapper(object):
                 list of stop words
         """
 
-        self.stop_words = stop_words # list of stop words
+        self.stop_words = stop_words  # list of stop words
 
         self.model_dir = os.path.join(self.cache_dir, 'stop_words')
         self.name = os.path.join(self.model_dir, name + '.pkl') # the name (tag) for custom stop words list
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
-        # dump(self.stop_words, self.name)
         dump(self.stop_words, self.name)
 
     def load(self, name):
         """Allow to retrive the stop_words list of strings
         """
-        # self.name = name # the name of stop words list that must be loaded
+        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
+        self.name = os.path.join(self.model_dir, name + '.pkl')
         self.stop_words = load(self.name)
         return (self.stop_words)
