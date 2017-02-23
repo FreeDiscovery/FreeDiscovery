@@ -14,11 +14,14 @@ from ...tests.run_suite import check_cache
 from ...ingestion import DocumentIndex
 from ...utils import dict2type, sdict_keys
 
+from sklearn.externals.joblib import Memory
+
 V01 = '/api/v0'
 
 data_dir = os.path.dirname(__file__)
 email_data_dir = os.path.join(data_dir, "..", "..", "data", "fedora-devel-list-2008-October")
 data_dir = os.path.join(data_dir, "..", "..", "data", "ds_001", "raw")
+cache_dir = check_cache()
 
 def parse_res(res):
     return json.loads(res.data.decode('utf-8'))
@@ -34,8 +37,6 @@ def _document2internal_id(value):
 @pytest.fixture
 def app():
 
-    cache_dir = check_cache()
-
     tapp = fd_app(cache_dir)
 
     tapp.config['TESTING'] = True
@@ -44,12 +45,12 @@ def app():
 
 @pytest.fixture
 def app_notest():
-    cache_dir = check_cache()
     tapp = fd_app(cache_dir)
     tapp.config['TESTING'] = False
 
     return tapp.test_client()
 
+memory = Memory(cachedir=cache_dir, verbose=0)
 
 #=============================================================================#
 #
@@ -90,6 +91,32 @@ def get_features(app, hashed=True, metadata_fields='data_dir'):
     assert dict2type(data) == {'id': 'str'}
     return dsid, pars
 
+@memory.cache(ignore=['app'])
+def get_features_cached(app, hashed=True):
+    method = V01 + "/feature-extraction/"
+    pars = { "use_hashing": hashed}
+
+    index = DocumentIndex.from_folder(data_dir)
+    pars["dataset_definition"] = []
+    for idx, file_path in enumerate(index.filenames):
+        row = {'file_path': file_path,
+               'document_id': _internal2document_id(idx)}
+        pars["dataset_definition"].append(row)
+
+
+    res = app.post(method, json=pars)
+
+    assert res.status_code == 200, method
+    data = parse_res(res)
+    assert dict2type(data, collapse_lists=True) == {'filenames': ['str'], 'id': 'str'}
+    dsid = data['id']
+
+    method = V01 + "/feature-extraction/{}".format(dsid)
+    res = app.post(method)
+    assert res.status_code == 200, method
+    data = parse_res(res)
+    assert dict2type(data) == {'id': 'str'}
+    return dsid, pars
 
 def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
     dsid, pars = get_features(app, hashed=hashed,
