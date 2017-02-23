@@ -207,3 +207,13 @@ class _SearchResponseSchemaElement(DocumentIndexSchema):
 
 class SearchResponseSchema(Schema):
     data = fields.Nested(_SearchResponseSchemaElement(), many=True, required=True)
+    
+class CustomStopWordsSchema(Schema):
+    name = fields.Str(required=True)
+    stop_words = fields.List(fields.Str(), required=True)
+
+
+class CustomStopWordsLoadSchema(Schema):
+    name = fields.Str(required=True)
+    stop_words = fields.List(fields.Str(), required=True)
+    

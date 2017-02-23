@@ -168,6 +168,8 @@ COMMON_FIRST_NAMES = [ "james","john","robert","michael","william","david",
 "isabella","herminia","terra","celina"
 ]
 
+from freediscovery.tests.run_suite import check_cache
+cache_dir = check_cache()
 
 class _StopWordsWrapper(object):
     """A mechanism for adding / managing custom stop words
@@ -180,7 +182,7 @@ class _StopWordsWrapper(object):
     """
     _wrapper_type = "stop_words"
 
-    def __init__(self, cache_dir='/tmp/'):
+    def __init__(self, cache_dir=cache_dir):
         self.cache_dir = cache_dir
 
     def save(self, name, stop_words):
@@ -195,19 +197,19 @@ class _StopWordsWrapper(object):
                 list of stop words
         """
 
-        self.stop_words = stop_words # list of stop words
+        self.stop_words = stop_words  # list of stop words
 
         self.model_dir = os.path.join(self.cache_dir, 'stop_words')
         self.name = os.path.join(self.model_dir, name + '.pkl') # the name (tag) for custom stop words list
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
-        # dump(self.stop_words, self.name)
         dump(self.stop_words, self.name)
 
     def load(self, name):
         """Allow to retrive the stop_words list of strings
         """
-        # self.name = name # the name of stop words list that must be loaded
+        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
+        self.name = os.path.join(self.model_dir, name + '.pkl')
         self.stop_words = load(self.name)
         return (self.stop_words)

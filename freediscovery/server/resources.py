@@ -37,6 +37,7 @@ from ..dupdet import _DuplicateDetectionWrapper
 from ..email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
 from ..exceptions import WrongParameter
+from ..stop_words import _StopWordsWrapper
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, DocumentIndexListSchema,
                       DocumentIndexNestedSchema,
@@ -52,7 +53,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
                       ErrorSchema, DuplicateDetectionSchema,
                       SearchResponseSchema, DocumentIndexSchema,
-                      EmptySchema
+                      EmptySchema,
+                      CustomStopWordsSchema, CustomStopWordsLoadSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -896,3 +898,29 @@ class SearchApi(Resource):
             res = sorted(res, key=lambda row: row['score'], reverse=True)
 
         return {'data': res}
+
+
+# ============================================================================ #
+#                            Custom Stop Words
+# ============================================================================ #
+
+
+class CustomStopWordsApi(Resource):
+    @doc(description="Perform a mechanism for adding / managing custom stop words")
+    @use_args({"name" : wfields.Str(required=True),
+               "stop_words" : wfields.List(wfields.Str(), required=True)})
+    @marshal_with(CustomStopWordsSchema())
+    def post(self, **args):
+        name = args['name']
+        stop_words = args['stop_words']
+        model = _StopWordsWrapper(cache_dir=self._cache_dir)
+        model.save(name = name, stop_words = stop_words)
+        return {'name': name}
+
+
+class CustomStopWordsLoadApi(Resource):
+    @doc(description="Loading a custom stop words")
+    @marshal_with(CustomStopWordsLoadSchema())
+    def get(self, **args):
+        name = args['name']
+        return {'name': name, 'stop_words': _StopWordsWrapper().load(name)}
