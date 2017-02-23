@@ -110,7 +110,6 @@ class LsiParsSchema(Schema):
 class LsiPostSchema(IDSchema):
     explained_variance = fields.Number(required=True)
 
-
 class CategorizationPostSchema(ClassificationScoresSchema):
     id = fields.Str(required=True)
 
@@ -130,25 +129,20 @@ class _CategorizationScoreSchemaElement(DocumentIndexSchema):
     category = fields.Str(required=True)
     score = fields.Number(required=True)
 
-
 class _CategorizationPredictSchemaElement(DocumentIndexSchema):
     scores = fields.Nested(_CategorizationScoreSchemaElement(), many=True, required=True)
 
-
 class CategorizationPredictSchema(Schema):
     data = fields.Nested(_CategorizationPredictSchemaElement(), many=True, required=True)
-
 
 class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
     options = fields.Str(required=True)
 
-
 class _HTreeSchema(Schema):
     n_leaves = fields.Int(required=True)
     n_components = fields.Int(required=True)
     children = fields.List(fields.List(fields.Int), required=True)
-
 
 class ClusteringSchema(Schema):
     labels = fields.List(fields.Int(), required=True)
@@ -160,8 +154,6 @@ class DuplicateDetectionSchema(Schema):
     simhash = fields.List(fields.Int(), required=True)
     cluster_id = fields.List(fields.Int(), required=True)
     dup_pairs = fields.List(fields.List(fields.Int()), required=True)
-
-
 
 class EmailThreadingParsSchema(Schema):
     group_by_subject = fields.Boolean(required=True)
@@ -179,7 +171,6 @@ class TreeSchema(Schema):
 class EmailThreadingSchema(Schema):
     id = fields.Str(required=True)
     data = fields.Nested(TreeSchema, many=True)
-
 
 
 class MetricsCategorizationSchema(Schema):
