@@ -16,6 +16,7 @@ from ..utils import dict2type
 from freediscovery.datasets import load_dataset
 from unittest import SkipTest
 import json
+import six
 
 cache_dir = check_cache()
 
@@ -32,7 +33,7 @@ def test_load_20newsgoups_dataset(name):
 
     assert dict2type(md) == {'data_dir': 'str', 'name': 'str'}
 
-    if 'CIRCLECI' not in os.environ:
+    if 'APPVEYOR' not in os.environ or six.PY3:
         # The following fails on CicleCI for some reason
         assert dict2type(dataset[0]) == response_ref
         assert dict2type(training_set[1]) == response_ref
@@ -46,11 +47,11 @@ def test_load_20newsgoups_dataset(name):
              categories]:
 
         md, training_set, dataset = load_dataset(name, cache_dir=cache_dir,
-                                    categories=categories_sel)
+                                                 categories=categories_sel)
 
         for resp in [training_set, dataset]:
 
-            if 'CIRCLECI' not in os.environ:
+            if 'APPVEYOR' not in os.environ or six.PY3:
                 # The following fails on CicleCI for some reason
                 assert dict2type(resp[0]) ==  response_ref
             result_fields = list(set([el['category'] for el in resp]))
