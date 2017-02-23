@@ -21,25 +21,6 @@ from ...tests.run_suite import check_cache
 from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
 
 
-@pytest.mark.parametrize("method", ['regular', 'semantic'])
-def test_search(app, method):
-
-    if method == 'regular':
-        dsid, lsi_id, _ = get_features_lsi(app, hashed=False)
-        parent_id = lsi_id
-    elif method == 'semantic':
-        dsid, _ = get_features(app, hashed=False)
-        lsi_id = None
-        parent_id = dsid
-
-    method = V01 + "/search/"
-    res = app.post(method, json=dict(parent_id=parent_id, query="so that I can reserve a room"))
-    assert res.status_code == 200
-    data = parse_res(res)
-    assert sorted(data.keys()) == ['data']
-    for row in data['data']:
-        assert sorted(row.keys()) == sorted(['score', 'internal_id'])
-
 def test_example_dataset(app):
     res = app.get(V01 + '/example-dataset/20newsgroups_micro')
     data = parse_res(res)

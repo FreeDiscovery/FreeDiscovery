@@ -34,7 +34,7 @@ class _SearchWrapper(_BaseWrapper):
                                           parent_id=parent_id,
                                           mid=mid, load_model=True)
 
-    def search(self, text):
+    def search(self, text, metric='cosine'):
         """
         Search given some text query
 
@@ -42,6 +42,8 @@ class _SearchWrapper(_BaseWrapper):
         ----------
         text : str
           the query string
+        metric : str
+          the output metric to use
         """
 
         vect = self.fe._load_model()
@@ -59,7 +61,7 @@ class _SearchWrapper(_BaseWrapper):
         s = Search(vect, lsi)
         s.fit(X)
 
-        dist = s.search(text)
+        dist = s.search(text, metric=metric)
         return dist
 
 
@@ -97,7 +99,7 @@ class Search(object):
         """
         self._fit_X = X
 
-    def search(self, text):
+    def search(self, text, metric='jaccard_norm'):
         """
         Perform the search operation
 
@@ -105,8 +107,11 @@ class Search(object):
         ----------
         text : str
           the search query text
+        metric : str
+          the output metric to use
         """
         from .lsi import _TruncatedSVD_LSI
+        from .metrics import _scale_cosine_similarity
 
         if self._fit_X is None:
             raise ValueError('Estomator must be fitted before using the search method!')
@@ -122,12 +127,11 @@ class Search(object):
         else:
             q = q_vect
 
-        dist = pairwise_distances(q, self._fit_X,
-                                  'euclidean',
-                                  n_jobs=self.n_jobs, squared=False)
+        dist = pairwise_distances(q, self._fit_X, 'cosine')
         dist = dist[0]
 
-        # convert to a 2 - cosine_distance
-        scores = 2 - dist/2
+        scores = 1 - dist
+
+        scores = _scale_cosine_similarity(scores, metric=metric)
 
         return scores

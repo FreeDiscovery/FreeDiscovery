@@ -170,6 +170,13 @@ def _query_features(vect, X, indices, n_top_words=10, remove_stop_words=False):
             out.append(terms[idx])
     return out
 
+def _type_mapper(mtype):
+    mapper = {'unicode': 'str', 'long': 'str'}
+    if mtype in mapper:
+        return mapper[mtype]
+    else:
+        return mtype
+
 def dict2type(d, collapse_lists=False, max_depth=10):
     """Recursively walk though the object
     and replace all dict values by their type
@@ -182,10 +189,7 @@ def dict2type(d, collapse_lists=False, max_depth=10):
       maximum depth on which the typing would be computed
     """
     if max_depth == 0:
-        res = type(d).__name__
-        if res == 'unicode':
-            res = 'str'
-        return res
+        return _type_mapper(type(d).__name__)
 
     if isinstance(d, dict):
         res = {}
@@ -198,49 +202,8 @@ def dict2type(d, collapse_lists=False, max_depth=10):
             res = list(set(res))
         return res
     else:
-        res = type(d).__name__
-        if res == 'unicode':
-            res = 'str'
-        return res
+        return _type_mapper(type(d).__name__)
 
 def sdict_keys(x):
     """Sorted dictionary keys of x"""
     return list(sorted(x.keys()))
-
-def assert_equal_dict_keys(d1, d2, path=''):
-    """ Recursively check that all dict keys are the same
-    between dictionary a and b
-    """
-    #Adapted from: https://stackoverflow.com/a/27266178/1791279
-
-    error_msg = []
-    if sdict_keys(d1) !=  sdict_keys(d2):
-        error_msg.append('Key at {} do not match {} != {}'.format(
-                                 path, sdict_keys(d1),  sdict_keys(d2)))
-
-    for key, val in d1.items():
-        if isinstance(val, dict):
-            if path == "":
-                path = key
-            else:
-                path = path + "->" + key
-            if isinstance(d2[key], dict):
-                error_msg += assert_equal_dict_keys(d1[key], d2[key], path)
-            else:
-                error_msg.append(path + ' differ')
-        elif isinstance(val, list) and key in d2 and isinstance(d2[key], list) \
-                and len(d1[key]) > 0 and len(d2[key]) > 0 \
-                and isinstance(d1[key][0], dict) and isinstance(d2[key][0], dict):
-            d1_list_keys = set(["_".join(sdict_keys(el)) for el in d1[key]])
-            d2_list_keys = set(["_".join(sdict_keys(el)) for el in d2[key]])
-            if len(d1_list_keys) == 1 and len(d2_list_keys) == 1:
-                if path == "":
-                    path = key
-                else:
-                    path = path + "->" + key
-                error_msg += assert_equal_dict_keys(d1[key][0], d2[key][0], path)
-
-    if error_msg:
-        assert False, "\n".join(error_msg)
-    else:
-        return error_msg

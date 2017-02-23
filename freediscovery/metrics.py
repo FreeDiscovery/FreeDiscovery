@@ -80,3 +80,69 @@ def seuclidean_dist2cosine_sim(x):
     return 1 - x/2.
 
 
+def cosine2jaccard_similarity(s_cos):
+    """ Given a cosine similarity on L2 normalized data,
+    compute the jaccard similarity
+
+    Parameters
+    ----------
+    s_cos : {float, ndarray}
+      the cosine similarity
+
+    Returns
+    -------
+    s_jac : {float, ndarray}
+      the Jaccard similarity
+    """
+    return s_cos / (2 - s_cos)
+
+
+def _normalize_similarity(x, metric='cosine'):
+    """Given a similarity score, normalize it to the
+    [0, 1] range
+
+    Parameters
+    ----------
+    x : {float, ndarray}
+      the similarity score
+    metric : str
+      the metric used (one of 'cosine', 'jaccard')
+    """
+    if metric == 'cosine':
+        # cosine similarity can be in the [-1, 1] range
+        return (x + 1)/2
+    elif metric == 'jaccard':
+        # jaccard similarity could potenitally be in the [-1/3, 1] range
+        # when using the cosine2jaccard_similarity function
+        return (3*x + 1)/4.
+    else:
+        raise ValueError
+
+def _scale_cosine_similarity(x, metric='cosine'):
+    """ Given a cosine similarity on L2 normalized data,
+    optionally convert it to Jaccard similarity, and/or 
+    normalize it to the [0, 1] interval
+
+    Parameters
+    ----------
+    x : {float, ndarray}
+      the cosine similarity value
+    metric : str
+      the conversion to apply one of ['cosine', 'jaccard', 'cosine_norm',
+                                      'jaccard_norm']
+    """
+    valid_metrics = ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']
+    if metric not in valid_metrics:
+        raise ValueError('metric {} not supported, must be in {}'.format(metric, valid_metrics))
+    if metric == 'cosine':
+        return x
+    if metric.startswith('jaccard'):
+        x = cosine2jaccard_similarity(x)
+
+    if metric.endswith('norm'):
+        x = _normalize_similarity(x, metric=metric.split('_')[0])
+
+    return x
+
+
+
