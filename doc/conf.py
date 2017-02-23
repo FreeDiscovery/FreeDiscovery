@@ -15,7 +15,6 @@
 
 import sys
 import os
-import six
 import freediscovery
 import sphinx_rtd_theme
 
@@ -29,10 +28,7 @@ sys.path.insert(0, os.path.abspath('sphinxext'))
 
 # Scipy and Numpy packages cannot be installed in on readthedocs.org
 # https://read-the-docs.readthedocs.org/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-if six.PY3:
-    from unittest.mock import MagicMock
-else:
-    from mock import Mock as MagicMock
+from unittest.mock import MagicMock
 
 class Mock(MagicMock):
     @classmethod
