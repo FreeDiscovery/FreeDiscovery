@@ -17,7 +17,7 @@ from ...ingestion import DocumentIndex
 from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
 from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
-               email_data_dir)
+               email_data_dir, get_features_cached)
 
 
 #=============================================================================#
@@ -37,6 +37,9 @@ def test_get_features(app):
         if key in ['data_dir']:
             continue
         assert val == data[key]
+
+def test_get_features_cached(app):
+    dsid, _ = get_features_cached(app)
 
 
 def test_delete_feature_extraction(app):

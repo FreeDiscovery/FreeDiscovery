@@ -65,11 +65,28 @@ EPSILON = 1e-3 # small numeric value
 
 class ExampleDatasetApi(Resource):
 
+    @use_args({'n_categories': wfields.Int(missing=2)})
     @doc(description=_docstring_description(dedent(load_dataset.__doc__)))
     @marshal_with(ExampleDatasetSchema())
-    def get(self, name):
+    def get(self, name, **args):
+        n_categories = args['n_categories']
+        n_categories = min(3, n_categories)
+        n_categories = max(1, n_categories)
+
+        categories = None
+        if "20newsgroups" in name:
+            if n_categories == 3:
+                categories = ['comp.graphics', 'rec.sport.baseball', 'sci.space']
+            elif n_categories == 2:
+                categories = ['comp.graphics', 'rec.sport.baseball']
+            elif n_categories == 1:
+                categories = ['comp.graphics']
+
+
         md, training_set, test_set = load_dataset(name, self._cache_dir, verbose=True,
-                                                  verify_checksum=False)
+                                                  verify_checksum=False,
+                                                  categories=categories)
+
         return {'metadata': md, 'training_set': training_set, 'dataset': test_set}
 
 

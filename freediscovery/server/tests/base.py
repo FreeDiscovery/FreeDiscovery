@@ -50,7 +50,7 @@ def app_notest():
 
     return tapp.test_client()
 
-memory = Memory(cachedir=cache_dir, verbose=0)
+memory = Memory(cachedir=os.path.join(cache_dir, '_joblib_cache', str(os.getpid())), verbose=0)
 
 #=============================================================================#
 #
@@ -92,18 +92,19 @@ def get_features(app, hashed=True, metadata_fields='data_dir'):
     return dsid, pars
 
 @memory.cache(ignore=['app'])
-def get_features_cached(app, hashed=True):
-    method = V01 + "/feature-extraction/"
+def get_features_cached(app, hashed=True, n_categories=2):
+    url = V01 + '/example-dataset/20newsgroups_3categories'
+    res = app.get(url, json={'n_categories': n_categories})
+    assert res.status_code == 200, url
+    input_ds = parse_res(res)
+
     pars = { "use_hashing": hashed}
+    data_dir = input_ds['metadata']['data_dir']
+    pars['dataset_definition'] = [{'document_id': row['document_id'],
+                                   'file_path': os.path.join(data_dir, row['file_path'])} \
+                                   for row in input_ds['dataset']]
 
-    index = DocumentIndex.from_folder(data_dir)
-    pars["dataset_definition"] = []
-    for idx, file_path in enumerate(index.filenames):
-        row = {'file_path': file_path,
-               'document_id': _internal2document_id(idx)}
-        pars["dataset_definition"].append(row)
-
-
+    method = V01 + "/feature-extraction/"
     res = app.post(method, json=pars)
 
     assert res.status_code == 200, method

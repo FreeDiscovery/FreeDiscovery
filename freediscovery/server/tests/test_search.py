@@ -18,7 +18,7 @@ from ...ingestion import DocumentIndex
 from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
 
-from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
+from .base import parse_res, V01, app, app_notest, get_features_cached, get_features_lsi
 
 
 @pytest.mark.parametrize("method", ['regular', 'semantic'])
@@ -28,7 +28,7 @@ def test_search(app, method):
         dsid, lsi_id, _ = get_features_lsi(app, hashed=False)
         parent_id = lsi_id
     elif method == 'semantic':
-        dsid, _ = get_features(app, hashed=False)
+        dsid, _ = get_features_cached(app, hashed=False)
         lsi_id = None
         parent_id = dsid
 
@@ -38,4 +38,7 @@ def test_search(app, method):
     data = parse_res(res)
     assert sorted(data.keys()) == ['data']
     for row in data['data']:
-        assert sorted(row.keys()) == sorted(['score', 'internal_id'])
+        if method == 'semantic':
+            assert sorted(row.keys()) == sorted(['score', 'internal_id'])
+        elif method == 'regular':
+            assert sorted(row.keys()) == sorted(['score', 'internal_id', 'document_id'])
