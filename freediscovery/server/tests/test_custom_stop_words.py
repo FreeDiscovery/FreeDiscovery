@@ -19,14 +19,6 @@ from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
 from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
 
-V01 = '/api/v0'
-
-
-data_dir = os.path.dirname(__file__)
-email_data_dir = os.path.join(data_dir, "..", "data", "fedora-devel-list-2008-October")
-data_dir = os.path.join(data_dir, "..", "data", "ds_001", "raw")
-
-
 #=============================================================================#
 #
 #                     Custom Stop Words
@@ -54,4 +46,3 @@ def test_stop_words(app):
     for word in data["stop_words"]:
         assert word == tested_stop_words[i]
         i += 1
-

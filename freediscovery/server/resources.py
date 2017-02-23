@@ -873,5 +873,4 @@ class CustomStopWordsLoadApi(Resource):
     @marshal_with(CustomStopWordsLoadSchema())
     def get(self, **args):
         name = args['name']
-
         return {'name': name, 'stop_words': _StopWordsWrapper().load(name)}
