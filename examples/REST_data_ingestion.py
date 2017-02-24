@@ -82,16 +82,7 @@ if __name__ == '__main__':
 
     print("\n3. Examine the id mapping\n")
 
-    method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    print(' GET', method)
-    data = {'internal_id': [row['internal_id'] for row in input_ds['dataset'][:3]]}
-    print('   DATA:', json.dumps(data))
-    res = requests.post(method, data=data).json()
-
-    print(' Response:')
-    print('  ', json.dumps(res))
-
-    method = BASE_URL + "/feature-extraction/{}/id-mapping/nested".format(dsid)
+    method = BASE_URL + "/feature-extraction/{}/id-mapping".format(dsid)
     print('\n GET', method)
     data = {'data': [{'internal_id': row['internal_id']} for row in input_ds['dataset'][:3]]}
     print('   DATA', json.dumps(data))

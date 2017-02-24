@@ -182,36 +182,17 @@ class FeaturesApiElement(Resource):
         fe.delete()
         return {}
 
-class _DocumentIndexListSchemaInput(DocumentIndexListSchema):
-    return_file_path = wfields.Boolean()
-
-class FeaturesApiElementMappingFlat(Resource):
-    @doc(description='Compute correspondence between id fields (flat). '
-           'At least one of the fields used for indexing must be provided,'
-           'and all the rest will be computed (if available)')
-    @use_args(_DocumentIndexListSchemaInput(strict=True))
-    @marshal_with(DocumentIndexListSchema())
-    def post(self, dsid, return_file_path=False, **args):
-        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        query = pd.DataFrame(args)
-        res = fe.db.search(query)
-        res_repr = fe.db.render_list(res, return_file_path=return_file_path)
-        return res_repr
-
-class _DocumentIndexNestedSchemaInput(DocumentIndexNestedSchema):
-    return_file_path = wfields.Boolean()
-
 class FeaturesApiElementMappingNested(Resource):
     @doc(description='Compute correspondence between id fields (nested). '
            'At least one of the fields used for indexing must be provided,'
            'and all the rest will be computed (if available)')
-    @use_args(_DocumentIndexNestedSchemaInput(strict=True))
+    @use_args(DocumentIndexNestedSchema(strict=True))
     @marshal_with(DocumentIndexNestedSchema())
-    def post(self, dsid, return_file_path=False, **args):
+    def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         query = pd.DataFrame(args['data'])
         res = fe.db.search(query)
-        res_repr = fe.db.render_dict(res, return_file_path=return_file_path)
+        res_repr = fe.db.render_dict(res, return_file_path=True)
         return {'data': res_repr}
 
 # ============================================================================ # 
@@ -417,13 +398,13 @@ class ModelsApiPredict(Resource):
             sort : sort by the score of the most likely class
             ml_output : type of the output in ['decision_function', 'probability'], only affects ML methods.
             nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            min_score : filter out results below a score threashold
+            min_score : filter out results below a similarity threashold
             """))
     @use_args({'max_result_categories': wfields.Int(missing=1),
                'sort': wfields.Boolean(missing=False),
                'ml_output': wfields.Str(missing='probability'),
                'nn_metric': wfields.Str(missing='jaccard_norm'),
-               'min_score': wfields.Int(missing=-100)})
+               'min_score': wfields.Number(missing=-1)})
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
@@ -870,15 +851,13 @@ class SearchApi(Resource):
 
             Parameters
             ----------
-            sort : sort by the score of the most likely class
             nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            min_score : filter out results below a score threashold
+            min_score : filter out results below a similarity threashold
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True),
-                'sort': wfields.Boolean(missing=False),
                 'nn_metric': wfields.Str(missing='jaccard_norm'),
-                'min_score': wfields.Int(missing=-100),
+                'min_score': wfields.Number(missing=-1),
                 })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
@@ -892,7 +871,6 @@ class SearchApi(Resource):
 
         res = model.fe.db.render_dict(scores_pd)
         res = [row for row in res if row['score'] > args['min_score']]
-        if args['sort']:
-            res = sorted(res, key=lambda row: row['score'], reverse=True)
+        res = sorted(res, key=lambda row: row['score'], reverse=True)
 
         return {'data': res}

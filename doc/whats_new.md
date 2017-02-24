@@ -10,8 +10,8 @@
 
 ### Enhancements
 
- * Categorization and semantic search support sorting and filtering of documents below a user provided threashold. It also enforces the resulting score in the `[0, 1]` range (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files), [#101](https://github.com/FreeDiscovery/FreeDiscovery/pull/100/files))
-
+ * Categorization and semantic search support sorting and filtering of documents below a user provided threashold. (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files))
+ * The similarity and ML scores can now be scaled to [0, 1] range using `nn_metric` and `ml_output` input parameters (PR [#101](https://github.com/FreeDiscovery/FreeDiscovery/pull/100/files)).
  * The REST API documentation is generated automatically from the code (using an OpenAPI specification) which allows to enforce consistency between the code and the docs (PR [#85](https://github.com/FreeDiscovery/FreeDiscovery/pull/85))
  
 
@@ -26,7 +26,7 @@
     - `/api/v0/feature-extraction/{dsid}/id-mapping/nested`
     - `/api/v0/email-parser/{dsid}/index`
   * Significant changes in the REST API to accomodate for multi-class categorization 
-  * The `internal_id` field is not longer exposed, document are indexed with `document_id`, `rendition_id` keys.
+  * The endpoint `/api/v0/feature-extraction/{dsid}/id-mapping/flat` is removed, while `/api/v0/feature-extraction/{dsid}/id-mapping/nested` is renamed to `/api/v0/feature-extraction/{dsid}/id-mapping`. 
 
 ## Version 0.8
 

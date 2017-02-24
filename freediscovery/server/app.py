@@ -12,7 +12,7 @@ from flask_apispec import FlaskApiSpec
 
 from apispec import APISpec
 
-from .resources import (FeaturesApi, FeaturesApiElement, FeaturesApiElementMappingFlat,
+from .resources import (FeaturesApi, FeaturesApiElement,
                         FeaturesApiElementMappingNested,
                         ModelsApi, ModelsApiElement, ModelsApiPredict, ModelsApiTest,
                         LsiApi, LsiApiElement,
@@ -72,8 +72,7 @@ def fd_app(cache_dir):
          (ExampleDatasetApi               , "/example-dataset/<name>")                             , 
          (FeaturesApi                     , "/feature-extraction")                          , 
          (FeaturesApiElement              , '/feature-extraction/<dsid>')                   , 
-         (FeaturesApiElementMappingFlat   , '/feature-extraction/<dsid>/id-mapping/flat')   , 
-         (FeaturesApiElementMappingNested , '/feature-extraction/<dsid>/id-mapping/nested') , 
+         (FeaturesApiElementMappingNested , '/feature-extraction/<dsid>/id-mapping') , 
          (EmailParserApi                  , "/email-parser")                                , 
          (EmailParserApiElement           , '/email-parser/<dsid>')                         , 
          (EmailParserApiElementIndex      , '/email-parser/<dsid>/index')                   , 

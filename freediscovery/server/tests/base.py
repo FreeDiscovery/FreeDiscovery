@@ -130,3 +130,16 @@ def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
     assert dict2type(data) == {'explained_variance': 'float', 'id': 'str'}
     lsi_id = data['id']
     return dsid, lsi_id, pars
+
+@memory.cache(ignore=['app'])
+def get_features_lsi_cached(app, hashed=True, n_categories=2, n_components=101):
+    dsid, pars = get_features_cached(app, hashed=hashed,
+                              n_categories=n_categories)
+    lsi_pars = dict(n_components=n_components, parent_id=dsid)
+    method = V01 + "/lsi/"
+    res = app.post(method, json=lsi_pars)
+    assert res.status_code == 200
+    data = parse_res(res)
+    assert dict2type(data) == {'explained_variance': 'float', 'id': 'str'}
+    lsi_id = data['id']
+    return dsid, lsi_id, pars

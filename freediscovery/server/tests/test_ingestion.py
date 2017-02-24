@@ -10,11 +10,12 @@ import pytest
 import json
 import itertools
 from unittest import SkipTest
+import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal
 
 from ...utils import dict2type, sdict_keys
 from ...ingestion import DocumentIndex
-from ...exceptions import OptionalDependencyMissing
+from ...exceptions import OptionalDependencyMissing, NotFound
 from ...tests.run_suite import check_cache
 from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
                email_data_dir, get_features_cached)
@@ -27,20 +28,16 @@ from .base import (parse_res, V01, app, app_notest, get_features, get_features_l
 #=============================================================================#
 
 def test_get_features(app):
-    dsid, pars = get_features(app)
+    dsid, pars = get_features_cached(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200, method
     data = parse_res(res)
     for key, val in pars.items():
-        if key in ['data_dir']:
+        if key in ['data_dir', 'dataset_definition']:
             continue
         assert val == data[key]
-
-def test_get_features_cached(app):
-    dsid, _ = get_features_cached(app)
-
 
 def test_delete_feature_extraction(app):
     dsid, _ = get_features(app)
@@ -65,8 +62,9 @@ def test_get_feature_extraction_all(app):
                      'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool'})
 
 
-def test_get_feature_extraction(app):
-    dsid, _ = get_features(app)
+@pytest.mark.parametrize('hashed', [True])
+def test_get_feature_extraction(app, hashed):
+    dsid, _ = get_features_cached(app, hashed=hashed)
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
@@ -81,32 +79,45 @@ def test_get_feature_extraction(app):
                      'n_samples_processed': 'int'}
 
 
-@pytest.mark.parametrize('return_file_path', ['return_file_path', 'dont_return_file_path'])
-def test_get_search_filenames(app, return_file_path):
+def test_get_search_filenames(app):
 
-    return_file_path = (return_file_path == 'return_file_path')
+    dsid, _ = get_features_cached(app)
 
-    dsid, _ = get_features(app)
+    method = V01 + "/feature-extraction/{}/id-mapping".format(dsid)
 
-    method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    for pars, indices in [
-            ({ 'file_path': ['0.7.47.101442.txt', '0.7.47.117435.txt']}, [0, 1]),
-            ({ 'file_path': ['0.7.6.28638.txt']}, [5])]:
-        if return_file_path:
-            pars['return_file_path'] = True
-        else:
-            pass # default to false
+    def _filter_dict(x, filter_field):
+        return {key: val for key, val in x.items() if key == filter_field}
+
+    response_ref = {'internal_id': 'int',
+                    'file_path' : 'str',
+                    'document_id': 'int'}
+
+    # Query 1
+    file_path_obj  = [{'file_path': val} for val in ['00401.txt', '00506.txt']]
+    res = app.post(method, json={'data': file_path_obj})
+    assert res.status_code == 200
+    data = parse_res(res)['data']
+
+    for idx in range(len(data)):
+        assert dict2type(data[idx]) == response_ref
+    assert [_filter_dict(row, 'file_path') for row in data] == file_path_obj
+    assert_equal(np.asarray([row['internal_id'] for row in data])**2,
+                 [row['document_id'] for row in data])
 
 
-        res = app.post(method, json=pars)
-        assert res.status_code == 200
-        data = parse_res(res)
-        response_ref = {'internal_id': ['int']}
+    with pytest.raises(NotFound):
+        res = app.post(method, json={'data': [{'file_path': '00400.txt'}]})
 
-        if return_file_path:
-            response_ref['file_path'] = ['str']
+    # Query 2
+    file_path_obj  = [{'document_id': 4 }, {'document_id': 9}]
+    res = app.post(method, json={'data': file_path_obj})
+    assert res.status_code == 200
+    data = parse_res(res)['data']
 
-        assert dict2type(data, collapse_lists=True) == response_ref
-        assert_equal(data['internal_id'], indices)
+    for idx in range(len(data)):
+        assert dict2type(data[idx]) == response_ref
+    assert [_filter_dict(row, 'document_id') for row in data] == file_path_obj
+    assert_equal(np.asarray([row['internal_id'] for row in data])**2,
+                 [row['document_id'] for row in data])
 
 

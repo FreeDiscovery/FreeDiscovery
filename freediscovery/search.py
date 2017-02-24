@@ -76,14 +76,10 @@ class Search(object):
     lsi : TruncatedSVD
       (optional) an LSI model fitted on the vectorised document-term matrix
       If provided this corresponds to a semantic search, default=None
-    n_jobs : int
-      The number of parallel jobs to run for neighbors search.
-      If -1, then the number of jobs is set to the number of CPU cores.
     """
-    def __init__(self, vectorizer, lsi=None, n_jobs=1):
+    def __init__(self, vectorizer, lsi=None):
         self.vectorizer = vectorizer
         self.lsi = lsi
-        self.n_jobs = n_jobs
         self._fit_X = None
 
 
