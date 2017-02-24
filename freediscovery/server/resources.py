@@ -182,36 +182,17 @@ class FeaturesApiElement(Resource):
         fe.delete()
         return {}
 
-class _DocumentIndexListSchemaInput(DocumentIndexListSchema):
-    return_file_path = wfields.Boolean()
-
-class FeaturesApiElementMappingFlat(Resource):
-    @doc(description='Compute correspondence between id fields (flat). '
-           'At least one of the fields used for indexing must be provided,'
-           'and all the rest will be computed (if available)')
-    @use_args(_DocumentIndexListSchemaInput(strict=True))
-    @marshal_with(DocumentIndexListSchema())
-    def post(self, dsid, return_file_path=False, **args):
-        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        query = pd.DataFrame(args)
-        res = fe.db.search(query)
-        res_repr = fe.db.render_list(res, return_file_path=return_file_path)
-        return res_repr
-
-class _DocumentIndexNestedSchemaInput(DocumentIndexNestedSchema):
-    return_file_path = wfields.Boolean()
-
 class FeaturesApiElementMappingNested(Resource):
     @doc(description='Compute correspondence between id fields (nested). '
            'At least one of the fields used for indexing must be provided,'
            'and all the rest will be computed (if available)')
-    @use_args(_DocumentIndexNestedSchemaInput(strict=True))
+    @use_args(DocumentIndexNestedSchema(strict=True))
     @marshal_with(DocumentIndexNestedSchema())
-    def post(self, dsid, return_file_path=False, **args):
+    def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         query = pd.DataFrame(args['data'])
         res = fe.db.search(query)
-        res_repr = fe.db.render_dict(res, return_file_path=return_file_path)
+        res_repr = fe.db.render_dict(res, return_file_path=True)
         return {'data': res_repr}
 
 # ============================================================================ # 

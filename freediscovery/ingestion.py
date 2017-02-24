@@ -112,10 +112,15 @@ class DocumentIndex(object):
 
         if res.shape[0] != query.shape[0]:
             # some documents were not found
-            msg = ['Query elements not found:']
+            msg = ['{} out of {} query elements not found \n(using "{}" as index):'.format(
+                                 (query.shape[0] - res.shape[0]), query.shape[0],
+                                  index_cols)]
             for index, row in query.iterrows():
                 if row[index_cols] not in self.data[index_cols].values:
                     msg.append('   * {}'.format(row.to_dict()))
+
+            msg.append('Expected format: \n {}'.format(self.data.iloc[0, :].to_dict()))
+            msg.append('with a total of {} documents'.format(self.data.shape[0]))
 
             if strict:
                 raise NotFound('\n'.join(msg))

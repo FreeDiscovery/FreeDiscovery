@@ -27,6 +27,7 @@
     - `/api/v0/email-parser/{dsid}/index`
   * Significant changes in the REST API to accomodate for multi-class categorization 
   * The `internal_id` field is not longer exposed, document are indexed with `document_id`, `rendition_id` keys.
+  * The endpoints `/api/v0/feature-extraction/{dsid}/id-mapping/flat`, and the enpoint `/api/v0/feature-extraction/{dsid}/id-mapping/nested` is renamed to `/api/v0/feature-extraction/{dsid}/id-mapping`. 
 
 ## Version 0.8
 

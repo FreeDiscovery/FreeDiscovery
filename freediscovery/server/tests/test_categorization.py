@@ -130,15 +130,15 @@ def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
     elif n_categories == 3:
         y = [1, 2, 1, 0, 0, 0]
 
-
-
-    method = V01 + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    res = app.post(method, json={'file_path': index_filenames})
+    method = V01 + "/feature-extraction/{}/id-mapping".format(dsid)
+    res = app.post(method, json={'data': [{'file_path': el} for el in index_filenames]})
     assert res.status_code == 200, method
-    index = parse_res(res)['internal_id']
+    data = parse_res(res)['data']
 
-    data_request = [{'internal_id': internal_id, 'category': str(cat_id)} \
-                     for (internal_id, cat_id) in zip(index, y)]
+    data_request = []
+    for row, cat_id in zip(data, y):
+        data_request.append({'category': str(cat_id),
+                             'internal_id': row['internal_id']})
 
     pars = {
           'parent_id': parent_id,
