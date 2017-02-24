@@ -398,13 +398,13 @@ class ModelsApiPredict(Resource):
             sort : sort by the score of the most likely class
             ml_output : type of the output in ['decision_function', 'probability'], only affects ML methods.
             nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            min_score : filter out results below a score threashold
+            min_score : filter out results below a similarity threashold
             """))
     @use_args({'max_result_categories': wfields.Int(missing=1),
                'sort': wfields.Boolean(missing=False),
                'ml_output': wfields.Str(missing='probability'),
                'nn_metric': wfields.Str(missing='jaccard_norm'),
-               'min_score': wfields.Int(missing=-100)})
+               'min_score': wfields.Number(missing=-1)})
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
@@ -852,7 +852,7 @@ class SearchApi(Resource):
             Parameters
             ----------
             nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            min_score : filter out results below a score threashold
+            min_score : filter out results below a similarity threashold
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True),
