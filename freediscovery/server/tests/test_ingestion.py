@@ -62,8 +62,9 @@ def test_get_feature_extraction_all(app):
                      'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool'})
 
 
-def test_get_feature_extraction(app):
-    dsid, _ = get_features_cached(app)
+@pytest.mark.parametrize('hashed', [True])
+def test_get_feature_extraction(app, hashed):
+    dsid, _ = get_features_cached(app, hashed=hashed)
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200

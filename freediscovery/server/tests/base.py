@@ -135,7 +135,7 @@ def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
 def get_features_lsi_cached(app, hashed=True, n_categories=2, n_components=101):
     dsid, pars = get_features_cached(app, hashed=hashed,
                               n_categories=n_categories)
-    lsi_pars = dict( n_components=n_categories, parent_id=dsid)
+    lsi_pars = dict(n_components=n_components, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, json=lsi_pars)
     assert res.status_code == 200
