@@ -18,14 +18,15 @@ from ...ingestion import DocumentIndex
 from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
 
-from .base import parse_res, V01, app, app_notest, get_features_cached, get_features_lsi
+from .base import (parse_res, V01, app, app_notest, get_features_cached,
+                   get_features_lsi, get_features_lsi_cached)
 
 
 @pytest.mark.parametrize("method", ['regular', 'semantic'])
 def test_search(app, method):
 
     if method == 'regular':
-        dsid, lsi_id, _ = get_features_lsi(app, hashed=False)
+        dsid, lsi_id, _ = get_features_lsi_cached(app, hashed=False)
         parent_id = lsi_id
     elif method == 'semantic':
         dsid, _ = get_features_cached(app, hashed=False)

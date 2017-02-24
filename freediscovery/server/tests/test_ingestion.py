@@ -15,7 +15,7 @@ from numpy.testing import assert_equal, assert_almost_equal
 
 from ...utils import dict2type, sdict_keys
 from ...ingestion import DocumentIndex
-from ...exceptions import OptionalDependencyMissing
+from ...exceptions import OptionalDependencyMissing, NotFound
 from ...tests.run_suite import check_cache
 from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
                email_data_dir, get_features_cached)
@@ -87,18 +87,35 @@ def test_get_search_filenames(app):
     def _filter_dict(x, filter_field):
         return {key: val for key, val in x.items() if key == filter_field}
 
+    response_ref = {'internal_id': 'int',
+                    'file_path' : 'str',
+                    'document_id': 'int'}
+
     # Query 1
     file_path_obj  = [{'file_path': val} for val in ['00401.txt', '00506.txt']]
     res = app.post(method, json={'data': file_path_obj})
     assert res.status_code == 200
     data = parse_res(res)['data']
-    response_ref = {'internal_id': 'int',
-                    'file_path' : 'str',
-                    'document_id': 'int'}
 
     for idx in range(len(data)):
         assert dict2type(data[idx]) == response_ref
     assert [_filter_dict(row, 'file_path') for row in data] == file_path_obj
+    assert_equal(np.asarray([row['internal_id'] for row in data])**2,
+                 [row['document_id'] for row in data])
+
+
+    with pytest.raises(NotFound):
+        res = app.post(method, json={'data': [{'file_path': '00400.txt'}]})
+
+    # Query 2
+    file_path_obj  = [{'document_id': 4 }, {'document_id': 9}]
+    res = app.post(method, json={'data': file_path_obj})
+    assert res.status_code == 200
+    data = parse_res(res)['data']
+
+    for idx in range(len(data)):
+        assert dict2type(data[idx]) == response_ref
+    assert [_filter_dict(row, 'document_id') for row in data] == file_path_obj
     assert_equal(np.asarray([row['internal_id'] for row in data])**2,
                  [row['document_id'] for row in data])
 
