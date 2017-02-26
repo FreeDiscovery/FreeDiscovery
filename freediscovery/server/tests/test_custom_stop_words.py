@@ -41,8 +41,3 @@ def test_stop_words(app):
 
     assert dict2type(data, collapse_lists=True) == {'name': 'str', 'stop_words': ['str']}
     assert data["stop_words"] == tested_stop_words
-    assert (len(data["stop_words"]) == len(tested_stop_words))
-    i = 0
-    for word in data["stop_words"]:
-        assert word == tested_stop_words[i]
-        i += 1

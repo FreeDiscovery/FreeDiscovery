@@ -168,8 +168,6 @@ COMMON_FIRST_NAMES = [ "james","john","robert","michael","william","david",
 "isabella","herminia","terra","celina"
 ]
 
-from freediscovery.tests.run_suite import check_cache
-cache_dir = check_cache()
 
 class _StopWordsWrapper(object):
     """A mechanism for adding / managing custom stop words
@@ -182,7 +180,7 @@ class _StopWordsWrapper(object):
     """
     _wrapper_type = "stop_words"
 
-    def __init__(self, cache_dir=cache_dir):
+    def __init__(self, cache_dir='/tmp/'):
         self.cache_dir = cache_dir
 
     def save(self, name, stop_words):
