@@ -37,6 +37,7 @@ from ..dupdet import _DuplicateDetectionWrapper
 from ..email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
 from ..exceptions import WrongParameter
+from ..stop_words import _StopWordsWrapper
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema, DocumentIndexListSchema,
                       DocumentIndexNestedSchema,
@@ -52,7 +53,8 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
                       ErrorSchema, DuplicateDetectionSchema,
                       SearchResponseSchema, DocumentIndexSchema,
-                      EmptySchema
+                      EmptySchema,
+                      CustomStopWordsSchema, CustomStopWordsLoadSchema
                       )
 
 EPSILON = 1e-3 # small numeric value
@@ -61,7 +63,7 @@ EPSILON = 1e-3 # small numeric value
 
 # ============================================================================ #
 #                         Datasets download                                    #
-# ============================================================================ # 
+# ============================================================================ #
 
 class ExampleDatasetApi(Resource):
 
@@ -95,9 +97,9 @@ id_schema = IDSchema()
 features_schema = FeaturesSchema()
 error_schema = ErrorSchema()
 
-# ============================================================================ # 
+# ============================================================================ #
 #                      Feature extraction                                      #
-# ============================================================================ # 
+# ============================================================================ #
 
 class FeaturesApi(Resource):
 
@@ -195,9 +197,9 @@ class FeaturesApiElementMappingNested(Resource):
         res_repr = fe.db.render_dict(res, return_file_path=True)
         return {'data': res_repr}
 
-# ============================================================================ # 
+# ============================================================================ #
 #                   Email parser                                      #
-# ============================================================================ # 
+# ============================================================================ #
 
 class EmailParserApi(Resource):
 
@@ -252,9 +254,9 @@ class EmailParserApiElementIndex(Resource):
         idx = fe.search(args['filenames'])
         return {'index': list(idx)}
 
-# ============================================================================ # 
+# ============================================================================ #
 #                  LSI decomposition
-# ============================================================================ # 
+# ============================================================================ #
 
 _lsi_api_get_args  = {'parent_id': wfields.Str(required=True) }
 _lsi_api_post_args = {'parent_id': wfields.Str(required=True),
@@ -311,7 +313,7 @@ class LsiApiElement(Resource):
 
 # ============================================================================ #
 #                  Categorization (ML)
-# ============================================================================ # 
+# ============================================================================ #
 
 
 
@@ -448,9 +450,9 @@ class ModelsApiTest(Resource):
         return res
 
 
-# ============================================================================ # 
+# ============================================================================ #
 #                              Clustering
-# ============================================================================ # 
+# ============================================================================ #
 
 _k_mean_clustering_api_post_args = {
         'parent_id': wfields.Str(required=True),
@@ -618,9 +620,9 @@ class ClusteringApiElement(Resource):
         cl.delete()
         return {}
 
-# ============================================================================ # 
+# ============================================================================ #
 #                              Duplicate detection
-# ============================================================================ # 
+# ============================================================================ #
 
 _dup_detection_api_post_args = {
         "parent_id": wfields.Str(required=True),
@@ -802,9 +804,9 @@ class MetricsDupDetectionApiElement(Resource):
                     mean_duplicates_count_score(labels_true, labels_pred)
         return output_metrics
 
-# ============================================================================ # 
+# ============================================================================ #
 #                              Email threading
-# ============================================================================ # 
+# ============================================================================ #
 
 
 class EmailThreadingApi(Resource):
@@ -840,9 +842,9 @@ class EmailThreadingApiElement(Resource):
         return {}
 
 
-# ============================================================================ # 
+# ============================================================================ #
 #                              (Semantic) search
-# ============================================================================ # 
+# ============================================================================ #
 
 
 class SearchApi(Resource):
@@ -874,3 +876,27 @@ class SearchApi(Resource):
         res = sorted(res, key=lambda row: row['score'], reverse=True)
 
         return {'data': res}
+
+
+# ============================================================================ #
+#                            Custom Stop Words
+# ============================================================================ #
+
+
+class CustomStopWordsApi(Resource):
+    @doc(description="Perform a mechanism for adding / managing custom stop words")
+    @use_args({"name" : wfields.Str(required=True),
+               "stop_words" : wfields.List(wfields.Str(), required=True)})
+    @marshal_with(CustomStopWordsSchema())
+    def post(self, **args):
+        name = args['name']
+        stop_words = args['stop_words']
+        model = _StopWordsWrapper(cache_dir=self._cache_dir)
+        model.save(name = name, stop_words = stop_words)
+        return {'name': name}
+
+
+class CustomStopWordsLoadApi(Resource):
+
+    def get(self, name):
+        return {'name': name, 'stop_words': _StopWordsWrapper(cache_dir=self._cache_dir).load(name)}
