@@ -14,7 +14,7 @@ from apispec import APISpec
 
 from .resources import (FeaturesApi, FeaturesApiElement,
                         FeaturesApiElementMappingNested,
-                        ModelsApi, ModelsApiElement, ModelsApiPredict, ModelsApiTest,
+                        ModelsApi, ModelsApiElement, ModelsApiPredict,
                         LsiApi, LsiApiElement,
                         ClusteringApiElement, KmeanClusteringApi,
                         BirchClusteringApi, WardHCClusteringApi, DBSCANClusteringApi,
@@ -80,7 +80,6 @@ def fd_app(cache_dir):
          (ModelsApi                       , '/categorization/')                             , 
          (ModelsApiElement                , '/categorization/<mid>')                        , 
          (ModelsApiPredict                , '/categorization/<mid>/predict')                , 
-         (ModelsApiTest                   , "/categorization/<mid>/test")                   , 
          (LsiApi                          , '/lsi/')                                        , 
          (LsiApiElement                   , '/lsi/<mid>')                                   , 
          (KmeanClusteringApi              , '/clustering/k-mean/')                          , 

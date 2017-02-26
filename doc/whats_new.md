@@ -25,8 +25,9 @@
     - `/api/v0/feature-extraction/{dsid}/id-mapping/flat`
     - `/api/v0/feature-extraction/{dsid}/id-mapping/nested`
     - `/api/v0/email-parser/{dsid}/index`
-  * Significant changes in the REST API to accomodate for multi-class categorization 
+  * Significant changes in the REST API to accommodate for multi-class categorization 
   * The endpoint `/api/v0/feature-extraction/{dsid}/id-mapping/flat` is removed, while `/api/v0/feature-extraction/{dsid}/id-mapping/nested` is renamed to `/api/v0/feature-extraction/{dsid}/id-mapping`. 
+  * Removed the `/categorization/<mid>/predict` which is superseded by `/metrics/categorization`. 
 
 ## Version 0.8
 

@@ -136,6 +136,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories):
 
     data = parse_res(res)
     assert res.status_code == 200, method
+    print(data)
     assert sorted(data.keys()) == sorted(['id', 'recall',
                                           'f1', 'precision', 'roc_auc', 'average_precision'])
     mid = data['id']
@@ -168,6 +169,8 @@ def _api_categorization_wrapper(app, solver, cv, n_categories):
 
     for row in data['data']:
         assert dict2type(row) == response_ref
+
+    res_scores = [row['scores'][0] for row in data['data']]
 
    #     method = V01 + "/categorization/{}/test".format(mid)
    #     res = app.post(method,

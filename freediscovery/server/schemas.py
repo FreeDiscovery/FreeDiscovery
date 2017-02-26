@@ -162,7 +162,6 @@ class DuplicateDetectionSchema(Schema):
     dup_pairs = fields.List(fields.List(fields.Int()), required=True)
 
 
-
 class EmailThreadingParsSchema(Schema):
     group_by_subject = fields.Boolean(required=True)
 

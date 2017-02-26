@@ -423,32 +423,6 @@ class ModelsApiPredict(Resource):
         return res
 
 
-_models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}
-
-
-class ModelsApiTest(Resource):
-
-    @doc(description=dedent("""
-           Test the categorization model
-
-           **Parameters**
-            - `ground_truth_filename`: [required] tab-delimited file name with a unique document ID followed by a 1 for relevant or 0 for non-relevant document
-
-          """))
-    @use_args(_models_api_test)
-    @marshal_with(ClassificationScoresSchema())
-    def post(self, mid, **args):
-        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
-
-        y_res, md = cat.predict()
-        d_ref = parse_ground_truth_file( args["ground_truth_filename"])
-        idx_ref = cat.fe.db._search_filenames(d_ref.file_path.values)
-        idx_res = np.arange(cat.fe.n_samples_, dtype='int')
-        res = categorization_score(idx_ref,
-                                   d_ref.is_relevant.values,
-                                   idx_res, y_res)
-        return res
-
 
 # ============================================================================ #
 #                              Clustering
