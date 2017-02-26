@@ -26,6 +26,7 @@ except:  # sklearn v0.18
 
 from ..text import FeatureVectorizer
 from ..parsers import EmailParser
+from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..io import parse_ground_truth_file
@@ -47,6 +48,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ClassificationScoresSchema, _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
+                      _CategorizationIndex,
                       ErrorSchema, DuplicateDetectionSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
@@ -665,11 +667,6 @@ class DupDetectionApiElement(Resource):
 # ============================================================================ #
 #                             Metrics                                          #
 # ============================================================================ #
-_metrics_categorization_api_get_args  = {
-    'y_true': wfields.List(wfields.Int(), required=True),
-    'y_pred': wfields.List(wfields.Number(), required=True),
-    'metrics': wfields.List(wfields.Str())
-}
 
 class MetricsCategorizationApiElement(Resource):
     @doc(description=dedent("""
@@ -681,31 +678,50 @@ class MetricsCategorizationApiElement(Resource):
             - y_pred: [required] list of int. Predicted labels
             - metrics: [required] list of str. Metrics to compute, any combination of "precision", "recall", "f1", "roc_auc"
           """))
-    @use_args(_metrics_categorization_api_get_args)
+    @use_args({'y_true': wfields.Nested(_CategorizationIndex(many=True, strict=True), required=True),
+               'y_pred': wfields.Nested(_CategorizationIndex(many=True, strict=True), required=True),
+               'metrics': wfields.List(wfields.Str())})
     @marshal_with(MetricsCategorizationSchema())
     def post(self, **args):
+        from sklearn.preprocessing import LabelEncoder
         output_metrics = {}
-        y_true = np.array(args['y_true'], dtype='int')
-        y_pred = np.array(args['y_pred'], dtype='float')
-        threshold = 0
-        y_pred_b = (y_pred > threshold).astype('int')
+        y_true = pd.DataFrame(args['y_true'])
+        y_pred = pd.DataFrame(args['y_pred'])
+        index_cols = _check_mutual_index(y_true.columns, y_pred.columns)
+
+        y_true = y_true.set_index(index_cols, verify_integrity=True)
+        y_pred = y_pred.set_index(index_cols, verify_integrity=True)
+
+        le = LabelEncoder()
+        y_true['category_id'] = le.fit_transform(y_true.category.values)
+        y_pred['category_id'] = le.transform(y_pred.category.values)
+
+
+        y = y_true[['category_id']].merge(y_pred[['category_id']],
+                                          how='inner',
+                                          left_index=True,
+                                          right_index=True,
+                                          suffixes=('_true', '_pred'))
         if 'metrics' in args:
             metrics = args['metrics']
         else:
             metrics = ['precision', 'recall', 'roc_auc', 'f1', 'average_precision']
 
+        cy_true = y.category_id_true
+        cy_pred = y.category_id_pred
+
         # wrapping metrics calculations, as for example F1 score can frequently print warnings
         # "F-score is ill defined and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
-            for func, y_targ in [(precision_score, y_pred_b),
-                                 (recall_score, y_pred_b),
-                                 (f1_score, y_pred_b),
-                                 (roc_auc_score, y_pred),
-                                 (average_precision_score, y_pred)]:
+            for func, y_targ in [(precision_score, cy_pred),
+                                 (recall_score, cy_pred),
+                                 (f1_score, cy_pred),
+                                 (roc_auc_score, cy_pred),
+                                 (average_precision_score, cy_pred)]:
                 name = func.__name__.replace('_score', '')
                 if name in metrics:
-                    output_metrics[name] = func(y_true, y_targ)
+                    output_metrics[name] = func(cy_true, y_targ)
 
         return output_metrics
 
