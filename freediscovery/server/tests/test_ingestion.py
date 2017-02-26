@@ -17,7 +17,7 @@ from ...utils import dict2type, sdict_keys
 from ...ingestion import DocumentIndex
 from ...exceptions import OptionalDependencyMissing, NotFound
 from ...tests.run_suite import check_cache
-from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
+from .base import (parse_res, V01, app, app_notest, get_features,
                email_data_dir, get_features_cached)
 
 
@@ -28,7 +28,7 @@ from .base import (parse_res, V01, app, app_notest, get_features, get_features_l
 #=============================================================================#
 
 def test_get_features(app):
-    dsid, pars = get_features_cached(app)
+    dsid, pars, _ = get_features_cached(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
@@ -64,7 +64,7 @@ def test_get_feature_extraction_all(app):
 
 @pytest.mark.parametrize('hashed', [True])
 def test_get_feature_extraction(app, hashed):
-    dsid, _ = get_features_cached(app, hashed=hashed)
+    dsid, _, _ = get_features_cached(app, hashed=hashed)
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
@@ -81,7 +81,7 @@ def test_get_feature_extraction(app, hashed):
 
 def test_get_search_filenames(app):
 
-    dsid, _ = get_features_cached(app)
+    dsid, _, _ = get_features_cached(app)
 
     method = V01 + "/feature-extraction/{}/id-mapping".format(dsid)
 

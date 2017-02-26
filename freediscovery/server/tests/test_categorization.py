@@ -15,7 +15,8 @@ from ...utils import dict2type, sdict_keys
 from ...ingestion import DocumentIndex
 from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
-from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
+from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
+                   get_features_lsi_cached, get_features_cached)
 
 
 #=============================================================================#
@@ -91,16 +92,16 @@ def test_api_lsi(app):
         assert data[key] == lsi_pars[key]
 
 
-_categoriazation_pars = itertools.product(  ['data_dir'],
-                                            ["LinearSVC", "LogisticRegression",
-                                            "NearestCentroid", "NearestNeighbor", 'xgboost'],
+_categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",
+                                            #"NearestCentroid",
+                                            "NearestNeighbor", 'xgboost'],
                                             ['', 'cv'])
 
-_categoriazation_pars = filter(lambda args: not (args[1].startswith('Nearest') and args[2] == 'cv'),
+_categoriazation_pars = filter(lambda args: not (args[0].startswith('Nearest') and args[1] == 'cv'),
                                _categoriazation_pars)
 
 
-def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
+def _api_categorization_wrapper(app, solver, cv, n_categories):
 
     cv = (cv == 'cv')
 
@@ -108,10 +109,10 @@ def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
         raise SkipTest # Circle CI is too slow and timesout
 
     if solver.startswith('Nearest'):
-        dsid, lsi_id, _ = get_features_lsi(app, metadata_fields=metadata_fields)
+        dsid, lsi_id, _, ds_input = get_features_lsi_cached(app, n_categories=n_categories)
         parent_id = lsi_id
     else:
-        dsid, _ = get_features(app, metadata_fields=metadata_fields)
+        dsid, _, ds_input = get_features_cached(app, n_categories=n_categories)
         lsi_id = None
         parent_id = dsid
 
@@ -120,29 +121,10 @@ def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
     assert res.status_code == 200
     data = parse_res(res)
 
-    filenames = data['filenames']
-    # we train the model on 5 samples / 6 and see what happens
-    index_filenames = filenames[:3] + filenames[3:]
-    if n_categories == 1:
-        y = [1, 1, 1, 1, 1, 1]
-    elif n_categories == 2:
-        y = [1, 1, 1, 0, 0, 0]
-    elif n_categories == 3:
-        y = [1, 2, 1, 0, 0, 0]
-
-    method = V01 + "/feature-extraction/{}/id-mapping".format(dsid)
-    res = app.post(method, json={'data': [{'file_path': el} for el in index_filenames]})
-    assert res.status_code == 200, method
-    data = parse_res(res)['data']
-
-    data_request = []
-    for row, cat_id in zip(data, y):
-        data_request.append({'category': str(cat_id),
-                             'internal_id': row['internal_id']})
 
     pars = {
           'parent_id': parent_id,
-          'data': data_request,
+          'data': ds_input['training_set'],
           'method': solver,
           'cv': cv}
 
@@ -172,19 +154,16 @@ def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
     method = V01 + "/categorization/{}/predict".format(mid)
     res = app.get(method)
     data = parse_res(res)
-    assert len(data['data']) == len(y)
     response_ref = {'internal_id': 'int',
+                    'document_id': 'int',
                      'scores': [ {'category': 'str',
                                   'score': 'float',
                                  }
                                ]}
-    if metadata_fields == 'dataset_definition':
-        response_ref['document_id'] = 'int'
 
     if solver == 'NearestNeighbor':
         response_ref['scores'][0]['internal_id'] = 'int'
-        if metadata_fields == 'dataset_definition':
-            response_ref['scores'][0]['document_id'] = 'int'
+        response_ref['scores'][0]['document_id'] = 'int'
 
 
     for row in data['data']:
@@ -202,17 +181,6 @@ def _api_categorization_wrapper(app, metadata_fields, solver, cv, n_categories):
     res = app.delete(method)
     assert res.status_code == 200
 
-@pytest.mark.parametrize("metadata_fields, solver, cv", _categoriazation_pars)
-def test_api_categorization(app, metadata_fields, solver, cv):
-    _api_categorization_wrapper(app, metadata_fields, solver, cv, 2)
-
-@pytest.mark.parametrize("metadata_fields", ["data_dir", "dataset_definition", None])
-def test_api_categorization_metadata_fields(app, metadata_fields):
-    
-    if metadata_fields == 'data_dir':
-        _api_categorization_wrapper(app, metadata_fields, 'LogisticRegression', '', 2)
-    elif metadata_fields == 'dataset_definition':
-        _api_categorization_wrapper(app, metadata_fields, 'LogisticRegression', '', 2)
-    else:
-        with pytest.raises(ValueError):
-            _api_categorization_wrapper(app, metadata_fields, 'LogisticRegression', False, 2)
+@pytest.mark.parametrize("solver, cv", _categoriazation_pars)
+def test_api_categorization(app, solver, cv):
+    _api_categorization_wrapper(app, solver, cv, 2)
