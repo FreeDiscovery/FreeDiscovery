@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     data = res['data']
 
-    df = pd.DataFrame(data).set_index('internal_id')
+    df = pd.DataFrame(data).set_index('document_id')
     print(df)
 
     print(df.score.max())
