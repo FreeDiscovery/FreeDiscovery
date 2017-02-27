@@ -128,6 +128,7 @@ if __name__ == '__main__':
                             json={'parent_id': parent_id,
                                   'data': input_ds['training_set'],
                                   'method': method,  # one of "LinearSVC", "LogisticRegression", 'xgboost'
+                                  'training_scores': True
                                   }).json()
 
         mid = res['id']

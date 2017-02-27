@@ -120,7 +120,7 @@ class _CategorizationInputSchema(Schema):
     data = fields.Nested(_CategorizationIndex, many=True)
     method =  fields.Str(default='LinearSVC')
     cv = fields.Boolean(missing=False)
-    training_scores = fields.Boolean(missing=True)
+    training_scores = fields.Boolean(missing=False)
 
 class _CategorizationScoreSchemaElement(DocumentIndexSchema):
     category = fields.Str(required=True)

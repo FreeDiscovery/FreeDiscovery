@@ -109,7 +109,8 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
           'parent_id': parent_id,
           'data': training_set,
           'method': solver,
-          'cv': cv}
+          'cv': cv,
+          'training_scores': True}
 
     method = V01 + "/categorization/"
     try:
