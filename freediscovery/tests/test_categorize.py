@@ -22,7 +22,7 @@ from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper
 from freediscovery.categorization import _CategorizerWrapper
 from freediscovery.io import parse_ground_truth_file
-from freediscovery.utils import categorization_score
+from freediscovery.metrics import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
 

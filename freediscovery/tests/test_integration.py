@@ -20,7 +20,7 @@ from freediscovery.dupdet import _DuplicateDetectionWrapper
 from freediscovery.cluster import _ClusteringWrapper
 from freediscovery.lsi import _LSIWrapper
 from freediscovery.io import parse_ground_truth_file
-from freediscovery.utils import categorization_score
+from freediscovery.metrics import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
 from .run_suite import check_cache
 

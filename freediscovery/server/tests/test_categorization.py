@@ -125,7 +125,8 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
                                                     'f1': 'float',
                                                     'precision': 'float',
                                                     'roc_auc': 'float',
-                                                    'average_precision': 'float'}}
+                                                    'average_precision': 'float',
+                                                    'recall_at_20p': 'float'}}
 
     if n_categories_train == 1:
         assert data['training_scores']['f1'] > 0.99

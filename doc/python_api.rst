@@ -111,6 +111,7 @@ This module aims to extend `sklearn.metrics <http://scikit-learn.org/stable/modu
 .. autosummary::
     :toctree: ./generated/
 
+    freediscovery.metrics.recall_at_k_score
     freediscovery.metrics.ratio_duplicates_score
     freediscovery.metrics.f1_same_duplicates_score
 

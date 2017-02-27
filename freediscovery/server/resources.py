@@ -30,10 +30,12 @@ from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..io import parse_ground_truth_file
-from ..utils import categorization_score, _docstring_description
+from ..utils import _docstring_description
 from ..cluster import _ClusteringWrapper
 from ..search import _SearchWrapper
-from ..metrics import ratio_duplicates_score, f1_same_duplicates_score, mean_duplicates_count_score
+from ..metrics import (categorization_score,
+                       ratio_duplicates_score, f1_same_duplicates_score,
+                       mean_duplicates_count_score)
 from ..dupdet import _DuplicateDetectionWrapper
 from ..email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
@@ -684,6 +686,7 @@ class MetricsCategorizationApiElement(Resource):
     @marshal_with(MetricsCategorizationSchema())
     def post(self, **args):
         from sklearn.preprocessing import LabelEncoder
+        from ..metrics import recall_at_k_score
         output_metrics = {}
         y_true = pd.DataFrame(args['y_true'])
 
@@ -734,17 +737,19 @@ class MetricsCategorizationApiElement(Resource):
                          recall_score,
                          f1_score,
                          roc_auc_score,
-                         average_precision_score]:
+                         average_precision_score,
+                         recall_at_k_score]:
                 name = func.__name__.replace('_score', '')
-                if name in ['roc_auc', 'average_precision'] and n_classes == 2:
+                opts = {}
+                if name in ['roc_auc', 'average_precision', 'recall_at_k_score'] and n_classes == 2:
                     y_targ = cy_pred_score
+                    if name == 'recall_at_k_score':
+                        opts = {'k': 0.2}
                 else:
                     y_targ = cy_pred
 
                 if name in _binary_metrics and n_classes != 2:
-                    opts = {'average': 'micro'}
-                else:
-                    opts = {}
+                    opts['average'] = 'micro'
                 if name in metrics:
                     if n_classes == 2 or name in _binary_metrics:
                         output_metrics[name] = func(cy_true, y_targ, **opts)
