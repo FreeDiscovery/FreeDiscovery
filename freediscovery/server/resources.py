@@ -40,7 +40,7 @@ from ..datasets import load_dataset
 from ..exceptions import WrongParameter
 from ..stop_words import _StopWordsWrapper
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema, DocumentIndexListSchema,
+                      FeaturesSchema,
                       DocumentIndexNestedSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
                       ExampleDatasetSchema,
@@ -333,7 +333,7 @@ class ModelsApi(Resource):
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
-            - `data`: a list of dict which have a `category` field and one or several fields that can be used for indexing, such as `internal_id`, `document_id`, `file_path`, `rendition_id`.
+            - `data`: a list of dict which have a `category` field and one or several fields that can be used for indexing, such as `document_id` and optionally `rendition_id`.
             - `method`: classification algorithm to use (default: LogisticRegression),
               * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
               * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),

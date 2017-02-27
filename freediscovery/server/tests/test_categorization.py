@@ -20,27 +20,6 @@ from .base import (parse_res, V01, app, app_notest, get_features, get_features_l
                    get_features_lsi_cached, get_features_cached)
 
 
-
-#=============================================================================#
-#
-#                     Helper functions / features
-#
-#=============================================================================#
-
-def _internal2document_id(value):
-    """A custom internal_id to document_id mapping used in tests"""
-    return 2*value + 1
-
-def _document2internal_id(value):
-    """A custom internal_id to document_id mapping used in tests"""
-    return (value - 1)//2
-
-def test_consistent_id_mapping():
-    internal_id = 2
-    document_id = _internal2document_id(internal_id)
-    assert _document2internal_id(document_id) == internal_id
-
-
 #=============================================================================#
 #
 #                     LSI
@@ -146,7 +125,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
                                                     'roc_auc': 'float',
                                                     'average_precision': 'float'}}
 
-    print(data)
+    #print(data)
     if n_categories_train == 1:
         pass
     elif n_categories == 2:
@@ -174,15 +153,13 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
     res = app.get(method)
     data = parse_res(res)
     data = data['data']
-    response_ref = {'internal_id': 'int',
-                    'document_id': 'int',
+    response_ref = { 'document_id': 'int',
                      'scores': [ {'category': 'str',
                                   'score': 'float',
                                  }
                                ]}
 
     if solver == 'NearestNeighbor':
-        response_ref['scores'][0]['internal_id'] = 'int'
         response_ref['scores'][0]['document_id'] = 'int'
 
 

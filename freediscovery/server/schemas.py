@@ -21,10 +21,10 @@ class Schema(BaseSchema):
 class DocumentIndexSchema(Schema):
     document_id = fields.Int()
     render_id = fields.Int()
-    internal_id = fields.Int()
 
 class DocumentIndexFullSchema(DocumentIndexSchema):
     file_path = fields.Str()
+    internal_id = fields.Int()
 
 class _ExampleDatasetElementSchema(DocumentIndexFullSchema):
     category = fields.Str()
@@ -44,12 +44,6 @@ class EmptySchema(Schema):
 class IDSchema(Schema):
     id = fields.Str(required=True)
 
-
-class DocumentIndexListSchema(Schema):
-    internal_id = fields.List(fields.Int())
-    document_id = fields.List(fields.Int())
-    render_id = fields.List(fields.Int())
-    file_path = fields.List(fields.Str())
 
 class DocumentIndexNestedSchema(Schema):
     data = fields.Nested(DocumentIndexFullSchema, many=True, required=True)

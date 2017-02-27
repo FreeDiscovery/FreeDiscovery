@@ -28,6 +28,7 @@
   * Significant changes in the REST API to accommodate for multi-class categorization 
   * The endpoint `/api/v0/feature-extraction/{dsid}/id-mapping/flat` is removed, while `/api/v0/feature-extraction/{dsid}/id-mapping/nested` is renamed to `/api/v0/feature-extraction/{dsid}/id-mapping`. 
   * Removed the `/categorization/<mid>/predict` which is superseded by `/metrics/categorization`. 
+  * The `internal_id` is no longer exposed in categorization and semantic search
 
 ## Version 0.8
 

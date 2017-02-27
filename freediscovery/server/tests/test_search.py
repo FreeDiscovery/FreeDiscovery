@@ -52,7 +52,6 @@ def test_search(app, method, min_score):
     data = data['data']
     for row in data:
         assert dict2type(row) == {'score': 'float',
-                                  'internal_id': 'int',
                                   'document_id': 'int'}
     scores = np.array([row['score'] for row in data])
     assert_equal(np.diff(scores) <= 0, True)
