@@ -71,7 +71,7 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
 
     n_classes = len(np.unique(Y_ref))
 
-    if n_classes > 2:
+    if n_classes != 2:
         opts = {"average": 'micro'}
     else:
         opts = {}

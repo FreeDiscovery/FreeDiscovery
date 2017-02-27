@@ -690,7 +690,8 @@ class MetricsCategorizationApiElement(Resource):
         y_pred_b = []
         for row in args['y_pred']:
             nrow = {'document_id': row['document_id'],
-                    'category': row['scores'][0]['category']}
+                    'category': row['scores'][0]['category'],
+                    'score': row['scores'][0]['score']}
             y_pred_b.append(nrow)
 
         y_pred_b = pd.DataFrame(y_pred_b)
@@ -704,7 +705,7 @@ class MetricsCategorizationApiElement(Resource):
         y_pred_b['category_id'] = le.transform(y_pred_b.category.values)
 
 
-        y = y_true[['category_id']].merge(y_pred_b[['category_id']],
+        y = y_true[['category_id']].merge(y_pred_b[['category_id', 'score']],
                                           how='inner',
                                           left_index=True,
                                           right_index=True,
@@ -714,27 +715,38 @@ class MetricsCategorizationApiElement(Resource):
         else:
             metrics = ['precision', 'recall', 'roc_auc', 'f1', 'average_precision']
 
-        cy_true = y.category_id_true
-        cy_pred = y.category_id_pred
+        _binary_metrics = ['precision', 'recall', 'f1']
+
+        cy_true = y.category_id_true.values
+        cy_pred = y.category_id_pred.values
 
         n_classes = len(le.classes_)
+
+        if n_classes == 2:
+            cy_pred_score = y.score.values
+            cy_pred_score[cy_pred == 0] *= -1
 
         # wrapping metrics calculations, as for example F1 score can frequently print warnings
         # "F-score is ill defined and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
-            for func, y_targ in [(precision_score, cy_pred),
-                                 (recall_score, cy_pred),
-                                 (f1_score, cy_pred),
-                                 (roc_auc_score, cy_pred),
-                                 (average_precision_score, cy_pred)]:
+            for func in [precision_score,
+                         recall_score,
+                         f1_score,
+                         roc_auc_score,
+                         average_precision_score]:
                 name = func.__name__.replace('_score', '')
-                if name in ['precision', 'recall', 'f1'] and n_classes > 2:
+                if name in ['roc_auc', 'average_precision'] and n_classes == 2:
+                    y_targ = cy_pred_score
+                else:
+                    y_targ = cy_pred
+
+                if name in _binary_metrics and n_classes != 2:
                     opts = {'average': 'micro'}
                 else:
                     opts = {}
                 if name in metrics:
-                    if n_classes <= 2 or name in ['precision', 'recall', 'f1']:
+                    if n_classes == 2 or name in _binary_metrics:
                         output_metrics[name] = func(cy_true, y_targ, **opts)
                     else:
                         output_metrics[name] = np.nan

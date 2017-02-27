@@ -30,9 +30,12 @@ def test_categorization_metrics(app, metrics):
     labels = ['negative', 'positive']
 
 
-    y_true = [{'category': labels[key], 'document_id': idx} for idx, key in\
+    y_true = [{'category': labels[key],
+               'document_id': idx} for idx, key in\
                       enumerate([0, 0, 0, 1, 1, 0, 1, 0, 1])]
-    y_pred = [{'category': labels[key], 'document_id': idx} for idx, key in\
+    y_pred = [{'scores': [{'category': labels[key],
+                           'score': 1.}],
+               'document_id': idx} for idx, key in\
                       enumerate([0, 0, 1, 1, 1, 0, 1, 1, 1])]
 
     pars = {'y_true': y_true, 'y_pred': y_pred, 'metrics': metrics}
