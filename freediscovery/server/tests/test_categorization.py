@@ -10,6 +10,7 @@ import pytest
 import json
 import itertools
 from unittest import SkipTest
+import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal
 
 from ...utils import dict2type, sdict_keys
@@ -125,9 +126,8 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
                                                     'roc_auc': 'float',
                                                     'average_precision': 'float'}}
 
-    #print(data)
     if n_categories_train == 1:
-        pass
+        assert data['training_scores']['f1'] > 0.99
     elif n_categories == 2:
         assert data['training_scores']['average_precision'] > 0.73
         if solver == 'NearestNeighbor':
@@ -166,6 +166,13 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
     for row in data:
         assert dict2type(row) == response_ref
 
+    if solver == 'NearestNeighbor':
+        #print(json.dumps(data, indent=4))
+        training_document_id = np.array([row['document_id'] for row in training_set])
+        training_document_id_res = np.array([row['scores'][0]['document_id'] for row in data])
+        #print(np.unique(sorted(training_document_id)))
+        #print(np.unique(sorted(training_document_id_res)))
+        assert_equal(np.in1d(training_document_id_res, training_document_id), True)
 
     method = V01 + "/metrics/categorization"
     res = app.post(method,

@@ -342,7 +342,7 @@ class ModelsApi(Resource):
               * "xgboost": [Gradient Boosting](https://xgboost.readthedocs.io/en/latest/model.html)
                    (*Warning:* for the moment xgboost is not istalled for a direct install on Windows)
             - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default True).
-            - `training_scores`: binary, compute the efficiency scores on the training dataset (default True).
+            - `training_scores`: binary, compute the efficiency scores on the training dataset. This would make computations much slower for NearestNeighbors (default False). 
           """))
     @use_args(_CategorizationInputSchema())
     @marshal_with(CategorizationPostSchema())
@@ -364,7 +364,7 @@ class ModelsApi(Resource):
             cv = None
         for key in ['parent_id', 'cv', 'training_scores']:
             del args[key]
-        _, Y_train = cat.train(cv=cv, **args)
+        _, Y_train = cat.fit(cv=cv, **args)
         idx_train = args['index']
         res = {'id': cat.mid, 'training_scores': {}}
         if training_scores:
