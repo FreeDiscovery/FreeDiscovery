@@ -8,7 +8,7 @@ import os
 from glob import glob
 from textwrap import dedent
 
-#from flask_restful import Resource
+from flask import request
 from webargs import fields as wfields
 from flask_apispec import (marshal_with, use_kwargs as use_args,
                            MethodResource as Resource)
@@ -48,7 +48,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ClassificationScoresSchema, _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
-                      _CategorizationIndex,
+                      _CategorizationIndex, _CategorizationPredictSchemaElement,
                       ErrorSchema, DuplicateDetectionSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
@@ -366,12 +366,12 @@ class ModelsApi(Resource):
             del args[key]
         _, Y_train = cat.train(cv=cv, **args)
         idx_train = args['index']
-        res = {'id': cat.mid}
+        res = {'id': cat.mid, 'training_scores': {}}
         if training_scores:
             Y_res, md = cat.predict()
             idx_res = np.arange(cat.fe.n_samples_, dtype='int')
-            res.update(categorization_score(idx_train, Y_train,
-                                       idx_res, np.argmax(Y_res, axis=1)))
+            res['training_scores'] = categorization_score(idx_train, Y_train,
+                                       idx_res, np.argmax(Y_res, axis=1))
         return res
 
 
@@ -674,30 +674,37 @@ class MetricsCategorizationApiElement(Resource):
           of categorization, comparing the groud truth labels with the predicted ones.
 
           **Parameters**
-            - y_true: [required] list of int. Ground truth labels
-            - y_pred: [required] list of int. Predicted labels
+            - y_true: [required] ground truth categorization data
+            - y_pred: [required] predicted categorization results
             - metrics: [required] list of str. Metrics to compute, any combination of "precision", "recall", "f1", "roc_auc"
           """))
-    @use_args({'y_true': wfields.Nested(_CategorizationIndex(many=True, strict=True), required=True),
-               'y_pred': wfields.Nested(_CategorizationIndex(many=True, strict=True), required=True),
+    @use_args({'y_true': wfields.Nested(_CategorizationIndex, many=True, required=True),
+               'y_pred': wfields.Nested(_CategorizationPredictSchemaElement, many=True, required=True),
                'metrics': wfields.List(wfields.Str())})
     @marshal_with(MetricsCategorizationSchema())
     def post(self, **args):
         from sklearn.preprocessing import LabelEncoder
         output_metrics = {}
         y_true = pd.DataFrame(args['y_true'])
-        y_pred = pd.DataFrame(args['y_pred'])
-        index_cols = _check_mutual_index(y_true.columns, y_pred.columns)
+
+        y_pred_b = []
+        for row in args['y_pred']:
+            nrow = {'document_id': row['document_id'],
+                    'category': row['scores'][0]['category']}
+            y_pred_b.append(nrow)
+
+        y_pred_b = pd.DataFrame(y_pred_b)
+        index_cols = _check_mutual_index(y_true.columns, y_pred_b.columns)
 
         y_true = y_true.set_index(index_cols, verify_integrity=True)
-        y_pred = y_pred.set_index(index_cols, verify_integrity=True)
+        y_pred_b = y_pred_b.set_index(index_cols, verify_integrity=True)
 
         le = LabelEncoder()
         y_true['category_id'] = le.fit_transform(y_true.category.values)
-        y_pred['category_id'] = le.transform(y_pred.category.values)
+        y_pred_b['category_id'] = le.transform(y_pred_b.category.values)
 
 
-        y = y_true[['category_id']].merge(y_pred[['category_id']],
+        y = y_true[['category_id']].merge(y_pred_b[['category_id']],
                                           how='inner',
                                           left_index=True,
                                           right_index=True,
@@ -710,6 +717,8 @@ class MetricsCategorizationApiElement(Resource):
         cy_true = y.category_id_true
         cy_pred = y.category_id_pred
 
+        n_classes = len(le.classes_)
+
         # wrapping metrics calculations, as for example F1 score can frequently print warnings
         # "F-score is ill defined and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
@@ -720,8 +729,15 @@ class MetricsCategorizationApiElement(Resource):
                                  (roc_auc_score, cy_pred),
                                  (average_precision_score, cy_pred)]:
                 name = func.__name__.replace('_score', '')
+                if name in ['precision', 'recall', 'f1'] and n_classes > 2:
+                    opts = {'average': 'micro'}
+                else:
+                    opts = {}
                 if name in metrics:
-                    output_metrics[name] = func(cy_true, y_targ)
+                    if n_classes <= 2 or name in ['precision', 'recall', 'f1']:
+                        output_metrics[name] = func(cy_true, y_targ, **opts)
+                    else:
+                        output_metrics[name] = np.nan
 
         return output_metrics
 

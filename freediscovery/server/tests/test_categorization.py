@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 import pytest
+import json
 import itertools
 from unittest import SkipTest
 from numpy.testing import assert_equal, assert_almost_equal
@@ -17,6 +18,7 @@ from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
 from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
                    get_features_lsi_cached, get_features_cached)
+
 
 
 #=============================================================================#
@@ -92,16 +94,9 @@ def test_api_lsi(app):
         assert data[key] == lsi_pars[key]
 
 
-_categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",
-                                            #"NearestCentroid",
-                                            "NearestNeighbor", 'xgboost'],
-                                            ['', 'cv'])
-
-_categoriazation_pars = filter(lambda args: not (args[0].startswith('Nearest') and args[1] == 'cv'),
-                               _categoriazation_pars)
 
 
-def _api_categorization_wrapper(app, solver, cv, n_categories):
+def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_train=None):
 
     cv = (cv == 'cv')
 
@@ -121,10 +116,18 @@ def _api_categorization_wrapper(app, solver, cv, n_categories):
     assert res.status_code == 200
     data = parse_res(res)
 
+    categories_list = list(set([row['category'] for row in ds_input['dataset']]))
+
+    if n_categories_train is None:
+        training_set = ds_input['training_set']
+    else:
+        assert n_categories_train <= n_categories
+        training_set = list(filter(lambda x: x['category'] in categories_list[:n_categories_train],
+                              ds_input['training_set']))
 
     pars = {
           'parent_id': parent_id,
-          'data': ds_input['training_set'],
+          'data': training_set,
           'method': solver,
           'cv': cv}
 
@@ -136,18 +139,29 @@ def _api_categorization_wrapper(app, solver, cv, n_categories):
 
     data = parse_res(res)
     assert res.status_code == 200, method
-    print(data)
-    assert sorted(data.keys()) == sorted(['id', 'recall',
-                                          'f1', 'precision', 'roc_auc', 'average_precision'])
+    assert dict2type(data) == {'id' : 'str',
+                               'training_scores': {'recall': 'float',
+                                                    'f1': 'float',
+                                                    'precision': 'float',
+                                                    'roc_auc': 'float',
+                                                    'average_precision': 'float'}}
+    print(data['training_scores'])
+    if n_categories_train == 1:
+        pass
+    elif n_categories == 2:
+        assert data['training_scores']['average_precision'] > 0.75
+        assert data['training_scores']['roc_auc'] > 0.7
+    elif n_categories == 3 and solver == 'NearestNeighbor':
+        assert data['training_scores']['f1'] > 0.6
+    else:
+        assert data['training_scores']['f1'] > 0.3
+
     mid = data['id']
 
     method = V01 + "/categorization/{}".format(mid)
     res = app.get(method)
     assert res.status_code == 200
     data = parse_res(res)
-    #assert dict2data.keys()) == \
-    #        sorted(["index", "y",
-    #                "method", "options"])
 
     for key in ["method"]:
         assert pars[key] == data[key]
@@ -155,6 +169,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories):
     method = V01 + "/categorization/{}/predict".format(mid)
     res = app.get(method)
     data = parse_res(res)
+    data = data['data']
     response_ref = {'internal_id': 'int',
                     'document_id': 'int',
                      'scores': [ {'category': 'str',
@@ -167,23 +182,50 @@ def _api_categorization_wrapper(app, solver, cv, n_categories):
         response_ref['scores'][0]['document_id'] = 'int'
 
 
-    for row in data['data']:
+    for row in data:
         assert dict2type(row) == response_ref
 
-    res_scores = [row['scores'][0] for row in data['data']]
 
-   #     method = V01 + "/categorization/{}/test".format(mid)
-   #     res = app.post(method,
-   #             json={'ground_truth_filename':
-   #                 os.path.join(data_dir, '..', 'ground_truth_file.txt')})
-   #     data = parse_res(res)
-   #     assert sorted(data.keys()) == sorted(['precision', 'recall',
-   #                         'f1', 'roc_auc', 'average_precision'])
+    method = V01 + "/metrics/categorization"
+    res = app.post(method,
+            json={'y_true': ds_input['dataset'],
+                  'y_pred': data})
+    data = parse_res(res)
+
+
+    assert dict2type(data) == {'precision': 'float',
+                               'recall': 'float',
+                               'f1': 'float',
+                               'roc_auc': 'float',
+                               'average_precision': 'float'}
+    print(data)
+    if n_categories == 2:
+        assert data['average_precision'] > 0.7
+        assert data['roc_auc'] > 0.7
+    else:
+        pass
 
     method = V01 + "/categorization/{}".format(mid)
     res = app.delete(method)
     assert res.status_code == 200
 
+
+_categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",
+                                            #"NearestCentroid",
+                                            "NearestNeighbor", 'xgboost'],
+                                            ['', 'cv'])
+
+_categoriazation_pars = filter(lambda args: not (args[0].startswith('Nearest') and args[1] == 'cv'),
+                               _categoriazation_pars)
+
 @pytest.mark.parametrize("solver, cv", _categoriazation_pars)
-def test_api_categorization(app, solver, cv):
+def test_api_categorization_2cat(app, solver, cv):
     _api_categorization_wrapper(app, solver, cv, 2)
+
+@pytest.mark.parametrize("n_categories", [1, 2, 3])
+def test_api_categorization_2cat_unsupervised(app, n_categories):
+    _api_categorization_wrapper(app, 'NearestNeighbor', cv='', n_categories=n_categories, n_categories_train=1)
+
+@pytest.mark.parametrize("solver", ["LogisticRegression", "NearestNeighbor"])
+def test_api_categorization_3cat(app, solver):
+    _api_categorization_wrapper(app, solver, '', 3)

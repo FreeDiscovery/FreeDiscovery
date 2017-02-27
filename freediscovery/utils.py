@@ -69,17 +69,25 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
     Y = Y[mask]
     Y_bin = (Y > threshold)
 
+    n_classes = len(np.unique(Y_ref))
+
+    if n_classes > 2:
+        opts = {"average": 'micro'}
+    else:
+        opts = {}
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UndefinedMetricWarning)
 
-        m_recall_score = recall_score(Y_ref, Y_bin)
-        m_precision_score = precision_score(Y_ref, Y_bin)
-        m_f1_score = f1_score(Y_ref, Y_bin)
-    if len(np.unique(Y_ref)) == 2:
+        m_recall_score = recall_score(Y_ref, Y_bin, **opts)
+        m_precision_score = precision_score(Y_ref, Y_bin, **opts)
+        m_f1_score = f1_score(Y_ref, Y_bin, **opts)
+    if n_classes == 2:
         m_roc_auc = roc_auc_score(Y_ref, Y)
+        m_average_precision = average_precision_score(Y_ref, Y)
     else:
         m_roc_auc = np.nan # ROC not defined in this case
-    m_average_precision = average_precision_score(Y_ref, Y)
+        m_average_precision = np.nan
 
     return {"recall": m_recall_score, "precision": m_precision_score,
             "f1": m_f1_score, 'roc_auc': m_roc_auc,

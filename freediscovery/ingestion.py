@@ -42,7 +42,8 @@ def _check_mutual_index(keys1, keys2):
          "file_path" in keys2:
         index_cols = ['file_path']
     else:
-        raise ValueError('The query columns {} cannot be used as an index'.format(list(keys1)))
+        raise ValueError("Cannot create a mutual index from columns\n keys1 : {}\n keys2: {}".format(
+             list(keys1), list(keys2)))
 
     return index_cols
 

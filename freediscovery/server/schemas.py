@@ -16,6 +16,7 @@ class Schema(BaseSchema):
 
     class Meta:
         strict = True
+        ordered = True
 
 class DocumentIndexSchema(Schema):
     document_id = fields.Int()
@@ -33,9 +34,9 @@ class _ExampleDatasetMetadataSchema(Schema):
     name = fields.Str(required=True)
 
 class ExampleDatasetSchema(Schema):
-    metadata = fields.Nested(_ExampleDatasetMetadataSchema(), required=True)
-    training_set = fields.Nested(_ExampleDatasetElementSchema(), many=True)
-    dataset = fields.Nested(_ExampleDatasetElementSchema(), many=True, required=True)
+    metadata = fields.Nested(_ExampleDatasetMetadataSchema, required=True)
+    training_set = fields.Nested(_ExampleDatasetElementSchema, many=True)
+    dataset = fields.Nested(_ExampleDatasetElementSchema, many=True, required=True)
 
 class EmptySchema(Schema):
     pass
@@ -111,8 +112,9 @@ class LsiPostSchema(IDSchema):
     explained_variance = fields.Number(required=True)
 
 
-class CategorizationPostSchema(ClassificationScoresSchema):
+class CategorizationPostSchema(Schema):
     id = fields.Str(required=True)
+    training_scores = fields.Nested(ClassificationScoresSchema())
 
 class _CategorizationIndex(DocumentIndexSchema):
     category = fields.Str(required=True)
@@ -132,11 +134,11 @@ class _CategorizationScoreSchemaElement(DocumentIndexSchema):
 
 
 class _CategorizationPredictSchemaElement(DocumentIndexSchema):
-    scores = fields.Nested(_CategorizationScoreSchemaElement(), many=True, required=True)
+    scores = fields.Nested(_CategorizationScoreSchemaElement, many=True, required=True)
 
 
 class CategorizationPredictSchema(Schema):
-    data = fields.Nested(_CategorizationPredictSchemaElement(), many=True, required=True)
+    data = fields.Nested(_CategorizationPredictSchemaElement, many=True, required=True)
 
 
 class CategorizationParsSchema(Schema):
@@ -205,7 +207,7 @@ class _SearchResponseSchemaElement(DocumentIndexSchema):
     score = fields.Number(required=True)
 
 class SearchResponseSchema(Schema):
-    data = fields.Nested(_SearchResponseSchemaElement(), many=True, required=True)
+    data = fields.Nested(_SearchResponseSchemaElement, many=True, required=True)
     
 class CustomStopWordsSchema(Schema):
     name = fields.Str(required=True)
@@ -215,4 +217,3 @@ class CustomStopWordsSchema(Schema):
 class CustomStopWordsLoadSchema(Schema):
     name = fields.Str(required=True)
     stop_words = fields.List(fields.Str(), required=True)
-    
