@@ -11,6 +11,44 @@ from .cluster.utils import _dbscan_unique2noisy
 # Information retrieval specific metrics
 # See scikit learn metrics for more general ones
 
+
+## Categorization Metrics
+
+def recall_at_k_score(y_true, y_pred, k):
+    """
+    Recall after retrieving k documents from the collections
+
+    Parameters
+    ----------
+    y_true : ndarray [n_samples]
+      array of integer classes
+    y_pred : ndarray [n_samples]
+      array of float predicted scores
+    k : {int, float}
+      the threashold either float in [0., 1.] or int in [0, n_samples]
+
+    Returns
+    -------
+    score : float
+      the recall at k score
+    """
+    N_docs = len(y_true)
+    if isinstance(k, float):
+        k = int(N_docs*k)
+    elif isinstance(k, int):
+        pass
+    else:
+        raise TypeError('Provided k with type {} must be int or float'.format(type(k)))
+
+    if len(y_true) != len(y_pred):
+        raise ValueError('len(y_true)={} != len(y_pred)={}'.format(len(y_true) != len(y_pred)))
+
+    index_sorted = np.argsort(y_pred)[::-1]
+    recall_curve = y_true[index_sorted].cumsum()/y_true.sum()
+    # make sure the element 0 is always 0
+    recall_curve = np.hstack((np.zeros(1), recall_curve))
+    return recall_curve[k]
+
 ## Clustering Metrics
 
 def ratio_duplicates_score(x, y):
