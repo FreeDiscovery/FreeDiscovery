@@ -82,11 +82,6 @@ if __name__ == '__main__':
 
     print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
                                                       if "filenames" not in key]))
-    # this step is not necessary anymore
-    #method = BASE_URL + "/feature-extraction/{}/id-mapping/flat".format(dsid)
-    #res = requests.get(method, data={'document_id': seed_document_id})
-    #seed_internal_id = res.json()['internal_id']
-
 
     # 3. Document categorization with LSI (used for Nearest Neighbors method)
 
@@ -110,7 +105,8 @@ if __name__ == '__main__':
     # 3. Document categorization
 
     print("\n3.a. Train the categorization model")
-    print("   {} positive, {} negative files".format(pd.DataFrame(input_ds['training_set']).groupby('category'), 0))
+    print("   {} positive, {} negative files".format(pd.DataFrame(input_ds['training_set'])\
+                             .groupby('category').count()['document_id'], 0))
 
     for method, use_lsi in [('LinearSVC', False),
                             ('NearestNeighbor', True)]:
@@ -132,11 +128,12 @@ if __name__ == '__main__':
                             json={'parent_id': parent_id,
                                   'data': input_ds['training_set'],
                                   'method': method,  # one of "LinearSVC", "LogisticRegression", 'xgboost'
+                                  'training_scores': True
                                   }).json()
 
         mid = res['id']
         print("     => model id = {}".format(mid))
-        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, F1= {f1:.3f}'.format(**res))
+        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, F1= {f1:.3f}'.format(**res['training_scores']))
 
         print("\n3.b. Check the parameters used in the categorization model")
         url = BASE_URL + '/categorization/{}'.format(mid)
@@ -151,27 +148,27 @@ if __name__ == '__main__':
         print(" GET", url)
         res = requests.get(url).json()
 
-        if method == "NearestNeighbor":
-            data = res['data']
-        else:
-            data = res['data']
+        data = []
+        for row in res['data']:
+            nrow = {'document_id': row['document_id'],
+                    'category': row['scores'][0]['category'],
+                    'score': row['scores'][0]['score']}
+            if method == 'NearestNeighbor':
+                nrow['nearest_document_id'] = row['scores'][0]['document_id']
+            data.append(nrow)
 
-        df = pd.DataFrame(data).set_index('internal_id')
-        #if method == "NearestNeighbor":
-        #    df = df[['document_id', 'nn_negative__distance', 'nn_negative__document_id',
-        #          'nn_positive__distance', 'nn_positive__document_id', 'score']]
 
+        df = pd.DataFrame(data).set_index('document_id')
         print(df)
 
-        #print("\n3.d Compute the categorization scores")
-        #url = BASE_URL + '/metrics/categorization'
-        #print(" GET", url)
-        #res = requests.post(url, json={'y_true': ground_truth_y,
-        #                              'y_pred': df.score.values.tolist(),
-        #                             } ).json()
+        print("\n3.d Compute the categorization scores")
+        url = BASE_URL + '/metrics/categorization'
+        print(" GET", url)
+        res = requests.post(url, json={'y_true': input_ds['dataset'],
+                                      'y_pred': res['data'] }).json()
 
 
-        #print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+        print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
 
     # 4. Cleaning
     print("\n5.a Delete the extracted features (and LSI decomposition)")

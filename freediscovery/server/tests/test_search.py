@@ -29,10 +29,10 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
 def test_search(app, method, min_score):
 
     if method == 'semantic':
-        dsid, lsi_id, _ = get_features_lsi_cached(app, hashed=False)
+        dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
         parent_id = lsi_id
     elif method == 'regular':
-        dsid, _ = get_features_cached(app, hashed=False)
+        dsid, _, _ = get_features_cached(app, hashed=False)
         lsi_id = None
         parent_id = dsid
     query = """The American National Standards Institute sells ANSI standards, and also
@@ -52,7 +52,6 @@ def test_search(app, method, min_score):
     data = data['data']
     for row in data:
         assert dict2type(row) == {'score': 'float',
-                                  'internal_id': 'int',
                                   'document_id': 'int'}
     scores = np.array([row['score'] for row in data])
     assert_equal(np.diff(scores) <= 0, True)

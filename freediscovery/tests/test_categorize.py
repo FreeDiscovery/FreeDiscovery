@@ -79,7 +79,7 @@ def test_categorization(use_lsi, method, cv):
     index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
     try:
-        model, Y_train = cat.train(
+        model, Y_train = cat.fit(
                                 index,
                                 ground_truth.is_relevant.values,
                                 method=method,
@@ -157,7 +157,7 @@ def test_categorization2dict(max_result_categories, sort, has_nn):
                                                 "score": 0.0,
                                                 "internal_id": 2,
                                                 "category": "positive",
-                                                "document_id": 0
+                                                "document_id": 4
                                             }
                                         ]
                                       }
@@ -184,7 +184,7 @@ def test_categorization2dict(max_result_categories, sort, has_nn):
                                                 "score": 1.3,
                                                 "internal_id": 0,
                                                 "category": "negative",
-                                                "document_id": 16
+                                                "document_id": 0
                                             }
                                         ]
                                     }
@@ -222,7 +222,7 @@ def test_explain_categorization():
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
     index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
-    model, _ = cat.train(index,
+    model, _ = cat.fit(index,
                          ground_truth.is_relevant.values,
                          method='LogisticRegression')
     _, X = cat.fe.load()
@@ -250,7 +250,7 @@ def test_pipeline(n_steps):
     cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
     index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
-    coefs, Y_train = cat.train( index, ground_truth.is_relevant.values)
+    coefs, Y_train = cat.fit( index, ground_truth.is_relevant.values)
 
     cat.predict()
 

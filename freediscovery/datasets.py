@@ -11,6 +11,7 @@ import sys
 import shutil
 import hashlib
 import platform
+import random
 
 import numpy as np
 import pandas as pd
@@ -245,6 +246,11 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
         training_set = di.render_dict(di.data[mask],
                              return_file_path=True)
         training_set = filter_dict(training_set, valid_fields)
+        if name == '20newsgroups_3categories':
+            # make a smaller training set
+            random.seed(999998)
+            training_set = random.sample(training_set,
+                                         min(len(training_set), di.data.shape[0] // 5))
 
     dataset = di.render_dict(return_file_path=True)
 

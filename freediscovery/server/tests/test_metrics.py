@@ -18,7 +18,7 @@ from ...ingestion import DocumentIndex
 from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
 
-from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
+from .base import parse_res, V01, app, app_notest
 
 
 @pytest.mark.parametrize('metrics',
@@ -27,8 +27,16 @@ from .base import parse_res, V01, app, app_notest, get_features, get_features_ls
 def test_categorization_metrics(app, metrics):
     metrics = list(metrics)
     url = V01 + '/metrics/categorization'
-    y_true = [0, 0, 0, 1, 1, 0, 1, 0, 1]
-    y_pred = [0.1, 0, 1, 1, 1, 0, 1, 1, 1]
+    labels = ['negative', 'positive']
+
+
+    y_true = [{'category': labels[key],
+               'document_id': idx} for idx, key in\
+                      enumerate([0, 0, 0, 1, 1, 0, 1, 0, 1])]
+    y_pred = [{'scores': [{'category': labels[key],
+                           'score': 1.}],
+               'document_id': idx} for idx, key in\
+                      enumerate([0, 0, 1, 1, 1, 0, 1, 1, 1])]
 
     pars = {'y_true': y_true, 'y_pred': y_pred, 'metrics': metrics}
     res = app.post(url, json=pars)

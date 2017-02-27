@@ -117,7 +117,7 @@ def get_features_cached(app, hashed=True, n_categories=2):
     assert res.status_code == 200, method
     data = parse_res(res)
     assert dict2type(data) == {'id': 'str'}
-    return dsid, pars
+    return dsid, pars, input_ds
 
 def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
     dsid, pars = get_features(app, hashed=hashed,
@@ -133,7 +133,7 @@ def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
 
 @memory.cache(ignore=['app'])
 def get_features_lsi_cached(app, hashed=True, n_categories=2, n_components=101):
-    dsid, pars = get_features_cached(app, hashed=hashed,
+    dsid, pars, input_ds = get_features_cached(app, hashed=hashed,
                               n_categories=n_categories)
     lsi_pars = dict(n_components=n_components, parent_id=dsid)
     method = V01 + "/lsi/"
@@ -142,4 +142,4 @@ def get_features_lsi_cached(app, hashed=True, n_categories=2, n_components=101):
     data = parse_res(res)
     assert dict2type(data) == {'explained_variance': 'float', 'id': 'str'}
     lsi_id = data['id']
-    return dsid, lsi_id, pars
+    return dsid, lsi_id, pars, input_ds

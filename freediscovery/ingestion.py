@@ -24,6 +24,32 @@ def _list_filenames(data_dir, dir_pattern=None, file_pattern=None):
     # make sure that sorting order is deterministic
     return sorted(filenames)
 
+def _check_mutual_index(keys1, keys2):
+    """ Given two datasets with columns keys1 and keys2,
+    returns the columns that could be used as an index
+    """
+    if 'internal_id' in keys1 and 'internal_id' in keys2:
+        index_cols = ['internal_id',]
+    elif "document_id" in keys1 and \
+         "document_id" in keys2 and \
+         "rendition_id" in keys1 and \
+         "rendition_id" in keys2:
+        index_cols = ['document_id', 'rendition_id']
+    elif "document_id" in keys1 and \
+         "document_id" in keys2:
+        index_cols = ['document_id']
+    elif "file_path" in keys1 and \
+         "file_path" in keys2:
+        index_cols = ['file_path']
+    else:
+        raise ValueError("Cannot create a mutual index from columns\n keys1 : {}\n keys2: {}".format(
+             list(keys1), list(keys2)))
+
+    return index_cols
+
+
+
+
 
 class DocumentIndex(object):
     def __init__(self, data_dir, data, filenames):
@@ -50,25 +76,10 @@ class DocumentIndex(object):
         if keys is None:
             keys = ['internal_id']
 
-        if "internal_id" in keys:
-            index_cols = ['internal_id',]
-        elif "document_id" in keys and \
-             "document_id" in self.data.columns and \
-             "rendition_id" in keys and \
-             "rendition_id" in self.data.columns:
-            index_cols = ['document_id', 'rendition_id']
-        elif "document_id" in keys and \
-             "document_id" in self.data.columns:
-            if self.data.document_id.is_unique:
-                index_cols = ['document_id',]
-            else:
-                raise ValueError('document_id cannot be used as an index, since it has duplicates'
+        index_cols = _check_mutual_index(keys, self.data.columns)
+        if index_cols == ["document_id"] and not self.data.document_id.is_unique:
+            raise ValueError('document_id cannot be used as an index, since it has duplicates'
                                  ' (and rendition_id has duplicates)')
-        elif "file_path" in keys and \
-             "file_path" in self.data.columns:
-            index_cols = ['file_path']
-        else:
-            raise ValueError('The query columns {} cannot be used as an index'.format(list(keys)))
 
         if len(index_cols) == 1:
             index_cols = index_cols[0]

@@ -158,7 +158,7 @@ class _CategorizerWrapper(_BaseWrapper):
             raise WrongParameter('Method {} not implemented!'.format(method))
         return cmod
 
-    def train(self, index, y, method='LinearSVC', cv=None):
+    def fit(self, index, y, method='LinearSVC', cv=None):
         """
         Train the categorization model
 
@@ -269,8 +269,9 @@ class _CategorizerWrapper(_BaseWrapper):
 
         nn_ind = None
         if isinstance(cmod, NearestNeighborRanker):
-            res, nn_ind = cmod.kneighbors(ds)
+            res, nn_ind_orig = cmod.kneighbors(ds)
             res = _scale_cosine_similarity(res, metric=nn_metric)
+            nn_ind = self._pars['index'][nn_ind_orig]
         elif hasattr(cmod, ml_output):
             res = getattr(cmod, ml_output)(ds)
         elif hasattr(cmod, 'decision_function'):
@@ -352,7 +353,7 @@ class _CategorizerWrapper(_BaseWrapper):
                 for Y_el, nn_el, label_el in sorted(zip(Y_row, nn_row, labels),
                                                     key=sort_func, reverse=True)[:max_result_categories]:
                     iiel = {'score': Y_el, 'internal_id': nn_el, 'category': label_el}
-                    iiel.update(id_mapping.loc[idx].to_dict())
+                    iiel.update(id_mapping.loc[nn_el].to_dict())
                     iscores.append(iiel)
             else:
                 # no nearest neighbors available
@@ -362,6 +363,8 @@ class _CategorizerWrapper(_BaseWrapper):
                     iscores.append(iiel)
             ires['scores'] = iscores
             res.append(ires)
+            #import json
+            #print(json.dumps(res, indent=4))
         if sort:
             res = sorted(res, key=lambda x: x['scores'][0]['score'], reverse=True)
         return {'data': res}

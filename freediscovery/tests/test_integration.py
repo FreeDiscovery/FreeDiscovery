@@ -65,7 +65,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
         index = cat.fe.db._search_filenames(ground_truth.file_path.values)
 
         try:
-            coefs, Y_train = cat.train(
+            coefs, Y_train = cat.fit(
                                     index,
                                     ground_truth.is_relevant.values,
                                     method=method

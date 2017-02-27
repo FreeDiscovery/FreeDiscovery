@@ -12,7 +12,7 @@ Open Source Software for E-Discovery and Information Retrieval
 
 FreeDiscovery is built on top of existing machine learning libraries (scikit-learn) and provides REST web services for information retrieval applications. It aims to benefit existing e-discovery platforms with a focus on the following functionality, 
 
-- binary text categorization
+- text categorization
 - document clustering
 - duplicate detection
 - e-mail threading

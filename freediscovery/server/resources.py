@@ -8,7 +8,7 @@ import os
 from glob import glob
 from textwrap import dedent
 
-#from flask_restful import Resource
+from flask import request
 from webargs import fields as wfields
 from flask_apispec import (marshal_with, use_kwargs as use_args,
                            MethodResource as Resource)
@@ -26,6 +26,7 @@ except:  # sklearn v0.18
 
 from ..text import FeatureVectorizer
 from ..parsers import EmailParser
+from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..io import parse_ground_truth_file
@@ -39,7 +40,7 @@ from ..datasets import load_dataset
 from ..exceptions import WrongParameter
 from ..stop_words import _StopWordsWrapper
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema, DocumentIndexListSchema,
+                      FeaturesSchema,
                       DocumentIndexNestedSchema,
                       EmailParserSchema, EmailParserElementIndexSchema,
                       ExampleDatasetSchema,
@@ -47,6 +48,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       ClassificationScoresSchema, _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
+                      _CategorizationIndex, _CategorizationPredictSchemaElement,
                       ErrorSchema, DuplicateDetectionSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
@@ -331,7 +333,7 @@ class ModelsApi(Resource):
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
-            - `data`: a list of dict which have a `category` field and one or several fields that can be used for indexing, such as `internal_id`, `document_id`, `file_path`, `rendition_id`.
+            - `data`: a list of dict which have a `category` field and one or several fields that can be used for indexing, such as `document_id` and optionally `rendition_id`.
             - `method`: classification algorithm to use (default: LogisticRegression),
               * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
               * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),
@@ -340,7 +342,7 @@ class ModelsApi(Resource):
               * "xgboost": [Gradient Boosting](https://xgboost.readthedocs.io/en/latest/model.html)
                    (*Warning:* for the moment xgboost is not istalled for a direct install on Windows)
             - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default True).
-            - `training_scores`: binary, compute the efficiency scores on the training dataset (default True).
+            - `training_scores`: binary, compute the efficiency scores on the training dataset. This would make computations much slower for NearestNeighbors (default False). 
           """))
     @use_args(_CategorizationInputSchema())
     @marshal_with(CategorizationPostSchema())
@@ -362,14 +364,14 @@ class ModelsApi(Resource):
             cv = None
         for key in ['parent_id', 'cv', 'training_scores']:
             del args[key]
-        _, Y_train = cat.train(cv=cv, **args)
+        _, Y_train = cat.fit(cv=cv, **args)
         idx_train = args['index']
-        res = {'id': cat.mid}
+        res = {'id': cat.mid, 'training_scores': {}}
         if training_scores:
             Y_res, md = cat.predict()
             idx_res = np.arange(cat.fe.n_samples_, dtype='int')
-            res.update(categorization_score(idx_train, Y_train,
-                                       idx_res, np.argmax(Y_res, axis=1)))
+            res['training_scores'] = categorization_score(idx_train, Y_train,
+                                       idx_res, np.argmax(Y_res, axis=1))
         return res
 
 
@@ -422,32 +424,6 @@ class ModelsApiPredict(Resource):
                                           min_score=min_score)
         return res
 
-
-_models_api_test = {'ground_truth_filename' : wfields.Str(required=True)}
-
-
-class ModelsApiTest(Resource):
-
-    @doc(description=dedent("""
-           Test the categorization model
-
-           **Parameters**
-            - `ground_truth_filename`: [required] tab-delimited file name with a unique document ID followed by a 1 for relevant or 0 for non-relevant document
-
-          """))
-    @use_args(_models_api_test)
-    @marshal_with(ClassificationScoresSchema())
-    def post(self, mid, **args):
-        cat = _CategorizerWrapper(self._cache_dir, mid=mid)
-
-        y_res, md = cat.predict()
-        d_ref = parse_ground_truth_file( args["ground_truth_filename"])
-        idx_ref = cat.fe.db._search_filenames(d_ref.file_path.values)
-        idx_res = np.arange(cat.fe.n_samples_, dtype='int')
-        res = categorization_score(idx_ref,
-                                   d_ref.is_relevant.values,
-                                   idx_res, y_res)
-        return res
 
 
 # ============================================================================ #
@@ -691,11 +667,6 @@ class DupDetectionApiElement(Resource):
 # ============================================================================ #
 #                             Metrics                                          #
 # ============================================================================ #
-_metrics_categorization_api_get_args  = {
-    'y_true': wfields.List(wfields.Int(), required=True),
-    'y_pred': wfields.List(wfields.Number(), required=True),
-    'metrics': wfields.List(wfields.Str())
-}
 
 class MetricsCategorizationApiElement(Resource):
     @doc(description=dedent("""
@@ -703,35 +674,82 @@ class MetricsCategorizationApiElement(Resource):
           of categorization, comparing the groud truth labels with the predicted ones.
 
           **Parameters**
-            - y_true: [required] list of int. Ground truth labels
-            - y_pred: [required] list of int. Predicted labels
+            - y_true: [required] ground truth categorization data
+            - y_pred: [required] predicted categorization results
             - metrics: [required] list of str. Metrics to compute, any combination of "precision", "recall", "f1", "roc_auc"
           """))
-    @use_args(_metrics_categorization_api_get_args)
+    @use_args({'y_true': wfields.Nested(_CategorizationIndex, many=True, required=True),
+               'y_pred': wfields.Nested(_CategorizationPredictSchemaElement, many=True, required=True),
+               'metrics': wfields.List(wfields.Str())})
     @marshal_with(MetricsCategorizationSchema())
     def post(self, **args):
+        from sklearn.preprocessing import LabelEncoder
         output_metrics = {}
-        y_true = np.array(args['y_true'], dtype='int')
-        y_pred = np.array(args['y_pred'], dtype='float')
-        threshold = 0
-        y_pred_b = (y_pred > threshold).astype('int')
+        y_true = pd.DataFrame(args['y_true'])
+
+        y_pred_b = []
+        for row in args['y_pred']:
+            nrow = {'document_id': row['document_id'],
+                    'category': row['scores'][0]['category'],
+                    'score': row['scores'][0]['score']}
+            y_pred_b.append(nrow)
+
+        y_pred_b = pd.DataFrame(y_pred_b)
+        index_cols = _check_mutual_index(y_true.columns, y_pred_b.columns)
+
+        y_true = y_true.set_index(index_cols, verify_integrity=True)
+        y_pred_b = y_pred_b.set_index(index_cols, verify_integrity=True)
+
+        le = LabelEncoder()
+        y_true['category_id'] = le.fit_transform(y_true.category.values)
+        y_pred_b['category_id'] = le.transform(y_pred_b.category.values)
+
+
+        y = y_true[['category_id']].merge(y_pred_b[['category_id', 'score']],
+                                          how='inner',
+                                          left_index=True,
+                                          right_index=True,
+                                          suffixes=('_true', '_pred'))
         if 'metrics' in args:
             metrics = args['metrics']
         else:
             metrics = ['precision', 'recall', 'roc_auc', 'f1', 'average_precision']
 
+        _binary_metrics = ['precision', 'recall', 'f1']
+
+        cy_true = y.category_id_true.values
+        cy_pred = y.category_id_pred.values
+
+        n_classes = len(le.classes_)
+
+        if n_classes == 2:
+            cy_pred_score = y.score.values
+            cy_pred_score[cy_pred == 0] *= -1
+
         # wrapping metrics calculations, as for example F1 score can frequently print warnings
         # "F-score is ill defined and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
-            for func, y_targ in [(precision_score, y_pred_b),
-                                 (recall_score, y_pred_b),
-                                 (f1_score, y_pred_b),
-                                 (roc_auc_score, y_pred),
-                                 (average_precision_score, y_pred)]:
+            for func in [precision_score,
+                         recall_score,
+                         f1_score,
+                         roc_auc_score,
+                         average_precision_score]:
                 name = func.__name__.replace('_score', '')
+                if name in ['roc_auc', 'average_precision'] and n_classes == 2:
+                    y_targ = cy_pred_score
+                else:
+                    y_targ = cy_pred
+
+                if name in _binary_metrics and n_classes != 2:
+                    opts = {'average': 'micro'}
+                else:
+                    opts = {}
                 if name in metrics:
-                    output_metrics[name] = func(y_true, y_targ)
+                    if n_classes == 2 or name in _binary_metrics:
+                        output_metrics[name] = func(cy_true, y_targ, **opts)
+                    else:
+                        output_metrics[name] = np.nan
 
         return output_metrics
 
