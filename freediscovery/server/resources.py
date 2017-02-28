@@ -51,7 +51,7 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       _CategorizationIndex, _CategorizationPredictSchemaElement,
-                      ErrorSchema, DuplicateDetectionSchema,
+                      ErrorSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
@@ -555,11 +555,6 @@ class DBSCANClusteringApi(Resource):
         return {'id': cl.mid}
 
 
-_clustering_api_get_args = {
-        'n_top_words': wfields.Int(missing=5)
-        }
-
-
 class ClusteringApiElement(Resource):
 
     @doc(description=dedent("""
@@ -567,11 +562,15 @@ class ClusteringApiElement(Resource):
 
            **Parameters**
             - `n_top_words`: keep only most relevant `n_top_words` words
-            - `label_method`: str, default='centroid-frequency' the method used for computing the cluster labels
+            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             """))
-    @use_args(_clustering_api_get_args)
+    @use_args({ 'n_top_words': wfields.Int(missing=5),
+               'nn_metric': wfields.Str(missing='jaccard_norm')
+          })
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):  # TODO unused parameter 'method'
+
+        nn_metric = args.pop('nn_metric')
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
 
@@ -582,7 +581,32 @@ class ClusteringApiElement(Resource):
         if args['n_top_words'] > 0:
             terms = cl.compute_labels(**args)
         else:
-            terms = []
+            terms = None
+
+        cl._fit_X = cl.pipeline.data
+
+        y = cl._merge_response(km.labels_)
+        res = []
+        valid_keys = ['document_id', 'rendering_id', 'similarity']
+        for name, group in y.groupby('cluster_id'):
+            name = int(name)
+            if group.shape[0] <= 1:
+                continue
+
+            S_sim_mean, S_sim = cl.centroid_similarity(group.index.values, nn_metric)
+            group = group.assign(similarity=S_sim)
+
+            row_docs = []
+            for idx, row in group.iterrows():
+                row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+            row['documents'] = row_docs
+            irow = {'documents': row_docs, 'cluster_id': int(name),
+                        'cluster_similarity': S_sim_mean}
+            if terms is not None:
+                irow['cluster_label'] = ' '.join(terms[name])
+            res.append(irow)
+
+        return {'data': res}
 
         pars = cl._load_pars()
         return {'labels': km.labels_.tolist(), 'cluster_terms': terms,
@@ -635,18 +659,17 @@ class DupDetectionApiElement(Resource):
            Query duplicates
 
            **Parameters**
-            - distance : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only)
-            - n_rand_lexicons : int, default=1 number of random lexicons used for duplicate detection (I-Match method only)
-            - rand_lexicon_ratio: float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
-            - nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-
+            - `distance` : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only)
+            - `n_rand_lexicons` : int, default=1 number of random lexicons used for duplicate detection (I-Match method only)
+            - `rand_lexicon_ratio` : float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
+            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
           """))
     @use_args({'distance': wfields.Int(),
                'n_rand_lexicons': wfields.Int(),
                'rand_lexicon_ratio': wfields.Number(),
                'nn_metric': wfields.Str(missing='jaccard_norm')
                })
-    @marshal_with(DuplicateDetectionSchema())
+    @marshal_with(ClusteringSchema())
     def get(self, mid, **args):
 
         nn_metric = args.pop('nn_metric')
@@ -654,18 +677,7 @@ class DupDetectionApiElement(Resource):
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
         model._fit_X = model.pipeline.data # load the data
-        res_scores = pd.DataFrame({'internal_id': np.arange(model.fe.n_samples_, dtype='int'),
-                                   'cluster_id': cluster_id})
-
-        res_scores = res_scores.set_index('internal_id', verify_integrity=True)
-        fdb = model.fe.db.data.set_index('internal_id', verify_integrity=True)
-
-        #res = model.fe.db.render_dict(res_scores)
-        y = fdb.merge(res_scores,
-                      how='inner',
-                      left_index=True,
-                      right_index=True,
-                      suffixes=('_db', '_cluster'))
+        y = model._merge_response(cluster_id)
         res = []
         valid_keys = ['document_id', 'rendering_id', 'similarity']
         for name, group in y.groupby('cluster_id'):
@@ -673,7 +685,7 @@ class DupDetectionApiElement(Resource):
                 continue
 
             S_sim_mean, S_sim = model.centroid_similarity(group.index.values, nn_metric)
-            group.similarity = S_sim
+            group = group.assign(similarity=S_sim)
 
             row_docs = []
             for idx, row in group.iterrows():

@@ -10,6 +10,7 @@ import os.path
 
 import numpy as np
 from sklearn.externals import joblib
+import pandas as pd
 
 from ..base import _BaseWrapper
 from ..utils import setup_model
@@ -155,10 +156,28 @@ class _BaseClusteringWrapper(object):
         X_sl = X[internal_ids, :]
         centroid = X_sl.mean(axis=0)
 
+        if centroid.ndim == 1:
+            centroid = centroid[None, :]
+
         S_cos = 1 - pairwise_distances(X_sl, centroid, metric='cosine')
         S_sim = _scale_cosine_similarity(S_cos, metric=nn_metric)
         S_sim_mean = np.mean(S_sim)
-        return S_sim_mean, S_sim[:,0]
+        return float(S_sim_mean), S_sim[:,0]
+
+    def _merge_response(self, cluster_id):
+        res_scores = pd.DataFrame({'internal_id': np.arange(self.fe.n_samples_, dtype='int'),
+                                   'cluster_id': cluster_id})
+
+        res_scores = res_scores.set_index('internal_id', verify_integrity=True)
+        fdb = self.fe.db.data.set_index('internal_id', verify_integrity=True)
+
+        y = fdb.merge(res_scores,
+                      how='inner',
+                      left_index=True,
+                      right_index=True,
+                      suffixes=('_db', '_cluster'))
+        return y
+
 
 
 class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
@@ -202,7 +221,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         if pars is None:
             pars = {}
         pars.update(km.get_params(deep=True))
-        X = self.pipeline.data
+        self._fit_X = X = self.pipeline.data
 
         mid, mid_dir = setup_model(self.model_dir)
 

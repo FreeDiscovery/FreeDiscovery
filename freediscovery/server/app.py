@@ -106,7 +106,7 @@ def fd_app(cache_dir):
 
         ressource_name = resource_el.__name__
         app.add_url_rule('/api/v0' + url, view_func=resource_el.as_view(ressource_name))
-        if ressource_name not in [ "EmailThreadingApi" ]:
+        if ressource_name not in ["EmailThreadingApi" ]:
             # the above two cases fail due to recursion limit
             docs.register(resource_el, endpoint=ressource_name)
 
