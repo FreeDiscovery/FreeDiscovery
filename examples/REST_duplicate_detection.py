@@ -130,9 +130,10 @@ res = requests.get(url,
 t1 = time()
 print('    .. computed in {:.1f}s'.format(time() - t0))
 
-labels_ = res['cluster_id']
+data = res['data']
 
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data]),
+                                        len(input_ds['dataset'])))
 
 
 
@@ -166,9 +167,10 @@ res = requests.get(url,
 data = res.json()
 print('    .. computed in {:.1f}s'.format(time() - t0))
 
-labels_ = data['cluster_id']
+data = data['data']
 
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data]),
+                                        len(input_ds['dataset'])))
 
 
 
