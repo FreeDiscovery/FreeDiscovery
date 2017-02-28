@@ -7,6 +7,7 @@
 ### New features  
 
  * Support for multi-class categorization and non integer class labels (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files)) 
+ * In the case of binary categorization, recall at 20 % of documents is computed as part of the list of default scores (PR [#106](https://github.com/FreeDiscovery/FreeDiscovery/pull/106))
 
 ### Enhancements
 

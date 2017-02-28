@@ -52,6 +52,7 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf examples/
 	rm -rf modules/generated/*
+	rm -rf generated/*
 
 
 html:
