@@ -716,7 +716,8 @@ class MetricsCategorizationApiElement(Resource):
         if 'metrics' in args:
             metrics = args['metrics']
         else:
-            metrics = ['precision', 'recall', 'roc_auc', 'f1', 'average_precision']
+            metrics = ['precision', 'recall', 'roc_auc',
+                       'f1', 'average_precision', 'recall_at_k']
 
         _binary_metrics = ['precision', 'recall', 'f1']
 
@@ -741,9 +742,9 @@ class MetricsCategorizationApiElement(Resource):
                          recall_at_k_score]:
                 name = func.__name__.replace('_score', '')
                 opts = {}
-                if name in ['roc_auc', 'average_precision', 'recall_at_k_score'] and n_classes == 2:
+                if name in ['roc_auc', 'average_precision', 'recall_at_k'] and n_classes == 2:
                     y_targ = cy_pred_score
-                    if name == 'recall_at_k_score':
+                    if name == 'recall_at_k':
                         opts = {'k': 0.2}
                 else:
                     y_targ = cy_pred
@@ -755,6 +756,8 @@ class MetricsCategorizationApiElement(Resource):
                         output_metrics[name] = func(cy_true, y_targ, **opts)
                     else:
                         output_metrics[name] = np.nan
+            print(output_metrics.keys())
+            output_metrics['recall_at_20p'] = output_metrics.pop('recall_at_k')
 
         return output_metrics
 

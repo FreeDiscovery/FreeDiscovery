@@ -128,18 +128,20 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
                                                     'average_precision': 'float',
                                                     'recall_at_20p': 'float'}}
 
+    training_scores = data['training_scores']
+    print(training_scores)
     if n_categories_train == 1:
-        assert data['training_scores']['f1'] > 0.99
+        assert training_scores['f1'] > 0.99
     elif n_categories == 2:
-        assert data['training_scores']['average_precision'] > 0.73
+        assert training_scores['average_precision'] > 0.73
         if solver == 'NearestNeighbor':
-            assert data['training_scores']['roc_auc'] > 0.7
+            assert training_scores['roc_auc'] > 0.7
         else:
-            assert data['training_scores']['roc_auc'] >= 0.5
+            assert training_scores['roc_auc'] >= 0.5
     elif n_categories == 3 and solver == 'NearestNeighbor':
-        assert data['training_scores']['f1'] > 0.6
+        assert training_scores['f1'] > 0.6
     else:
-        assert data['training_scores']['f1'] > 0.3
+        assert training_scores['f1'] > 0.3
 
     mid = data['id']
 
@@ -187,7 +189,9 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
                                'recall': 'float',
                                'f1': 'float',
                                'roc_auc': 'float',
-                               'average_precision': 'float'}
+                               'average_precision': 'float',
+                               'recall_at_20p': 'float'}
+    print(data)
     if n_categories == 2:
         assert data['average_precision'] > 0.7
         assert data['roc_auc'] > 0.7
