@@ -14,7 +14,7 @@ from numpy.testing import (assert_allclose, assert_equal,
                            assert_array_less)
 
 import pytest
-from freediscovery.utils import categorization_score
+from freediscovery.metrics import categorization_score
 from freediscovery.pipeline import _split_path, PipelineFinder
 from .run_suite import check_cache
 

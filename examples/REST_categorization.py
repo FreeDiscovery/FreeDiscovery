@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
         mid = res['id']
         print("     => model id = {}".format(mid))
-        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, F1= {f1:.3f}'.format(**res['training_scores']))
+        print('    => Training scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, recall @20%: {recall_at_20p:.3f} '.format(**res['training_scores']))
 
         print("\n3.b. Check the parameters used in the categorization model")
         url = BASE_URL + '/categorization/{}'.format(mid)
@@ -168,7 +168,7 @@ if __name__ == '__main__':
                                       'y_pred': res['data'] }).json()
 
 
-        print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}'.format(**res))
+        print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, recall @20%: {recall_at_20p:.3f} '.format(**res))
 
     # 4. Cleaning
     print("\n5.a Delete the extracted features (and LSI decomposition)")

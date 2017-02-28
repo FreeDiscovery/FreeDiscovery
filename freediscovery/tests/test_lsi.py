@@ -13,8 +13,6 @@ import pytest
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
-from freediscovery.utils import categorization_score
-from freediscovery.io import parse_ground_truth_file
 from .run_suite import check_cache
 
 

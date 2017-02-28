@@ -95,6 +95,7 @@ class ClassificationScoresSchema(Schema):
     f1 = fields.Number(required=True)
     roc_auc = fields.Number(required=True)
     average_precision = fields.Number(required=True)
+    recall_at_20p = fields.Number()
 
 
 class LsiParsSchema(Schema):
@@ -183,6 +184,7 @@ class MetricsCategorizationSchema(Schema):
     f1 = fields.Number()
     roc_auc = fields.Number()
     average_precision = fields.Number()
+    recall_at_20p = fields.Number()
 
 
 class MetricsClusteringSchema(Schema):

@@ -15,6 +15,7 @@ from .run_suite import check_cache
 
 from freediscovery.metrics import (ratio_duplicates_score,
                                    f1_same_duplicates_score,
+                                   recall_at_k_score,
                                    mean_duplicates_count_score,
                                    seuclidean_dist2cosine_sim)
 
@@ -71,6 +72,29 @@ def test_cosine_jaccard_norm(metric):
     elif metric == 'jaccard':
         assert_allclose(S_res, 0.5, rtol=0.1)
 
+
+def test_recall_at_k_score():
+    y_true = np.array([0, 1, 0, 1, 0])
+    y_pred = np.array([0.2, 0.8, 0.1, 0.5, 0.6])  # just an ids renaming
+
+    score = recall_at_k_score(y_true, y_pred, k=0)
+    assert score == 0.0
+    score = recall_at_k_score(y_true, y_pred, k=len(y_true))
+    assert score == 1.0
+    score = recall_at_k_score(y_true, y_pred, k=1)
+    assert score == 0.5
+    score = recall_at_k_score(y_true, y_pred, k=2)
+    assert score == 0.5
+    score = recall_at_k_score(y_true, y_pred, k=3)
+    assert score == 1.0
+
+    # test float input
+    score = recall_at_k_score(y_true, y_pred, k=0.)
+    assert score == 0.0
+    score = recall_at_k_score(y_true, y_pred, k=0.2)
+    assert score == 0.5
+    score = recall_at_k_score(y_true, y_pred, k=1.0)
+    assert score == 1.0
 
 
 
