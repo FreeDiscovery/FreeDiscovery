@@ -55,7 +55,6 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
-                      ErrorSchema, DuplicateDetectionSchema,
                       SearchResponseSchema, DocumentIndexSchema,
                       EmptySchema,
                       CustomStopWordsSchema, CustomStopWordsLoadSchema
@@ -630,30 +629,60 @@ class DupDetectionApi(Resource):
 
         return {'id': model.mid}
 
-_dupdet_api_get_args = {
-        'distance': wfields.Int(),
-        'n_rand_lexicons': wfields.Int(),
-        'rand_lexicon_ratio': wfields.Number()
-        }
-
-
 class DupDetectionApiElement(Resource):
 
     @doc(description=dedent("""
            Query duplicates
 
            **Parameters**
-            - distance : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only) - n_rand_lexicons : int, default=1
-              number of random lexicons used for duplicate detection (I-Match method only)
+            - distance : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only)
+            - n_rand_lexicons : int, default=1 number of random lexicons used for duplicate detection (I-Match method only)
             - rand_lexicon_ratio: float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
+            - nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+
           """))
-    @use_args(_dupdet_api_get_args)
+    @use_args({'distance': wfields.Int(),
+               'n_rand_lexicons': wfields.Int(),
+               'rand_lexicon_ratio': wfields.Number(),
+               'nn_metric': wfields.Str(missing='jaccard_norm')
+               })
     @marshal_with(DuplicateDetectionSchema())
     def get(self, mid, **args):
 
+        nn_metric = args.pop('nn_metric')
+
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
-        return {'cluster_id': cluster_id}
+        model._fit_X = model.pipeline.data # load the data
+        res_scores = pd.DataFrame({'internal_id': np.arange(model.fe.n_samples_, dtype='int'),
+                                   'cluster_id': cluster_id})
+
+        res_scores = res_scores.set_index('internal_id', verify_integrity=True)
+        fdb = model.fe.db.data.set_index('internal_id', verify_integrity=True)
+
+        #res = model.fe.db.render_dict(res_scores)
+        y = fdb.merge(res_scores,
+                      how='inner',
+                      left_index=True,
+                      right_index=True,
+                      suffixes=('_db', '_cluster'))
+        res = []
+        valid_keys = ['document_id', 'rendering_id', 'similarity']
+        for name, group in y.groupby('cluster_id'):
+            if group.shape[0] <= 1:
+                continue
+
+            S_sim_mean, S_sim = model.centroid_similarity(group.index.values, nn_metric)
+            group.similarity = S_sim
+
+            row_docs = []
+            for idx, row in group.iterrows():
+                row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+            row['documents'] = row_docs
+            res.append({'documents': row_docs, 'cluster_id': name,
+                        'cluster_similarity': S_sim_mean})
+
+        return {'data': res}
 
 
     @marshal_with(EmptySchema())
@@ -881,8 +910,8 @@ class SearchApi(Resource):
 
             Parameters
             ----------
-            nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            min_score : filter out results below a similarity threashold
+            - nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - min_score : filter out results below a similarity threashold
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True),

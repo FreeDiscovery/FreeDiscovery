@@ -135,8 +135,33 @@ class ClusterLabels(object):
         #"else:
         #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
 
+class _BaseClusteringWrapper(object):
 
-class _ClusteringWrapper(_BaseWrapper):
+    def centroid_similarity(self, internal_ids, nn_metric='jaccard_norm'):
+        """ Given a list of documents in a cluster, compute the cluster centroid,
+        intertia and individual distances 
+
+        Parameters
+        ----------
+        internal_ids : list
+          a list of internal ids
+        nn_metric : str
+          a rescaling of the metric if needed
+        """
+        from ..metrics import _scale_cosine_similarity
+        from sklearn.metrics.pairwise import pairwise_distances
+        X = self._fit_X
+
+        X_sl = X[internal_ids, :]
+        centroid = X_sl.mean(axis=0)
+
+        S_cos = 1 - pairwise_distances(X_sl, centroid, metric='cosine')
+        S_sim = _scale_cosine_similarity(S_cos, metric=nn_metric)
+        S_sim_mean = np.mean(S_sim)
+        return S_sim_mean, S_sim[:,0]
+
+
+class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
     """Document clustering
 
     The algorithms are adapted from scikit learn.

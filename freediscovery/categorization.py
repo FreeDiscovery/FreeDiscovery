@@ -363,8 +363,6 @@ class _CategorizerWrapper(_BaseWrapper):
                     iscores.append(iiel)
             ires['scores'] = iscores
             res.append(ires)
-            #import json
-            #print(json.dumps(res, indent=4))
         if sort:
             res = sorted(res, key=lambda x: x['scores'][0]['score'], reverse=True)
         return {'data': res}

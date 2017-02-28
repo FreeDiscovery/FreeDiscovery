@@ -14,7 +14,7 @@
  * Categorization and semantic search support sorting and filtering of documents below a user provided threashold. (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files))
  * The similarity and ML scores can now be scaled to [0, 1] range using `nn_metric` and `ml_output` input parameters (PR [#101](https://github.com/FreeDiscovery/FreeDiscovery/pull/100/files)).
  * The REST API documentation is generated automatically from the code (using an OpenAPI specification) which allows to enforce consistency between the code and the docs (PR [#85](https://github.com/FreeDiscovery/FreeDiscovery/pull/85))
- 
+ * Adapted clustering and duplicate detection to reuturn documents indexed by `document_id`, `rendering_id`
 
 
 ### API Changes

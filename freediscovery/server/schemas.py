@@ -153,11 +153,16 @@ class ClusteringSchema(Schema):
     htree = fields.Nested(_HTreeSchema()) 
     pars = fields.Str(required=True)
 
-class DuplicateDetectionSchema(Schema):
-    simhash = fields.List(fields.Int(), required=True)
-    cluster_id = fields.List(fields.Int(), required=True)
-    dup_pairs = fields.List(fields.List(fields.Int()), required=True)
+class _ClusteringElementSubSchema(DocumentIndexSchema):
+    similarity = fields.Number()
 
+class _ClusteringElementSchema(DocumentIndexSchema):
+    cluster_id = fields.Int(required=True)
+    cluster_similarity = fields.Number()
+    documents = fields.Nested(_ClusteringElementSubSchema, many=True, required=True)
+
+class DuplicateDetectionSchema(Schema):
+    data = fields.Nested(_ClusteringElementSchema, many=True, required=True)
 
 class EmailThreadingParsSchema(Schema):
     group_by_subject = fields.Boolean(required=True)
