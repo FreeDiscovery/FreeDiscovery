@@ -398,13 +398,12 @@ class ModelsApiPredict(Resource):
     @doc(description=dedent("""
             Predict document categorization with a previously trained model
 
-            Parameters
-            ----------
-            max_result_categories : the maximum number of categories in the results
-            sort : sort by the score of the most likely class
-            ml_output : type of the output in ['decision_function', 'probability'], only affects ML methods.
-            nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            min_score : filter out results below a similarity threashold
+            **Parameters* 
+             - `max_result_categories` : the maximum number of categories in the results
+             - `sort` : sort by the score of the most likely class
+             - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
+             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+             - `min_score` : filter out results below a similarity threashold
             """))
     @use_args({'max_result_categories': wfields.Int(missing=1),
                'sort': wfields.Boolean(missing=False),
@@ -673,7 +672,10 @@ class DupDetectionApiElement(Resource):
 class MetricsCategorizationApiElement(Resource):
     @doc(description=dedent("""
           Compute categorization metrics to assess the quality
-          of categorization, comparing the groud truth labels with the predicted ones.
+          of categorization.
+
+          In the case of binary categrorization, category labels are sorted alphabetically
+          and the second one is expected to be the positive one.
 
           **Parameters**
             - y_true: [required] ground truth categorization data
@@ -704,9 +706,9 @@ class MetricsCategorizationApiElement(Resource):
         y_pred_b = y_pred_b.set_index(index_cols, verify_integrity=True)
 
         le = LabelEncoder()
+        # this also sorts label by arithmetic order
         y_true['category_id'] = le.fit_transform(y_true.category.values)
         y_pred_b['category_id'] = le.transform(y_pred_b.category.values)
-
 
         y = y_true[['category_id']].merge(y_pred_b[['category_id', 'score']],
                                           how='inner',
@@ -756,8 +758,8 @@ class MetricsCategorizationApiElement(Resource):
                         output_metrics[name] = func(cy_true, y_targ, **opts)
                     else:
                         output_metrics[name] = np.nan
-            print(output_metrics.keys())
-            output_metrics['recall_at_20p'] = output_metrics.pop('recall_at_k')
+            if "recall_at_k" in output_metrics:
+                output_metrics['recall_at_20p'] = output_metrics.pop('recall_at_k')
 
         return output_metrics
 
