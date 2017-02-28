@@ -140,24 +140,19 @@ class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
     options = fields.Str(required=True)
 
+class _ClusteringElementSubSchema(DocumentIndexSchema):
+    similarity = fields.Number()
 
-class _HTreeSchema(Schema):
-    n_leaves = fields.Int(required=True)
-    n_components = fields.Int(required=True)
-    children = fields.List(fields.List(fields.Int), required=True)
-
+class _ClusteringElementSchema(DocumentIndexSchema):
+    cluster_id = fields.Int(required=True)
+    cluster_similarity = fields.Number()
+    cluster_label = fields.Str()
+    cluster_depth = fields.Int()
+    children = fields.List(fields.Int())
+    documents = fields.Nested(_ClusteringElementSubSchema, many=True, required=True)
 
 class ClusteringSchema(Schema):
-    labels = fields.List(fields.Int(), required=True)
-    cluster_terms = fields.List(fields.List(fields.Str()), required=True)
-    htree = fields.Nested(_HTreeSchema()) 
-    pars = fields.Str(required=True)
-
-class DuplicateDetectionSchema(Schema):
-    simhash = fields.List(fields.Int(), required=True)
-    cluster_id = fields.List(fields.Int(), required=True)
-    dup_pairs = fields.List(fields.List(fields.Int()), required=True)
-
+    data = fields.Nested(_ClusteringElementSchema, many=True, required=True)
 
 class EmailThreadingParsSchema(Schema):
     group_by_subject = fields.Boolean(required=True)
@@ -169,7 +164,7 @@ class TreeSchema(Schema):
     id = fields.Int(required=True)
     parent = fields.Int(allow_none=True, required=True)
     subject = fields.Str()
-    children = fields.Nested('self', many=True, required=True)
+    children = fields.Nested('self', many=True)
 
 
 class EmailThreadingSchema(Schema):

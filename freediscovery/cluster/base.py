@@ -10,6 +10,7 @@ import os.path
 
 import numpy as np
 from sklearn.externals import joblib
+import pandas as pd
 
 from ..base import _BaseWrapper
 from ..utils import setup_model
@@ -135,8 +136,51 @@ class ClusterLabels(object):
         #"else:
         #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
 
+class _BaseClusteringWrapper(object):
 
-class _ClusteringWrapper(_BaseWrapper):
+    def centroid_similarity(self, internal_ids, nn_metric='jaccard_norm'):
+        """ Given a list of documents in a cluster, compute the cluster centroid,
+        intertia and individual distances 
+
+        Parameters
+        ----------
+        internal_ids : list
+          a list of internal ids
+        nn_metric : str
+          a rescaling of the metric if needed
+        """
+        from ..metrics import _scale_cosine_similarity
+        from sklearn.metrics.pairwise import pairwise_distances
+        X = self._fit_X
+
+        X_sl = X[internal_ids, :]
+        centroid = X_sl.mean(axis=0)
+
+        if centroid.ndim == 1:
+            centroid = centroid[None, :]
+
+        S_cos = 1 - pairwise_distances(X_sl, centroid, metric='cosine')
+        S_sim = _scale_cosine_similarity(S_cos, metric=nn_metric)
+        S_sim_mean = np.mean(S_sim)
+        return float(S_sim_mean), S_sim[:,0]
+
+    def _merge_response(self, cluster_id):
+        res_scores = pd.DataFrame({'internal_id': np.arange(self.fe.n_samples_, dtype='int'),
+                                   'cluster_id': cluster_id})
+
+        res_scores = res_scores.set_index('internal_id', verify_integrity=True)
+        fdb = self.fe.db.data.set_index('internal_id', verify_integrity=True)
+
+        y = fdb.merge(res_scores,
+                      how='inner',
+                      left_index=True,
+                      right_index=True,
+                      suffixes=('_db', '_cluster'))
+        return y
+
+
+
+class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
     """Document clustering
 
     The algorithms are adapted from scikit learn.
@@ -177,7 +221,7 @@ class _ClusteringWrapper(_BaseWrapper):
         if pars is None:
             pars = {}
         pars.update(km.get_params(deep=True))
-        X = self.pipeline.data
+        self._fit_X = X = self.pipeline.data
 
         mid, mid_dir = setup_model(self.model_dir)
 
@@ -282,7 +326,7 @@ class _ClusteringWrapper(_BaseWrapper):
         return self._cluster_func(n_clusters, km, pars)
 
 
-    def birch(self, n_clusters, threshold=0.5):
+    def birch(self, n_clusters, threshold=0.5, branching_factor=50):
         """
         Perform Birch clustering
 
@@ -300,7 +344,8 @@ class _ClusteringWrapper(_BaseWrapper):
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering for scaling reasons.")
 
-        km = Birch(n_clusters=n_clusters, threshold=threshold)
+        km = Birch(n_clusters=n_clusters, threshold=threshold,
+                branching_factor=branching_factor)
 
         return self._cluster_func(n_clusters, km, pars)
 

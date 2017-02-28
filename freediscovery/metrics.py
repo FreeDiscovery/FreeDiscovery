@@ -136,8 +136,23 @@ def cosine2jaccard_similarity(s_cos):
     """
     return s_cos / (2 - s_cos)
 
+def jaccard2cosine_similarity(s_jac):
+    """ Given a cosine similarity on L2 normalized data,
+    compute the jaccard similarity
 
-def _normalize_similarity(x, metric='cosine'):
+    Parameters
+    ----------
+    s_jac : {float, ndarray}
+      the cosine similarity
+
+    Returns
+    -------
+    s_cos : {float, ndarray}
+      the Jaccard similarity
+    """
+    return 2*s_jac / (1 + s_jac)
+
+def _normalize_similarity(x, metric='cosine', inverse=False):
     """Given a similarity score, normalize it to the
     [0, 1] range
 
@@ -147,18 +162,26 @@ def _normalize_similarity(x, metric='cosine'):
       the similarity score
     metric : str
       the metric used (one of 'cosine', 'jaccard')
+    inverse : bool
+      perform the inverse de-normalization operation
     """
     if metric == 'cosine':
         # cosine similarity can be in the [-1, 1] range
-        return (x + 1)/2
+        if not inverse:
+            return (x + 1)/2
+        else:
+            return 2*x - 1
     elif metric == 'jaccard':
         # jaccard similarity could potenitally be in the [-1/3, 1] range
         # when using the cosine2jaccard_similarity function
-        return (3*x + 1)/4.
+        if not inverse:
+            return (3*x + 1)/4.
+        else:
+            return (4*x - 1)/3.
     else:
         raise ValueError
 
-def _scale_cosine_similarity(x, metric='cosine'):
+def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     """ Given a cosine similarity on L2 normalized data,
     optionally convert it to Jaccard similarity, and/or 
     normalize it to the [0, 1] interval
@@ -170,6 +193,8 @@ def _scale_cosine_similarity(x, metric='cosine'):
     metric : str
       the conversion to apply one of ['cosine', 'jaccard', 'cosine_norm',
                                       'jaccard_norm']
+    inverse : bool
+      perform the inverse de-normalization operation
     """
     valid_metrics = ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']
     if metric not in valid_metrics:
@@ -177,10 +202,13 @@ def _scale_cosine_similarity(x, metric='cosine'):
     if metric == 'cosine':
         return x
     if metric.startswith('jaccard'):
-        x = cosine2jaccard_similarity(x)
+        if not inverse:
+            x = cosine2jaccard_similarity(x)
+        else:
+            x = jaccard2cosine_similarity(x)
 
     if metric.endswith('norm'):
-        x = _normalize_similarity(x, metric=metric.split('_')[0])
+        x = _normalize_similarity(x, metric=metric.split('_')[0], inverse=inverse)
 
     return x
 

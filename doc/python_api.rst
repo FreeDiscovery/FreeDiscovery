@@ -71,7 +71,7 @@ Email threading
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.threading._EmailThreadingWrapper
+    freediscovery.email_threading._EmailThreadingWrapper
     
 Semantic search
 ---------------

@@ -14,13 +14,6 @@ import requests
 pd.options.display.float_format = '{:,.3f}'.format
 
 
-def repr_clustering(labels, terms):
-    out = []
-    for ridx, row in enumerate(terms):
-        out.append({'cluster_names': row, 'N_documents': (labels == ridx).sum()})
-    out = pd.DataFrame(out).sort_values('N_documents', ascending=False)
-    return out
-
 dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
@@ -101,17 +94,22 @@ print("\n3.b. Computing cluster labels")
 url = BASE_URL + '/clustering/k-mean/{}'.format(mid)
 print(" GET", url)
 res = requests.get(url,
-                   json={'n_top_words': 6
+                   json={'n_top_words': 3
                          }).json()
 t1 = time()
 
+
+data = res['data']
+for row in data:
+    row['n_documents'] = len(row.pop('documents'))
+
 print('    .. computed in {:.1f}s'.format(t1 - t0))
-print(repr_clustering(np.array(res['labels']), res['cluster_terms']))
+print(pd.DataFrame(data))
 
 
-# # 4. Document Clustering (LSI + Ward Hierarchical Clustering)
+# # 4. Document Clustering (LSI + Birch Clustering)
 
-print("\n4.a. Document clustering (LSI + Ward HC)")
+print("\n4.a. Document clustering (LSI + Birch clustering)")
 
 url = BASE_URL + '/clustering/ward_hc/'
 print(" POST", url)
@@ -119,14 +117,14 @@ t0 = time()
 res = requests.post(url,
                     json={'parent_id': lsi_id,
                           'n_clusters': 10,
-                          'n_neighbors': 5  # this is the connectivity constraint
+                          'min_similarity': 0.7
                           }).json()
 
 mid = res['id']
 print("     => model id = {}".format(mid))
 
 print("\n4.b. Computing cluster labels")
-url = BASE_URL + '/clustering/ward_hc/{}'.format(mid)
+url = BASE_URL + '/clustering/birch/{}'.format(mid)
 print(" GET", url)
 res = requests.get(url,
                    json={'n_top_words': 6
@@ -134,7 +132,9 @@ res = requests.get(url,
 t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
-print(repr_clustering(np.array(res['labels']), res['cluster_terms']))
+data = res['data']
+for row in data:
+    row['n_documents'] = len(row.pop('documents'))
 
 
 # 4. Cleaning

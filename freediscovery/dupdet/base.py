@@ -14,8 +14,9 @@ from ..text import FeatureVectorizer
 from ..utils import setup_model, _rename_main_thread
 from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
                             WrongParameter)
+from ..cluster.base import _BaseClusteringWrapper
 
-class _DuplicateDetectionWrapper(_BaseWrapper):
+class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
     """Find near duplicates in a document collection.
 
     Currently supported backends are simhash-py and i-match.

@@ -18,7 +18,7 @@ from ...ingestion import DocumentIndex
 from ...exceptions import OptionalDependencyMissing
 from ...tests.run_suite import check_cache
 
-from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
+from .base import parse_res, V01, app, app_notest, get_features_cached
 
 #=============================================================================#
 #
@@ -37,7 +37,7 @@ def test_api_dupdetection(app, kind, options):
         except ImportError:
             raise SkipTest
 
-    dsid, pars = get_features(app, hashed=False)
+    dsid, pars, _ = get_features_cached(app, hashed=False)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
@@ -50,14 +50,19 @@ def test_api_dupdetection(app, kind, options):
     res = app.post(url, json=pars)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['id'])
+    assert dict2type(data) == {'id': 'str'}
     mid = data['id']
 
     url += '/{}'.format(mid)
     res = app.get(url, query_string=options)
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == sorted(['cluster_id'])
 
-    res = app.delete(method)
+    assert dict2type(data, max_depth=1) == {'data': 'list'}
+    for row in data['data']:
+        assert dict2type(row, max_depth=1) == {'cluster_id': 'int',
+                                               'cluster_similarity': 'float',
+                                               'documents': 'list'}
+
+    res = app.delete(url)
     assert res.status_code == 200

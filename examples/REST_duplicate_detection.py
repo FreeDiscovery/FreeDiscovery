@@ -83,7 +83,7 @@ print(" POST", url)
 t0 = time()
 res = requests.post(url,
         json={'parent_id': lsi_id,
-              'eps': 0.35,            # 2*cosine distance for documents to be considered as duplicates
+              'min_similarity': 0.90,            # 2*cosine distance for documents to be considered as duplicates
               'n_max_samples': 2
               }).json()
 
@@ -99,9 +99,10 @@ t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
 
-labels_ = res['labels']
-
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+data = res['data']
+print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data \
+                                            if len(row['documents']) > 1]),
+                                        len(input_ds['dataset'])))
 
 
 print("\n3. Near Duplicates Detection using I-Match")
@@ -130,9 +131,10 @@ res = requests.get(url,
 t1 = time()
 print('    .. computed in {:.1f}s'.format(time() - t0))
 
-labels_ = res['cluster_id']
+data = res['data']
 
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data]),
+                                        len(input_ds['dataset'])))
 
 
 
@@ -166,9 +168,10 @@ res = requests.get(url,
 data = res.json()
 print('    .. computed in {:.1f}s'.format(time() - t0))
 
-labels_ = data['cluster_id']
+data = data['data']
 
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data]),
+                                        len(input_ds['dataset'])))
 
 
 

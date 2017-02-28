@@ -50,7 +50,8 @@ def test_euclidean2cosine():
 
 def test_cosine2jaccard():
     from sklearn.metrics.pairwise import pairwise_distances
-    from freediscovery.metrics import cosine2jaccard_similarity
+    from freediscovery.metrics import (cosine2jaccard_similarity,
+                                       jaccard2cosine_similarity)
 
     x = np.array([[0, 0, 1., 1.]])
     y = np.array([[0, 1., 1., 0]])
@@ -60,6 +61,9 @@ def test_cosine2jaccard():
     S_jac_ref = 1 - pairwise_distances(x.astype('bool'), y.astype('bool'), metric='jaccard')
 
     assert_allclose(S_jac, S_jac_ref)
+
+    S_cos2 = jaccard2cosine_similarity(S_jac)
+    assert_allclose(S_cos2, S_cos)
 
 @pytest.mark.parametrize('metric', ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']) 
 def test_cosine_jaccard_norm(metric):
@@ -71,6 +75,8 @@ def test_cosine_jaccard_norm(metric):
         assert_allclose(S_res, S_cos)
     elif metric == 'jaccard':
         assert_allclose(S_res, 0.5, rtol=0.1)
+    S_res2 = _scale_cosine_similarity(S_res, metric=metric, inverse=True)
+    assert_allclose(S_res2, S_cos, rtol=0.1)
 
 
 def test_recall_at_k_score():

@@ -15,7 +15,8 @@ from numpy.testing import assert_equal, assert_almost_equal
 from .. import fd_app
 from ...utils import _silent, dict2type, sdict_keys
 
-from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
+from .base import (parse_res, V01, app, app_notest, get_features_cached,
+                                        get_features_lsi_cached)
 
 
 
@@ -32,10 +33,10 @@ from .base import parse_res, V01, app, app_notest, get_features, get_features_ls
 def test_api_clustering(app, model, use_lsi):
 
     if use_lsi:
-        dsid, lsi_id, _ = get_features_lsi(app, hashed=False)
+        dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
         parent_id = lsi_id
     else:
-        dsid, _ = get_features(app, hashed=False)
+        dsid, _, _ = get_features_cached(app, hashed=False)
         lsi_id = None
         parent_id = dsid
 
@@ -49,7 +50,7 @@ def test_api_clustering(app, model, use_lsi):
     url = V01 + "/clustering/" + model
     pars = { 'parent_id': parent_id, }
     if model != 'dbscan':
-        pars['n_clusters'] = 2
+        pars['n_clusters'] = 13
     if model == 'dbscan':
         pars.update({'eps': 0.1, "min_samples": 2})
     res = app.post(url, json=pars)
@@ -64,13 +65,21 @@ def test_api_clustering(app, model, use_lsi):
     res = app.get(url, query_string={'n_top_words': n_top_words})
     assert res.status_code == 200
     data = parse_res(res)
-    assert sorted(data.keys()) == \
-            sorted(['cluster_terms', 'labels', 'pars', 'htree'])
-    assert len(data['cluster_terms'][0]) == 2
+    assert dict2type(data, max_depth=1) == {'data': 'list'}
+    for row in data['data']:
+        assert dict2type(row, max_depth=1) == {'cluster_id': 'int',
+                                               'cluster_similarity': 'float',
+                                               'cluster_label': 'str',
+                                               'documents': 'list'}
+        for irow in row['documents']:
+            assert dict2type(irow) == {'document_id': 'int',
+                                       'similarity': 'float'}
+    if model != 'dbscan':
+        assert len(data['data']) == 13
 
-    if data['htree']:
-        assert sorted(data['htree'].keys()) == \
-                sorted(['n_leaves', 'n_components', 'children'])
+    #if data['htree']:
+    #    assert sorted(data['htree'].keys()) == \
+    #            sorted(['n_leaves', 'n_components', 'children'])
 
-    res = app.delete(method)
+    res = app.delete(url)
     assert res.status_code == 200

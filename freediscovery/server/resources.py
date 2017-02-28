@@ -35,7 +35,7 @@ from ..cluster import _ClusteringWrapper
 from ..search import _SearchWrapper
 from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
-                       mean_duplicates_count_score)
+                       mean_duplicates_count_score, _scale_cosine_similarity)
 from ..dupdet import _DuplicateDetectionWrapper
 from ..email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
@@ -51,11 +51,10 @@ from .schemas import (IDSchema, FeaturesParsSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
                       _CategorizationIndex, _CategorizationPredictSchemaElement,
-                      ErrorSchema, DuplicateDetectionSchema,
+                      ErrorSchema,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
-                      ErrorSchema, DuplicateDetectionSchema,
                       SearchResponseSchema, DocumentIndexSchema,
                       EmptySchema,
                       CustomStopWordsSchema, CustomStopWordsLoadSchema
@@ -460,11 +459,6 @@ class KmeanClusteringApi(Resource):
         return {'id': cl.mid}
 
 
-_birch_clustering_api_post_args = {
-        'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(missing=150),
-        'threshold': wfields.Number(),
-        }
 
 
 class BirchClusteringApi(Resource):
@@ -477,15 +471,32 @@ class BirchClusteringApi(Resource):
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
             - `n_clusters`: the number of clusters
-            - `threshold`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
+            - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
+            - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively.
+            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
            """))
-    @use_args(_birch_clustering_api_post_args)
+    @use_args( {
+            'parent_id': wfields.Str(required=True),
+            'n_clusters': wfields.Int(missing=150),
+            'branching_factor': wfields.Int(missing=50),
+            'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
+            'nn_metric': wfields.Str(missing='jaccard_norm')
+            }
+            )
     @marshal_with(IDSchema())
     def post(self, **args):
+        from math import sqrt
+        
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
-        del args['parent_id']
-        cl.birch(**args)
+        S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
+                                         metric=args.pop('nn_metric'),
+                                         inverse=True)
+        # cosine sim to euclidean distance
+        threshold = sqrt(2 *(1 - S_cos))
+
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir,
+                                parent_id=args.pop('parent_id'))
+        cl.birch(threshold=threshold, **args)
         return {'id': cl.mid}
 
 
@@ -525,11 +536,6 @@ class WardHCClusteringApi(Resource):
         cl.ward_hc(**args)
         return {'id': cl.mid}
 
-_dbscan_clustering_api_post_args = {
-        'parent_id': wfields.Str(required=True),
-        'eps': wfields.Number(missing=0.1),
-        'min_samples': wfields.Int(missing=10)
-        }
 
 
 class DBSCANClusteringApi(Resource):
@@ -541,24 +547,28 @@ class DBSCANClusteringApi(Resource):
 
            **Parameters**
              - `parent_id`: `dataset_id` or `lsi_id`
-             - `eps`: (optional) float The maximum distance between two samples for them to be considered as in the same neighborhood.
+             - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
+             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_samples`: (optional) int The number of samples (or total weight) in a neighborhood for a point to be considered as a core point. This includes the point itself.
             """))
-    @use_args(_dbscan_clustering_api_post_args)
+    @use_args({ 'parent_id': wfields.Str(required=True),
+                'min_samples': wfields.Int(missing=10),
+                'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
+                'nn_metric': wfields.Str(missing='jaccard_norm')
+                })
     @marshal_with(IDSchema())
     def post(self, **args):
+        from math import sqrt
+        S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
+                                         metric=args.pop('nn_metric'),
+                                         inverse=True)
+        # cosine sim to euclidean distance
+        eps = sqrt(2 *(1 - S_cos))
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args.pop('parent_id'))
 
-        del args['parent_id']
-
-        cl.dbscan(**args)
+        cl.dbscan(eps=eps, **args)
         return {'id': cl.mid}
-
-
-_clustering_api_get_args = {
-        'n_top_words': wfields.Int(missing=5)
-        }
 
 
 class ClusteringApiElement(Resource):
@@ -568,11 +578,15 @@ class ClusteringApiElement(Resource):
 
            **Parameters**
             - `n_top_words`: keep only most relevant `n_top_words` words
-            - `label_method`: str, default='centroid-frequency' the method used for computing the cluster labels
+            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             """))
-    @use_args(_clustering_api_get_args)
+    @use_args({ 'n_top_words': wfields.Int(missing=5),
+               'nn_metric': wfields.Str(missing='jaccard_norm')
+          })
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):  # TODO unused parameter 'method'
+
+        nn_metric = args.pop('nn_metric')
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
 
@@ -583,7 +597,30 @@ class ClusteringApiElement(Resource):
         if args['n_top_words'] > 0:
             terms = cl.compute_labels(**args)
         else:
-            terms = []
+            terms = None
+
+        cl._fit_X = cl.pipeline.data
+
+        y = cl._merge_response(km.labels_)
+        res = []
+        valid_keys = ['document_id', 'rendering_id', 'similarity']
+        for name, group in y.groupby('cluster_id'):
+            name = int(name)
+
+            S_sim_mean, S_sim = cl.centroid_similarity(group.index.values, nn_metric)
+            group = group.assign(similarity=S_sim)
+
+            row_docs = []
+            for idx, row in group.iterrows():
+                row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+            row['documents'] = row_docs
+            irow = {'documents': row_docs, 'cluster_id': int(name),
+                        'cluster_similarity': S_sim_mean}
+            if terms is not None:
+                irow['cluster_label'] = ' '.join(terms[name])
+            res.append(irow)
+
+        return {'data': res}
 
         pars = cl._load_pars()
         return {'labels': km.labels_.tolist(), 'cluster_terms': terms,
@@ -630,30 +667,48 @@ class DupDetectionApi(Resource):
 
         return {'id': model.mid}
 
-_dupdet_api_get_args = {
-        'distance': wfields.Int(),
-        'n_rand_lexicons': wfields.Int(),
-        'rand_lexicon_ratio': wfields.Number()
-        }
-
-
 class DupDetectionApiElement(Resource):
 
     @doc(description=dedent("""
            Query duplicates
 
            **Parameters**
-            - distance : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only) - n_rand_lexicons : int, default=1
-              number of random lexicons used for duplicate detection (I-Match method only)
-            - rand_lexicon_ratio: float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
+            - `distance` : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only)
+            - `n_rand_lexicons` : int, default=1 number of random lexicons used for duplicate detection (I-Match method only)
+            - `rand_lexicon_ratio` : float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
+            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
           """))
-    @use_args(_dupdet_api_get_args)
-    @marshal_with(DuplicateDetectionSchema())
+    @use_args({'distance': wfields.Int(),
+               'n_rand_lexicons': wfields.Int(),
+               'rand_lexicon_ratio': wfields.Number(),
+               'nn_metric': wfields.Str(missing='jaccard_norm')
+               })
+    @marshal_with(ClusteringSchema())
     def get(self, mid, **args):
+
+        nn_metric = args.pop('nn_metric')
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
-        return {'cluster_id': cluster_id}
+        model._fit_X = model.pipeline.data # load the data
+        y = model._merge_response(cluster_id)
+        res = []
+        valid_keys = ['document_id', 'rendering_id', 'similarity']
+        for name, group in y.groupby('cluster_id'):
+            if group.shape[0] <= 1:
+                continue
+
+            S_sim_mean, S_sim = model.centroid_similarity(group.index.values, nn_metric)
+            group = group.assign(similarity=S_sim)
+
+            row_docs = []
+            for idx, row in group.iterrows():
+                row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+            row['documents'] = row_docs
+            res.append({'documents': row_docs, 'cluster_id': name,
+                        'cluster_similarity': S_sim_mean})
+
+        return {'data': res}
 
 
     @marshal_with(EmptySchema())
@@ -881,8 +936,8 @@ class SearchApi(Resource):
 
             Parameters
             ----------
-            nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            min_score : filter out results below a similarity threashold
+            - nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - min_score : filter out results below a similarity threashold
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True),
