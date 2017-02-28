@@ -83,7 +83,7 @@ print(" POST", url)
 t0 = time()
 res = requests.post(url,
         json={'parent_id': lsi_id,
-              'eps': 0.35,            # 2*cosine distance for documents to be considered as duplicates
+              'min_similarity': 0.90,            # 2*cosine distance for documents to be considered as duplicates
               'n_max_samples': 2
               }).json()
 
@@ -100,7 +100,8 @@ t1 = time()
 print('    .. computed in {:.1f}s'.format(t1 - t0))
 
 data = res['data']
-print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data]),
+print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data \
+                                            if len(row['documents']) > 1]),
                                         len(input_ds['dataset'])))
 
 
