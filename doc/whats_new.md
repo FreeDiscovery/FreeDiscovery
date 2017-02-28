@@ -2,7 +2,7 @@
 
 ## Version 0.9
 
-**In developpement**
+**Jan 28, 2017**
 
 ### New features  
 
@@ -12,9 +12,11 @@
 ### Enhancements
 
  * Categorization and semantic search support sorting and filtering of documents below a user provided threashold. (PR [#96](https://github.com/FreeDiscovery/FreeDiscovery/pull/96/files))
+ * Categorization returns only `max_result_categories` categories with the highest score. 
  * The similarity and ML scores can now be scaled to [0, 1] range using `nn_metric` and `ml_output` input parameters (PR [#101](https://github.com/FreeDiscovery/FreeDiscovery/pull/100/files)).
  * The REST API documentation is generated automatically from the code (using an OpenAPI specification) which allows to enforce consistency between the code and the docs (PR [#85](https://github.com/FreeDiscovery/FreeDiscovery/pull/85))
- * Adapted clustering and duplicate detection to return structured objects indexed by `document_id`( and optionally `rendering_id`)
+ * Adapted clustering and duplicate detection API to return structured objects indexed by `document_id`( and optionally `rendering_id`)
+ * Improved tests coverage and overall simplified the API
 
 
 ### API Changes
@@ -26,10 +28,10 @@
     - `/api/v0/feature-extraction/{dsid}/id-mapping/flat`
     - `/api/v0/feature-extraction/{dsid}/id-mapping/nested`
     - `/api/v0/email-parser/{dsid}/index`
- * Significant changes in the REST API to accommodate for multi-class categorization 
+ * Significant changes in the categorization REST API to accommodate for multi-class cases
  * The endpoint `/api/v0/feature-extraction/{dsid}/id-mapping/flat` is removed, while `/api/v0/feature-extraction/{dsid}/id-mapping/nested` is renamed to `/api/v0/feature-extraction/{dsid}/id-mapping`. 
- * Removed the `/categorization/<mid>/predict` which is superseded by `/metrics/categorization`. 
- * The `internal_id` is no longer exposed in categorization and semantic search
+ * Removed the `/categorization/<mid>/test` which is superseded by `/metrics/categorization`. 
+ * The `internal_id` is no longer exposed in the public API
 
 ## Version 0.8
 
