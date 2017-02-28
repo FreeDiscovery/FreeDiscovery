@@ -326,7 +326,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         return self._cluster_func(n_clusters, km, pars)
 
 
-    def birch(self, n_clusters, threshold=0.5):
+    def birch(self, n_clusters, threshold=0.5, branching_factor=50):
         """
         Perform Birch clustering
 
@@ -344,7 +344,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering for scaling reasons.")
 
-        km = Birch(n_clusters=n_clusters, threshold=threshold)
+        km = Birch(n_clusters=n_clusters, threshold=threshold,
+                branching_factor=branching_factor)
 
         return self._cluster_func(n_clusters, km, pars)
 

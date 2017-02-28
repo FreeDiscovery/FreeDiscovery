@@ -35,7 +35,7 @@ from ..cluster import _ClusteringWrapper
 from ..search import _SearchWrapper
 from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
-                       mean_duplicates_count_score)
+                       mean_duplicates_count_score, _scale_cosine_similarity)
 from ..dupdet import _DuplicateDetectionWrapper
 from ..email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
@@ -459,11 +459,6 @@ class KmeanClusteringApi(Resource):
         return {'id': cl.mid}
 
 
-_birch_clustering_api_post_args = {
-        'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(missing=150),
-        'threshold': wfields.Number(),
-        }
 
 
 class BirchClusteringApi(Resource):
@@ -476,15 +471,32 @@ class BirchClusteringApi(Resource):
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
             - `n_clusters`: the number of clusters
-            - `threshold`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
+            - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
+            - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively.
+            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
            """))
-    @use_args(_birch_clustering_api_post_args)
+    @use_args( {
+            'parent_id': wfields.Str(required=True),
+            'n_clusters': wfields.Int(missing=150),
+            'branching_factor': wfields.Int(missing=50),
+            'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
+            'nn_metric': wfields.Str(missing='jaccard_norm')
+            }
+            )
     @marshal_with(IDSchema())
     def post(self, **args):
+        from math import sqrt
+        
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
-        del args['parent_id']
-        cl.birch(**args)
+        S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
+                                         metric=args.pop('nn_metric'),
+                                         inverse=True)
+        # cosine sim to euclidean distance
+        threshold = sqrt(2 *(1 - S_cos))
+
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir,
+                                parent_id=args.pop('parent_id'))
+        cl.birch(threshold=threshold, **args)
         return {'id': cl.mid}
 
 
@@ -524,11 +536,6 @@ class WardHCClusteringApi(Resource):
         cl.ward_hc(**args)
         return {'id': cl.mid}
 
-_dbscan_clustering_api_post_args = {
-        'parent_id': wfields.Str(required=True),
-        'eps': wfields.Number(missing=0.1),
-        'min_samples': wfields.Int(missing=10)
-        }
 
 
 class DBSCANClusteringApi(Resource):
@@ -540,18 +547,27 @@ class DBSCANClusteringApi(Resource):
 
            **Parameters**
              - `parent_id`: `dataset_id` or `lsi_id`
-             - `eps`: (optional) float The maximum distance between two samples for them to be considered as in the same neighborhood.
+             - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
+             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_samples`: (optional) int The number of samples (or total weight) in a neighborhood for a point to be considered as a core point. This includes the point itself.
             """))
-    @use_args(_dbscan_clustering_api_post_args)
+    @use_args({ 'parent_id': wfields.Str(required=True),
+                'min_samples': wfields.Int(missing=10),
+                'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
+                'nn_metric': wfields.Str(missing='jaccard_norm')
+                })
     @marshal_with(IDSchema())
     def post(self, **args):
+        from math import sqrt
+        S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
+                                         metric=args.pop('nn_metric'),
+                                         inverse=True)
+        # cosine sim to euclidean distance
+        eps = sqrt(2 *(1 - S_cos))
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args.pop('parent_id'))
 
-        del args['parent_id']
-
-        cl.dbscan(**args)
+        cl.dbscan(eps=eps, **args)
         return {'id': cl.mid}
 
 
@@ -590,8 +606,6 @@ class ClusteringApiElement(Resource):
         valid_keys = ['document_id', 'rendering_id', 'similarity']
         for name, group in y.groupby('cluster_id'):
             name = int(name)
-            if group.shape[0] <= 1:
-                continue
 
             S_sim_mean, S_sim = cl.centroid_similarity(group.index.values, nn_metric)
             group = group.assign(similarity=S_sim)

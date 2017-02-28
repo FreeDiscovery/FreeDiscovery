@@ -99,9 +99,9 @@ t1 = time()
 
 print('    .. computed in {:.1f}s'.format(t1 - t0))
 
-labels_ = res['labels']
-
-print('Found {} duplicates / {}'.format(len(labels_) - len(np.unique(labels_)), len(labels_)))
+data = res['data']
+print('Found {} duplicates / {}'.format(sum([len(row['documents']) for row in data]),
+                                        len(input_ds['dataset'])))
 
 
 print("\n3. Near Duplicates Detection using I-Match")
