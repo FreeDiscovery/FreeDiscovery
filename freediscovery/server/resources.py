@@ -188,7 +188,7 @@ class FeaturesApiElement(Resource):
         return {}
 
 class FeaturesApiElementMappingNested(Resource):
-    @doc(description='Compute correspondence between id fields (nested). '
+    @doc(description='Compute correspondence between id fields for documents. '
            'At least one of the fields used for indexing must be provided,'
            'and all the rest will be computed (if available)')
     @use_args(DocumentIndexNestedSchema(strict=True))
@@ -266,6 +266,7 @@ _lsi_api_post_args = {'parent_id': wfields.Str(required=True),
                       'n_components': wfields.Int(missing=150) }
 class LsiApi(Resource):
 
+    @doc(description='List existing LSI models')
     @use_args(_lsi_api_get_args)
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
@@ -276,15 +277,14 @@ class LsiApi(Resource):
     @doc(description=dedent("""
            Build a Latent Semantic Indexing (LSI) model
 
-           The option `use_hashing=True` must be set for the feature extraction.
-           Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           Recommended data ingestion options also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
            The recommended value for the `n_components` (dimensions of the SVD decompositions) is
            in the [100, 200] range.
 
            **Parameters**
              - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features.
-             - `parent_id`: `dataset_id`
+             - `parent_id`: parent dataset identified by `dataset_id`
           """))
     @use_args(_lsi_api_post_args)
     @marshal_with(LsiPostSchema())
@@ -321,6 +321,7 @@ class LsiApiElement(Resource):
 
 
 class ModelsApi(Resource):
+    @doc(description='List existing categorization models')
     @marshal_with(CategorizationParsSchema(many=True))
     def get(self, parent_id):
         cat = _CategorizerWrapper(parent_id, self._cache_dir)
@@ -342,7 +343,7 @@ class ModelsApi(Resource):
               * "NearestCentroid": nearest centroid classifier (requires LSI)
               * "xgboost": [Gradient Boosting](https://xgboost.readthedocs.io/en/latest/model.html)
                    (*Warning:* for the moment xgboost is not istalled for a direct install on Windows)
-            - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default True).
+            - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default False).
             - `training_scores`: binary, compute the efficiency scores on the training dataset. This would make computations much slower for NearestNeighbors (default False). 
           """))
     @use_args(_CategorizationInputSchema())
@@ -397,7 +398,7 @@ class ModelsApiPredict(Resource):
     @doc(description=dedent("""
             Predict document categorization with a previously trained model
 
-            **Parameters* 
+            **Parameters**
              - `max_result_categories` : the maximum number of categories in the results
              - `sort` : sort by the score of the most likely class
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
@@ -441,7 +442,7 @@ class KmeanClusteringApi(Resource):
     @doc(description=dedent("""
            Compute K-mean clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for feature extraction include, `use_idf=1, sublinear_tf=0, binary=0`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -466,7 +467,7 @@ class BirchClusteringApi(Resource):
     @doc(description=dedent("""
            Compute birch clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -512,9 +513,9 @@ class WardHCClusteringApi(Resource):
     @doc(description=dedent("""
            Compute Ward Hierarchical Clustering.
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
-           The Ward Hierarchical clustering is generally slower that K-mean, however the run time can be reduced by decreasing the following parameters,
+           The Ward Hierarchical clustering is generally slower that K-mean, and does not scale well with the dataset size. The run time can be reduced by decreasing the following parameters,
 
             - `lsi_components`: the number of dimensions used for the Latent Semantic Indexing decomposition (e.g. from 150 to 50)
             - `n_neighbors`:  the number of neighbors used to construct the connectivity (e.g. from 10 to 5)
@@ -543,7 +544,7 @@ class DBSCANClusteringApi(Resource):
     @doc(description=dedent("""
            Compute clustering (DBSCAN)
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for the data ingestion also include, `use_idf=1, sublinear_tf=0, binary=0`.
 
            **Parameters**
              - `parent_id`: `dataset_id` or `lsi_id`
@@ -932,12 +933,12 @@ class EmailThreadingApiElement(Resource):
 
 class SearchApi(Resource):
     @doc(description=dedent("""
-            Perform document search (if `parent_id` is a `dataset_id`) or a semantic search (if `parent_id` is a `lsi_id`).")
+            Perform document search (if `parent_id` is a `dataset_id`) or a semantic search (if `parent_id` is a `lsi_id`).
 
             Parameters
             ----------
-            - nn_metric : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
-            - min_score : filter out results below a similarity threashold
+            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `min_score` : filter out results below a similarity threashold
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True),
@@ -967,7 +968,7 @@ class SearchApi(Resource):
 
 
 class CustomStopWordsApi(Resource):
-    @doc(description="Perform a mechanism for adding / managing custom stop words")
+    @doc(description="Store a list of custom stop words")
     @use_args({"name" : wfields.Str(required=True),
                "stop_words" : wfields.List(wfields.Str(), required=True)})
     @marshal_with(CustomStopWordsSchema())
@@ -981,5 +982,6 @@ class CustomStopWordsApi(Resource):
 
 class CustomStopWordsLoadApi(Resource):
 
+    @doc(description="Load a stored list of stop words")
     def get(self, name):
         return {'name': name, 'stop_words': _StopWordsWrapper(cache_dir=self._cache_dir).load(name)}

@@ -22,9 +22,10 @@ or by downloading the latest stable version from the [Github releases page](http
 
  2. To install the optional simhash-py dependency, a g++ (GCC >= 4.8) compiler is required on Linux (on Windows it is not installed). 
  
- 3. A virtual environment with all the dependencies can be setup with the following command,
+ 3. A virtual environment with all the dependencies can be setup with the following commands,
  
           cd FreeDiscovery
+          conda config --append channels conda-forge
           conda create -n freediscovery-env --file requirements.txt python=3.6
  
           source activate freediscovery-env   # on Linux/Mac OS X
