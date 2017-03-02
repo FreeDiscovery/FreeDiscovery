@@ -15,12 +15,12 @@ FreeDiscovery is built on top of existing machine learning libraries (scikit-lea
 - text categorization
 - document clustering
 - duplicate detection
+- semantic search
 - e-mail threading
-- document search and semantic search
 
 In addition, FreeDiscovery can be used as Python package and aims to expose a scikit-learn compatible API. 
 
-The first release is expected for January 1, 2017, but we would very much appreciate feedback on the existing functionality. Feel free to open new issues on Github or send any comments to grossman@ir.cs.georgetown.edu.  
+We would very much appreciate feedback on the existing functionality. Feel free to open new issues on Github or send any comments to `the mailing list <https://groups.google.com/forum/#!forum/freediscovery-ml>`_ at `freediscovery-ml@googlegroups.com <mailto:freediscovery-ml@googlegroups.com>`_.
 
 For more information see the documentation and API Reference,
 
@@ -28,3 +28,6 @@ For more information see the documentation and API Reference,
 - stable version 0.9 [``0.9.X`` branch | `documentation <https://freediscovery.github.io/doc/stable/>`_ ].
 
 FreeDiscovery is released under the 3-clause BSD licence.
+
+.. image:: https://freediscovery.github.io/static/grossmanlabs-old-logo-small.gif
+    :target: http://www.grossmanlabs.com/
