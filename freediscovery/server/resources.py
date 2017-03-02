@@ -29,7 +29,6 @@ from ..parsers import EmailParser
 from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
-from ..io import parse_ground_truth_file
 from ..utils import _docstring_description
 from ..cluster import _ClusteringWrapper
 from ..search import _SearchWrapper
@@ -937,13 +936,19 @@ class SearchApi(Resource):
 
             Parameters
             ----------
+            - `parent_id` : the id of the previous processing step (either `dataset_id` or `lsi_id`)
+            - `query` : the seach query
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             - `min_score` : filter out results below a similarity threashold
+            - `max_results` : return only the first `max_results` documents
+            - `sort` : sort the results by score
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(required=True),
                 'nn_metric': wfields.Str(missing='jaccard_norm'),
                 'min_score': wfields.Number(missing=-1),
+                'sort': wfields.Boolean(missing=True),
+                'max_results': wfields.Int(),
                 })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
@@ -957,7 +962,10 @@ class SearchApi(Resource):
 
         res = model.fe.db.render_dict(scores_pd)
         res = [row for row in res if row['score'] > args['min_score']]
-        res = sorted(res, key=lambda row: row['score'], reverse=True)
+        if 'max_results' in args:
+            res = res[:args['max_results']]
+        if args['sort']:
+            res = sorted(res, key=lambda row: row['score'], reverse=True)
 
         return {'data': res}
 

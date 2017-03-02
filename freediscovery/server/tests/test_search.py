@@ -23,16 +23,19 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
                    get_features_lsi, get_features_lsi_cached)
 
 
-@pytest.mark.parametrize("method, min_score", [('regular', -1),
-                                               ('semantic', -1),
-                                               ('semantic', 0.5)])
-def test_search(app, method, min_score):
+@pytest.mark.parametrize("method, min_score, max_results", [('regular', -1, None),
+                                                            ('semantic', -1, None),
+                                                            ('semantic', 0.5, None),
+                                                            ('semantic', -1, 1000000),
+                                                            ('semantic', -1, 3),
+                                                            ])
+def test_search(app, method, min_score, max_results):
 
     if method == 'semantic':
-        dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
+        dsid, lsi_id, _, input_ds = get_features_lsi_cached(app, hashed=False)
         parent_id = lsi_id
     elif method == 'regular':
-        dsid, _, _ = get_features_cached(app, hashed=False)
+        dsid, _, input_ds = get_features_cached(app, hashed=False)
         lsi_id = None
         parent_id = dsid
     query = """The American National Standards Institute sells ANSI standards, and also
@@ -42,10 +45,14 @@ def test_search(app, method, min_score):
     """
     query_file_path = "02256.txt"
 
-    res = app.post(V01 + "/search/", json=dict(parent_id=parent_id,
-                                               min_score=min_score,
-                                               query=query,
-                                               ))
+    pars = dict(parent_id=parent_id,
+                min_score=min_score,
+                query=query)
+    if max_results is not None:
+        pars['max_results'] = max_results
+
+
+    res = app.post(V01 + "/search/", json=pars)
     assert res.status_code == 200
     data = parse_res(res)
     assert sorted(data.keys()) == ['data']
@@ -56,8 +63,11 @@ def test_search(app, method, min_score):
     scores = np.array([row['score'] for row in data])
     assert_equal(np.diff(scores) <= 0, True)
     assert_array_less(min_score, scores)
+    if max_results is not None:
+        assert len(data) == min(max_results, len(input_ds['dataset']))
 
     res = app.post(V01 + "/feature-extraction/{}/id-mapping".format(dsid), 
                    json={'data': [data[0]]})
     res = parse_res(res)
-    assert res['data'][0]['file_path'] == query_file_path
+    if max_results is None:
+        assert res['data'][0]['file_path'] == query_file_path
