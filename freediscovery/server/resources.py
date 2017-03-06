@@ -124,7 +124,7 @@ class FeaturesApi(Resource):
              - `stop_words`: "english" or "None" Remove stop words from the resulting tokens. Only applies for the "word" analyzer.  If "english", a built-in stop word list for English is used. ( default: "None") - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
              - `norm`: The normalization to use after the feature weighting ('None', 'l1', 'l2') (default: 'None')
              - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
-             - `binary`: If set to 1, all non zero counts are set to 1. (default: True)
+             - `binary`: If set to 1, all non zero counts are set to 1. (default: False)
              - `use_idf`: Enable inverse-document-frequency reweighting (default: False).
              - `sublinear_tf`: Apply sublinear tf scaling, i.e. replace tf with log(1 + tf) (default: False).
              - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True)
