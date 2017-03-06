@@ -991,5 +991,12 @@ class CustomStopWordsApi(Resource):
 class CustomStopWordsLoadApi(Resource):
 
     @doc(description="Load a stored list of stop words")
+    @marshal_with(CustomStopWordsLoadSchema())
     def get(self, name):
         return {'name': name, 'stop_words': _StopWordsWrapper(cache_dir=self._cache_dir).load(name)}
+
+    @doc(description='Delete a stored custom stop words')
+    @marshal_with(EmptySchema())
+    def delete(self, name):
+        _StopWordsWrapper(cache_dir=self._cache_dir).delete(name)
+        return {}

@@ -41,3 +41,7 @@ def test_stop_words(app):
 
     assert dict2type(data, collapse_lists=True) == {'name': 'str', 'stop_words': ['str']}
     assert data["stop_words"] == tested_stop_words
+
+    method = V01 + "/stop-words/{}".format(name)
+    res = app.delete(method)
+    assert res.status_code == 200
