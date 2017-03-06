@@ -211,3 +211,13 @@ class _StopWordsWrapper(object):
         self.name = os.path.join(self.model_dir, name + '.pkl')
         self.stop_words = load(self.name)
         return (self.stop_words)
+
+    def delete(self, name):
+        """Allow to delete the stop_words list of strings
+        """
+        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
+
+        if os.path.exists(os.path.join(self.model_dir, name + '.pkl')):
+            os.remove(os.path.join(self.model_dir, name + '.pkl'))
+
+
