@@ -71,7 +71,7 @@ def test_get_feature_extraction(app, hashed):
     data = parse_res(res)
     assert dict2type(data, collapse_lists=True) == {'analyzer': 'str',
                      'ngram_range': ['int'], 'stop_words': 'NoneType',
-                     'n_jobs': 'int', 'chunk_size': 'int', 'norm': 'NoneType',
+                     'n_jobs': 'int', 'chunk_size': 'int', 'norm': 'str',
                      'data_dir': 'str', 'n_samples': 'int',
                      'n_features': 'int', 'use_idf': 'bool',
                      'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool',
