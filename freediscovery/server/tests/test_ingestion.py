@@ -31,9 +31,7 @@ def test_get_features(app):
     dsid, pars, _ = get_features_cached(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200, method
-    data = parse_res(res)
+    data = app.get_check(method)
     for key, val in pars.items():
         if key in ['data_dir', 'dataset_definition']:
             continue
@@ -43,15 +41,12 @@ def test_delete_feature_extraction(app):
     dsid, _ = get_features(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.delete(method)
-    assert res.status_code == 200
+    app.delete_check(method)
 
 
 def test_get_feature_extraction_all(app):
     method = V01 + "/feature-extraction/"
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
     for row in data:
         del row['norm']
         assert sdict_keys(row) == sdict_keys({'analyzer': 'str',
@@ -66,9 +61,7 @@ def test_get_feature_extraction_all(app):
 def test_get_feature_extraction(app, hashed):
     dsid, _, _ = get_features_cached(app, hashed=hashed)
     method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
     assert dict2type(data, collapse_lists=True) == {'analyzer': 'str',
                      'ngram_range': ['int'], 'stop_words': 'NoneType',
                      'n_jobs': 'int', 'chunk_size': 'int', 'norm': 'str',
@@ -94,9 +87,8 @@ def test_get_search_filenames(app):
 
     # Query 1
     file_path_obj  = [{'file_path': val} for val in ['00401.txt', '00506.txt']]
-    res = app.post(method, json={'data': file_path_obj})
-    assert res.status_code == 200
-    data = parse_res(res)['data']
+    data = app.post_check(method, json={'data': file_path_obj})
+    data = data['data']
 
     for idx in range(len(data)):
         assert dict2type(data[idx]) == response_ref
@@ -110,9 +102,8 @@ def test_get_search_filenames(app):
 
     # Query 2
     file_path_obj  = [{'document_id': 4 }, {'document_id': 9}]
-    res = app.post(method, json={'data': file_path_obj})
-    assert res.status_code == 200
-    data = parse_res(res)['data']
+    data = app.post_check(method, json={'data': file_path_obj})
+    data = data['data']
 
     for idx in range(len(data)):
         assert dict2type(data[idx]) == response_ref
