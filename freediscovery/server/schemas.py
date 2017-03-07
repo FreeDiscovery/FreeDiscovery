@@ -67,7 +67,7 @@ class FeaturesParsSchema(Schema):
     sublinear_tf = fields.Boolean(missing=True)
     binary = fields.Boolean(missing=False)
     use_hashing = fields.Boolean(missing=False)
-    norm = fields.Str(missing='None')
+    norm = fields.Str(missing='l2')
     n_samples = fields.Int(dump_only=True)
     n_samples_processed = fields.Int(dump_only=True)
     min_df = fields.Number(required=False)
