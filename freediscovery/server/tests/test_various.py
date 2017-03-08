@@ -22,8 +22,7 @@ from .base import parse_res, V01, app, app_notest, get_features, get_features_ls
 
 
 def test_example_dataset(app):
-    res = app.get(V01 + '/example-dataset/20newsgroups_micro')
-    data = parse_res(res)
+    data = app.get_check(V01 + '/example-dataset/20newsgroups_micro')
     assert dict2type(data, max_depth=1) == {'dataset': 'list',
                                             'training_set': 'list',
                                             'metadata': 'dict'}
@@ -42,7 +41,6 @@ def test_example_dataset(app):
 
 
 def test_openapi_specs(app):
-    res = app.get('/openapi-specs.json')
-    data = parse_res(res)
+    data = app.get_check('/openapi-specs.json')
     assert data['swagger'] == '2.0'
 

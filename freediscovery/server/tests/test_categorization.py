@@ -34,36 +34,30 @@ def test_api_lsi(app):
     assert res.status_code == 200
     data = parse_res(res)
     method = V01 + "/lsi/"
-    res = app.get(method,
+    res = app.get_check(method,
             data=dict(
                 parent_id=dsid,
                 )
             )
-    assert res.status_code == 200
 
     lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
-    res = app.post(method, json=lsi_pars)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.post_check(method, json=lsi_pars)
+
     assert sorted(data.keys()) == ['explained_variance', 'id']
     lid = data['id']
 
 
     # checking again that we can load all the lsi models
     method = V01 + "/lsi/"
-    res = app.get(method,
+    data = app.get_check(method,
             data=dict(
                 parent_id=dsid,
                 )
             )
-    assert res.status_code == 200
-    data = parse_res(res)  # TODO unused variable
     
     method = V01 + "/lsi/{}".format(lid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
     for key, vals in lsi_pars.items():
         assert vals == data[key]
 
@@ -92,9 +86,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
         parent_id = dsid
 
     method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
 
     categories_list = list(set([row['category'] for row in ds_input['dataset']]))
 
@@ -114,12 +106,10 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
 
     method = V01 + "/categorization/"
     try:
-        res = app.post(method, json=pars)
+        data = app.post_check(method, json=pars)
     except OptionalDependencyMissing:
         raise SkipTest
 
-    data = parse_res(res)
-    assert res.status_code == 200, method
     assert dict2type(data) == {'id' : 'str',
                                'training_scores': {'recall': 'float',
                                                     'f1': 'float',
@@ -148,16 +138,13 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
     mid = data['id']
 
     method = V01 + "/categorization/{}".format(mid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
 
     for key in ["method"]:
         assert pars[key] == data[key]
 
     method = V01 + "/categorization/{}/predict".format(mid)
-    res = app.get(method)
-    data = parse_res(res)
+    data = app.get_check(method)
     data = data['data']
     response_ref = { 'document_id': 'int',
                      'scores': [ {'category': 'str',
@@ -181,11 +168,9 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
         assert_equal(np.in1d(training_document_id_res, training_document_id), True)
 
     method = V01 + "/metrics/categorization"
-    res = app.post(method,
+    data = app.post_check(method,
             json={'y_true': ds_input['dataset'],
                   'y_pred': data})
-    data = parse_res(res)
-
 
     assert dict2type(data) == {'precision': 'float',
                                'recall': 'float',
@@ -202,8 +187,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
         assert data['f1'] > 0.32
 
     method = V01 + "/categorization/{}".format(mid)
-    res = app.delete(method)
-    assert res.status_code == 200
+    res = app.delete_check(method)
 
 
 _categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",

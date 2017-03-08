@@ -31,10 +31,8 @@ def parse_emails(app):
     method = V01 + "/email-parser/"
     pars = dict(data_dir=email_data_dir)
 
-    res = app.post(method, json=pars)
+    data = app.post_check(method, json=pars)
 
-    assert res.status_code == 200, method
-    data = parse_res(res)
     assert sorted(data.keys()) ==  ['filenames', 'id']
     dsid = data['id']
 
@@ -44,9 +42,7 @@ def test_parse_emails(app):
     dsid, pars = parse_emails(app)
 
     method = V01 + "/email-parser/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200, method
-    data = parse_res(res)
+    data = app.get_check(method)
     for key, val in pars.items():
         if key in ['data_dir']:
             continue
@@ -57,15 +53,12 @@ def test_delete_parsed_emails(app):
     dsid, _ = parse_emails(app)
 
     method = V01 + "/email-parser/{}".format(dsid)
-    res = app.delete(method)
-    assert res.status_code == 200
+    app.delete_check(method)
 
 
 def test_get_email_parser_all(app):
     method = V01 + "/email-parser/"
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
     for row in data:
         assert sorted(row.keys()) == sorted([ 'data_dir', 'id', 'encoding', 'n_samples']) 
 
@@ -73,9 +66,7 @@ def test_get_email_parser_all(app):
 def test_get_email_parser(app):
     dsid, _ = parse_emails(app)
     method = V01 + "/email-parser/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
     assert sorted(data.keys()) == \
              sorted(['data_dir', 'filenames', 'encoding', 'n_samples', 'type'])
 
@@ -88,9 +79,7 @@ def test_get_search_emails_by_filename(app):
             ({ 'filenames': ['1', '2']}, [0, 1]),
             ({ 'filenames': ['5']}, [4])]:
 
-        res = app.post(method, json=pars)
-        assert res.status_code == 200
-        data = parse_res(res)
+        data = app.post_check(method, json=pars)
         assert sorted(data.keys()) ==  sorted(['index'])
         assert_equal(data['index'], indices)
 
@@ -108,16 +97,12 @@ def test_api_thread_emails(app):
     dsid, _ = parse_emails(app)
 
     method = V01 + "/email-parser/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)  # TODO unused variable
+    data = app.get_check(method)
 
     url = V01 + "/email-threading" 
     pars = { 'parent_id': dsid }
-             
-    res = app.post(url, json=pars)
-    assert res.status_code == 200
-    data = parse_res(res)
+
+    data = app.post_check(url, json=pars)
     assert sorted(data.keys()) == sorted(['data', 'id'])
     mid = data['id']
 
@@ -141,10 +126,7 @@ def test_api_thread_emails(app):
     assert data['data'] == tree_ref
 
     url += '/{}'.format(mid)
-    res = app.get(url)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(url)
     assert sorted(data.keys()) == sorted(['group_by_subject'])
 
-    res = app.delete(method)
-    assert res.status_code == 200
+    app.delete_check(method)

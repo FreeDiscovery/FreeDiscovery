@@ -52,9 +52,7 @@ def test_search(app, method, min_score, max_results):
         pars['max_results'] = max_results
 
 
-    res = app.post(V01 + "/search/", json=pars)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.post_check(V01 + "/search/", json=pars)
     assert sorted(data.keys()) == ['data']
     data = data['data']
     for row in data:
@@ -66,8 +64,7 @@ def test_search(app, method, min_score, max_results):
     if max_results is not None:
         assert len(data) == min(max_results, len(input_ds['dataset']))
 
-    res = app.post(V01 + "/feature-extraction/{}/id-mapping".format(dsid), 
+    data = app.post_check(V01 + "/feature-extraction/{}/id-mapping".format(dsid), 
                    json={'data': [data[0]]})
-    res = parse_res(res)
     if max_results is None:
-        assert res['data'][0]['file_path'] == query_file_path
+        assert data['data'][0]['file_path'] == query_file_path

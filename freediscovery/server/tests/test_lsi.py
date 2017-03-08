@@ -34,42 +34,35 @@ def test_api_lsi(app):
     assert res.status_code == 200
     data = parse_res(res)
     method = V01 + "/lsi/"
-    res = app.get(method,
+    res = app.get_check(method,
             data=dict(
                 parent_id=dsid,
                 )
             )
-    assert res.status_code == 200
 
     lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
-    res = app.post(method, json=lsi_pars)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.post_check(method, json=lsi_pars)
     assert sorted(data.keys()) == ['explained_variance', 'id']
     lid = data['id']
 
 
     # checking again that we can load all the lsi models
     method = V01 + "/lsi/"
-    res = app.get(method,
+    data = app.get(method,
             data=dict(
                 parent_id=dsid,
                 )
             )
-    assert res.status_code == 200
-    data = parse_res(res)  # TODO unused variable
-    
+
     method = V01 + "/lsi/{}".format(lid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
     for key, vals in lsi_pars.items():
         assert vals == data[key]
 
     assert sorted(data.keys()) == \
             sorted(["n_components", "parent_id"])
-    
+
     for key in data.keys():
         assert data[key] == lsi_pars[key]
 

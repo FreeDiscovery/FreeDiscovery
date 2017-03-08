@@ -40,23 +40,17 @@ def test_api_dupdetection(app, kind, options):
     dsid, pars, _ = get_features_cached(app, hashed=False)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)  # TODO unused variable
+    data = app.get_check(method)
 
     url = V01 + "/duplicate-detection" 
     pars = { 'parent_id': dsid,
              'method': kind}
-    res = app.post(url, json=pars)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.post_check(url, json=pars)
     assert dict2type(data) == {'id': 'str'}
     mid = data['id']
 
     url += '/{}'.format(mid)
-    res = app.get(url, query_string=options)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(url, query_string=options)
 
     assert dict2type(data, max_depth=1) == {'data': 'list'}
     for row in data['data']:
@@ -64,5 +58,4 @@ def test_api_dupdetection(app, kind, options):
                                                'cluster_similarity': 'float',
                                                'documents': 'list'}
 
-    res = app.delete(url)
-    assert res.status_code == 200
+    app.delete_check(url)
