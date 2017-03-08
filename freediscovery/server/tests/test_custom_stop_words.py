@@ -31,17 +31,13 @@ def test_stop_words(app):
 
     method = V01 + "/stop-words/"
     pars = dict(name=name, stop_words=tested_stop_words)
-    res = app.post(method, json=pars)
-    assert res.status_code == 200
+    data = app.post_check(method, json=pars)
 
     method = V01 + "/stop-words/{}".format(name)
-    res = app.get(method)
-    assert res.status_code == 200
-    data = parse_res(res)
+    data = app.get_check(method)
 
     assert dict2type(data, collapse_lists=True) == {'name': 'str', 'stop_words': ['str']}
     assert data["stop_words"] == tested_stop_words
 
     method = V01 + "/stop-words/{}".format(name)
-    res = app.delete(method)
-    assert res.status_code == 200
+    app.delete_check(method)

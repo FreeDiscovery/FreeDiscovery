@@ -39,10 +39,7 @@ def test_categorization_metrics(app, metrics):
                       enumerate([0, 0, 1, 1, 1, 0, 1, 1, 1])]
 
     pars = {'y_true': y_true, 'y_pred': y_pred, 'metrics': metrics}
-    res = app.post(url, json=pars)
-    assert res.status_code == 200
-
-    data = parse_res(res)
+    data = app.post_check(url, json=pars)
     assert sorted(data.keys()) == sorted(metrics)
     for key in metrics:
         assert data[key] > 0.5
@@ -59,10 +56,8 @@ def test_clustering_metrics(app, metrics):
     labels_pred = [0, 0, 1, 1]
 
     pars = {'labels_true': labels_true, 'labels_pred': labels_pred, 'metrics': metrics}
-    res = app.post(url, json=pars)
-    assert res.status_code == 200
+    data = app.post_check(url, json=pars)
 
-    data = parse_res(res)
     assert sorted(data.keys()) == sorted(metrics)
     if 'adjusted_rand' in metrics:
         assert_almost_equal(data['adjusted_rand'], 0.5714, decimal=4)
@@ -81,10 +76,7 @@ def test_dupdetection_metrics(app, metrics):
     labels_pred = [0, 1, 3, 2, 5, 2]
 
     pars = {'labels_true': labels_true, 'labels_pred': labels_pred, 'metrics': metrics}
-    res = app.post(url, json=pars)
-    assert res.status_code == 200
-
-    data = parse_res(res)
+    data = app.post_check(url, json=pars)
     assert sorted(data.keys()) == sorted(metrics)
     if 'ratio_duplicates' in metrics:
         assert_almost_equal(data['ratio_duplicates'], 0.5)

@@ -12,7 +12,7 @@ import os.path
 from .. import fd_app
 from ...tests.run_suite import check_cache
 from ...ingestion import DocumentIndex
-from ...utils import dict2type, sdict_keys
+from ...utils import dict2type
 
 from sklearn.externals.joblib import Memory
 
@@ -34,13 +34,31 @@ def _document2internal_id(value):
     """A custom internal_id to document_id mapping used in tests"""
     return (value - 1)//2
 
+def app_call_wrapper(func):
+    """Wrapp the POST, GET, DELETE methods of flask.testing.FlaskClient
+    in order to make the response_code checks and convert the
+    json output to dict that we always need to do
+    """
+
+    def inner_function(*args, valid_return_codes=None, **kwargs):
+        if valid_return_codes is None:
+            valid_return_codes = [200]
+        res = func(*args, **kwargs)
+        assert res.status_code in valid_return_codes, args[0]
+        data = parse_res(res)
+        return data
+    return inner_function
+
 @pytest.fixture
 def app():
-
     tapp = fd_app(cache_dir)
-
     tapp.config['TESTING'] = True
-    return tapp.test_client()
+
+    client =  tapp.test_client()
+    client.post_check = app_call_wrapper(client.post)
+    client.get_check = app_call_wrapper(client.get)
+    client.delete_check = app_call_wrapper(client.delete)
+    return client
 
 
 @pytest.fixture
@@ -48,7 +66,11 @@ def app_notest():
     tapp = fd_app(cache_dir)
     tapp.config['TESTING'] = False
 
-    return tapp.test_client()
+    client = tapp.test_client()
+    client.post_check = app_call_wrapper(client.post)
+    client.get_check = app_call_wrapper(client.get)
+    client.delete_check = app_call_wrapper(client.delete)
+    return client
 
 memory = Memory(cachedir=os.path.join(cache_dir, '_joblib_cache', str(os.getpid())), verbose=0)
 
