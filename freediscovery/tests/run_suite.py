@@ -23,10 +23,8 @@ def run_cli(coverage=False):
 
 
 def check_cache():
-    if os.name == 'nt':
-        cache_dir = '.\\'
-    else:
-        cache_dir = "/tmp/"
+    import tempfile
+    cache_dir = tempfile.gettempdir()
 
     if not os.path.exists(cache_dir):
         raise SkipTest
