@@ -259,6 +259,7 @@ class FeatureVectorizer(_BaseTextTransformer):
             Enable inverse-document-frequency reweighting.
 
         """
+        from freediscovery.stop_words import _StopWordsWrapper
 
         if dataset_definition is not None:
             db = DocumentIndex.from_list(dataset_definition)
@@ -275,8 +276,12 @@ class FeatureVectorizer(_BaseTextTransformer):
             raise WrongParameter('not a valid input ngram_range={}: should be a list or a typle!'.format(ngram_range))
         if not len(ngram_range) == 2:
             raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
-        if stop_words not in [None, 'english', 'english_alphanumeric']:
-            raise WrongParameter('stop_words')
+        if stop_words in [None, 'english', 'english_alphanumeric']:
+            pass
+        elif stop_words in _StopWordsWrapper(cache_dir=self.cache_dir):
+            pass
+        else:
+            raise WrongParameter('stop_words = {}'.format(stop_words))
 
         if n_features is None and use_hashing:
             n_features = 100001 # default size of the hashing table
@@ -339,7 +344,6 @@ class FeatureVectorizer(_BaseTextTransformer):
         pars['filenames_abs'] = [os.path.join(data_dir, el) for el in filenames_base]
         chunk_size = pars['chunk_size']
         n_samples = pars['n_samples']
-        n_jobs = pars['n_jobs']
         use_hashing = pars['use_hashing']
 
         if use_hashing:
@@ -354,7 +358,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         try:
             if use_hashing:
                 _rename_main_thread() # fixed in https://github.com/joblib/joblib/pull/414
-                Parallel(n_jobs=n_jobs)(delayed(_vectorize_chunk)(dsid_dir, k, pars)\
+                Parallel(n_jobs=pars['n_jobs'])(delayed(_vectorize_chunk)(dsid_dir, k, pars)\
                             for k in range(n_samples//chunk_size + 1))
 
                 res = self._aggregate_features()

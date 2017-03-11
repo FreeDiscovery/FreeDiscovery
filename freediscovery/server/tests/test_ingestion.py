@@ -71,6 +71,20 @@ def test_get_feature_extraction(app, hashed):
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'n_samples_processed': 'int'}
 
+@pytest.mark.parametrize('hashed', [True])
+def test_stop_words_integration(app, hashed):
+    url = V01 + '/stop-words/'
+
+    sw_name = 'test1w'
+    pars = {'name': sw_name,
+            'stop_words': ['and', 'or', 'in']}
+
+    res = app.post_check(url, json=pars)
+
+    dsid, _, _ = get_features(app, hashed=hashed, stop_words=sw_name)
+
+    print(res)
+
 
 def test_get_search_filenames(app):
 
