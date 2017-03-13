@@ -30,16 +30,22 @@ def explain_categorization(weights, text, colormap):
         from html import escape  # python 3.x
     except ImportError:
         from cgi import escape  # python 2.x
+    from matplotlib.colors import Normalize
+
     text = escape(text)  # in order to have a valid HTML output after adding <span> tags
+
+    max_val = max(abs(min(weights.values())), abs(max(weights.values())))
+
+    norm = Normalize(vmin=-max_val, vmax=max_val)
 
     document_html_lines = list()
     for line in text.splitlines():
-        line_decorated = _replace_with_color_spans(line, weights, colormap)
+        line_decorated = _replace_with_color_spans(line, weights, colormap, norm)
         document_html_lines.append(line_decorated)
-    return "<br/>".join(document_html_lines)
+    return "<br/>".join(document_html_lines), norm
 
 
-def _make_cmap(cmap_name='jet', alpha=0.2):
+def _make_cmap(cmap_name='jet', alpha=0.2, filter_ratio=0.5):
     """Create a colormap which will be used to adding color spans to text
 
     Parameters
@@ -48,6 +54,8 @@ def _make_cmap(cmap_name='jet', alpha=0.2):
         name of colormap, see here for all possible values: http://matplotlib.org/users/colormaps.html
     alpha : float
         color's transparency
+    filter_ratio : float
+        make fully transparent (1 - filter_ratio) of the color bar
 
     Returns
     -------
@@ -61,14 +69,24 @@ def _make_cmap(cmap_name='jet', alpha=0.2):
 
     # Extract colormap's colors and set new alpha
     cmap_array = cmap(np.arange(cmap.N))
-    cmap_array[:, -1] = alpha
+    N = cmap_array.shape[0]
+    if filter_ratio is not None:
+        if not 0 <= filter_ratio <= 1:
+            raise ValueError('filter_ratio = {} must be in the [0, 1] range'.format(filter_ratio))
+        nf_ratio = 1 - filter_ratio
+        cmap_array[:, -1] = 0.0
+        cmap_array[:int(nf_ratio*N / 2), -1] = alpha
+        cmap_array[-int(nf_ratio*N / 2):, -1] = alpha
+    else:
+        cmap_array[:, -1] = alpha
+
 
     # Create new colormap from the array with modified alpha
     cmap_with_trancparency = mpl.colors.ListedColormap(cmap_array)
     return cmap_with_trancparency
 
 
-def _replace_with_color_spans(textline, weights, colormap):
+def _replace_with_color_spans(textline, weights, colormap, norm):
     """Given a line of text and a dictionary of word weights,
     add color span tag to those words in the textline that are present in the dictionary
 
@@ -86,9 +104,11 @@ def _replace_with_color_spans(textline, weights, colormap):
     str
         HTML string representing the word wrapped into a <span> tag with background color
     """
+
     html = textline
     positions = _get_keyword_positions(textline, weights.keys())
     positions_no_overlap = _keep_longest_overlapping_substrings(positions)
+
 
     # Perform replacement in the descreasing order of positions, i.e. from the end of the textline.
     # This way replacing words in the end of the string does not affect positions of words at the beginning
@@ -100,7 +120,7 @@ def _replace_with_color_spans(textline, weights, colormap):
         # while keeping their original case.
         # We assume that dictionary has only lowercase words ('eric') in this case.
         key = source_word.lower()
-        score = weights[key]
+        score = norm(weights[key])
         colored_word = _wrap_in_colored_span(source_word, score, colormap)
         # print(word_start, word_end, source_word, " ==> ", colored_word)
         html = html[:word_start] + colored_word + html[word_end:]

@@ -20,7 +20,7 @@ from .metrics import _scale_cosine_similarity
 from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
 
 
-def explain_binary_categorization(estimator, vocabulary, X_row):
+def binary_sensitivity_analysis(estimator, vocabulary, X_row):
     """Explain the binary categorization results
 
     Parameters
