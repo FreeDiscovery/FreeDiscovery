@@ -45,8 +45,9 @@ ax.set_title('Relative word weights', fontsize=12)
 
 # visualize the html results in sphinx gallery
 tmp_file = os.path.join('..', 'doc', 'examples', 'out.html')
-with open(tmp_file, 'wt') as fh:
-    fh.write(html)
+if os.path.exists(tmp_file):
+    with open(tmp_file, 'wt') as fh:
+        fh.write(html)
 
 ####################################
 # .. raw:: html

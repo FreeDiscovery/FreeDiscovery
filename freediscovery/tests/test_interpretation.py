@@ -4,6 +4,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from unittest import SkipTest
+
 
 def test_get_positions():
     from freediscovery.interpretation import _get_keyword_positions
@@ -54,5 +56,8 @@ def test_explain_categorization():
     def colormap_mock(x):
        return (1.0, 1.0, 1.0, 1.0)
 
-    document_html = explain_categorization(words_weights, document_text, colormap=colormap_mock)
+    try:
+        document_html = explain_categorization(words_weights, document_text, colormap=colormap_mock)
+    except ImportError:
+        raise SkipTest
     assert len(document_html) > 0

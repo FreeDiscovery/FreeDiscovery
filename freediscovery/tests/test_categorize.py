@@ -215,7 +215,7 @@ def test_categorization2dict(max_result_categories, sort, has_nn):
     json.dumps(res)
 
 def test_explain_categorization():
-    from freediscovery.categorization import explain_binary_categorization
+    from freediscovery.categorization import binary_sensitivity_analysis
 
     uuid = vect_uuid
 
@@ -228,7 +228,7 @@ def test_explain_categorization():
     _, X = cat.fe.load()
     vect = cat.fe._load_model()
 
-    weights = explain_binary_categorization(model, vect.vocabulary_, X[0, :])
+    weights = binary_sensitivity_analysis(model, vect.vocabulary_, X[0, :])
     assert len(weights.keys()) < len(vect.vocabulary_) # not all vocabulary keys are returned
 
 
