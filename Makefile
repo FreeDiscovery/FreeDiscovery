@@ -13,3 +13,6 @@ test: test3
 
 test_cov: 
 	cd ..; python3 -c "import freediscovery.tests as ft; ft.run(coverage=True)"
+
+clean:
+	find . -type d -name "__pycache__" -exec rm -fr {} \;
