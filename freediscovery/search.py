@@ -34,14 +34,16 @@ class _SearchWrapper(_BaseWrapper):
                                           parent_id=parent_id,
                                           mid=mid, load_model=True)
 
-    def search(self, text, metric='cosine'):
+    def search(self, text, internal_id=None, metric='cosine'):
         """
         Search given some text query
 
         Parameters
         ----------
         text : str
-          the query string
+          the query string. This will be ignored if an internal_id parameter is provided.
+        internal_id : int
+          the document id used as a search query. If provided the text input will be ignored.
         metric : str
           the output metric to use
         """
@@ -61,7 +63,10 @@ class _SearchWrapper(_BaseWrapper):
         s = Search(vect, lsi)
         s.fit(X)
 
-        dist = s.search(text, metric=metric)
+        if internal_id is not None:
+            dist = s.search_id(internal_id, metric=metric)
+        else:
+            dist = s.search(text, metric=metric)
         return dist
 
 
@@ -107,7 +112,6 @@ class Search(object):
           the output metric to use
         """
         from .lsi import _TruncatedSVD_LSI
-        from .metrics import _scale_cosine_similarity
 
         if self._fit_X is None:
             raise ValueError('Estomator must be fitted before using the search method!')
@@ -123,7 +127,40 @@ class Search(object):
         else:
             q = q_vect
 
-        dist = pairwise_distances(q, self._fit_X, 'cosine')
+        scores = self._compute_score(q, self._fit_X, metric)
+
+        return scores
+
+
+    def search_id(self, internal_id, metric='jaccard_norm'):
+        """
+        Perform the search operation
+
+        Parameters
+        ----------
+        internal_id : int
+          the internal_id of the document used as a search query
+        metric : str
+          the output metric to use
+        """
+        if self._fit_X is None:
+            raise ValueError('Estomator must be fitted before using the search method!')
+
+        X = self._fit_X
+
+        q = X[[internal_id], :]
+
+        scores = self._compute_score(q, self._fit_X, metric)
+
+        return scores
+
+    @staticmethod
+    def _compute_score(q, X, metric):
+        """ Internal method to compute the scores """
+
+        from .metrics import _scale_cosine_similarity
+
+        dist = pairwise_distances(q, X, 'cosine')
         dist = dist[0]
 
         scores = 1 - dist
