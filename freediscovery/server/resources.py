@@ -19,10 +19,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_sco
                             adjusted_rand_score, adjusted_mutual_info_score,\
                             v_measure_score, average_precision_score
 import warnings
-try:  # sklearn v0.17
-    from sklearn.exceptions import UndefinedMetricWarning
-except:  # sklearn v0.18
-    from sklearn.metrics.base import UndefinedMetricWarning
+from sklearn.metrics.base import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
 from ..parsers import EmailParser
@@ -937,14 +934,16 @@ class SearchApi(Resource):
             Parameters
             ----------
             - `parent_id` : the id of the previous processing step (either `dataset_id` or `lsi_id`)
-            - `query` : the seach query
+            - `query` : the seach query. Either `query` or `query_document_id` must be provided.
+            - `query_document_id` : the id of the document used as the search query. Either `query` or `query_document_id` must be provided.
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             - `min_score` : filter out results below a similarity threashold
             - `max_results` : return only the first `max_results` documents
             - `sort` : sort the results by score
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
-                "query": wfields.Str(required=True),
+                "query": wfields.Str(),
+                "query_document_id": wfields.Int(),
                 'nn_metric': wfields.Str(missing='jaccard_norm'),
                 'min_score': wfields.Number(missing=-1),
                 'sort': wfields.Boolean(missing=True),
@@ -955,17 +954,27 @@ class SearchApi(Resource):
         parent_id = args['parent_id']
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
 
-        query = args['query']
-        scores = model.search(query, metric=args['nn_metric'])
+        if 'query' in args and 'query_document_id' not in args:
+            query = args['query']
+            scores = model.search(query, metric=args['nn_metric'])
+        elif 'query' not in args and 'query_document_id' in args:
+            query = pd.DataFrame([{'document_id': args['query_document_id']}])
+            res_q = model.fe.db.search(query, drop=False)
+
+            scores = model.search(None, internal_id=res_q.internal_id.values[0],
+                                  metric=args['nn_metric'])
+        else:
+            raise WrongParameter("One of the 'query', 'query_document_id' must be provided")
+
         scores_pd = pd.DataFrame({'score': scores,
                                   'internal_id': np.arange(model.fe.n_samples_, dtype='int')})
 
         res = model.fe.db.render_dict(scores_pd)
         res = [row for row in res if row['score'] > args['min_score']]
-        if 'max_results' in args:
-            res = res[:args['max_results']]
         if args['sort']:
             res = sorted(res, key=lambda row: row['score'], reverse=True)
+        if 'max_results' in args:
+            res = res[:args['max_results']]
 
         return {'data': res}
 
