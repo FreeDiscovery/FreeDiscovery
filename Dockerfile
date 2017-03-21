@@ -57,6 +57,7 @@ RUN python setup.py install && \
 # > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
 # rth: not sure if this is still relevant.
 ENV LANG C.UTF-8
+ENV DOCKER 1
 
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
