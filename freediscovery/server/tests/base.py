@@ -72,7 +72,7 @@ def app_notest():
     client.delete_check = app_call_wrapper(client.delete)
     return client
 
-memory = Memory(cachedir=os.path.join(cache_dir, '_joblib_cache', str(os.getpid())), verbose=0)
+memory = Memory(cachedir=os.path.join(cache_dir, '_joblib_cache'), verbose=0)
 
 #=============================================================================#
 #

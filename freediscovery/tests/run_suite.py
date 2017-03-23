@@ -3,6 +3,8 @@
 import os
 import sys
 
+from freediscovery.externals.joblib_pool import _get_temp_dir
+
 base_dir = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -22,12 +24,19 @@ def run_cli(coverage=False):
     sys.exit(status)
 
 
-def check_cache():
+def check_cache(test_env=True):
     import tempfile
-    cache_dir = tempfile.gettempdir()
+
+    if test_env:
+        subfolder = 'freediscovery-cache-test-{}'.format(os.getpid())
+    else:
+        subfolder = 'freediscovery-cache'
+
+    cache_dir, _ = _get_temp_dir(subfolder)
 
     if not os.path.exists(cache_dir):
-        raise SkipTest
+        os.mkdir(cache_dir)
+
     return cache_dir
 
 if __name__ == '__main__':
