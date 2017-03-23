@@ -16,7 +16,7 @@ from time import time
 pd.options.display.float_format = '{:,.3f}'.format
 
 dataset_name = "treclegal09_2k_subset"
-cache_dir = check_cache()
+cache_dir = check_cache(test_env=False)
 
 
 print("0. Load Dataset")
