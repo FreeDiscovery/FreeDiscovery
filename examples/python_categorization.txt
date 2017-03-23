@@ -18,7 +18,7 @@ from freediscovery.utils import categorization_score
 
 dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 
-cache_dir = check_cache()
+cache_dir = check_cache(test_env=False)
 
 if __name__ == '__main__':
 

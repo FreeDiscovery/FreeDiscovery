@@ -30,6 +30,13 @@ from .resources import (FeaturesApi, FeaturesApiElement,
                         )
 
 
+if os.environ.get('DOCKER', None) is not None:
+    from ..externals.flask_compress import Compress
+
+    compress = Compress()
+else:
+    compress = None
+
 #class CatchAll(Resource):
 #
 #    def get(self, url):
@@ -62,6 +69,8 @@ def fd_app(cache_dir):
           'APISPEC_SWAGGER_UI_URL': '/swagger-ui.html'})
 
     app.test_client_class = TestClient
+    if compress is not None:
+        compress.init_app(app)
 
     docs = FlaskApiSpec(app)
 
