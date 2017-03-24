@@ -80,10 +80,17 @@ def test_stop_words_integration(app, hashed):
             'stop_words': ['and', 'or', 'in']}
 
     res = app.post_check(url, json=pars)
+    assert dict2type(res, collapse_lists=True) == {'name' : 'str'}
+    assert res['name'] == sw_name
 
-    dsid, _, _ = get_features(app, hashed=hashed, stop_words=sw_name)
+    res = app.get_check(url + sw_name)
+    assert dict2type(res, collapse_lists=True) == {'name' : 'str',
+                                                   'stop_words': ['str']}
+    assert res['name'] == sw_name
+    assert res['stop_words'] == pars['stop_words']
 
-    print(res)
+    dsid, _ = get_features(app, hashed=hashed, stop_words=sw_name)
+
 
 
 def test_get_search_filenames(app):
