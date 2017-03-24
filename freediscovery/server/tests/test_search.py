@@ -28,6 +28,7 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
                                                             ('semantic', 0.5, None),
                                                             ('semantic', -1, 1000000),
                                                             ('semantic', -1, 3),
+                                                            ('semantic', -1, 0),
                                                             ])
 def test_search(app, method, min_score, max_results):
 
@@ -61,12 +62,16 @@ def test_search(app, method, min_score, max_results):
     scores = np.array([row['score'] for row in data])
     assert_equal(np.diff(scores) <= 0, True)
     assert_array_less(min_score, scores)
-    if max_results is not None:
+    if max_results:
         assert len(data) == min(max_results, len(input_ds['dataset']))
+    elif min_score > -1:
+        pass
+    else:
+        assert len(data) == 1967
 
     data = app.post_check(V01 + "/feature-extraction/{}/id-mapping".format(dsid), 
                    json={'data': [data[0]]})
-    if max_results is None:
+    if not max_results:
         assert data['data'][0]['file_path'] == query_file_path
 
 
