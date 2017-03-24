@@ -299,7 +299,8 @@ class _CategorizerWrapper(_BaseWrapper):
 
     @staticmethod
     def to_dict(Y_pred, nn_pred, labels, id_mapping,
-                max_result_categories=1, sort=False, min_score=None):
+                max_result_categories=1, sort_by=None,
+                sort_reverse=True, min_score=None):
         """
         Create a nested dictionary result that would be returned by 
         the REST API given the categorization results
@@ -316,8 +317,10 @@ class _CategorizerWrapper(_BaseWrapper):
            the metadata mapping from freediscovery.ingestion.DocumentIndex.data
         max_result_categories : int
            the maximum number of categories in the results
-        sort : bool
-           sort by the score of the most likely class
+        sort_by : {str, None}
+           the key used for sorting
+        sort_reverse : bool
+           reverse the sort order
         min_score : {int, None}
            filter out results below a score threashold
         """
@@ -363,8 +366,11 @@ class _CategorizerWrapper(_BaseWrapper):
                     iscores.append(iiel)
             ires['scores'] = iscores
             res.append(ires)
-        if sort:
-            res = sorted(res, key=lambda x: x['scores'][0]['score'], reverse=True)
+        if sort_by:
+            valid_sort = ['score']
+            if sort_by not in valid_sort:
+                raise ValueError('sort_by={} not in {}'.format(sort_by, valid_sort))
+            res = sorted(res, key=lambda x: x['scores'][0][sort_by], reverse=sort_reverse)
         return {'data': res}
 
 

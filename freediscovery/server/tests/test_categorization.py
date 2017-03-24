@@ -70,7 +70,8 @@ def test_api_lsi(app):
 
 
 
-def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_train=None):
+def _api_categorization_wrapper(app, solver, cv, n_categories,
+                                n_categories_train=None, max_results=None):
 
     cv = (cv == 'cv')
 
@@ -144,7 +145,12 @@ def _api_categorization_wrapper(app, solver, cv, n_categories, n_categories_trai
         assert pars[key] == data[key]
 
     method = V01 + "/categorization/{}/predict".format(mid)
-    data = app.get_check(method)
+    if max_results:
+        json_data = {'max_results': max_results}
+    else:
+        json_data = {}
+
+    data = app.get_check(method, json=json_data)
     data = data['data']
     response_ref = { 'document_id': 'int',
                      'scores': [ {'category': 'str',
@@ -210,3 +216,6 @@ def test_api_categorization_2cat_unsupervised(app, n_categories):
 @pytest.mark.parametrize("solver", ["LogisticRegression", "NearestNeighbor"])
 def test_api_categorization_3cat(app, solver):
     _api_categorization_wrapper(app, solver, '', 3)
+
+def test_api_categorization_max_results(app):
+    _api_categorization_wrapper(app, 'LogisticRegression', '', 2, max_results=100)

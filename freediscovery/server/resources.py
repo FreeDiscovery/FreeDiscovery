@@ -37,6 +37,8 @@ from ..email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
 from ..exceptions import WrongParameter
 from ..stop_words import _StopWordsWrapper
+from .validators import _is_in_range
+
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema,
                       DocumentIndexNestedSchema,
@@ -397,29 +399,39 @@ class ModelsApiPredict(Resource):
 
             **Parameters**
              - `max_result_categories` : the maximum number of categories in the results
-             - `sort` : sort by the score of the most likely class
+             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
+             - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
+             - `max_results` : return only the first `max_results` documents
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
              - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_score` : filter out results below a similarity threashold
             """))
     @use_args({'max_result_categories': wfields.Int(missing=1),
-               'sort': wfields.Boolean(missing=False),
+               'sort_by': wfields.Str(missing='score'),
+               'sort_order': wfields.Str(missing='descending',
+                                         validate=_is_in_range(['descending', 'ascending'])),
+               'max_results': wfields.Int(),
                'ml_output': wfields.Str(missing='probability'),
                'nn_metric': wfields.Str(missing='jaccard_norm'),
                'min_score': wfields.Number(missing=-1)})
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
-        sort = args.pop('sort')
+        sort_by = args.pop('sort_by')
+        sort_reverse = args.pop('sort_order') == 'descending'
         max_result_categories  = args.pop('max_result_categories')
         min_score = args.pop("min_score")
+        max_results = args.pop("max_results", 0)
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         y_res, nn_res = cat.predict(**args)
         res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
                                           cat.fe.db.data,
-                                          sort=sort,
+                                          sort_by=sort_by,
+                                          sort_reverse=sort_reverse,
                                           max_result_categories=max_result_categories,
                                           min_score=min_score)
+        if max_results > 0:
+            res['data'] = res['data'][:max_results]
         return res
 
 
@@ -940,15 +952,18 @@ class SearchApi(Resource):
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             - `min_score` : filter out results below a similarity threashold
             - `max_results` : return only the first `max_results` documents
-            - `sort` : sort the results by score
+            - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
+            - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(),
                 "query_document_id": wfields.Int(),
                 'nn_metric': wfields.Str(missing='jaccard_norm'),
                 'min_score': wfields.Number(missing=-1),
-                'sort': wfields.Boolean(missing=True),
                 'max_results': wfields.Int(),
+                'sort_by': wfields.Str(missing='score'),
+                'sort_order': wfields.Str(missing='descending',
+                                          validate=_is_in_range(['descending', 'ascending'])),
                 })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
@@ -972,9 +987,13 @@ class SearchApi(Resource):
 
         res = model.fe.db.render_dict(scores_pd)
         res = [row for row in res if row['score'] > args['min_score']]
-        if args['sort']:
-            res = sorted(res, key=lambda row: row['score'], reverse=True)
-        if 'max_results' in args:
+        sort_by = args['sort_by']
+        if sort_by:
+            if sort_by not in res[0]:
+                raise WrongParameter('sort_by={} not in []'.format(sort_by, list(res[0].keys())))
+            sort_reverse = args['sort_order'] == 'descending'
+            res = sorted(res, key=lambda row: row['score'], reverse=sort_reverse)
+        if 'max_results' in args and args['max_results'] > 0:
             res = res[:args['max_results']]
 
         return {'data': res}
