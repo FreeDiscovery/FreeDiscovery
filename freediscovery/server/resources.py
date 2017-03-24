@@ -401,6 +401,7 @@ class ModelsApiPredict(Resource):
              - `max_result_categories` : the maximum number of categories in the results
              - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
              - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
+             - `max_results` : return only the first `max_results` documents
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
              - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_score` : filter out results below a similarity threashold
@@ -409,6 +410,7 @@ class ModelsApiPredict(Resource):
                'sort_by': wfields.Str(missing='score'),
                'sort_order': wfields.Str(missing='descending',
                                          validate=_is_in_range(['descending', 'ascending'])),
+               'max_results': wfields.Int(),
                'ml_output': wfields.Str(missing='probability'),
                'nn_metric': wfields.Str(missing='jaccard_norm'),
                'min_score': wfields.Number(missing=-1)})
@@ -419,6 +421,7 @@ class ModelsApiPredict(Resource):
         sort_reverse = args.pop('sort_order') == 'descending'
         max_result_categories  = args.pop('max_result_categories')
         min_score = args.pop("min_score")
+        max_results = args.pop("max_results", 0)
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         y_res, nn_res = cat.predict(**args)
         res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
@@ -427,6 +430,8 @@ class ModelsApiPredict(Resource):
                                           sort_reverse=sort_reverse,
                                           max_result_categories=max_result_categories,
                                           min_score=min_score)
+        if max_results > 0:
+            res['data'] = res['data'][:max_results]
         return res
 
 
@@ -947,8 +952,8 @@ class SearchApi(Resource):
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             - `min_score` : filter out results below a similarity threashold
             - `max_results` : return only the first `max_results` documents
-             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
-             - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
+            - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
+            - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(),
@@ -988,7 +993,7 @@ class SearchApi(Resource):
                 raise WrongParameter('sort_by={} not in []'.format(sort_by, list(res[0].keys())))
             sort_reverse = args['sort_order'] == 'descending'
             res = sorted(res, key=lambda row: row['score'], reverse=sort_reverse)
-        if 'max_results' in args:
+        if 'max_results' in args and args['max_results'] > 0:
             res = res[:args['max_results']]
 
         return {'data': res}
