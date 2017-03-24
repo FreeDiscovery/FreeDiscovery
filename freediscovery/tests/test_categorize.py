@@ -113,13 +113,13 @@ def test_categorization(use_lsi, method, cv):
     assert_allclose(scores['recall'], 1, rtol=0.68)
     cat.delete()
 
-@pytest.mark.parametrize('max_result_categories, sort, has_nn', [(1, '', True),
-                                                             (1, 'sort', True),
-                                                             (1, '', False),
-                                                             (2, '', True), (3, '', True)])
-def test_categorization2dict(max_result_categories, sort, has_nn):
+@pytest.mark.parametrize('max_result_categories, sort_by, has_nn',
+                                                            [(1, None, True),
+                                                             (1, 'score', True),
+                                                             (1, None, False),
+                                                             (2, None, True), (3, '', True)])
+def test_categorization2dict(max_result_categories, sort_by, has_nn):
     import json
-    sort = (sort == 'sort')
     Y_pred = np.array([[1.0, 0.0],
                        [0.6, 0.4],
                        [0.0, 1.0],
@@ -139,10 +139,10 @@ def test_categorization2dict(max_result_categories, sort, has_nn):
     res = _CategorizerWrapper.to_dict(Y_pred, D_nn,
                                      ['negative', 'positive'], id_mapping,
                                      max_result_categories=max_result_categories,
-                                     sort=sort)
+                                     sort_by=sort_by)
     assert list(res.keys()) == ['data']
     if has_nn:
-        if max_result_categories >= 2 and not sort:
+        if max_result_categories >= 2 and not sort_by:
             assert res['data'][0] == {
                                         "internal_id": 0,
                                         "document_id": 0,
@@ -161,7 +161,7 @@ def test_categorization2dict(max_result_categories, sort, has_nn):
                                             }
                                         ]
                                       }
-        elif max_result_categories == 1 and not sort:
+        elif max_result_categories == 1 and not sort_by:
             assert res['data'][0] == {
                                         "internal_id": 0,
                                         "document_id": 0,
@@ -175,7 +175,7 @@ def test_categorization2dict(max_result_categories, sort, has_nn):
                                         ]
                                       }
 
-        elif max_result_categories == 1 and sort:
+        elif max_result_categories == 1 and sort_by:
             assert res['data'][0] == {
                                         "internal_id": 4,
                                         "document_id": 16,
@@ -188,12 +188,12 @@ def test_categorization2dict(max_result_categories, sort, has_nn):
                                             }
                                         ]
                                     }
-        elif max_result_categories == 0 and not sort:
+        elif max_result_categories == 0 and not sort_by:
             assert res['data'][0]['scores'] == []
         else:
             raise NotImplementedError
     else:
-        if max_result_categories == 1 and not sort:
+        if max_result_categories == 1 and not sort_by:
             assert res['data'][0] == {
                                         "internal_id": 0,
                                         "document_id": 0,
