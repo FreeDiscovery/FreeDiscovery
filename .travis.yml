@@ -32,7 +32,8 @@ install:
 
 script:
     # run tests
-    - python -c "import freediscovery.tests as ft; ft.run_cli()"
+    - pip install pytest-cov codecov
+    - py.test -sv --cov=./
     # install matplotlib which we don't add as a core dependency but which is used in examples
     - pip install matplotlib==1.5.3
     # now start the server and run the examples
@@ -49,6 +50,5 @@ script:
         done
         cat log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt; then false; else true; fi
 
-#after_success:
-#    coveralls
-
+after_success:
+    codecov --token=${CODECOV_TOKEN}

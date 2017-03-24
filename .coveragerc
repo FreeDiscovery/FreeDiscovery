@@ -1,0 +1,5 @@
+[run]
+omit = 
+   freediscovery/tests/*
+   freediscovery/server/tests/*
+   freediscovery/externals/*

@@ -7,6 +7,9 @@ FreeDiscovery
 .. image:: https://ci.appveyor.com/api/projects/status/w5kjscmqlrlehp5t/branch/master?svg=true
     :target: https://ci.appveyor.com/project/FreeDiscovery/freediscovery/branch/master
 
+.. image:: https://codecov.io/gh/FreeDiscovery/FreeDiscovery/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/FreeDiscovery/FreeDiscovery
+
 
 Open Source Software for E-Discovery and Information Retrieval
 
