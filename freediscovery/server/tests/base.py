@@ -80,7 +80,7 @@ memory = Memory(cachedir=os.path.join(cache_dir, '_joblib_cache'), verbose=0)
 #
 #=============================================================================#
 
-def get_features(app, hashed=True, metadata_fields='data_dir'):
+def get_features(app, hashed=True, metadata_fields='data_dir', **kwargs):
     method = V01 + "/feature-extraction/"
     pars = { "use_hashing": hashed}
     if metadata_fields == 'data_dir':
@@ -98,6 +98,8 @@ def get_features(app, hashed=True, metadata_fields='data_dir'):
     else:
         raise NotImplementedError('metadata_fields={} is not implemented')
 
+    pars.update(kwargs)
+
 
     res = app.post(method, json=pars)
 
@@ -114,8 +116,8 @@ def get_features(app, hashed=True, metadata_fields='data_dir'):
     return dsid, pars
 
 @memory.cache(ignore=['app'])
-def get_features_cached(app, hashed=True, n_categories=2):
-    url = V01 + '/example-dataset/20newsgroups_3categories'
+def get_features_cached(app, hashed=True, n_categories=2, dataset='20newsgroups_3categories'):
+    url = V01 + '/example-dataset/{}'.format(dataset)
     res = app.get(url, json={'n_categories': n_categories})
     assert res.status_code == 200, url
     input_ds = parse_res(res)
@@ -141,9 +143,9 @@ def get_features_cached(app, hashed=True, n_categories=2):
     assert dict2type(data) == {'id': 'str'}
     return dsid, pars, input_ds
 
-def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
+def get_features_lsi(app, hashed=True, metadata_fields='data_dir', **kwargs):
     dsid, pars = get_features(app, hashed=hashed,
-                              metadata_fields=metadata_fields)
+                              metadata_fields=metadata_fields, **kwargs)
     lsi_pars = dict( n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, json=lsi_pars)
@@ -154,7 +156,8 @@ def get_features_lsi(app, hashed=True, metadata_fields='data_dir'):
     return dsid, lsi_id, pars
 
 @memory.cache(ignore=['app'])
-def get_features_lsi_cached(app, hashed=True, n_categories=2, n_components=101):
+def get_features_lsi_cached(app, hashed=True, n_categories=2, n_components=101,
+                            dataset="20newsgroups_3categories"):
     dsid, pars, input_ds = get_features_cached(app, hashed=hashed,
                               n_categories=n_categories)
     lsi_pars = dict(n_components=n_components, parent_id=dsid)

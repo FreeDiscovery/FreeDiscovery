@@ -118,7 +118,8 @@ class FeaturesApi(Resource):
              - `analyzer`: 'word', 'char', 'char_wb' Whether the feature should be made of word or character n-grams.  Option ‘char_wb’ creates character n-grams only from text inside word boundaries.  ( default: 'word')
              - `ngram_range` : tuple (min_n, max_n), default=(1, 1) The lower and upper boundary of the range of n-values for different n-grams to be extracted. All values of n such that min_n <= n <= max_n will be used.
 
-             - `stop_words`: "english" or "None" Remove stop words from the resulting tokens. Only applies for the "word" analyzer.  If "english", a built-in stop word list for English is used. ( default: "None") - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
+             - `stop_words`: "english" or "None" Remove stop words from the resulting tokens. Only applies for the "word" analyzer.  If "english", a built-in stop word list for English is used. ( default: "None")
+             - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
              - `norm`: The normalization to use after the feature weighting ('None', 'l1', 'l2') (default: 'l2')
              - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
              - `binary`: If set to 1, all non zero counts are set to 1. (default: False)
