@@ -401,7 +401,7 @@ class ModelsApiPredict(Resource):
              - `max_result_categories` : the maximum number of categories in the results
              - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
              - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
-             - `max_results` : return only the first `max_results` documents
+             - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
              - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_score` : filter out results below a similarity threashold
@@ -951,7 +951,7 @@ class SearchApi(Resource):
             - `query_document_id` : the id of the document used as the search query. Either `query` or `query_document_id` must be provided.
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             - `min_score` : filter out results below a similarity threashold
-            - `max_results` : return only the first `max_results` documents
+            - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
             - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
             """))
