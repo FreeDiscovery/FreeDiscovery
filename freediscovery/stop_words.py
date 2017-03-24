@@ -10,6 +10,8 @@ import os.path
 
 from sklearn.externals.joblib import dump, load
 
+from .pipeline import PipelineFinder
+
 CUSTOM_STOP_WORDS = ['com']
 
 # List of common english first names
@@ -181,43 +183,59 @@ class _StopWordsWrapper(object):
     _wrapper_type = "stop_words"
 
     def __init__(self, cache_dir='/tmp/'):
-        self.cache_dir = cache_dir
+        """ Initialize a stop words wrapper
+
+        Parameters
+        ----------
+        cache_dir : str
+          the cache directory
+        """
+        self.cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
+        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
+
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
 
     def save(self, name, stop_words):
-        """Allow to save the stop_words list of strings with joblib.save
-           under $CACHE_DIR/stop_words/<name>.pkl
+        """
+        Save a list of stop_words with joblib.save under
+             $CACHE_DIR/stop_words/<name>.pkl
 
-            Parameters
-            ----------
-            name : str
-                stop words name / identifier
-            stop_words : list
-                list of stop words
+        Parameters
+        ----------
+        name : str
+            stop words name / identifier
+        stop_words : list
+            list of stop words
         """
 
         self.stop_words = stop_words  # list of stop words
 
-        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
-        self.name = os.path.join(self.model_dir, name + '.pkl') # the name (tag) for custom stop words list
-        if not os.path.exists(self.model_dir):
-            os.makedirs(self.model_dir)
+
+        self.name = os.path.join(self.model_dir, str(name) + '.pkl')
 
         dump(self.stop_words, self.name)
 
     def load(self, name):
-        """Allow to retrive the stop_words list of strings
+        """Retrive stop words specified by a name
         """
-        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
-        self.name = os.path.join(self.model_dir, name + '.pkl')
+        self.name = os.path.join(self.model_dir, str(name) + '.pkl')
         self.stop_words = load(self.name)
         return (self.stop_words)
 
     def delete(self, name):
-        """Allow to delete the stop_words list of strings
+        """Delete stop words specified by a name
         """
-        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
+        if os.path.exists(os.path.join(self.model_dir, str(name) + '.pkl')):
+            os.remove(os.path.join(self.model_dir, str(name) + '.pkl'))
 
-        if os.path.exists(os.path.join(self.model_dir, name + '.pkl')):
-            os.remove(os.path.join(self.model_dir, name + '.pkl'))
+    def __contains__(self, name):
+        """ Check if a given stop words set exists """
+        return os.path.exists(os.path.join(self.model_dir, str(name) + '.pkl'))
+
+    def list(self):
+        """ Returns a list of exiting stop-words """
+        return [os.splitext(el)[0] for el in  os.listdir(self.model_dir)]
+
 
 

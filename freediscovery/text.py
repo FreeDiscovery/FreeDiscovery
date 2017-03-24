@@ -18,6 +18,7 @@ from sklearn.pipeline import make_pipeline
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
 from .ingestion import DocumentIndex
+from .stop_words import _StopWordsWrapper
 from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
 
 
@@ -154,13 +155,14 @@ class _BaseTextTransformer(object):
         import traceback
         out = []
         for dsid in os.listdir(self.cache_dir):
+            if dsid == 'stop_words':
+                continue
             row = {"id": dsid}
             self.dsid = dsid
             try:
                 pars = self._load_pars()
             except:
-                print(pars.keys())
-                traceback.print_exc()
+                #traceback.print_exc()
                 continue
 
             if pars['type'] != type(self).__name__:
@@ -271,12 +273,19 @@ class FeatureVectorizer(_BaseTextTransformer):
         self.data_dir = data_dir
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
+
         if not isinstance(ngram_range, tuple) and not isinstance(ngram_range, list):
             raise WrongParameter('not a valid input ngram_range={}: should be a list or a typle!'.format(ngram_range))
+
         if not len(ngram_range) == 2:
             raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
-        if stop_words not in [None, 'english', 'english_alphanumeric']:
-            raise WrongParameter('stop_words')
+
+        if stop_words in [None, 'english', 'english_alphanumeric']:
+            pass
+        elif stop_words in _StopWordsWrapper(cache_dir=self.cache_dir):
+            pass
+        else:
+            raise WrongParameter('stop_words = {}'.format(stop_words))
 
         if n_features is None and use_hashing:
             n_features = 100001 # default size of the hashing table
@@ -339,7 +348,6 @@ class FeatureVectorizer(_BaseTextTransformer):
         pars['filenames_abs'] = [os.path.join(data_dir, el) for el in filenames_base]
         chunk_size = pars['chunk_size']
         n_samples = pars['n_samples']
-        n_jobs = pars['n_jobs']
         use_hashing = pars['use_hashing']
 
         if use_hashing:
@@ -349,12 +357,16 @@ class FeatureVectorizer(_BaseTextTransformer):
 
         processing_lock =  os.path.join(dsid_dir, 'processing')
         _touch(processing_lock)
-        pars['stop_words'] = self._generate_stop_words(pars['stop_words'])
+        custom_sw = _StopWordsWrapper(cache_dir=self.cache_dir)
+        if pars['stop_words'] in custom_sw:
+            pars['stop_words'] = custom_sw.load(pars['stop_words'])
+        else:
+            pars['stop_words'] = self._generate_stop_words(pars['stop_words'])
 
         try:
             if use_hashing:
                 _rename_main_thread() # fixed in https://github.com/joblib/joblib/pull/414
-                Parallel(n_jobs=n_jobs)(delayed(_vectorize_chunk)(dsid_dir, k, pars)\
+                Parallel(n_jobs=pars['n_jobs'])(delayed(_vectorize_chunk)(dsid_dir, k, pars)\
                             for k in range(n_samples//chunk_size + 1))
 
                 res = self._aggregate_features()
