@@ -251,11 +251,14 @@ class DocumentIndex(object):
     @classmethod
     def from_list(cls, metadata):
         """ Create a DocumentIndex from a list of dictionaries, for instance
-        {
-            document_id: 1,
-            rendition_id: 4,
-            file_path: "c:\dev\1.txt"
-        }
+
+        .. code:: javascript
+
+            {
+                document_id: 1,
+                rendition_id: 4,
+                file_path: "c:\dev\1.txt"
+            }
 
         Parmaters
         ---------
