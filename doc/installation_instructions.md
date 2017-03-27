@@ -1,9 +1,5 @@
 # Installation Instructions
 
-There are two ways of installing FreeDiscovery,
-
-1. An installation into a Python virtual environment (recommended for development and testing)
-2. Using a Docker container (recommended in production)
 
 ## 1. Downloading FreeDiscovery
 
@@ -15,8 +11,6 @@ or by downloading the latest stable version from the [Github releases page](http
 
 
 ## 2. Installing the Dependencies
-
-### 2.a. Python Install
 
  1. Download and install [Miniconda](http://conda.pydata.org/miniconda.html) 64 bit for Python 3.5 (a cross-platform package manager for Python & R)
 
@@ -55,20 +49,6 @@ or by downloading the latest stable version from the [Github releases page](http
 **Note 2**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python (3.5 or 3.6), and install the list of dependencies (split between `requirements.txt` and `scripts/requirements_pip*.txt` under `build_tools/`) with `pip`.
 
 
-### 2.b. Docker Container
-1. Download and [install Docker](https://docs.docker.com/engine/installation/)
-
-2. Download the pre-build container images (requires authentication),
-
-        docker pull "freediscovery/freediscovery:<version>"
-
-   or build the container locally,
-   
-        cd FreeDiscovery
-        docker build -t "freediscovery/freediscovery:<version>" .     
-
-   where `<version>` is the stable version `0.7` or latest development version with the tag `latest`.
-
       
 ## 3. Starting the FreeDiscovery Server
 
@@ -77,10 +57,6 @@ or by downloading the latest stable version from the [Github releases page](http
 The FreeDiscovery server can be started with,
    
     bash conda_run.sh
-for the Python install, or with
-
-    bash docker_run.sh freediscovery/freediscovery:<version>
-for the docker container, respectively. The repository shared with the Docker container (used to ingest the data) is `../freediscovery_shared`.
 
 ### 3.2. On Windows
 
@@ -90,8 +66,3 @@ The server initialization is not currently fully scripted on Windows, and the fo
 2. The server can then be started with,
 
         python scripts\run_api.py ..\freediscovery_shared 
-   for the Python install, or with,
-
-        docker run -t -i -v /<absolute-path-to-the-foder-with-data>:/freediscovery_shared -p 5001:5001 freediscovery/freediscovery:<version>
-
-   for the docker install.
