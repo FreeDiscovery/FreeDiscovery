@@ -6,5 +6,6 @@ User Manual
 
    data_ingestion
    scaling_benchmarks
+   docker
    deployment
 
