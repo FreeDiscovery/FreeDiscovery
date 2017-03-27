@@ -27,8 +27,8 @@ We would very much appreciate feedback on the existing functionality. Feel free 
 
 For more information see the documentation and API Reference,
 
-- development version [``master`` branch | `documentation <https://freediscovery.github.io/doc/dev/>`_ ].
-- stable version 0.9 [``0.9.X`` branch | `documentation <https://freediscovery.github.io/doc/stable/>`_ ].
+- stable version 0.9 [``0.9.X`` branch | documentation http://freediscovery.io/doc/stable/].
+- development version [``master`` branch | documentation http://freediscovery.io/doc/dev/ ].
 
 FreeDiscovery is released under the 3-clause BSD licence.
 
