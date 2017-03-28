@@ -58,9 +58,8 @@ def _binary_linkage2clusters(linkage, n_samples):
     return labels_renamed
 
 
-def _make_birch_hierarchy(node, depth=0):
+def _make_birch_hierarchy(node, depth=0, cluster_id=0):
     """Construct a cluster hierarchy using a trained Birch model
-
 
     Parameters
     ----------
@@ -72,15 +71,34 @@ def _make_birch_hierarchy(node, depth=0):
     res : a jwzthreading.Container object
       a hierarchical structure with the resulting clustering
     """
-    from jwzthreading import Container
+    from freediscovery.externals.jwzthreading import Container
+
     htree = Container()
-    for el in  node.subclusters_:
+    htree.message = {'document_id': [], 'cluster_id': cluster_id}
+    doc_id = htree.message['document_id']
+
+    for el in node.subclusters_:
         if el.child_ is not None:
-            _make_birch_hierarchy(el.child_, depth=depth+1)
-            print('depth:', depth, el.child_)
+            cluster_id += 1
+            subtree = _make_birch_hierarchy(el.child_, depth=depth+1, cluster_id=cluster_id)
+            htree.add_child(subtree)
         else:
-            print(el.n_samples_)
-            print(dir(el))
+            doc_id.append(el.id_)
+    return htree
+
+def _print_container(ctr, depth=0, debug=0):
+    """Print summary of Thread to stdout."""
+    if debug:
+        message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject)
+    else:
+        message = str(ctr.cluster_id) + ' N_children: ' + str(len(ctr.children)) + ' N_docs: ' + str(len(ctr.message))
+
+
+    print(''.join(['> ' * depth, message]))
+
+    for child in ctr.children:
+        _print_container(child, depth + 1, debug)
+
 
 
 
