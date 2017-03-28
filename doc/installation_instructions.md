@@ -35,7 +35,9 @@ or by downloading the latest stable version from the [Github releases page](http
           python -c "import freediscovery.tests as ft; ft.run()"
 
 
-**Note**: for convenience, running steps 2 and 3 can be automated:
+**Note 1**: all of the above commands (except the installation of the compiler) should be run without `sudo` and with regular user permissions.
+
+**Note 2**: for convenience, running steps 2 and 3 can be automated:
 
 - on Linux and Mac OS X:
 
@@ -46,7 +48,7 @@ or by downloading the latest stable version from the [Github releases page](http
           cd build_tools
           conda_setup.bat
 
-**Note 2**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python (3.5 or 3.6), and install the list of dependencies (split between `requirements.txt` and `scripts/requirements_pip*.txt` under `build_tools/`) with `pip`.
+**Note 3**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python (3.5 or 3.6), and install the list of dependencies (split between `requirements.txt` and `scripts/requirements_pip*.txt` under `build_tools/`) with `pip`.
 
 
       
