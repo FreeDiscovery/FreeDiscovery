@@ -26,11 +26,12 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
 #
 #=============================================================================#
 
-@pytest.mark.parametrize("model, use_lsi", [('k-mean', False),
-                                            ('birch', True),
-                                            ('ward_hc', True),
-                                            ('dbscan', True)])
-def test_api_clustering(app, model, use_lsi):
+@pytest.mark.parametrize("model, use_lsi, n_clusters", [('k-mean', False, 13),
+                                            ('birch', True, -1),
+                                            ('birch', True, 13),
+                                            ('ward_hc', True, 13),
+                                            ('dbscan', True, None)])
+def test_api_clustering(app, model, use_lsi, n_clusters):
 
     if use_lsi:
         dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
@@ -46,7 +47,7 @@ def test_api_clustering(app, model, use_lsi):
     url = V01 + "/clustering/" + model
     pars = { 'parent_id': parent_id, }
     if model != 'dbscan':
-        pars['n_clusters'] = 13
+        pars['n_clusters'] = n_clusters
     if model == 'dbscan':
         pars.update({'eps': 0.1, "min_samples": 2})
     data = app.post_check(url, json=pars)

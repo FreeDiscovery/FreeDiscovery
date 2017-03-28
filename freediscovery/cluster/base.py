@@ -138,31 +138,6 @@ class ClusterLabels(object):
 
 class _BaseClusteringWrapper(object):
 
-    def centroid_similarity(self, internal_ids, nn_metric='jaccard_norm'):
-        """ Given a list of documents in a cluster, compute the cluster centroid,
-        intertia and individual distances 
-
-        Parameters
-        ----------
-        internal_ids : list
-          a list of internal ids
-        nn_metric : str
-          a rescaling of the metric if needed
-        """
-        from ..metrics import _scale_cosine_similarity
-        from sklearn.metrics.pairwise import pairwise_distances
-        X = self._fit_X
-
-        X_sl = X[internal_ids, :]
-        centroid = X_sl.mean(axis=0)
-
-        if centroid.ndim == 1:
-            centroid = centroid[None, :]
-
-        S_cos = 1 - pairwise_distances(X_sl, centroid, metric='cosine')
-        S_sim = _scale_cosine_similarity(S_cos, metric=nn_metric)
-        S_sim_mean = np.mean(S_sim)
-        return float(S_sim_mean), S_sim[:,0]
 
     def _merge_response(self, cluster_id):
         res_scores = pd.DataFrame({'internal_id': np.arange(self.fe.n_samples_, dtype='int'),
@@ -239,7 +214,11 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             n_clusters = len(np.unique(labels_))
             km.labels_ = labels_
 
-        if not hasattr(km, 'cluster_centers_'):
+        if type(km).__name__ == 'Birch' and n_clusters is None:
+            # hierarcical clustering, centroids are computed at a
+            # different time..
+            pass
+        elif not hasattr(km, 'cluster_centers_'):
             # i.e. model is not MiniBatchKMeans => compute centroids
             km.cluster_centers_ = NearestCentroid().fit(X, labels_).centroids_
 
@@ -330,7 +309,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         return self._cluster_func(n_clusters, km, pars)
 
 
-    def birch(self, n_clusters, threshold=0.5, branching_factor=50):
+    def birch(self, n_clusters=-1, threshold=0.5, branching_factor=50):
         """
         Perform Birch clustering
 
@@ -347,6 +326,9 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         pars = {'threshold': threshold}
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering for scaling reasons.")
+
+        if n_clusters <= 0:
+            n_clusters = None
 
         km = Birch(n_clusters=n_clusters, threshold=threshold,
                 branching_factor=branching_factor)

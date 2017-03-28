@@ -529,7 +529,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
                 "Training data and predicted data do "
                 "not have same number of features.")
 
-    def predict(self, X):
+    def predict(self, X, batch_size=5000):
         """
         Predict data using the ``centroids_`` of subclusters.
 
@@ -547,6 +547,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
         """
         X = check_array(X, accept_sparse='csr')
         self._check_fit(X)
+
         reduced_distance = safe_sparse_dot(X, self.subcluster_centers_.T)
         reduced_distance *= -2
         reduced_distance += self._subcluster_norms

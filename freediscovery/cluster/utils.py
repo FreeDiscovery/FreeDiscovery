@@ -8,6 +8,8 @@ from __future__ import unicode_literals
 import numpy as np
 from sklearn.utils.validation import check_array
 
+from freediscovery.externals.jwzthreading import Container
+
 def _binary_linkage2clusters(linkage, n_samples):
     """ Given a list of elements of size n_sample and a linkage matrix
     linking some of those samples, compute the cluster_id of each element
@@ -58,46 +60,6 @@ def _binary_linkage2clusters(linkage, n_samples):
     return labels_renamed
 
 
-def _make_birch_hierarchy(node, depth=0, cluster_id=0):
-    """Construct a cluster hierarchy using a trained Birch model
-
-    Parameters
-    ----------
-    model : Birch
-      a trained Birch clustering
-
-    Returns
-    -------
-    res : a jwzthreading.Container object
-      a hierarchical structure with the resulting clustering
-    """
-    from freediscovery.externals.jwzthreading import Container
-
-    htree = Container()
-    htree.message = {'document_id': [], 'cluster_id': cluster_id}
-    doc_id = htree.message['document_id']
-
-    for el in node.subclusters_:
-        if el.child_ is not None:
-            cluster_id += 1
-            subtree = _make_birch_hierarchy(el.child_, depth=depth+1, cluster_id=cluster_id)
-            htree.add_child(subtree)
-        else:
-            doc_id.append(el.id_)
-    return htree
-
-def _print_container(ctr, depth=0, debug=0):
-    """Print summary of Thread to stdout."""
-    if debug:
-        message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject)
-    else:
-        message = str(ctr.cluster_id) + ' N_children: ' + str(len(ctr.children)) + ' N_docs: ' + str(len(ctr.message))
-
-
-    print(''.join(['> ' * depth, message]))
-
-    for child in ctr.children:
-        _print_container(child, depth + 1, debug)
 
 
 
@@ -184,3 +146,29 @@ def _dbscan_unique2noisy(labels_):
         else:
             raise ValueError('This should not be possible!')
     return labels_ndup_
+
+
+def centroid_similarity(X, internal_ids, nn_metric='jaccard_norm'):
+    """ Given a list of documents in a cluster, compute the cluster centroid,
+    intertia and individual distances
+
+    Parameters
+    ----------
+    internal_ids : list
+      a list of internal ids
+    nn_metric : str
+      a rescaling of the metric if needed
+    """
+    from ..metrics import _scale_cosine_similarity
+    from sklearn.metrics.pairwise import pairwise_distances
+
+    X_sl = X[internal_ids, :]
+    centroid = X_sl.mean(axis=0)
+
+    if centroid.ndim == 1:
+        centroid = centroid[None, :]
+
+    S_cos = 1 - pairwise_distances(X_sl, centroid, metric='cosine')
+    S_sim = _scale_cosine_similarity(S_cos, metric=nn_metric)
+    S_sim_mean = np.mean(S_sim)
+    return float(S_sim_mean), S_sim[:,0]

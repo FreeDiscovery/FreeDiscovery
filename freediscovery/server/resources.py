@@ -27,7 +27,7 @@ from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..utils import _docstring_description
-from ..cluster import _ClusteringWrapper
+from ..cluster import _ClusteringWrapper, centroid_similarity
 from ..search import _SearchWrapper
 from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
@@ -480,14 +480,14 @@ class BirchClusteringApi(Resource):
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
-            - `n_clusters`: the number of clusters
+            - `n_clusters`: the number of clusters or -1 to use hierarchical clustering (default: -1)
             - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
             - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively.
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
            """))
     @use_args( {
             'parent_id': wfields.Str(required=True),
-            'n_clusters': wfields.Int(missing=150),
+            'n_clusters': wfields.Int(missing=-1),
             'branching_factor': wfields.Int(missing=50),
             'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
             'nn_metric': wfields.Str(missing='jaccard_norm')
@@ -617,7 +617,7 @@ class ClusteringApiElement(Resource):
         for name, group in y.groupby('cluster_id'):
             name = int(name)
 
-            S_sim_mean, S_sim = cl.centroid_similarity(group.index.values, nn_metric)
+            S_sim_mean, S_sim = centroid_similarity(cl._fit_X, group.index.values, nn_metric)
             group = group.assign(similarity=S_sim)
 
             row_docs = []
@@ -708,7 +708,7 @@ class DupDetectionApiElement(Resource):
             if group.shape[0] <= 1:
                 continue
 
-            S_sim_mean, S_sim = model.centroid_similarity(group.index.values, nn_metric)
+            S_sim_mean, S_sim = centroid_similarity(model._fit_X, group.index.values, nn_metric)
             group = group.assign(similarity=S_sim)
 
             row_docs = []

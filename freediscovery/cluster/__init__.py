@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 from .base import (select_top_words, ClusterLabels,
                    _ClusteringWrapper)
+from .utils import centroid_similarity
 
 from .dendrogram import _DendrogramChildren
 

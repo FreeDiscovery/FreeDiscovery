@@ -104,22 +104,31 @@ def test_clustering(method, use_lsi, args, cl_args):
 
 
 def test_birch_make_hierarchy():
-    from freediscovery.cluster.utils import _make_birch_hierarchy , _print_container
+    from freediscovery.cluster.birch import (_print_container, _BirchHierarchy)
     from freediscovery.externals.birch import Birch
     from sklearn.preprocessing import normalize
 
     np.random.seed(9999)
 
-    X = np.random.rand(3000, 100)
+    X = np.random.rand(10000, 100)
     normalize(X)
 
-    mod = Birch(n_clusters=None, threshold=0.8)
+    mod = Birch(n_clusters=None, threshold=0.8, compute_labels=False)
     mod.fit(X)
 
-    htree = _make_birch_hierarchy(mod.root_)
-    print(htree)
-    _print_container(htree)
+    hmod = _BirchHierarchy(mod)
+    hmod.fit(X)
 
+    htree = hmod.htree
+    assert htree.size == hmod._n_clusters
+
+
+    doc_count = 0
+    for el in htree.flatten():
+        doc_count += len(el['document_id'])
+        el._get_children_document_id()
+    assert doc_count == X.shape[0]
+    assert htree.document_count == X.shape[0]
 
 
 def test_denrogram_children():
