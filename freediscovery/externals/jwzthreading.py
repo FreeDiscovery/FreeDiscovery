@@ -45,27 +45,33 @@ SUBJECT_RE = re.compile(
 # models
 #
 
-class Container(object):
-    """Contains a tree of messages.
+class Container(dict):
+    """Contains a tree of objects. Each container is a subclassed dict
+    where the contents are stored.
 
     Attributes:
-        message (Message): Message corresponding to this tree node.
-            This can be None, if a Message-Id is referenced but no
-            message with the ID is included.
         children ([Container]): Possibly-empty list of child containers
         parent (Container): Parent container, if any
     """
-    def __init__(self):
-        self.message = self.parent = None
+    def __init__(self, **args):
+        dict.__init__(self, **args)
+        self.parent = None
         self.children = []
 
     def __repr__(self):
         return '<%s %x: %r>' % (self.__class__.__name__, id(self),
-                                self.message)
+                                dict.__repr__(self))
+    def __hash__(self):
+        """ Make the container hashable. Care must be taken though not to change
+	the container contents after the initialization as otherwise the hash
+        value will change
+	"""
+        return hash(tuple(sorted(self.items())) + (self.parent,))
+
 
     def is_dummy(self):
-        """Check if Container has a message."""
-        return self.message is None
+        """Check if Container has some contents."""
+        return not len(self.keys())
 
     def add_child(self, child):
         """Add a child to `self`.
@@ -132,7 +138,7 @@ class Container(object):
             return 1 + self.parent.depth
 
     def flatten(self):
-        """ Return a flatten version of the thread
+        """ Return a flatten version of the tree
 
         Returns
           list [Containers]: a list of messages
@@ -160,6 +166,8 @@ class Container(object):
     def collapse_empty(self, inplace=True):
         """ Collapse empty top level containers.
 
+        This only applies to the JWZ algorithm
+
         If multiple messages reference a non existing top level message,
         by default JWZ threading algorithm will create a en empty top level
         container to be used as the root node.
@@ -178,12 +186,15 @@ class Container(object):
         if not inplace:
             raise NotImplementedError
 
+        if not 'message' in self:
+            raise ValueError('This method is only valid when used for email threading')
 
-        if self.message is not None:
+
+        if self['message'] is not None:
             # nothing to be done
             return self
 
-        if any([el.message is None for el in self.children]):
+        if any([el['message'] is None for el in self.children]):
             raise ValueError('Children containers cannot be empty!')
 
         # In the following, self.message is None
@@ -203,20 +214,24 @@ class Container(object):
 
 
     def to_dict(self, include=[]):
-        """ Convert a Container tree to a nested dict """
-        if self.message is None:
-            raise ValueError('Containers with None messages are not supported!')
+        """ Convert a Container tree to a nested dict
+        """
+        if 'message' not in self:
+            raise ValueError('This method is currently valid with email threading, '
+                             'please overwrite it for other applications')
+
+        if self['message'] is None:
             raise ValueError('Containers with None messages are not supported:!\n'\
                              '    this: {}'.format(self))
 
-        res =  {'id': self.message.message_idx}
+        res =  {'id': self['message'].message_idx}
 
         for key in include:
-            res[key] =  getattr(self.message, key)
+            res[key] =  getattr(self['message'], key)
 
         if self.parent is not None:
-            if self.parent.message is not None:
-                res['parent'] = self.parent.message.message_idx
+            if self.parent['message'] is not None:
+                res['parent'] = self.parent['message'].message_idx
             else:
                 raise ValueError('Containers with None messages are not supported:!\n'\
                                  '    this: {}\n    parent: {}'.format(self, self.parent))
@@ -324,10 +339,10 @@ def prune_container(container):
     for child in new_children:
         container.add_child(child)
 
-    if container.message is None and not len(container.children):
+    if container.get('message') is None and not len(container.children):
         # step 4 (a) - nuke empty containers
         return []
-    elif container.message is None and (
+    elif container.get('message') is None and (
         len(container.children) == 1 or container.parent is not None):
         # step 4 (b) - promote children
         children = container.children[:]
@@ -356,10 +371,10 @@ def sort_threads(threads, key='message_idx', missing=-1, reverse=False):
 
     def _sort_func(el):
 
-        if el.message is None:
+        if el.get('message') is None:
             val = missing
         else:
-            val = getattr(el.message, key)
+            val = getattr(el.get('message'), key)
         if val is None:
             val = missing
         return val
@@ -398,10 +413,10 @@ def thread(messages, group_by_subject=True):
         # step one (a)
         this_container = id_table.get(msg.message_id, None)
         if this_container is not None:
-            this_container.message = msg
+            this_container['message'] = msg
         else:
-            this_container = Container()
-            this_container.message = msg
+            this_container = Container(message=None)
+            this_container['message'] = msg
             id_table[msg.message_id] = this_container
 
         # step one (b)
@@ -410,7 +425,7 @@ def thread(messages, group_by_subject=True):
             ## print "Processing reference for "+repr(msg.message_id)+": "+repr(ref)
             container = id_table.get(ref, None)
             if container is None:
-                container = Container()
+                container = Container(message=None)
                 id_table[ref] = container
 
             if prev is not None:
@@ -466,10 +481,10 @@ def thread(messages, group_by_subject=True):
     # step five - group root set by subject
     subject_table = OrderedDict()
     for container in root_set:
-        if container.message:
-            subj = container.message.subject
+        if container['message']:
+            subj = container['message'].subject
         else:
-            subj = container.children[0].message.subject
+            subj = container.children[0]['message'].subject
 
         subj = SUBJECT_RE.sub('', subj)
         if subj == '':
@@ -478,19 +493,19 @@ def thread(messages, group_by_subject=True):
         existing = subject_table.get(subj, None)
         if (existing is None or
             (existing.message is not None and
-             container.message is None) or
+             container.get('message') is None) or
             (existing.message is not None and
-             container.message is not None and
-             len(existing.message.subject) > len(container.message.subject))):
+             container.get('message') is not None and
+             len(existing.message.subject) > len(container['message'].subject))):
             subject_table[subj] = container
 
 
     # step five (c)
     for container in root_set:
-        if container.message:
-            subj = container.message.subject
+        if container['message']:
+            subj = container['message'].subject
         else:
-            subj = container.children[0].message.subject
+            subj = container.children[0]['message'].subject
 
         subj = SUBJECT_RE.sub('', subj)
         ctr = subject_table.get(subj)
@@ -506,14 +521,14 @@ def thread(messages, group_by_subject=True):
                 ctr.add_child(container)
             else:
                 container.add_child(ctr)
-        elif len(ctr.message.subject) < len(container.message.subject):
+        elif len(ctr.message.subject) < len(container['message'].subject):
             # ctr has fewer levels of 're:' headers
             ctr.add_child(container)
-        elif len(ctr.message.subject) > len(container.message.subject):
+        elif len(ctr.message.subject) > len(container['message'].subject):
             # container has fewer levels of 're:' headers
             container.add_child(ctr)
         else:
-            new = Container()
+            new = Container(message=None)
             new.add_child(ctr)
             new.add_child(container)
             subject_table[subj] = new
@@ -523,10 +538,13 @@ def thread(messages, group_by_subject=True):
 
 def print_container(ctr, depth=0, debug=0):
     """Print summary of Thread to stdout."""
-    if debug:
-        message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject)
+    if 'message' in ctr:
+        if debug:
+            message = repr(ctr) + ' ' + repr(ctr['message'] and ctr['message'].subject)
+        else:
+            message = str(ctr['message'] and ctr['message'].subject)
     else:
-        message = str(ctr.message and ctr.message.subject)
+        message = str(ctr)
 
     print(''.join(['> ' * depth, message]))
 
