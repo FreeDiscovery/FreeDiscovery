@@ -60,10 +60,6 @@ def _binary_linkage2clusters(linkage, n_samples):
     return labels_renamed
 
 
-
-
-
-
 def _merge_clusters(X, rename=False):
     """
     Compute a union of all clusters

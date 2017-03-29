@@ -506,6 +506,10 @@ class BirchClusteringApi(Resource):
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir,
                                 parent_id=args.pop('parent_id'))
+
+        if args.get('n_clusters') <= 0:
+            args['n_clusters'] = None
+
         cl.birch(threshold=threshold, **args)
         return {'id': cl.mid}
 
@@ -588,53 +592,83 @@ class ClusteringApiElement(Resource):
 
            **Parameters**
             - `n_top_words`: keep only most relevant `n_top_words` words
-            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `nn_metric` : The similarity metric in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
             """))
     @use_args({ 'n_top_words': wfields.Int(missing=5),
                'nn_metric': wfields.Str(missing='jaccard_norm')
           })
     @marshal_with(ClusteringSchema())
-    def get(self, method, mid, **args):  # TODO unused parameter 'method'
-
+    def get(self, method, mid, **args):
         nn_metric = args.pop('nn_metric')
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
 
-        km = cl._load_model()
-        htree = cl._get_htree(km)
-        if 'children' in htree:
-            htree['children'] = htree['children'].tolist()
-        if args['n_top_words'] > 0:
-            terms = cl.compute_labels(**args)
-        else:
-            terms = None
-
         cl._fit_X = cl.pipeline.data
+        km = cl._load_model()
 
-        y = cl._merge_response(km.labels_)
-        res = []
-        valid_keys = ['document_id', 'rendering_id', 'similarity']
-        for name, group in y.groupby('cluster_id'):
-            name = int(name)
+        htree = cl._get_htree(cl._fit_X, metric=nn_metric)
 
-            S_sim_mean, S_sim = centroid_similarity(cl._fit_X, group.index.values, nn_metric)
-            group = group.assign(similarity=S_sim)
 
-            row_docs = []
-            for idx, row in group.iterrows():
-                row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
-            row['documents'] = row_docs
-            irow = {'documents': row_docs, 'cluster_id': int(name),
-                        'cluster_similarity': S_sim_mean}
-            if terms is not None:
-                irow['cluster_label'] = ' '.join(terms[name])
-            res.append(irow)
+        if type(km).__name__ == 'Birch' and cl._pars['is_hierarchical']:
+            # Hierarchical clustering
+            flat_tree = htree.flatten()
+
+            terms = cl.compute_labels(cluster_indices=[row['children_document_id'] for row in flat_tree],
+                                      **args)
+            for label, row in zip(terms, flat_tree):
+                row['cluster_label'] = label
+
+            res = []
+            db = cl.fe.db.data
+            doc_keys = [key for key in db.columns \
+                            if key in ['document_id', 'rendering_id']]
+            db = db[doc_keys]
+
+            for idx, row in enumerate(flat_tree):
+                irow = {key: row[key] for key in ['cluster_label', 'cluster_similarity']}
+                irow['cluster_id'] = idx
+                irow['children'] = [el['cluster_id'] for el in row.children]
+                irow['cluster_depth'] = row.depth
+
+                db_sl = db.iloc[row['children_document_id']].copy()
+                db_sl['similarity'] = row['cluster_similarity']
+                tmp = []
+                for index, row_tmp in db_sl.iterrows():
+                    row_dict = row_tmp.to_dict()
+                    tmp.append(row_dict)
+                irow['documents'] = tmp
+
+                res.append(irow)
+
+        else:
+            # Non hierarchical clustering
+
+            if args['n_top_words'] > 0:
+                terms = cl.compute_labels(**args)
+            else:
+                terms = None
+
+            y = cl._merge_response(km.labels_)
+            res = []
+            valid_keys = ['document_id', 'rendering_id', 'similarity']
+            for name, group in y.groupby('cluster_id'):
+                name = int(name)
+
+                S_sim_mean, S_sim = centroid_similarity(cl._fit_X, group.index.values, nn_metric)
+                group = group.assign(similarity=S_sim)
+
+                row_docs = []
+                for idx, row in group.iterrows():
+                    row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+                row['documents'] = row_docs
+                irow = {'documents': row_docs, 'cluster_id': int(name),
+                            'cluster_similarity': S_sim_mean}
+                if terms is not None:
+                    irow['cluster_label'] = ' '.join(terms[name])
+                res.append(irow)
+
 
         return {'data': res}
-
-        pars = cl._load_pars()
-        return {'labels': km.labels_.tolist(), 'cluster_terms': terms,
-                  'htree': htree, 'pars': pars}
 
 
     @doc(description='Delete a clustering model')

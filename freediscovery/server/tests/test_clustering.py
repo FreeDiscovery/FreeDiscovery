@@ -41,6 +41,11 @@ def test_api_clustering(app, model, use_lsi, n_clusters):
         lsi_id = None
         parent_id = dsid
 
+    if model == 'birch' and n_clusters <= 0:
+        is_hierarchical = True
+    else:
+        is_hierarchical = False
+
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)
 
@@ -61,14 +66,16 @@ def test_api_clustering(app, model, use_lsi, n_clusters):
 
     assert dict2type(data, max_depth=1) == {'data': 'list'}
     for row in data['data']:
-        assert dict2type(row, max_depth=1) == {'cluster_id': 'int',
-                                               'cluster_similarity': 'float',
-                                               'cluster_label': 'str',
-                                               'documents': 'list'}
+        ref_res = {'cluster_id': 'int', 'cluster_similarity': 'float',
+                   'cluster_label': 'str', 'documents': 'list'}
+        if is_hierarchical:
+            ref_res['children'] = 'list'
+            ref_res['cluster_depth'] = 'int'
+        assert dict2type(row, max_depth=1) == ref_res
         for irow in row['documents']:
             assert dict2type(irow) == {'document_id': 'int',
                                        'similarity': 'float'}
-    if model != 'dbscan':
+    if model != 'dbscan' and not is_hierarchical:
         assert len(data['data']) == 13
 
     #if data['htree']:

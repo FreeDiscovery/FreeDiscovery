@@ -143,7 +143,7 @@ class CategorizationParsSchema(Schema):
 class _ClusteringElementSubSchema(DocumentIndexSchema):
     similarity = fields.Number()
 
-class _ClusteringElementSchema(DocumentIndexSchema):
+class _ClusteringElementSchema(Schema):
     cluster_id = fields.Int(required=True)
     cluster_similarity = fields.Number()
     cluster_label = fields.Str()

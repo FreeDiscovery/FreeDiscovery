@@ -48,9 +48,6 @@ def _check_mutual_index(keys1, keys2):
     return index_cols
 
 
-
-
-
 class DocumentIndex(object):
     def __init__(self, data_dir, data, filenames):
         self.data_dir = data_dir
