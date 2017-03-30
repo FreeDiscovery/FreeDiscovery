@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import os
 import pytest
 import json
-import itertools
+import re
 from unittest import SkipTest
 from numpy.testing import assert_equal, assert_almost_equal
 
@@ -72,6 +72,8 @@ def test_api_clustering(app, model, use_lsi, n_clusters):
             ref_res['children'] = 'list'
             ref_res['cluster_depth'] = 'int'
         assert dict2type(row, max_depth=1) == ref_res
+        # make sure we have space separated words, not a str(list)
+        assert re.match('[^\[]+', row['cluster_label'])
         for irow in row['documents']:
             assert dict2type(irow) == {'document_id': 'int',
                                        'similarity': 'float'}

@@ -5,14 +5,18 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path
+from unittest import SkipTest
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
+from sklearn.externals import joblib
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.cluster import _ClusteringWrapper, select_top_words
+from freediscovery.cluster.birch import _check_birch_tree_consistency
 from freediscovery.lsi import _LSIWrapper
-from .run_suite import check_cache
+from .run_suite import check_cache, EXTERNAL_DATASETS_PATH
 
 
 NCLUSTERS = 2
@@ -117,20 +121,29 @@ def test_clustering(method, use_lsi, args, cl_args):
     cat.delete()
 
 
-
-
-def test_birch_make_hierarchy():
+@pytest.mark.parametrize('dataset', ['random', 'birch_hierarchical'])
+def test_birch_make_hierarchy(dataset):
     from freediscovery.cluster.birch import (_print_container, _BirchHierarchy)
     from freediscovery.externals.birch import Birch
     from sklearn.preprocessing import normalize
 
-    np.random.seed(9999)
+    if dataset == 'random':
+        np.random.seed(9999)
 
-    X = np.random.rand(10000, 100)
-    normalize(X)
+        X = np.random.rand(10000, 100)
+        normalize(X)
+    elif dataset == 'birch_hierarchical':
+        if EXTERNAL_DATASETS_PATH is None:
+            raise SkipTest
+        basename = os.path.dirname(__file__)
+        X = joblib.load(os.path.join(basename, '..', 'data', 'ds_lsi_birch', 'data'))
+        joblib.dump(X, '/tmp/data')
 
-    mod = Birch(n_clusters=None, threshold=0.8, compute_labels=False)
+
+    mod = Birch(n_clusters=None, compute_labels=False)
     mod.fit(X)
+
+    _check_birch_tree_consistency(mod.root_)
 
     hmod = _BirchHierarchy(mod)
     hmod.fit(X)
@@ -138,10 +151,10 @@ def test_birch_make_hierarchy():
     htree = hmod.htree
     assert htree.size == hmod._n_clusters
 
-
     doc_count = 0
     for el in htree.flatten():
         doc_count += len(el['document_id'])
+        el.depth
         el._get_children_document_id()
     assert doc_count == X.shape[0]
     assert htree.document_count == X.shape[0]

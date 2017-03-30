@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 import os.path
+import sys
 
 import numpy as np
 from sklearn.externals import joblib
@@ -216,6 +217,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         if type(km).__name__ == 'Birch' and n_clusters is None:
             # hierarcical clustering, centroids are computed at a later time..
             labels_ = None
+            sys.setrecursionlimit(os.environ.get('FREEDISCOVERY_RECURSION_LIM', 10000))
         else:
             if type(km).__name__ == "DBSCAN":
                 labels_ = _dbscan_noisy2unique(km.labels_)
@@ -230,8 +232,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
 
         pars['n_clusters'] = n_clusters
 
-        joblib.dump(km, os.path.join(self.model_dir, mid,  'model'), compress=9)
-        joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'), compress=9)
+        joblib.dump(km, os.path.join(self.model_dir, mid,  'model'))
+        joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'))
 
         self.km = km
         self._pars  = pars

@@ -19,10 +19,26 @@ class _HCContainer(Container):
             res += el._get_children_document_id()
         return res
 
+
+def _check_birch_tree_consistency(node):
+    """ Check that the _id we added is consistent """
+    for el in node.subclusters_:
+        if el.n_samples_  != len(el.id_):
+            raise ValueError('For subcluster {}, n_samples={} but len(id_)={}'.format(el,
+                                     el.n_samples_, el.id_))
+        if el.child_ is not None:
+            _check_birch_tree_consistency(el.child_)
+
+
+
 class _BirchHierarchy(object):
     def __init__(self, model, metric='jaccard_norm'):
         self.model = model
         self.htree, _n_clusters = self._make_birch_hierarchy(model.root_)
+        if len(self.htree._get_children_document_id()) != self.model.n_samples_:
+            raise ValueError("Building hierarchy failed: "
+        	             "root node contains {} documents, while the total document number is {}".format(
+		                len(self.htree._get_children_document_id()), self.model.n_samples_))
         self._n_clusters = _n_clusters
         self.metric_ = metric
 
@@ -54,7 +70,7 @@ class _BirchHierarchy(object):
                 subtree, cluster_id = _BirchHierarchy._make_birch_hierarchy(el.child_, depth=depth+1, cluster_id=cluster_id)
                 htree.add_child(subtree)
             else:
-                document_id_list.append(el.id_)
+                document_id_list += el.id_
         if depth == 0:
             #make sure we return the correct number of clusters
             cluster_id += 1

@@ -625,8 +625,9 @@ class ClusteringApiElement(Resource):
             db = db[doc_keys]
 
             for idx, row in enumerate(flat_tree):
-                irow = {key: row[key] for key in ['cluster_label', 'cluster_similarity']}
-                irow['cluster_id'] = idx
+                irow = {'cluster_similarity': row['cluster_similarity'],
+                        'cluster_label': ' '.join(row['cluster_label']),
+                        'cluster_id': idx}
                 irow['children'] = [el['cluster_id'] for el in row.children]
                 irow['cluster_depth'] = row.depth
 

@@ -275,24 +275,26 @@ class _CFSubcluster(object):
         Squared norm of the subcluster. Used to prevent recomputing when
         pairwise minimum distances are computed.
 
-    id_ : ndarray
-        subcluster id
+    id_ : lis
+        a list of subcluster ids
     """
     def __init__(self, linear_sum=None, id_=None):
         if linear_sum is None:
             self.n_samples_ = 0
             self.squared_sum_ = 0.0
             self.linear_sum_ = 0
+            self.id_ = [] 
         else:
             self.n_samples_ = 1
             self.centroid_ = self.linear_sum_ = linear_sum
             self.squared_sum_ = self.sq_norm_ = np.dot(
                 self.linear_sum_, self.linear_sum_)
+            self.id_ = [id_]
         self.child_ = None
-        self.id_ = id_
 
     def update(self, subcluster):
         self.n_samples_ += subcluster.n_samples_
+        self.id_ += subcluster.id_
         self.linear_sum_ += subcluster.linear_sum_
         self.squared_sum_ += subcluster.squared_sum_
         self.centroid_ = self.linear_sum_ / self.n_samples_
@@ -310,9 +312,10 @@ class _CFSubcluster(object):
         dot_product = (-2 * new_n) * new_norm
         sq_radius = (new_ss + dot_product) / new_n + new_norm
         if sq_radius <= threshold ** 2:
-            (self.n_samples_, self.linear_sum_, self.squared_sum_,
+            new_id = self.id_ + nominee_cluster.id_
+            (self.n_samples_, self.id_, self.linear_sum_, self.squared_sum_,
              self.centroid_, self.sq_norm_) = \
-                new_n, new_ls, new_ss, new_centroid, new_norm
+                new_n, new_id, new_ls, new_ss, new_centroid, new_norm
             return True
         return False
 
@@ -426,6 +429,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
             Input data.
         """
         self.fit_, self.partial_fit_ = True, False
+        self.n_samples_ = X.shape[0]
         return self._fit(X)
 
     def _fit(self, X):
