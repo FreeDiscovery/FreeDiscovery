@@ -71,7 +71,8 @@ def test_api_lsi(app):
 
 
 def _api_categorization_wrapper(app, solver, cv, n_categories,
-                                n_categories_train=None, max_results=None):
+                                n_categories_train=None, max_results=None,
+                                subset='all'):
 
     cv = (cv == 'cv')
 
@@ -149,6 +150,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
         json_data = {'max_results': max_results}
     else:
         json_data = {}
+    json_data['subset'] = subset
 
     data = app.get_check(method, json=json_data)
     data = data['data']
@@ -161,6 +163,15 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
     if solver == 'NearestNeighbor':
         response_ref['scores'][0]['document_id'] = 'int'
 
+    if max_results is None:
+        if subset == 'all':
+            assert len(data) == len(ds_input['dataset'])
+        elif subset == 'train':
+            assert len(data) == len(training_set)
+        elif subset == 'test':
+            assert len(data) == len(ds_input['dataset']) - len(training_set)
+        else:
+            raise ValueError
 
     for row in data:
         assert dict2type(row) == response_ref
@@ -219,3 +230,7 @@ def test_api_categorization_3cat(app, solver):
 
 def test_api_categorization_max_results(app):
     _api_categorization_wrapper(app, 'LogisticRegression', '', 2, max_results=100)
+
+@pytest.mark.parametrize("subset", ['all', 'test', 'train'])
+def test_api_categorization_3cat(app, subset):
+    _api_categorization_wrapper(app, 'LogisticRegression', '', 2, subset=subset)

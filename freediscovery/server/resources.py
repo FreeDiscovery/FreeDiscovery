@@ -402,6 +402,7 @@ class ModelsApiPredict(Resource):
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
              - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_score` : filter out results below a similarity threashold
+             - `subset`: apply prediction to a document subset. Must be one of ['all', 'train', 'test']. Default: 'test'.
             """))
     @use_args({'max_result_categories': wfields.Int(missing=1),
                'sort_by': wfields.Str(missing='score'),
@@ -410,7 +411,10 @@ class ModelsApiPredict(Resource):
                'max_results': wfields.Int(),
                'ml_output': wfields.Str(missing='probability'),
                'nn_metric': wfields.Str(missing='jaccard_norm'),
-               'min_score': wfields.Number(missing=-1)})
+               'min_score': wfields.Number(missing=-1),
+               'subset': wfields.Str(missing='test',
+                                     validate=_is_in_range(['all', 'train', 'test']))
+               })
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
@@ -419,14 +423,19 @@ class ModelsApiPredict(Resource):
         max_result_categories  = args.pop('max_result_categories')
         min_score = args.pop("min_score")
         max_results = args.pop("max_results", 0)
+        subset = args.pop("subset")
+
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
         y_res, nn_res = cat.predict(**args)
+        train_indices = cat._pars['index']
         res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
                                           cat.fe.db.data,
                                           sort_by=sort_by,
                                           sort_reverse=sort_reverse,
                                           max_result_categories=max_result_categories,
-                                          min_score=min_score)
+                                          min_score=min_score,
+                                          subset=subset,
+                                          train_indices=train_indices)
         if max_results > 0:
             res['data'] = res['data'][:max_results]
         return res
