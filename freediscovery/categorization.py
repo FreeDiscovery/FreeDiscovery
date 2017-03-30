@@ -297,10 +297,10 @@ class _CategorizerWrapper(_BaseWrapper):
             res = np.hstack((res_n[:,None], res_p[:, None]))
         return res, nn_ind
 
-    @staticmethod
     def to_dict(Y_pred, nn_pred, labels, id_mapping,
                 max_result_categories=1, sort_by=None,
-                sort_reverse=True, min_score=None):
+                sort_reverse=True, min_score=None,
+                subset='all', train_indices=None):
         """
         Create a nested dictionary result that would be returned by 
         the REST API given the categorization results
@@ -323,6 +323,10 @@ class _CategorizerWrapper(_BaseWrapper):
            reverse the sort order
         min_score : {int, None}
            filter out results below a score threashold
+        subset : str
+           (optionally) filter out documents in the train or test set
+        train_indice : list
+            indices of the training set
         """
         if max_result_categories <= 0:
             raise ValueError('the max_result_categories={} must be strictly positive'.format(max_result_categories))
@@ -344,9 +348,26 @@ class _CategorizerWrapper(_BaseWrapper):
         else:
             outer_container = ((y_row, None) for y_row in Y_pred.tolist())
 
+        # optionally filter out test or training set
+        _subset_range = np.arange(len(Y_pred))
+        if subset == 'all':
+            _subset_mask = np.ones(_subset_range.shape)
+        elif subset == 'train':
+            _subset_mask = np.in1d(_subset_range, train_indices)
+        elif subset == 'test':
+            _subset_mask = ~np.in1d(_subset_range, train_indices)
+        else:
+            raise ValueError
+
+        _subset_mask = _subset_mask.astype('bool')
+        subset_mask = {idx: val for idx, val in zip(_subset_range, _subset_mask)}
+
         res = []
         for idx, (Y_row, nn_row) in enumerate(outer_container):
             if max(Y_row) < min_score:
+                continue
+            if not subset_mask[idx]:
+                # this document is not in the user provided subset
                 continue
             ires = {'internal_id': idx}
             ires.update(id_mapping.loc[idx].to_dict())
