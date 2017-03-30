@@ -30,7 +30,6 @@ def _check_birch_tree_consistency(node):
             _check_birch_tree_consistency(el.child_)
 
 
-
 class _BirchHierarchy(object):
     def __init__(self, model, metric='jaccard_norm'):
         self.model = model
@@ -83,6 +82,7 @@ class _BirchHierarchy(object):
         for row in self.htree.flatten():
             document_id_lst = row._get_children_document_id()
             row['children_document_id'] = document_id_lst
+            row['cluster_size'] = len(document_id_lst)
             inertia, S_sim = centroid_similarity(X, document_id_lst, nn_metric=self.metric_)
             row['document_similarity'] = S_sim
             row['cluster_similarity'] = inertia

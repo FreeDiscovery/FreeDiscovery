@@ -148,6 +148,7 @@ class _ClusteringElementSchema(Schema):
     cluster_similarity = fields.Number()
     cluster_label = fields.Str()
     cluster_depth = fields.Int()
+    cluster_size = fields.Int()
     children = fields.List(fields.Int())
     documents = fields.Nested(_ClusteringElementSubSchema, many=True, required=True)
 

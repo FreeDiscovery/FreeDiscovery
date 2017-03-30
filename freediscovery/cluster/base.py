@@ -217,7 +217,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         if type(km).__name__ == 'Birch' and n_clusters is None:
             # hierarcical clustering, centroids are computed at a later time..
             labels_ = None
-            sys.setrecursionlimit(os.environ.get('FREEDISCOVERY_RECURSION_LIM', 10000))
+            sys.setrecursionlimit(os.environ.get('FREEDISCOVERY_RECURSION_LIM', 50000))
         else:
             if type(km).__name__ == "DBSCAN":
                 labels_ = _dbscan_noisy2unique(km.labels_)

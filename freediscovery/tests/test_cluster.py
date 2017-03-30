@@ -15,6 +15,7 @@ from sklearn.externals import joblib
 from freediscovery.text import FeatureVectorizer
 from freediscovery.cluster import _ClusteringWrapper, select_top_words
 from freediscovery.cluster.birch import _check_birch_tree_consistency
+from freediscovery.cluster.optimal_sampling import compute_optimal_sampling
 from freediscovery.lsi import _LSIWrapper
 from .run_suite import check_cache, EXTERNAL_DATASETS_PATH
 
@@ -121,8 +122,10 @@ def test_clustering(method, use_lsi, args, cl_args):
     cat.delete()
 
 
-@pytest.mark.parametrize('dataset', ['random', 'birch_hierarchical'])
-def test_birch_make_hierarchy(dataset):
+@pytest.mark.parametrize('dataset, optimal_sampling', [('random', False),
+                                                       ('birch_hierarchical', False),
+                                                       ('birch_hierarchical', True)])
+def test_birch_make_hierarchy(dataset, optimal_sampling) :
     from freediscovery.cluster.birch import (_print_container, _BirchHierarchy)
     from freediscovery.externals.birch import Birch
     from sklearn.preprocessing import normalize
@@ -130,17 +133,16 @@ def test_birch_make_hierarchy(dataset):
     if dataset == 'random':
         np.random.seed(9999)
 
-        X = np.random.rand(10000, 100)
+        X = np.random.rand(1000, 100)
         normalize(X)
+        branching_factor=10
     elif dataset == 'birch_hierarchical':
-        if EXTERNAL_DATASETS_PATH is None:
-            raise SkipTest
         basename = os.path.dirname(__file__)
         X = joblib.load(os.path.join(basename, '..', 'data', 'ds_lsi_birch', 'data'))
-        joblib.dump(X, '/tmp/data')
+        branching_factor=2
 
 
-    mod = Birch(n_clusters=None, compute_labels=False)
+    mod = Birch(n_clusters=None, threshold=0.1, branching_factor=branching_factor, compute_labels=False)
     mod.fit(X)
 
     _check_birch_tree_consistency(mod.root_)
@@ -158,6 +160,18 @@ def test_birch_make_hierarchy(dataset):
         el._get_children_document_id()
     assert doc_count == X.shape[0]
     assert htree.document_count == X.shape[0]
+    if optimal_sampling:
+        s_samples_1 = compute_optimal_sampling(htree, min_similarity=0.85, min_coverage=0.9)
+
+        for row in s_samples_1:
+            assert len(row['document_similarity']) == 1
+            assert len(row['children_document_id']) == 1
+        s_samples_2 = compute_optimal_sampling(htree, min_similarity=0.85, min_coverage=0.2)
+        s_samples_3 = compute_optimal_sampling(htree, min_similarity=0.9, min_coverage=0.9)
+
+        assert len(s_samples_1) > len(s_samples_2)
+        assert len(s_samples_1) < len(s_samples_3)
+
 
 
 def test_denrogram_children():

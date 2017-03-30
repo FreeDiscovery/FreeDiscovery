@@ -26,12 +26,14 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
 #
 #=============================================================================#
 
-@pytest.mark.parametrize("model, use_lsi, n_clusters", [('k-mean', False, 13),
-                                            ('birch', True, -1),
-                                            ('birch', True, 13),
-                                            ('ward_hc', True, 13),
-                                            ('dbscan', True, None)])
-def test_api_clustering(app, model, use_lsi, n_clusters):
+@pytest.mark.parametrize("model, use_lsi, n_clusters, optimal_sampling",
+                         [('k-mean', False, 13, False),
+                          ('birch', True, -1, False),
+                          ('birch', True, -1, True),
+                          ('birch', True, 13, False),
+                          ('ward_hc', True, 13, False),
+                          ('dbscan', True, None, False)])
+def test_api_clustering(app, model, use_lsi, n_clusters, optimal_sampling):
 
     if use_lsi:
         dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
@@ -62,18 +64,23 @@ def test_api_clustering(app, model, use_lsi, n_clusters):
 
     url += '/{}'.format(mid)
     n_top_words = 2
-    data = app.get_check(url, query_string={'n_top_words': n_top_words})
+    pars = {'n_top_words': n_top_words}
+    if optimal_sampling:
+        pars['return_optimal_sampling'] = True
+    data = app.get_check(url, query_string=pars)
 
     assert dict2type(data, max_depth=1) == {'data': 'list'}
     for row in data['data']:
         ref_res = {'cluster_id': 'int', 'cluster_similarity': 'float',
-                   'cluster_label': 'str', 'documents': 'list'}
-        if is_hierarchical:
+                   'documents': 'list', 'cluster_size': 'int'}
+        if is_hierarchical and not optimal_sampling:
             ref_res['children'] = 'list'
             ref_res['cluster_depth'] = 'int'
+        if not optimal_sampling:
+            ref_res['cluster_label'] = 'str'
+            assert re.match('[^\[]+', row['cluster_label'])
         assert dict2type(row, max_depth=1) == ref_res
         # make sure we have space separated words, not a str(list)
-        assert re.match('[^\[]+', row['cluster_label'])
         for irow in row['documents']:
             assert dict2type(irow) == {'document_id': 'int',
                                        'similarity': 'float'}
