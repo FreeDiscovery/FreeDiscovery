@@ -7,15 +7,18 @@ from __future__ import unicode_literals
 
 import os
 import os.path
+import sys
 
 import numpy as np
 from sklearn.externals import joblib
+import scipy.sparse
 import pandas as pd
 
 from ..base import _BaseWrapper
 from ..utils import setup_model
 from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
 from .utils import _dbscan_noisy2unique
+from .birch import _BirchHierarchy
 
 
 ### Clustering methods for FreeDiscovery
@@ -60,109 +63,84 @@ class ClusterLabels(object):
        a scikit-learn's text vectorizer
     model : ClusterMixin object
        the cluster object
-    pars : dict
-       clustering algorithms parameters 
     lsi_components: TruncatedSVD object or None
        LSA object if it was used for clustering
-    cluster_indices : list, default=None
-       if not None, ignore clustering given by the clustering model and compute
-       terms for the cluster provided by the given indices
+    method: str, optional, default='centroid-frequency'
+       the method used to compute the centroid labels
+       Only 'centroid-frequency' is supported at the moment.
+    n_top_words: int, default=10
+       keep only most relevant n_top_words words
     """
-    def __init__(self, vect, model, pars, lsi=None, cluster_indices=None):
+    def __init__(self, vect, model, lsi=None,
+             method='centroid-frequency', n_top_words=6):
         self.model = model
         self.vect = vect
-        self.n_clusters = pars['n_clusters']
         self.lsi = lsi
-        self._compute_centroids(cluster_indices)
+        self.method = method
+        self.n_top_words = n_top_words
 
-    def _compute_centroids(self, cluster_indices=None):
-        model = self.model
-        lsi = self.lsi
-        if cluster_indices is None:
-            method_name = type(model).__name__
-            if method_name not in ['MiniBatchKMeans', 'AgglomerativeClustering',
-                                        'Birch', 'DBSCAN']:
-                raise NotImplementedError('Method name: {} not implented!'.format(method_name))
-
-            centroids = self.model.cluster_centers_ # centroids were previously computed
+    def _to_original_space(self, centroids):
+        """If LSI is used recover the data points positions in the original space
+        """
+        if self.lsi is not None:
+            return self.lsi.inverse_transform(centroids)
         else:
-            centroids = cluster_indices['centroids']
+            return centroids
 
-        self.n_clusters = centroids.shape[0]  # might happen that a cluster has 0 data points points
-                                         # in which case n_clusters = centroids.shape[0]
-        if lsi is None:
-            order_centroids = centroids.argsort()[:, ::-1]
-        else:
-            svd = lsi 
-            original_space_centroids = svd.inverse_transform(centroids)
-            order_centroids = original_space_centroids.argsort()[:, ::-1]
-        self._order_centroids = order_centroids
+    def _get_model_centroids(self):
+        method_name = type(self.model).__name__
+        if method_name not in ['MiniBatchKMeans', 'AgglomerativeClustering',
+                                    'Birch', 'DBSCAN']:
+            raise NotImplementedError('Method name: {} not implented!'.format(method_name))
 
-    def predict(self, method='centroid-frequency', n_top_words=6):
+        return self.model.cluster_centers_ # centroids were previously computed
+
+
+    def predict(self, centroids=None):
         """ Compute the cluster labels
 
         Parameters
         ----------
-        method: str, optional, default='centroid-frequency'
-            the method used to compute the centroid labels
-            Must be one of 'centroid-frequency',
-        n_top_words: int, default=10
-           keep only most relevant n_top_words words
+        centroids : list, default=None
+           if not None, ignore clustering given by the clustering model and
+           compute labels for the given cluster centroids
 
         Returns
         -------
         cluster_labels: array [n_samples]
         """
-        self.n_top_words = n_top_words
+        if centroids is None:
+            centroids = self._get_model_centroids()
+
         if self.n_top_words > MAX_N_TOP_WORDS:
             raise ValueError
-        if method == 'centroid-frequency':
-            return self._predict_centroid_freq()
+        if self.method == 'centroid-frequency':
+            return self._predict_centroid_freq(centroids)
         else:
             raise ValueError
 
-    def _predict_centroid_freq(self):
+
+    def _predict_centroid_freq(self, centroids):
         """ Return cluster labels based on the most frequent words (tfidf) at cluster centroids """
+
+        centroids = self._to_original_space(centroids)
+
+        n_clusters = centroids.shape[0]
+
+        centroids_ordered = centroids.argsort()[:, ::-1]
+
+
         terms = self.vect.get_feature_names()
         cluster_terms = []
-        for i in range(self.n_clusters):
-            terms_i = [terms[ind] for ind in self._order_centroids[i, :MAX_N_TOP_WORDS]]
+        for i in range(n_clusters):
+            terms_i = [terms[ind] for ind in centroids_ordered[i, :MAX_N_TOP_WORDS]]
             terms_i = select_top_words(terms_i, self.n_top_words)
             cluster_terms.append(terms_i)
         return cluster_terms
 
-        #"if lsi is not None:
-        #"    silhouette_score_res = silhouette_score(X, cluster_labels)
-        #"else:
-        #"    silhouette_score_res = np.nan # this takes too much memory to compute with the raw matrix
 
 class _BaseClusteringWrapper(object):
 
-    def centroid_similarity(self, internal_ids, nn_metric='jaccard_norm'):
-        """ Given a list of documents in a cluster, compute the cluster centroid,
-        intertia and individual distances 
-
-        Parameters
-        ----------
-        internal_ids : list
-          a list of internal ids
-        nn_metric : str
-          a rescaling of the metric if needed
-        """
-        from ..metrics import _scale_cosine_similarity
-        from sklearn.metrics.pairwise import pairwise_distances
-        X = self._fit_X
-
-        X_sl = X[internal_ids, :]
-        centroid = X_sl.mean(axis=0)
-
-        if centroid.ndim == 1:
-            centroid = centroid[None, :]
-
-        S_cos = 1 - pairwise_distances(X_sl, centroid, metric='cosine')
-        S_sim = _scale_cosine_similarity(S_cos, metric=nn_metric)
-        S_sim_mean = np.mean(S_sim)
-        return float(S_sim_mean), S_sim[:,0]
 
     def _merge_response(self, cluster_id):
         res_scores = pd.DataFrame({'internal_id': np.arange(self.fe.n_samples_, dtype='int'),
@@ -211,6 +189,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
 
         self.km = self.cmod
         del self.cmod
+        self._fit_X = None
 
 
     def _cluster_func(self, n_clusters, km, pars=None):
@@ -218,10 +197,12 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         all clustering implementations """
         import warnings
         from sklearn.neighbors import NearestCentroid
-        if pars is None:
-            pars = {}
+
         pars.update(km.get_params(deep=True))
-        self._fit_X = X = self.pipeline.data
+        if self._fit_X is None:
+            self._fit_X = X = self.pipeline.data
+        else:
+            X = self._fit_X
 
         mid, mid_dir = setup_model(self.model_dir)
 
@@ -233,35 +214,44 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         self.mid = mid
         self.mid_dir = mid_dir
 
-        labels_ = km.labels_
-        if type(km).__name__ == "DBSCAN":
-            labels_ = _dbscan_noisy2unique(labels_)
-            n_clusters = len(np.unique(labels_))
-            km.labels_ = labels_
+        if type(km).__name__ == 'Birch' and n_clusters is None:
+            # hierarcical clustering, centroids are computed at a later time..
+            labels_ = None
+            sys.setrecursionlimit(os.environ.get('FREEDISCOVERY_RECURSION_LIM', 50000))
+        else:
+            if type(km).__name__ == "DBSCAN":
+                labels_ = _dbscan_noisy2unique(km.labels_)
+                n_clusters = len(np.unique(labels_))
+                km.labels_ = labels_
+            else:
+                labels_ = km.labels_
 
-        if not hasattr(km, 'cluster_centers_'):
-            # i.e. model is not MiniBatchKMeans => compute centroids
-            km.cluster_centers_ = NearestCentroid().fit(X, labels_).centroids_
+            if not hasattr(km, 'cluster_centers_'):
+        # i.e. model is not MiniBatchKMeans => compute centroids
+                km.cluster_centers_ = NearestCentroid().fit(X, labels_).centroids_
 
         pars['n_clusters'] = n_clusters
 
-        joblib.dump(km, os.path.join(self.model_dir, mid,  'model'), compress=9)
-        joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'), compress=9)
+        joblib.dump(km, os.path.join(self.model_dir, mid,  'model'))
+        joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'))
 
         self.km = km
         self._pars  = pars
 
-        htree = self._get_htree(km)
+        return labels_
 
-        return labels_, htree
 
-    @staticmethod
-    def _get_htree(km):
+    def _get_htree(self, X=None, metric='jaccard_norm'):
+        km = self.km
         method_name = type(km).__name__
         if method_name == 'AgglomerativeClustering':
             htree = {'n_leaves': km.n_leaves_,
                      'n_components': km.n_components_,
-                     'children': km.children_}
+                     'children': km.children_.tolist()}
+        elif method_name == 'Birch' and self._pars['n_clusters'] is None:
+            hmod = _BirchHierarchy(km, metric=metric)
+            hmod.fit(X)
+            htree = hmod.htree
         else:
             htree = {}
         return htree
@@ -277,7 +267,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             the method used for computing the cluster labels
         n_top_words : int, default=10
            keep only most relevant n_top_words words
-        cluster_indices : list, default=None
+        cluster_indices : list of lists, default=None
            if not None, ignore clustering given by the clustering model and compute
            terms for the cluster provided by the given indices
 
@@ -286,14 +276,6 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         cluster_labels : array [n_samples]
         """
         vect = self.fe._load_model()
-        if cluster_indices is not None:
-            args = {'indices': cluster_indices}
-            X = self.pipeline.data[cluster_indices]
-
-            centroids = np.atleast_2d(X.mean(axis=0))
-            args['centroids'] = centroids
-        else:
-            args = None
 
         if 'lsi' in self.pipeline:
             lsi = joblib.load(os.path.join(
@@ -302,9 +284,26 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         else:
             lsi = None
 
-        lb = ClusterLabels(vect, self.km, self._pars, lsi=lsi,
-                cluster_indices=args)
-        terms = lb.predict(method=label_method, n_top_words=n_top_words)
+        lb = ClusterLabels(vect, self.km, lsi=lsi,
+                           method=label_method, n_top_words=n_top_words)
+
+        if cluster_indices is not None:
+            if self._fit_X is None:
+                X = self.pipeline.data
+            else:
+                X = self._fit_X
+            centroids = []
+            for indices in cluster_indices:
+                X_sl = X[indices]
+                centroids.append(X_sl.mean(axis=0))
+            if lsi is None:
+                centroids = scipy.sparse.csr_matrix(centroids)
+            else:
+                centroids = np.array(centroids)
+        else:
+            centroids = None
+
+        terms = lb.predict(centroids=centroids)
         return terms
 
 
@@ -320,13 +319,13 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
            the bath size for the MiniBatchKMeans algorithm
         """
         from sklearn.cluster import MiniBatchKMeans
-        pars = {"batch_size": batch_size}
+        pars = {"batch_size": batch_size, 'is_hierarchical': False}
         km = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', n_init=10,
                     init_size=batch_size, batch_size=batch_size)
         return self._cluster_func(n_clusters, km, pars)
 
 
-    def birch(self, n_clusters, threshold=0.5, branching_factor=50):
+    def birch(self, n_clusters=None, threshold=0.5, branching_factor=50):
         """
         Perform Birch clustering
 
@@ -339,13 +338,19 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         threshold : float
             birch threshold
         """
-        from sklearn.cluster import Birch
-        pars = {'threshold': threshold}
+        from freediscovery.externals.birch import Birch
+        pars = {'threshold': threshold, 'is_hierarchical': n_clusters is None}
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering for scaling reasons.")
 
+        if n_clusters is None:
+            compute_labels = False
+        else:
+            compute_labels = True
+
         km = Birch(n_clusters=n_clusters, threshold=threshold,
-                branching_factor=branching_factor)
+                branching_factor=branching_factor,
+                compute_labels=compute_labels)
 
         return self._cluster_func(n_clusters, km, pars)
 
@@ -365,7 +370,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         """
         from sklearn.cluster import AgglomerativeClustering
         from sklearn.neighbors import kneighbors_graph
-        pars = {'n_neighbors': n_neighbors}
+        pars = {'n_neighbors': n_neighbors, 'is_hierarchical': True}
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering for scaling reasons.")
 
@@ -400,7 +405,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             to be considered as a core point. This includes the point itself.
         """
         from sklearn.cluster import DBSCAN
-        pars = None
+        pars = {'is_hierarchical': False}
 
         km = DBSCAN(eps=eps, min_samples=min_samples, algorithm=algorithm,
                     leaf_size=leaf_size)

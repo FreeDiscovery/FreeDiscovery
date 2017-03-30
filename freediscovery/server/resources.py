@@ -27,7 +27,7 @@ from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..utils import _docstring_description
-from ..cluster import _ClusteringWrapper
+from ..cluster import _ClusteringWrapper, centroid_similarity, compute_optimal_sampling
 from ..search import _SearchWrapper
 from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
@@ -144,9 +144,6 @@ class FeaturesApi(Resource):
         for key in ['min_df', 'max_df']:
             if key in args and args[key] > 1. + EPSILON: # + eps
                 args[key] = int(args[key])
-
-        if 'dataset_defintion' in args:
-            print(args['dataset_definition'])
 
         fe = FeatureVectorizer(self._cache_dir)
         dsid = fe.preprocess(**args)
@@ -480,15 +477,15 @@ class BirchClusteringApi(Resource):
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
-            - `n_clusters`: the number of clusters
-            - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
-            - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively.
+            - `n_clusters`: the number of clusters or -1 to use hierarchical clustering (default: -1)
+            - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html). Increasing this value would increase the hierarchical tree depth (and the number of clusters).
+            - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively. Decreasing this value would increase the number of clusters.
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
            """))
     @use_args( {
             'parent_id': wfields.Str(required=True),
-            'n_clusters': wfields.Int(missing=150),
-            'branching_factor': wfields.Int(missing=50),
+            'n_clusters': wfields.Int(missing=-1),
+            'branching_factor': wfields.Int(missing=20),
             'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
             'nn_metric': wfields.Str(missing='jaccard_norm')
             }
@@ -506,6 +503,10 @@ class BirchClusteringApi(Resource):
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir,
                                 parent_id=args.pop('parent_id'))
+
+        if args.get('n_clusters') <= 0:
+            args['n_clusters'] = None
+
         cl.birch(threshold=threshold, **args)
         return {'id': cl.mid}
 
@@ -588,53 +589,110 @@ class ClusteringApiElement(Resource):
 
            **Parameters**
             - `n_top_words`: keep only most relevant `n_top_words` words
-            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `nn_metric` : The similarity metric in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `return_optimal_sampling` : Instead of cluster results, the optimal sampling results will be returned (with no cluster labels). This option is only valid with Birch algorithm. Note that optimal sampling cannot return more samples than the subclusters in the birch clustering results (default: false)
+            - `sampling_min_similarity` : Similarity threashold used by smart sampling. Decreasing this value would result in more sampled documents. Default: 1.0 (i.e. use the full cluster hierarichy).
+            - `sampling_min_coverage` : Minimal coverage requirement in [0, 1] range. Increasing this value would result in a larger number of samples. (default: 0.9)
             """))
     @use_args({ 'n_top_words': wfields.Int(missing=5),
-               'nn_metric': wfields.Str(missing='jaccard_norm')
+               'nn_metric': wfields.Str(missing='jaccard_norm'),
+               'return_optimal_sampling': wfields.Bool(missing=False),
+               'sampling_min_similarity': wfields.Number(missing=1.0),
+               'sampling_min_coverage': wfields.Number(missing=0.9),
           })
     @marshal_with(ClusteringSchema())
-    def get(self, method, mid, **args):  # TODO unused parameter 'method'
-
+    def get(self, method, mid, **args):
         nn_metric = args.pop('nn_metric')
+        return_optimal_sampling = args.pop('return_optimal_sampling')
+        sampling_min_coverage = args.pop('sampling_min_coverage')
+        sampling_min_similarity = args.pop('sampling_min_similarity')
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir, mid=mid)
-
         km = cl._load_model()
-        htree = cl._get_htree(km)
-        if 'children' in htree:
-            htree['children'] = htree['children'].tolist()
-        if args['n_top_words'] > 0:
-            terms = cl.compute_labels(**args)
-        else:
-            terms = None
+
+        if return_optimal_sampling and not cl._pars['is_hierarchical']:
+            raise WrongParameter('Model {} does not support optimal sampling, please use Birch clustering'.format(type(km).__name__))
 
         cl._fit_X = cl.pipeline.data
 
-        y = cl._merge_response(km.labels_)
-        res = []
-        valid_keys = ['document_id', 'rendering_id', 'similarity']
-        for name, group in y.groupby('cluster_id'):
-            name = int(name)
+        htree = cl._get_htree(cl._fit_X, metric=nn_metric)
 
-            S_sim_mean, S_sim = cl.centroid_similarity(group.index.values, nn_metric)
-            group = group.assign(similarity=S_sim)
 
-            row_docs = []
-            for idx, row in group.iterrows():
-                row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
-            row['documents'] = row_docs
-            irow = {'documents': row_docs, 'cluster_id': int(name),
-                        'cluster_similarity': S_sim_mean}
-            if terms is not None:
-                irow['cluster_label'] = ' '.join(terms[name])
-            res.append(irow)
+        if type(km).__name__ == 'Birch' and cl._pars['is_hierarchical']:
+            # Hierarchical clustering
+
+            db = cl.fe.db.data
+
+            if return_optimal_sampling:
+                # cut the hierarchical tree to match the smart sampling
+                flat_tree = compute_optimal_sampling(htree,
+                                                     sampling_min_similarity,
+                                                     sampling_min_coverage)
+            else:
+                # we don't use optimal sampling
+                flat_tree = htree.flatten()
+
+                terms = cl.compute_labels(cluster_indices=[row['children_document_id'] for row in flat_tree],
+                                          **args)
+                for label, row in zip(terms, flat_tree):
+                    row['cluster_label'] = label
+
+            res = []
+            doc_keys = [key for key in db.columns \
+                            if key in ['document_id', 'rendering_id']]
+            db = db[doc_keys]
+
+            for idx, row in enumerate(flat_tree):
+                irow = {'cluster_similarity': row['cluster_similarity'],
+                        'cluster_size': row['cluster_size'],
+                        'cluster_id': idx}
+                if not return_optimal_sampling:
+                    irow['cluster_label'] = ' '.join(row['cluster_label'])
+                    irow['children'] = [el['cluster_id'] for el in row.children]
+                    irow['cluster_depth'] = row.depth
+
+                db_sl = db.iloc[row['children_document_id']].copy()
+                db_sl['similarity'] = row['cluster_similarity']
+                tmp = []
+                for index, row_tmp in db_sl.iterrows():
+                    row_dict = row_tmp.to_dict()
+                    tmp.append(row_dict)
+                irow['documents'] = tmp
+
+                res.append(irow)
+
+        else:
+            # Non hierarchical clustering
+
+            
+
+            if args['n_top_words'] > 0:
+                terms = cl.compute_labels(**args)
+            else:
+                terms = None
+
+            y = cl._merge_response(km.labels_)
+            res = []
+            valid_keys = ['document_id', 'rendering_id', 'similarity']
+            for name, group in y.groupby('cluster_id'):
+                name = int(name)
+
+                S_sim_mean, S_sim = centroid_similarity(cl._fit_X, group.index.values, nn_metric)
+                group = group.assign(similarity=S_sim)
+
+                row_docs = []
+                for idx, row in group.iterrows():
+                    row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+                row['documents'] = row_docs
+                irow = {'documents': row_docs, 'cluster_id': int(name),
+                            'cluster_similarity': S_sim_mean}
+                irow['cluster_size'] = len(row_docs)
+                if terms is not None:
+                    irow['cluster_label'] = ' '.join(terms[name])
+                res.append(irow)
+
 
         return {'data': res}
-
-        pars = cl._load_pars()
-        return {'labels': km.labels_.tolist(), 'cluster_terms': terms,
-                  'htree': htree, 'pars': pars}
 
 
     @doc(description='Delete a clustering model')
@@ -708,7 +766,7 @@ class DupDetectionApiElement(Resource):
             if group.shape[0] <= 1:
                 continue
 
-            S_sim_mean, S_sim = model.centroid_similarity(group.index.values, nn_metric)
+            S_sim_mean, S_sim = centroid_similarity(model._fit_X, group.index.values, nn_metric)
             group = group.assign(similarity=S_sim)
 
             row_docs = []

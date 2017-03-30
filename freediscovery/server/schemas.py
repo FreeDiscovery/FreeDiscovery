@@ -143,11 +143,12 @@ class CategorizationParsSchema(Schema):
 class _ClusteringElementSubSchema(DocumentIndexSchema):
     similarity = fields.Number()
 
-class _ClusteringElementSchema(DocumentIndexSchema):
+class _ClusteringElementSchema(Schema):
     cluster_id = fields.Int(required=True)
     cluster_similarity = fields.Number()
     cluster_label = fields.Str()
     cluster_depth = fields.Int()
+    cluster_size = fields.Int()
     children = fields.List(fields.Int())
     documents = fields.Nested(_ClusteringElementSubSchema, many=True, required=True)
 

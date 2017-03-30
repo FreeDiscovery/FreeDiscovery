@@ -111,13 +111,14 @@ print(pd.DataFrame(data))
 
 print("\n4.a. Document clustering (LSI + Birch clustering)")
 
-url = BASE_URL + '/clustering/ward_hc/'
+url = BASE_URL + '/clustering/birch/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
                     json={'parent_id': lsi_id,
-                          'n_clusters': 10,
-                          'min_similarity': 0.7
+                          'n_clusters': -1,
+                          #'min_similarity': 0.95,
+                          'branching_factor': 20 
                           }).json()
 
 mid = res['id']
@@ -127,7 +128,7 @@ print("\n4.b. Computing cluster labels")
 url = BASE_URL + '/clustering/birch/{}'.format(mid)
 print(" GET", url)
 res = requests.get(url,
-                   json={'n_top_words': 6
+                   json={'n_top_words': 3
                          }).json()
 t1 = time()
 
@@ -136,6 +137,24 @@ data = res['data']
 for row in data:
     row['n_documents'] = len(row.pop('documents'))
 
+print(pd.DataFrame(data))
+
+# # 4. Optimal sampling (LSI + Birch Clustering)
+
+print("\n4.a. Optimal sampling (LSI + Birch clustering)")
+
+t0 = time()
+url = BASE_URL + '/clustering/birch/{}'.format(mid)
+print(" GET", url)
+res = requests.get(url,
+                   json={'return_optimal_sampling': True,
+                         'sampling_min_coverage': 0.9
+                         }).json()
+t1 = time()
+print('    .. computed in {:.1f}s'.format(t1 - t0))
+data = res['data']
+
+print(pd.DataFrame(data))
 
 # 4. Cleaning
 print("\n5. Delete the extracted features")

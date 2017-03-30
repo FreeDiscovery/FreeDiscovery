@@ -100,7 +100,9 @@ def test_features_hashing(use_hashing, use_lsi, method):
                 method = 'k_means'
             cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=parent_id)
             cm = getattr(cat, method)
-            labels, htree = cm(2)
+            labels = cm(2)
+
+            htree = cat._get_htree(cat.pipeline.data)
 
             terms = cat.compute_labels(n_top_words=10)
         else:
