@@ -5,14 +5,19 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path
+from unittest import SkipTest
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
+from sklearn.externals import joblib
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.cluster import _ClusteringWrapper, select_top_words
+from freediscovery.cluster.birch import _check_birch_tree_consistency
+from freediscovery.cluster.optimal_sampling import compute_optimal_sampling
 from freediscovery.lsi import _LSIWrapper
-from .run_suite import check_cache
+from .run_suite import check_cache, EXTERNAL_DATASETS_PATH
 
 
 NCLUSTERS = 2
@@ -46,6 +51,7 @@ def check_cluster_consistency(labels, terms):
                           [['k_means', None, {}, {}],
                            ['k_means', True,   {}, {}],
                            ['birch', True, {'threshold': 0.5}, {}],
+                           ['birch', True, {'threshold': 0.5, 'branching_factor': 3, 'n_clusters': None}, {}],
                            ['ward_hc', True, {'n_neighbors': 5}, {}],
                            ['dbscan', False, {'eps':0.5, 'min_samples': 2}, {}],
                            ['dbscan', True,   {'eps':0.5, 'min_samples': 2}, {}],
@@ -63,42 +69,109 @@ def test_clustering(method, use_lsi, args, cl_args):
 
     cat = _ClusteringWrapper(cache_dir=cache_dir, parent_id=parent_id)
     cm = getattr(cat, method)
-    labels, htree = cm(NCLUSTERS, **args)
+    if 'n_clusters' not in args:
+        args['n_clusters'] = NCLUSTERS
+    labels = cm(**args)
 
-    terms = cat.compute_labels(n_top_words=n_top_words, **cl_args)
+    htree = cat._get_htree(cat.pipeline.data)
+
     mid = cat.mid
 
-    if method == 'ward_hc':
-        assert sorted(htree.keys()) == sorted(['n_leaves', 'n_components', 'children'])
+
+    if method == 'birch' and cat._pars['is_hierarchical']:
+        assert htree != {}
+        flat_tree = htree.flatten()
+
+        terms = cat.compute_labels(n_top_words=n_top_words,
+                                   cluster_indices=[row['children_document_id'] for row in flat_tree])
+        for label, row in zip(terms, flat_tree):
+            row['cluster_label'] = label
     else:
-        assert htree == {}
+        terms = cat.compute_labels(n_top_words=n_top_words, **cl_args)
 
-    if method == 'dbscan':
-        assert (labels != -1).all()
+        if method == 'ward_hc':
+            assert sorted(htree.keys()) == sorted(['n_leaves', 'n_components', 'children'])
+        else:
+            assert htree == {}
 
-    check_cluster_consistency(labels, terms)
-    cat.scores(np.random.randint(0, NCLUSTERS-1, size=len(labels)), labels)
-    # load the model saved to disk
-    km = cat._load_model()
-    assert_allclose(labels, km.labels_)
-    if method != 'dbscan':
-        # DBSCAN does not take the number of clusters as input
-        assert len(terms) == NCLUSTERS
-        assert len(np.unique(labels)) == NCLUSTERS
+        if method == 'dbscan':
+            assert (labels != -1).all()
 
-    for el in terms:
-        assert len(el) == n_top_words
-    cluster_indices = np.nonzero(labels == 0)
-    if use_lsi:
-        # use_lsi=False is not supported for now
-        terms2 = cat.compute_labels(cluster_indices=cluster_indices, **cl_args)
-        # 70% of the terms at least should match
+        check_cluster_consistency(labels, terms)
+        cat.scores(np.random.randint(0, NCLUSTERS-1, size=len(labels)), labels)
+        # load the model saved to disk
+        km = cat._load_model()
+        assert_allclose(labels, km.labels_)
         if method != 'dbscan':
-            assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
+            # DBSCAN does not take the number of clusters as input
+            assert len(terms) == NCLUSTERS
+            assert len(np.unique(labels)) == NCLUSTERS
+
+        for el in terms:
+            assert len(el) == n_top_words
+        cluster_indices = np.nonzero(labels == 0)
+        if use_lsi:
+            # use_lsi=False is not supported for now
+            terms2 = cat.compute_labels(cluster_indices=[cluster_indices], **cl_args)
+            # 70% of the terms at least should match
+            if method != 'dbscan':
+                assert sum([el in terms[0] for el in terms2[0]]) > 0.7*len(terms2[0])
 
 
     cat2 = _ClusteringWrapper(cache_dir=cache_dir, mid=mid) # make sure we can load it  # TODO unused variable
     cat.delete()
+
+
+@pytest.mark.parametrize('dataset, optimal_sampling', [('random', False),
+                                                       ('birch_hierarchical', False),
+                                                       ('birch_hierarchical', True)])
+def test_birch_make_hierarchy(dataset, optimal_sampling) :
+    from freediscovery.cluster.birch import (_print_container, _BirchHierarchy)
+    from freediscovery.externals.birch import Birch
+    from sklearn.preprocessing import normalize
+
+    if dataset == 'random':
+        np.random.seed(9999)
+
+        X = np.random.rand(1000, 100)
+        normalize(X)
+        branching_factor=10
+    elif dataset == 'birch_hierarchical':
+        basename = os.path.dirname(__file__)
+        X = joblib.load(os.path.join(basename, '..', 'data', 'ds_lsi_birch', 'data'))
+        branching_factor=2
+
+
+    mod = Birch(n_clusters=None, threshold=0.1, branching_factor=branching_factor, compute_labels=False)
+    mod.fit(X)
+
+    _check_birch_tree_consistency(mod.root_)
+
+    hmod = _BirchHierarchy(mod)
+    hmod.fit(X)
+
+    htree = hmod.htree
+    assert htree.size == hmod._n_clusters
+
+    doc_count = 0
+    for el in htree.flatten():
+        doc_count += len(el['document_id'])
+        el.depth
+        el._get_children_document_id()
+    assert doc_count == X.shape[0]
+    assert htree.document_count == X.shape[0]
+    if optimal_sampling:
+        s_samples_1 = compute_optimal_sampling(htree, min_similarity=0.85, min_coverage=0.9)
+
+        for row in s_samples_1:
+            assert len(row['document_similarity']) == 1
+            assert len(row['children_document_id']) == 1
+        s_samples_2 = compute_optimal_sampling(htree, min_similarity=0.85, min_coverage=0.2)
+        s_samples_3 = compute_optimal_sampling(htree, min_similarity=0.9, min_coverage=0.9)
+
+        assert len(s_samples_1) > len(s_samples_2)
+        assert len(s_samples_1) < len(s_samples_3)
+
 
 
 def test_denrogram_children():

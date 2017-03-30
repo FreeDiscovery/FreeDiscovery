@@ -7,6 +7,8 @@ from freediscovery.externals.joblib_pool import _get_temp_dir
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
 
+EXTERNAL_DATASETS_PATH = os.environ.get('FREEDISCOVERY_EXTERNAL_TEST_DATASETS')
+
 
 def run(coverage=False):
     import pytest
