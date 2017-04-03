@@ -15,13 +15,15 @@ For ingesting a custom dataset, it is necessary is to place the data collection 
 
 Each document in the collection is given a unique numerical `internal_id` that is used to identify documents internally. This field is however not exposed by the REST API. Instead, the following fields can also be used for indexing,
 
- * `file_path`: the path to the file relative to the `data_dir`. Note that when FreeDiscovery is provided with a list of `file_path`, the `data_dir` will be recomputed as the longest common path (and `file_path` will be changed accordingly).
- * `document_id`: an external numeric document id provided in the `POST /api/v0/feature-extraction/<id>` step
- * `document_id` together with a `rendition_id`, where the latter is also provided in the `POST /api/v0/feature-extraction/<id>` processing step
+ * `file_path`: the absolute path to the file. Note that when FreeDiscovery is provided with a list of `file_path`, the `data_dir` will be recomputed as the longest common path.
+ * `document_id`: an external numeric document id provided in the `POST /api/v0/feature-extraction/<dataset-id>` step
+ * `document_id` together with a `rendition_id`, where the latter is also provided in the `POST /api/v0/feature-extraction/<dataset-id>` processing step
 
-To use a field (or a group of fields) as a index, it must be unique, meaning that duplicates are not supported. The only field that is unique by construction is `internal_id`, all the rest being user provided. Additional information regarding data ingestion and indexing can be found in the [`REST_data_ingestion`](`../examples/REST_data_ingestion.html) example. The main API endpoints that allow mapping between different fields are,
+To use a field (or a group of fields) as a index, it must be unique, meaning that duplicates are not supported. The only field that is unique by construction is `internal_id`, all the rest being user provided. Additional information regarding data ingestion and indexing can be found in the [`REST_data_ingestion`](`../examples/REST_data_ingestion.html) example. The mapping between different index fields is provided by
  * `POST /api/v0/feature-extraction/<id>/id-mapping/nested`
-the training of the categorization model also uses a similar mechanism to identify training set documents.
+
+
+The training of the categorization model also uses a similar mechanism to identify training set documents.
 
 **Note:** the different fields above can always be associated to the processed documents, however attempting to index (e.g. select) a subset of documents using a field (or a group of fields) with duplicates will result in an error.
 
