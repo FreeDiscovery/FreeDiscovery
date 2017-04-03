@@ -1,7 +1,11 @@
-include README.md
+include README.rst
+include LICENCE
+include requirements.txt
 recursive-include scripts *.py
 recursive-include freediscovery *.py
 prune freediscovery/tests/.hypothesis
 recursive-include freediscovery *.txt
 recursive-include examples *.py
-recursive-include freediscovery/data/fedora-devel-list-2008-October *
+recursive-include benchmarks *.py
+recursive-include freediscovery *.pkl*
+include freediscovery/data/ds_lsi_birch/data

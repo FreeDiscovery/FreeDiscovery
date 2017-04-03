@@ -2,5 +2,5 @@
 
 from ._version import __version__
 
-__version_date__ = "Sun Sep 18 21:19:18 2016 +0200"
-__version_hash__ = "5f55485"
+__version_date__ = "Fri Mar 31 15:48:09 2017 +0200"
+__version_hash__ = "692dd0d"

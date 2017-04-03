@@ -18,12 +18,35 @@ if mo:
 else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
+with open('README.rst', 'rt') as fh:
+    LONG_DESCRIPTION = fh.read()
 
 setup(name='freediscovery',
       version=version,
       description='Open source software for E-Discovery and Information Retrieval',
-      author='GL',
+      author='Grossman Labs',
+      url="https://github.com/FreeDiscovery/FreeDiscovery",
+      license='BSD',
       packages=find_packages(),
       include_package_data=True,
+      long_description=LONG_DESCRIPTION,
+      classifiers=[
+          'Development Status :: 4 - Beta',
+
+          'Intended Audience :: Information Technology',
+          'Intended Audience :: Legal Industry',
+
+           'License :: OSI Approved :: BSD License',
+
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
+
+          'Operating System :: OS Independent',
+
+          'Topic :: Scientific/Engineering :: Artificial Intelligence',
+          'Topic :: Text Processing :: General'
+     ],
+     keywords='information-retrieval machine-learning text-classification',
      )
 

@@ -23,12 +23,12 @@ FreeDiscovery is built on top of existing machine learning libraries (scikit-lea
 
 In addition, FreeDiscovery can be used as Python package and aims to expose a scikit-learn compatible API. 
 
-We would very much appreciate feedback on the existing functionality. Feel free to open new issues on Github or send any comments to `the mailing list <https://groups.google.com/forum/#!forum/freediscovery-ml>`_ at `freediscovery-ml@googlegroups.com <mailto:freediscovery-ml@googlegroups.com>`_.
+We would very much appreciate feedback on the existing functionality. Feel free to open new issues on Github or send any comments to the mailing list https://groups.google.com/forum/#!forum/freediscovery-ml at `freediscovery-ml@googlegroups.com <mailto:freediscovery-ml@googlegroups.com>`_.
 
 For more information see the documentation and API Reference,
 
-- stable version 0.9 [``0.9.X`` branch | documentation http://freediscovery.io/doc/stable/].
-- development version [``master`` branch | documentation http://freediscovery.io/doc/dev/ ].
+ - development version [``master`` branch | documentation http://freediscovery.io/doc/dev/ ].
+ - stable version 0.9 [``0.9.X`` branch | documentation http://freediscovery.io/doc/stable/ ].
 
 FreeDiscovery is released under the 3-clause BSD licence.
 
