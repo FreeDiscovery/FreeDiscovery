@@ -51,8 +51,7 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
 
     fset_new.eliminate_zeros()
 
-    joblib.dump(fset_new, os.path.join(dsid_dir, 'features-{:05}'.format(k)),
-            compress=0)
+    joblib.dump(fset_new, os.path.join(dsid_dir, 'features-{:05}'.format(k)))
 
 class _BaseTextTransformer(object):
     """Base text transformer
@@ -207,7 +206,7 @@ class FeatureVectorizer(_BaseTextTransformer):
             dataset_definition=None, n_features=None,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words=None,
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
-            norm='l2', min_df=0.0, max_df=1.0):
+            norm='l2', min_df=0.0, max_df=1.0, parse_email_headers=False):
         """Initalize the features extraction.
 
         See sklearn.feature_extraction.text for a detailed description of the input parameters
@@ -306,11 +305,12 @@ class FeatureVectorizer(_BaseTextTransformer):
                 'n_jobs': n_jobs, 'use_idf': use_idf, 'sublinear_tf': sublinear_tf,
                 'binary': binary, 'use_hashing': use_hashing,
                 'norm': norm, 'min_df': min_df, 'max_df': max_df,
+                'parse_email_headers': parse_email_headers, 
                 'type': type(self).__name__
                }
         self._pars = pars
-        joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
-        joblib.dump(db, os.path.join(dsid_dir, 'db'), compress=9)
+        joblib.dump(pars, os.path.join(dsid_dir, 'pars'))
+        joblib.dump(db, os.path.join(dsid_dir, 'db'))
         self.db = db
         return dsid
 
@@ -330,6 +330,23 @@ class FeatureVectorizer(_BaseTextTransformer):
         #    return stop_words_list
         else:
             raise ValueError
+
+    def parse_email_headers(self):
+        from email.parser import Parser
+        from .externals.jwzthreading import Message
+        features = []
+        for idx, fname in enumerate(self._pars['filenames_abs']):
+            with open(fname, 'rt') as fh:
+                txt = fh.read()
+                #if sys.version_info < (3, 0) and encoding != 'utf-8':
+                #    message = message.encode('utf-8')
+                message = Parser().parsestr(txt, headersonly=True)
+
+                msg_obj = Message(message, message_idx=idx)
+
+                features.append(msg_obj)
+        joblib.dump(features, os.path.join(self.dsid_dir, 'email_metadata'))
+        return features
 
     def transform(self):
         """

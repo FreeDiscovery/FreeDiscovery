@@ -22,7 +22,6 @@ import warnings
 from sklearn.metrics.base import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
-from ..parsers import EmailParser
 from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
@@ -130,6 +129,7 @@ class FeaturesApi(Resource):
              - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True)
              - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
+             - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
             """))
     @use_args(FeaturesParsSchema(strict=True))
     @marshal_with(FeaturesSchema())
@@ -174,6 +174,8 @@ class FeaturesApiElement(Resource):
     def post(self, dsid):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         dsid, _ = fe.transform()
+        if fe._pars['parse_email_headers']:
+            fe.parse_email_headers()
         return {'id': dsid}
 
     @doc(description='Delete a processed dataset')
@@ -196,62 +198,6 @@ class FeaturesApiElementMappingNested(Resource):
         res_repr = fe.db.render_dict(res, return_file_path=True)
         return {'data': res_repr}
 
-# ============================================================================ #
-#                   Email parser                                      #
-# ============================================================================ #
-
-class EmailParserApi(Resource):
-
-    @doc(description='List processed datasets')
-    def get(self):
-        fe = EmailParser(self._cache_dir)
-        return fe.list_datasets()
-
-    @doc(description=dedent("""
-           Load a dataset and parse emails
-
-           Initialize the feature extraction on a document collection.
-
-           **Parameters**
-            - `data_dir`: [required] relative path to the directory with the input files
-          """))
-    @use_args({'data_dir': wfields.Str(required=True)})
-    @marshal_with(EmailParserSchema())
-    def post(self, **args):
-        fe = EmailParser(self._cache_dir)
-        dsid = fe.transform(**args)
-        pars = fe.get_params()
-        return {'id': dsid, 'filenames': pars['filenames']}
-
-
-class EmailParserApiElement(Resource):
-    @doc(description='Load parsed emails')
-    def get(self, dsid):
-        fe = EmailParser(self._cache_dir, dsid=dsid)
-        out = fe.get_params()
-        return out
-
-    @marshal_with(EmptySchema())
-    def delete(self, dsid):
-        fe = EmailParser(self._cache_dir, dsid=dsid)
-        fe.delete()
-        return {}
-
-
-class EmailParserApiElementIndex(Resource):
-    @doc(description=dedent("""
-           Query document index for a list of filenames
-
-           **Parameters**
-            - `filenames`: [required] list of filenames
-
-          """))
-    @use_args({'filenames': wfields.List(wfields.Str(), required=True)})
-    @marshal_with(EmailParserElementIndexSchema())
-    def post(self, dsid, **args):
-        fe = EmailParser(self._cache_dir, dsid=dsid)
-        idx = fe.search(args['filenames'])
-        return {'index': list(idx)}
 
 # ============================================================================ #
 #                  LSI decomposition

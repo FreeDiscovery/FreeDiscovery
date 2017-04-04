@@ -13,7 +13,6 @@ from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
 from .base import _BaseWrapper
-from .parsers import EmailParser
 from .utils import setup_model, INT_NAN
 from .exceptions import (ModelNotFound, WrongParameter,
              NotImplementedFD, OptionalDependencyMissing)
@@ -42,8 +41,12 @@ class _EmailThreadingWrapper(_BaseWrapper):
 
         super(_EmailThreadingWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id, mid=mid,
-                                          dataset_definition=EmailParser,
                                           load_model=True)
+
+        if not os.path.exists(os.path.join(self.fe.dsid_dir, 'email_metadata')):
+            raise ValueError('The email metadata was not found. Please rerun'
+                             ' feature extraction with `parse_email_headers=True`'
+                             ' option')
 
 
     def thread(self, index=None, group_by_subject=False,
@@ -76,7 +79,7 @@ class _EmailThreadingWrapper(_BaseWrapper):
         if index is None:
             index = np.arange(self.fe.n_samples_)
 
-        _, d_all = self.fe.load()  #, mmap_mode='r')
+        d_all = joblib.load(os.path.join(self.fe.dsid_dir, 'email_metadata'))
 
         threads = jwzt.thread(d_all, group_by_subject)
 
@@ -94,8 +97,8 @@ class _EmailThreadingWrapper(_BaseWrapper):
             'group_by_subject': group_by_subject
         }
         self._pars = pars
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
-        joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
+        joblib.dump(pars, os.path.join(mid_dir, 'pars'))
+        joblib.dump(cmod, os.path.join(mid_dir, 'model'))
 
 
         self.mid = mid

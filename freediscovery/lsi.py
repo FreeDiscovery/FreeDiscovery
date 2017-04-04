@@ -94,7 +94,7 @@ class _LSIWrapper(_BaseWrapper):
 
         ds_p = lsi.transform_lsi_norm(ds)
 
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
+        joblib.dump(pars, os.path.join(mid_dir, 'pars'))
         joblib.dump(lsi, os.path.join(mid_dir, 'model'))
         joblib.dump(ds_p, os.path.join(mid_dir, 'data'))
 
