@@ -13,7 +13,6 @@ from sklearn.externals import joblib
 
 from .text import FeatureVectorizer
 from .base import _BaseWrapper
-from .parsers import EmailParser
 from .utils import setup_model, INT_NAN
 from .exceptions import (ModelNotFound, WrongParameter,
              NotImplementedFD, OptionalDependencyMissing)

@@ -22,7 +22,6 @@ import warnings
 from sklearn.metrics.base import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
-from ..parsers import EmailParser
 from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper

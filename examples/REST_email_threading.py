@@ -40,24 +40,20 @@ data_dir = res['metadata']['data_dir']
 
 
 print("\n1.a Parse emails")
-url = BASE_URL + '/email-parser'
+url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-res = requests.post(url, json={'data_dir': data_dir })
+res = requests.post(url, json={'data_dir': data_dir,
+                               'parse_email_headers': True}).json()
 
-dsid = res.json()['id']
-print("   => received {}".format(list(res.json().keys())))
+dsid = res['id']
+print("   => received {}".format(list(res.keys())))
 print("   => dsid = {}".format(dsid))
 
 
+url = BASE_URL+'/feature-extraction/{}'.format(dsid)
+print(" POST", url)
+requests.post(url)
 
-print("\n1.b. check the parameters of the emails")
-url = BASE_URL + '/email-parser/{}'.format(dsid)
-print(' GET', url)
-res = requests.get(url)
-
-data = res.json()
-print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
-                                                        if key != 'filenames']))
 
 print("\n2. Email threading")
 
