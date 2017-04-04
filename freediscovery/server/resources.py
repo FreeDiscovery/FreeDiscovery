@@ -199,62 +199,6 @@ class FeaturesApiElementMappingNested(Resource):
         res_repr = fe.db.render_dict(res, return_file_path=True)
         return {'data': res_repr}
 
-# ============================================================================ #
-#                   Email parser                                      #
-# ============================================================================ #
-
-class EmailParserApi(Resource):
-
-    @doc(description='List processed datasets')
-    def get(self):
-        fe = EmailParser(self._cache_dir)
-        return fe.list_datasets()
-
-    @doc(description=dedent("""
-           Load a dataset and parse emails
-
-           Initialize the feature extraction on a document collection.
-
-           **Parameters**
-            - `data_dir`: [required] relative path to the directory with the input files
-          """))
-    @use_args({'data_dir': wfields.Str(required=True)})
-    @marshal_with(EmailParserSchema())
-    def post(self, **args):
-        fe = EmailParser(self._cache_dir)
-        dsid = fe.transform(**args)
-        pars = fe.get_params()
-        return {'id': dsid, 'filenames': pars['filenames']}
-
-
-class EmailParserApiElement(Resource):
-    @doc(description='Load parsed emails')
-    def get(self, dsid):
-        fe = EmailParser(self._cache_dir, dsid=dsid)
-        out = fe.get_params()
-        return out
-
-    @marshal_with(EmptySchema())
-    def delete(self, dsid):
-        fe = EmailParser(self._cache_dir, dsid=dsid)
-        fe.delete()
-        return {}
-
-
-class EmailParserApiElementIndex(Resource):
-    @doc(description=dedent("""
-           Query document index for a list of filenames
-
-           **Parameters**
-            - `filenames`: [required] list of filenames
-
-          """))
-    @use_args({'filenames': wfields.List(wfields.Str(), required=True)})
-    @marshal_with(EmailParserElementIndexSchema())
-    def post(self, dsid, **args):
-        fe = EmailParser(self._cache_dir, dsid=dsid)
-        idx = fe.search(args['filenames'])
-        return {'index': list(idx)}
 
 # ============================================================================ #
 #                  LSI decomposition

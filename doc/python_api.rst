@@ -16,13 +16,6 @@ Datasets
     freediscovery.datasets.load_dataset
     freediscovery.ingestion.DocumentIndex
 
-Parsers
----------------
-.. autosummary::
-    :toctree: ./generated/
-
-    freediscovery.parsers.EmailParser
-
 Feature extraction
 ------------------
 
