@@ -69,7 +69,7 @@ def test_get_feature_extraction(app, hashed):
                      'n_features': 'int', 'use_idf': 'bool',
                      'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
-                     'n_samples_processed': 'int'}
+                     'parse_email_headers': 'bool', 'n_samples_processed': 'int'}
 
 @pytest.mark.parametrize('hashed', [True])
 def test_stop_words_integration(app, hashed):

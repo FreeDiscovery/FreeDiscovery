@@ -42,11 +42,10 @@ class _EmailThreadingWrapper(_BaseWrapper):
 
         super(_EmailThreadingWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id, mid=mid,
-                                          dataset_definition=EmailParser,
                                           load_model=True)
 
         if not os.path.exists(os.path.join(self.fe.dsid_dir, 'email_metadata')):
-            raise ValueError('The email metadata was not found. Please rerurn'
+            raise ValueError('The email metadata was not found. Please rerun'
                              ' feature extraction with `parse_email_headers=True`'
                              ' option')
 

@@ -64,7 +64,6 @@ class _BaseWrapper(object):
       initialization
     """
     def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None,
-                 dataset_definition=FeatureVectorizer,
                  load_model=False):
         if parent_id is None and mid is None:
             raise WrongParameter('At least one of parent_id or mid should be provided!')
@@ -77,7 +76,7 @@ class _BaseWrapper(object):
             self.mid = None
 
         # this is an alias that should be deprecated
-        self.fe = dataset_definition(cache_dir=cache_dir,
+        self.fe = FeatureVectorizer(cache_dir=cache_dir,
                                      dsid=self.pipeline['vectorizer'])
 
         self.model_dir = os.path.join(self.pipeline.get_path(),

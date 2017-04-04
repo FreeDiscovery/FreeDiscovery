@@ -84,7 +84,10 @@ def get_features(app, hashed=True, metadata_fields='data_dir', **kwargs):
     method = V01 + "/feature-extraction/"
     pars = { "use_hashing": hashed}
     if metadata_fields == 'data_dir':
-        pars["data_dir"] = data_dir
+        if kwargs.get('parse_email_headers'):
+            pars["data_dir"] = email_data_dir
+        else:
+            pars["data_dir"] = data_dir
     elif metadata_fields == 'dataset_definition':
 
         index = DocumentIndex.from_folder(data_dir)

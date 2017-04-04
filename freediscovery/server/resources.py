@@ -130,6 +130,7 @@ class FeaturesApi(Resource):
              - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True)
              - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
+             - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
             """))
     @use_args(FeaturesParsSchema(strict=True))
     @marshal_with(FeaturesSchema())
@@ -174,6 +175,8 @@ class FeaturesApiElement(Resource):
     def post(self, dsid):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         dsid, _ = fe.transform()
+        if fe._pars['parse_email_headers']:
+            fe.parse_email_headers()
         return {'id': dsid}
 
     @doc(description='Delete a processed dataset')

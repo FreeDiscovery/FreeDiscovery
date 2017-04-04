@@ -252,7 +252,7 @@ def test_email_parsing():
     uuid = fe.preprocess(data_dir)
     uuid, filenames = fe.transform()
 
-    email_md = fe.parse_emails()
+    email_md = fe.parse_email_headers()
     assert len(filenames) == len(email_md)
 
     fe.delete()

@@ -23,7 +23,7 @@ def test_threading():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir=data_dir)
     fe.transform()
-    fe.parse_emails()
+    fe.parse_email_headers()
 
     filenames, res = fe.load(uuid)
 

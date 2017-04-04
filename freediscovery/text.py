@@ -206,7 +206,7 @@ class FeatureVectorizer(_BaseTextTransformer):
             dataset_definition=None, n_features=None,
             chunk_size=5000, analyzer='word', ngram_range=(1, 1), stop_words=None,
             n_jobs=1, use_idf=False, sublinear_tf=True, binary=False, use_hashing=False,
-            norm='l2', min_df=0.0, max_df=1.0):
+            norm='l2', min_df=0.0, max_df=1.0, parse_email_headers=False):
         """Initalize the features extraction.
 
         See sklearn.feature_extraction.text for a detailed description of the input parameters
@@ -305,6 +305,7 @@ class FeatureVectorizer(_BaseTextTransformer):
                 'n_jobs': n_jobs, 'use_idf': use_idf, 'sublinear_tf': sublinear_tf,
                 'binary': binary, 'use_hashing': use_hashing,
                 'norm': norm, 'min_df': min_df, 'max_df': max_df,
+                'parse_email_headers': parse_email_headers, 
                 'type': type(self).__name__
                }
         self._pars = pars
@@ -330,7 +331,7 @@ class FeatureVectorizer(_BaseTextTransformer):
         else:
             raise ValueError
 
-    def parse_emails(self):
+    def parse_email_headers(self):
         from email.parser import Parser
         from .externals.jwzthreading import Message
         features = []
