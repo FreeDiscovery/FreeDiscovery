@@ -84,8 +84,8 @@ class EmailParser(_BaseTextTransformer):
                 features.append(msg_obj)
 
 
-        joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
-        joblib.dump(features, os.path.join(dsid_dir, 'features'), compress=9)
+        joblib.dump(pars, os.path.join(dsid_dir, 'pars'))
+        joblib.dump(features, os.path.join(dsid_dir, 'features'))
 
         #pars['filenames_abs'] = [os.path.join(data_dir, el) for el in filenames_base]
         return dsid

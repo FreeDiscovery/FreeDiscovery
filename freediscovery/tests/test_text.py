@@ -243,3 +243,16 @@ def test_feature_extraction_cyrillic(analyzer, ngram_range, use_hashing):
 
     assert np.isfinite(res2.data).all()
     fe.delete()
+
+def test_email_parsing():
+    data_dir = os.path.join(basename, "..", "data", "fedora-devel-list-2008-October")
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir)
+    uuid, filenames = fe.transform()
+
+    email_md = fe.parse_emails()
+    assert len(filenames) == len(email_md)
+
+    fe.delete()

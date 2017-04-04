@@ -51,8 +51,7 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
 
     fset_new.eliminate_zeros()
 
-    joblib.dump(fset_new, os.path.join(dsid_dir, 'features-{:05}'.format(k)),
-            compress=0)
+    joblib.dump(fset_new, os.path.join(dsid_dir, 'features-{:05}'.format(k)))
 
 class _BaseTextTransformer(object):
     """Base text transformer
@@ -309,8 +308,8 @@ class FeatureVectorizer(_BaseTextTransformer):
                 'type': type(self).__name__
                }
         self._pars = pars
-        joblib.dump(pars, os.path.join(dsid_dir, 'pars'), compress=9)
-        joblib.dump(db, os.path.join(dsid_dir, 'db'), compress=9)
+        joblib.dump(pars, os.path.join(dsid_dir, 'pars'))
+        joblib.dump(db, os.path.join(dsid_dir, 'db'))
         self.db = db
         return dsid
 
@@ -330,6 +329,23 @@ class FeatureVectorizer(_BaseTextTransformer):
         #    return stop_words_list
         else:
             raise ValueError
+
+    def parse_emails(self):
+        from email.parser import Parser
+        from .externals.jwzthreading import Message
+        features = []
+        for idx, fname in enumerate(self._pars['filenames_abs']):
+            with open(fname, 'rt') as fh:
+                txt = fh.read()
+                #if sys.version_info < (3, 0) and encoding != 'utf-8':
+                #    message = message.encode('utf-8')
+                message = Parser().parsestr(txt, headersonly=True)
+
+                msg_obj = Message(message, message_idx=idx)
+
+                features.append(msg_obj)
+        joblib.dump(features, os.path.join(self.dsid_dir, 'email_metadata'))
+        return features
 
     def transform(self):
         """

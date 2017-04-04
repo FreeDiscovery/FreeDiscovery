@@ -45,6 +45,11 @@ class _EmailThreadingWrapper(_BaseWrapper):
                                           dataset_definition=EmailParser,
                                           load_model=True)
 
+        if not os.path.exists(os.path.join(self.fe.dsid_dir, 'email_metadata')):
+            raise ValueError('The email metadata was not found. Please rerurn'
+                             ' feature extraction with `parse_email_headers=True`'
+                             ' option')
+
 
     def thread(self, index=None, group_by_subject=False,
             sort_by_key='message_idx', sort_missing=-1):
@@ -76,7 +81,7 @@ class _EmailThreadingWrapper(_BaseWrapper):
         if index is None:
             index = np.arange(self.fe.n_samples_)
 
-        _, d_all = self.fe.load()  #, mmap_mode='r')
+        d_all = joblib.load(os.path.join(self.fe.dsid_dir, 'email_metadata'))
 
         threads = jwzt.thread(d_all, group_by_subject)
 
@@ -94,8 +99,8 @@ class _EmailThreadingWrapper(_BaseWrapper):
             'group_by_subject': group_by_subject
         }
         self._pars = pars
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'), compress=9)
-        joblib.dump(cmod, os.path.join(mid_dir, 'model'), compress=9)
+        joblib.dump(pars, os.path.join(mid_dir, 'pars'))
+        joblib.dump(cmod, os.path.join(mid_dir, 'model'))
 
 
         self.mid = mid
