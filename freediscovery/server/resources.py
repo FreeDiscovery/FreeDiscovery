@@ -336,9 +336,6 @@ class ModelsApi(Resource):
               * "LogisticRegression": [LogisticRegression](http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression)
               * "LinearSVC": [Linear SVM](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html),
               * "NearestNeighbor": nearest neighbor classifier (requires LSI)
-              * "NearestCentroid": nearest centroid classifier (requires LSI)
-              * "xgboost": [Gradient Boosting](https://xgboost.readthedocs.io/en/latest/model.html)
-                   (*Warning:* for the moment xgboost is not istalled for a direct install on Windows)
             - `cv`: binary, if true optimal parameters of the ML model are determined by cross-validation over 5 stratified K-folds (default False).
             - `training_scores`: binary, compute the efficiency scores on the training dataset. This would make computations much slower for NearestNeighbors (default False). 
           """))
@@ -525,36 +522,6 @@ _wardhc_clustering_api_post_args = {
         'n_clusters': wfields.Int(missing=150),
         'n_neighbors': wfields.Int(missing=5),
         }
-
-
-class WardHCClusteringApi(Resource):
-
-    @doc(description=dedent("""
-           Compute Ward Hierarchical Clustering.
-
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `use_idf=1, sublinear_tf=0, binary=0`.
-
-           The Ward Hierarchical clustering is generally slower that K-mean, and does not scale well with the dataset size. The run time can be reduced by decreasing the following parameters,
-
-            - `lsi_components`: the number of dimensions used for the Latent Semantic Indexing decomposition (e.g. from 150 to 50)
-            - `n_neighbors`:  the number of neighbors used to construct the connectivity (e.g. from 10 to 5)
-
-           **Parameters**
-            - `parent_id`: `dataset_id` or `lsi_id`
-            - `n_clusters`: the number of clusters
-            - `n_neighbors` Number of neighbors for each sample, used to compute the connectivity matrix (see [AgglomerativeClustering](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html) and [kneighbors_graph](http://scikit-learn.org/stable/modules/generated/sklearn.neighbors.kneighbors_graph.html)
-
-           """))
-    @use_args(_wardhc_clustering_api_post_args)
-    @marshal_with(IDSchema())
-    def post(self, **args):
-
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
-
-        del args['parent_id']
-
-        cl.ward_hc(**args)
-        return {'id': cl.mid}
 
 
 

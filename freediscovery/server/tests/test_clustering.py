@@ -31,7 +31,6 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
                           ('birch', True, -1, False),
                           ('birch', True, -1, True),
                           ('birch', True, 13, False),
-                          ('ward_hc', True, 13, False),
                           ('dbscan', True, None, False)])
 def test_api_clustering(app, model, use_lsi, n_clusters, optimal_sampling):
 
