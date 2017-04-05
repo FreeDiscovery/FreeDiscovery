@@ -48,6 +48,10 @@ class _LSIWrapper(_BaseWrapper):
         super(_LSIWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id, mid=mid)
 
+    def _load_features(self):
+        mid_dir = os.path.join(self.fe.dsid_dir, self._wrapper_type, self.mid)
+        return joblib.load(os.path.join(mid_dir, 'data'))
+
 
     def fit_transform(self, n_components=150, n_iter=5):
         """

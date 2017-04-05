@@ -8,8 +8,10 @@ import os.path
 import re
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import pytest
+
+from sklearn.preprocessing import normalize
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
@@ -32,6 +34,10 @@ def test_lsi():
     assert lsi_res.components_.shape == (n_components, fe.n_features_)
     assert lsi._load_pars() is not None
     lsi._load_model()
+    X_lsi = lsi._load_features()
+
+    assert_allclose(normalize(X_lsi), X_lsi)
+
 
     # test pipeline
 
