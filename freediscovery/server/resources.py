@@ -947,9 +947,7 @@ class SearchApi(Resource):
                 })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
-        from time import time
         parent_id = args['parent_id']
-        t0 = time()
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
 
         if 'query' in args and 'query_document_id' not in args:
@@ -975,15 +973,10 @@ class SearchApi(Resource):
             is_ascending = args['sort_order'] == 'ascending'
             scores_pd.sort_values(by=sort_by, inplace=True, ascending=is_ascending)
 
-        print(scores_pd.size)
-        print(time() - t0)
-
-        t0 = time()
-        res = model.fe.db.render_dict(scores_pd)
-        res = [row for row in res if row['score'] > args['min_score']]
         if 'max_results' in args and args['max_results'] > 0:
-            res = res[:args['max_results']]
-        print(time() - t0)
+            scores_pd = scores_pd.iloc[:args['max_results'], :]
+
+        res = model.fe.db.render_dict(scores_pd)
 
         return {'data': res}
 

@@ -173,23 +173,21 @@ class DocumentIndex(object):
         else:
             base_keys = list(self.data.columns)
         if res is not None:
-            res_keys = [key for key in res if key not in base_keys]
+            res_keys = [key for key in res if key not in base_keys or key == 'internal_id']
             if not return_file_path and 'file_path' in res_keys:
                 res_keys.remove('file_path')
 
         db = db[base_keys]
 
-        out = []
+
+        db_dict = db.to_dict(orient='records')
         if res is not None:
-            for index, row in res[res_keys].iterrows():
-                row_dict = row.to_dict()
-                db_sel = db.loc[index]
-                row_dict.update(db_sel.to_dict())
-                out.append(row_dict)
+            out = res[res_keys].to_dict(orient='records')
+            for idx, row in enumerate(out):
+                internal_id = int(row['internal_id'])
+                row.update(db_dict[internal_id])
         else:
-            for index, row in db.iterrows():
-                row_dict = row.to_dict()
-                out.append(row_dict)
+            out = db_dict
 
         return out
 

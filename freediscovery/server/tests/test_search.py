@@ -71,6 +71,7 @@ def test_search(app, method, min_score, max_results):
 
     data = app.post_check(V01 + "/feature-extraction/{}/id-mapping".format(dsid), 
                    json={'data': [data[0]]})
+
     if not max_results:
         assert data['data'][0]['file_path'] == query_file_path
 

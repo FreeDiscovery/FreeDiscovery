@@ -141,7 +141,6 @@ class _BaseTextTransformer(object):
             raise ValueError('Vectorizer model id {} ({}) not found in the cache {}!'.format(
                              mid, mid_dir))
         fname = os.path.join(mid_dir, 'vectorizer')
-        print(self._pars['use_hashing'])
         if self._pars['use_hashing']:
             cmod = joblib.load(fname)
         else:
