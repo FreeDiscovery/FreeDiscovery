@@ -5,7 +5,34 @@ This page aims to summarize the performance and scaling of the algorithms used i
 
 Benchmarks are computed running the `examples <./examples/index.html>`_ on the TREC 2009 corpus of 700 000 documents (1.5 GB or 7 GB uncompressed). The following benchmarks are given for Intel(R) Xeon(R) CPU E3-1225 V2 @ 3.20GHz (4 CPU cores) server with 16 GB of RAM. The time complexites are experimentally (approximately) estimated for the given parameters.
 
+Document ingestion
+------------------
 
++--------------+---------------------------+-----------+---------------------------------+
+| Method       | Parameters                | Time (s)  | Complexity                      |
++==============+===========================+===========+=================================+
+| Vectorizer   | - `use_hashing=False`     |  780      | `O(n_samples)`                  |
+|              | - `use_idf=False`         |           |                                 |
++--------------+---------------------------+-----------+---------------------------------+
+
+
+Preprocessing
+-------------
+
++--------------+---------------------------+-----------+---------------------------------+
+| Method       | Parameters                | Time (s)  | Complexity                      |
++==============+===========================+===========+=================================+
+| LSI          | - `n_components=150`      |  270      | `O(n_samples)`                  |
++--------------+---------------------------+-----------+---------------------------------+
+
+Semantic search
+---------------
+
++-------------------------+---------------------------+-----------+---------------------------------+
+| Method                  | Parameters                | Time (s)  | Complexity                      |
++=========================+===========================+===========+=================================+
+| Text query              | - `n_components=150`      |  270      | `O(n_samples)`                  |
++-------------------------+---------------------------+-----------+---------------------------------+
 
 Near Duplicates Detection
 -------------------------
