@@ -32,7 +32,7 @@ class _SearchWrapper(_BaseWrapper):
 
         super(_SearchWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id,
-                                          mid=mid, load_model=True)
+                                          mid=mid)
 
     def search(self, text, internal_id=None, metric='cosine'):
         """
