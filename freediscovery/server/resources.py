@@ -947,7 +947,9 @@ class SearchApi(Resource):
                 })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
+        from time import time
         parent_id = args['parent_id']
+        t0 = time()
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
 
         if 'query' in args and 'query_document_id' not in args:
@@ -964,17 +966,24 @@ class SearchApi(Resource):
 
         scores_pd = pd.DataFrame({'score': scores,
                                   'internal_id': np.arange(model.fe.n_samples_, dtype='int')})
+        scores_pd = scores_pd[scores_pd.score > args['min_score']]
 
-        res = model.fe.db.render_dict(scores_pd)
-        res = [row for row in res if row['score'] > args['min_score']]
         sort_by = args['sort_by']
         if sort_by:
-            if sort_by not in res[0]:
-                raise WrongParameter('sort_by={} not in []'.format(sort_by, list(res[0].keys())))
-            sort_reverse = args['sort_order'] == 'descending'
-            res = sorted(res, key=lambda row: row['score'], reverse=sort_reverse)
+            if sort_by not in scores_pd.columns:
+                raise WrongParameter('sort_by={} not in {}'.format(sort_by, list(scores_pd.columns)))
+            is_ascending = args['sort_order'] == 'ascending'
+            scores_pd.sort_values(by=sort_by, inplace=True, ascending=is_ascending)
+
+        print(scores_pd.size)
+        print(time() - t0)
+
+        t0 = time()
+        res = model.fe.db.render_dict(scores_pd)
+        res = [row for row in res if row['score'] > args['min_score']]
         if 'max_results' in args and args['max_results'] > 0:
             res = res[:args['max_results']]
+        print(time() - t0)
 
         return {'data': res}
 
