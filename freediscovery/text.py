@@ -8,7 +8,9 @@ import os.path
 import re
 import shutil
 import numpy as np
+
 import pickle
+import warnings
 
 from sklearn.externals import joblib
 from sklearn.externals.joblib import Parallel, delayed
@@ -286,6 +288,11 @@ class FeatureVectorizer(_BaseTextTransformer):
 
         if not len(ngram_range) == 2:
             raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
+
+        if norm != 'l2':
+            warnings.warn("the use of 'l2' norm is stronly advised; distance calculations"
+                          " may not be correct with other normalizations. Currently "
+                          " norm={}".format(norm))
 
         if stop_words in [None, 'english', 'english_alphanumeric']:
             pass

@@ -7,9 +7,11 @@ from __future__ import print_function
 import os.path
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
+from numpy.testing import assert_allclose
 import scipy.sparse
 import itertools
 import pytest
+from sklearn.preprocessing import normalize
 
 from freediscovery.text import (FeatureVectorizer,
                                 _FeatureVectorizerSampled)
@@ -39,6 +41,9 @@ def test_feature_extraction_tokenization(analyzer, ngram_range, use_hashing):
     assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), "not an array {}".format(res2)
 
     assert np.isfinite(res2.data).all()
+
+    assert_allclose(normalize(res2).data, res2.data)  # data is l2 normalized
+
     fe.delete()
 
 @pytest.mark.parametrize("sublinear_tf, use_idf, binary, use_hashing", 
@@ -64,6 +69,7 @@ def test_feature_extraction_weighting(use_idf, sublinear_tf, binary, use_hashing
     assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), "not an array {}".format(res2)
 
     assert np.isfinite(res2.data).all()
+    assert_allclose(normalize(res2).data, res2.data)  # data is l2 normalized
 
 
     fe.delete()
@@ -159,8 +165,10 @@ def test_sampling_filenames():
     fe_pars = {'binary': True, 'norm': None, 'sublinear_tf': False}
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-              use_hashing=True, **fe_pars)  # TODO unused (overwritten on the next line)
+    with pytest.warns(UserWarning):
+        # there is a warning because we don't use norm='l2'
+        uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+                  use_hashing=True, **fe_pars)  # TODO unused (overwritten on the next line)
     uuid, filenames = fe.transform()
     fnames, X = fe.load(uuid)
 

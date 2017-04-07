@@ -121,7 +121,6 @@ class FeaturesApi(Resource):
 
              - `stop_words`: "english" or "None" Remove stop words from the resulting tokens. Only applies for the "word" analyzer.  If "english", a built-in stop word list for English is used. ( default: "None")
              - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
-             - `norm`: The normalization to use after the feature weighting ('None', 'l1', 'l2') (default: 'l2')
              - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
              - `binary`: If set to 1, all non zero counts are set to 1. (default: False)
              - `use_idf`: Enable inverse-document-frequency reweighting (default: False).
@@ -131,12 +130,10 @@ class FeaturesApi(Resource):
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
              - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
             """))
-    @use_args(FeaturesParsSchema(strict=True))
+    @use_args(FeaturesParsSchema(strict=True, exclude=('norm',)))
     @marshal_with(FeaturesSchema())
     def post(self, **args):
         args['use_idf'] = args['use_idf'] > 0
-        if args['norm'] == 'None':
-            args['norm'] = None
         if args['use_hashing']:
             for key in ['min_df', 'max_df']:
                 if key in args:
