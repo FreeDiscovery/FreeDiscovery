@@ -32,7 +32,7 @@ class _SearchWrapper(_BaseWrapper):
 
         super(_SearchWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id,
-                                          mid=mid, load_model=True)
+                                          mid=mid)
 
     def search(self, text, internal_id=None, metric='cosine'):
         """
@@ -47,9 +47,12 @@ class _SearchWrapper(_BaseWrapper):
         metric : str
           the output metric to use
         """
+        if internal_id is not None:
+            vect = None
+        else:
+            vect = self.fe._load_model()
+            vect.set_params(input='content')
 
-        vect = self.fe._load_model()
-        vect.set_params(input='content')
 
         X = self.pipeline.data
 
@@ -60,6 +63,7 @@ class _SearchWrapper(_BaseWrapper):
         else:
             lsi = None
 
+
         s = Search(vect, lsi)
         s.fit(X)
 
@@ -67,6 +71,7 @@ class _SearchWrapper(_BaseWrapper):
             dist = s.search_id(internal_id, metric=metric)
         else:
             dist = s.search(text, metric=metric)
+
         return dist
 
 

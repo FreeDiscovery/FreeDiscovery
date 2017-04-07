@@ -931,6 +931,8 @@ class SearchApi(Resource):
             - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
             - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
+            - `batch_id`: retrieve a given subset of scores. Default: -1 (retrieves all scrores)
+            - `batch_size`: the number of document scores retrieved per batch. Default: 5000
             """))
     @use_args({ "parent_id": wfields.Str(required=True),
                 "query": wfields.Str(),
@@ -941,6 +943,8 @@ class SearchApi(Resource):
                 'sort_by': wfields.Str(missing='score'),
                 'sort_order': wfields.Str(missing='descending',
                                           validate=_is_in_range(['descending', 'ascending'])),
+                'batch_id': wfields.Int(missing=-1),
+                'batch_size': wfields.Int(missing=5000),
                 })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
@@ -954,43 +958,74 @@ class SearchApi(Resource):
             query = pd.DataFrame([{'document_id': args['query_document_id']}])
             res_q = model.fe.db.search(query, drop=False)
 
-            scores = model.search(None, internal_id=res_q.internal_id.values[0],
+            scores = model.search(None,
+                                  internal_id=res_q.internal_id.values[0],
                                   metric=args['nn_metric'])
         else:
-            raise WrongParameter("One of the 'query', 'query_document_id' must be provided")
+            raise WrongParameter("One of the 'query', "
+                                 "'query_document_id' must be provided")
 
         scores_pd = pd.DataFrame({'score': scores,
-                                  'internal_id': np.arange(model.fe.n_samples_, dtype='int')})
+                                  'internal_id': np.arange(
+                                       model.fe.n_samples_, dtype='int')})
+        scores_pd = scores_pd[scores_pd.score > args['min_score']]
 
-        res = model.fe.db.render_dict(scores_pd)
-        res = [row for row in res if row['score'] > args['min_score']]
+        if 'query' not in args and 'query_document_id' in args:
+            # remove the query document
+            scores_pd = scores_pd[scores_pd.internal_id != res_q.internal_id.values[0]]
+
         sort_by = args['sort_by']
         if sort_by:
-            if sort_by not in res[0]:
-                raise WrongParameter('sort_by={} not in []'.format(sort_by, list(res[0].keys())))
-            sort_reverse = args['sort_order'] == 'descending'
-            res = sorted(res, key=lambda row: row['score'], reverse=sort_reverse)
+            if sort_by not in scores_pd.columns:
+                raise WrongParameter(
+                    'sort_by={} not in {}'.format(sort_by,
+                                                  list(scores_pd.columns)))
+            is_ascending = args['sort_order'] == 'ascending'
+            scores_pd.sort_values(by=sort_by, inplace=True,
+                                  ascending=is_ascending)
+
         if 'max_results' in args and args['max_results'] > 0:
-            res = res[:args['max_results']]
+            scores_pd = scores_pd.iloc[:args['max_results'], :]
 
-        return {'data': res}
+        # make the pagination happen
+        n_samples = scores_pd.shape[0]
+        batch_id = args['batch_id']
+        batch_size = args['batch_size']
+        if batch_id >= 0:
+            mslice = slice(batch_id*batch_size,
+                           min((batch_id + 1)*batch_size, n_samples))
+            scores_batch = scores_pd.iloc[mslice, :]
+        else:
+            scores_batch = scores_pd
+
+        res = model.fe.db.render_dict(scores_batch)
+
+        pagination = {'batch_id': args['batch_id'],
+                      'current_response_count': scores_batch.shape[0],
+                      'total_response_count': n_samples}
+        if args['batch_id'] < 0:
+            pagination['batch_id_last'] = args['batch_id']
+        else:
+            pagination['batch_id_last'] = n_samples // batch_size
+
+        return {'data': res, 'pagination': pagination}
 
 
-# ============================================================================ #
+# =========================================================================== #
 #                            Custom Stop Words
-# ============================================================================ #
+# =========================================================================== #
 
 
 class CustomStopWordsApi(Resource):
     @doc(description="Store a list of custom stop words")
-    @use_args({"name" : wfields.Str(required=True),
-               "stop_words" : wfields.List(wfields.Str(), required=True)})
+    @use_args({"name": wfields.Str(required=True),
+               "stop_words": wfields.List(wfields.Str(), required=True)})
     @marshal_with(CustomStopWordsSchema())
     def post(self, **args):
         name = args['name']
         stop_words = args['stop_words']
         model = _StopWordsWrapper(cache_dir=self._cache_dir)
-        model.save(name = name, stop_words = stop_words)
+        model.save(name=name, stop_words=stop_words)
         return {'name': name}
 
 

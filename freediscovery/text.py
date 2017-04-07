@@ -8,6 +8,8 @@ import os.path
 import re
 import shutil
 import numpy as np
+
+import pickle
 import warnings
 
 from sklearn.externals import joblib
@@ -40,12 +42,13 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
 
     if pars['use_idf']:
-        pars['binary'] = False # need to apply TFIDF weights first 
+        pars['binary'] = False  # need to apply TFIDF weights first
 
-    hash_opts = {key: vals for key, vals in pars.items() \
-            if key in ['stop_words', 'n_features', 'binary', 'analyser', 'ngram_range']}
+    hash_opts = {key: vals for key, vals in pars.items()
+                 if key in ['stop_words', 'n_features',
+                            'binary', 'analyser', 'ngram_range']}
     fe = HashingVectorizer(input='filename', norm=None, decode_error='ignore',
-           non_negative=True, **hash_opts) 
+                           non_negative=True, **hash_opts)
     if pretend:
         return fe
     fset_new = fe.transform(filenames[mslice])
@@ -70,7 +73,6 @@ class _BaseTextTransformer(object):
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
         self.data_dir = None
         self.verbose = verbose
-
 
         self.cache_dir = cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
         if not os.path.exists(cache_dir):
@@ -140,7 +142,14 @@ class _BaseTextTransformer(object):
         if not os.path.exists(mid_dir):
             raise ValueError('Vectorizer model id {} ({}) not found in the cache {}!'.format(
                              mid, mid_dir))
-        cmod = joblib.load(os.path.join(mid_dir, 'vectorizer'))
+        fname = os.path.join(mid_dir, 'vectorizer')
+        if self._pars['use_hashing']:
+            cmod = joblib.load(fname)
+        else:
+            # this is much faster in python 3 as cpickle is used
+            # (only works if no numpy arrays are used)
+            with open(fname, 'rb') as fh:
+                cmod = pickle.load(fh)
         return cmod
 
 
@@ -411,7 +420,13 @@ class FeatureVectorizer(_BaseTextTransformer):
                             decode_error='ignore', **opts_tfidf)
                 res = tfidf.fit_transform(pars['filenames_abs'])
                 self.vect = tfidf
-            joblib.dump(self.vect, os.path.join(dsid_dir, 'vectorizer'))
+            fname = os.path.join(dsid_dir, 'vectorizer')
+            if self._pars['use_hashing']:
+                joblib.dump(self.vect, fname)
+            else:
+                # faster for pure python objects
+                with open(fname, 'wb') as fh:
+                    pickle.dump(self.vect, fh)
 
             if pars['norm'] is not None:
                 res = normalize(res, norm=pars['norm'], copy=False)

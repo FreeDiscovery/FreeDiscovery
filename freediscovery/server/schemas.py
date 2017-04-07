@@ -199,9 +199,20 @@ class MetricsDupDetectionSchema(Schema):
 class _SearchResponseSchemaElement(DocumentIndexSchema):
     score = fields.Number(required=True)
 
+
+class _ResponsePaginaton(Schema):
+    total_response_count = fields.Int()
+    current_response_count = fields.Int()
+    batch_id = fields.Int()
+    batch_id_last = fields.Int()
+
+
 class SearchResponseSchema(Schema):
-    data = fields.Nested(_SearchResponseSchemaElement, many=True, required=True)
-    
+    data = fields.Nested(_SearchResponseSchemaElement,
+                         many=True, required=True)
+    pagination = fields.Nested(_ResponsePaginaton, required=True)
+
+
 class CustomStopWordsSchema(Schema):
     name = fields.Str(required=True)
     stop_words = fields.List(fields.Str(), required=True)
