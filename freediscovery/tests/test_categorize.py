@@ -1,17 +1,11 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-#from __future__ import unicode_literals
 
 import os.path
 from unittest import SkipTest
 import re
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal,
-                           assert_array_less, assert_array_equal)
+from numpy.testing import assert_allclose
 
 import pandas as pd
 import pytest
@@ -39,7 +33,7 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 
 fe = FeatureVectorizer(cache_dir=cache_dir)
 vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt')
-vect_uuid = fe.transform()
+fe.transform()
 
 
 lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
@@ -50,10 +44,10 @@ ground_truth = parse_ground_truth_file(
 
 _test_cases = itertools.product(
                        [False, True],
-                       ["LinearSVC", "LogisticRegression", 'xgboost', "NearestNeighbor",
-                        "NearestCentroid"],
-                        #'MLPClassifier', 'ensemble-stacking' not supported in production the moment
+                       ["LinearSVC", "LogisticRegression", 'xgboost',
+                        "NearestNeighbor", "NearestCentroid"],
                        [None, 'fast'])
+# 'MLPClassifier', 'ensemble-stacking' not supported in production the moment
 _test_cases = filter(lambda x: not (x[1].startswith("Nearest") and x[2]),
                      _test_cases)
 
@@ -61,8 +55,9 @@ _test_cases = filter(lambda x: not (x[1].startswith("Nearest") and x[2]),
 @pytest.mark.parametrize('use_lsi, method, cv', _test_cases)
 def test_categorization(use_lsi, method, cv):
 
-    if 'CIRCLECI' in os.environ and cv == 'fast' and method in ['LinearSVC', 'xgboost']:
-        raise SkipTest # Circle CI is too slow and timesout
+    if 'CIRCLECI' in os.environ and cv == 'fast'\
+            and method in ['LinearSVC', 'xgboost']:
+        raise SkipTest  # Circle CI is too slow and timesout
 
     if method == 'xgboost':
         try:
@@ -75,8 +70,10 @@ def test_categorization(use_lsi, method, cv):
     else:
         uuid = lsi.mid
 
-    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
-    index = cat.fe.db._search_filenames(ground_truth.file_path.values)
+    cat = _CategorizerWrapper(cache_dir=cache_dir,
+                              parent_id=uuid, cv_n_folds=2)
+    cat.fe.db_.filenames_ = cat.fe.filenames_
+    index = cat.fe.db_._search_filenames(ground_truth.file_path.values)
 
     try:
         model, Y_train = cat.fit(
@@ -87,19 +84,18 @@ def test_categorization(use_lsi, method, cv):
     except OptionalDependencyMissing:
         raise SkipTest
 
-
-
     Y_pred, md = cat.predict()
     X_pred = np.arange(cat.fe.n_samples_, dtype='int')
-    idx_gt = cat.fe.db._search_filenames(ground_truth.file_path.values)
+    idx_gt = cat.fe.db_._search_filenames(ground_truth.file_path.values)
 
     scores = categorization_score(idx_gt,
-                        ground_truth.is_relevant.values,
-                        X_pred, np.argmax(Y_pred, axis=1))
+                                  ground_truth.is_relevant.values,
+                                  X_pred, np.argmax(Y_pred, axis=1))
 
     assert cat.get_params() is not None
 
-    assert Y_pred.shape == (cat.fe.n_samples_, len(np.unique(ground_truth.is_relevant.values)))
+    assert Y_pred.shape == (cat.fe.n_samples_,
+                            len(np.unique(ground_truth.is_relevant.values)))
 
     if method == 'NearestNeighbor':
         assert md.shape == Y_pred.shape
@@ -113,11 +109,12 @@ def test_categorization(use_lsi, method, cv):
     assert_allclose(scores['recall'], 1, rtol=0.68)
     cat.delete()
 
+
 @pytest.mark.parametrize('max_result_categories, sort_by, has_nn',
-                                                            [(1, None, True),
-                                                             (1, 'score', True),
-                                                             (1, None, False),
-                                                             (2, None, True), (3, '', True)])
+                         [(1, None, True),
+                          (1, 'score', True),
+                          (1, None, False),
+                          (2, None, True), (3, '', True)])
 def test_categorization2dict(max_result_categories, sort_by, has_nn):
     import json
     Y_pred = np.array([[1.0, 0.0],
@@ -134,12 +131,12 @@ def test_categorization2dict(max_result_categories, sort_by, has_nn):
                          [0, 2]])
     else:
         D_nn = None
-    id_mapping = pd.DataFrame([{'internal_id': idx, 'document_id': idx**2} \
-                    for idx in range(Y_pred.shape[0])])
+    id_mapping = pd.DataFrame([{'internal_id': idx, 'document_id': idx**2}
+                               for idx in range(Y_pred.shape[0])])
     res = _CategorizerWrapper.to_dict(Y_pred, D_nn,
-                                     ['negative', 'positive'], id_mapping,
-                                     max_result_categories=max_result_categories,
-                                     sort_by=sort_by)
+                                      ['negative', 'positive'], id_mapping,
+                                      max_result_categories=max_result_categories,
+                                      sort_by=sort_by)
     assert list(res.keys()) == ['data']
     if has_nn:
         if max_result_categories >= 2 and not sort_by:
@@ -214,25 +211,25 @@ def test_categorization2dict(max_result_categories, sort_by, has_nn):
     # check that we are picklable
     json.dumps(res)
 
+
 def test_explain_categorization():
     from freediscovery.categorization import binary_sensitivity_analysis
 
     uuid = vect_uuid
 
-    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
-    index = cat.fe.db._search_filenames(ground_truth.file_path.values)
+    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid,
+                              cv_n_folds=2)
+    cat.fe.db_.filenames_ = cat.fe.filenames_
+    index = cat.fe.db_._search_filenames(ground_truth.file_path.values)
 
-    model, _ = cat.fit(index,
-                         ground_truth.is_relevant.values,
-                         method='LogisticRegression')
-    _, X = cat.fe.load()
-    vect = cat.fe._load_model()
+    model, _ = cat.fit(index, ground_truth.is_relevant.values,
+                       method='LogisticRegression')
+    X = cat.fe._load_features()
+    vect = cat.fe.vect_
 
     weights = binary_sensitivity_analysis(model, vect.vocabulary_, X[0, :])
-    assert len(weights.keys()) < len(vect.vocabulary_) # not all vocabulary keys are returned
-
-
-
+    # not all vocabulary keys are returned
+    assert len(weights.keys()) < len(vect.vocabulary_)
 
 
 @pytest.mark.parametrize('n_steps', [2, 3])
@@ -247,10 +244,12 @@ def test_pipeline(n_steps):
     else:
         raise ValueError
 
-    cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=uuid, cv_n_folds=2)
-    index = cat.fe.db._search_filenames(ground_truth.file_path.values)
+    cat = _CategorizerWrapper(cache_dir=cache_dir,
+                              parent_id=uuid, cv_n_folds=2)
+    cat.fe.db_.filenames_ = cat.fe.filenames_
+    index = cat.fe.db_._search_filenames(ground_truth.file_path.values)
 
-    coefs, Y_train = cat.fit( index, ground_truth.is_relevant.values)
+    coefs, Y_train = cat.fit(index, ground_truth.is_relevant.values)
 
     cat.predict()
 
@@ -282,7 +281,6 @@ def test_pipeline(n_steps):
                 raise ValueError
 
 
-
 def test_unique_label():
     """Check that testing works with only one label in the training test"""
     np.random.seed(10)
@@ -291,18 +289,15 @@ def test_unique_label():
 
     idx = np.arange(len(is_relevant), dtype='int')
 
-    scores = categorization_score(idx,
-                        is_relevant,
-                        idx,
-                        np.random.rand(*Nshape))
-    # TODO unused variable 'scores'
+    scores = categorization_score(idx, is_relevant, idx,
+                                  np.random.rand(*Nshape))
 
 
 def test_categorization_score():
     idx = [1, 2,  3,  4,  5, 6]
-    y   = [1, 1, -1, -1, -1, 1]
+    y = [1, 1, -1, -1, -1, 1]
     idx_ref = [10, 5, 3, 2, 6]
-    y_ref   = [0,  1, 0, 1, 1]
+    y_ref = [0,  1, 0, 1, 1]
 
     scores = categorization_score(idx_ref, y_ref, idx, y)
 
@@ -311,7 +306,6 @@ def test_categorization_score():
 
     # make sure permutations don't affect the result
     idx_ref2 = [10, 5, 2, 3, 6]
-    y_ref2   = [0,  1, 1, 0, 1]
+    y_ref2 = [0, 1, 1, 0, 1]
     scores2 = categorization_score(idx_ref2, y_ref2, idx, y)
     assert scores['average_precision'] == scores2['average_precision']
-

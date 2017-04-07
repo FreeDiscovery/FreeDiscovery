@@ -18,28 +18,36 @@ class Schema(BaseSchema):
         strict = True
         ordered = True
 
+
 class DocumentIndexSchema(Schema):
     document_id = fields.Int()
     render_id = fields.Int()
+
 
 class DocumentIndexFullSchema(DocumentIndexSchema):
     file_path = fields.Str()
     internal_id = fields.Int()
 
+
 class _ExampleDatasetElementSchema(DocumentIndexFullSchema):
     category = fields.Str()
+
 
 class _ExampleDatasetMetadataSchema(Schema):
     data_dir = fields.Str(required=True)
     name = fields.Str(required=True)
 
+
 class ExampleDatasetSchema(Schema):
     metadata = fields.Nested(_ExampleDatasetMetadataSchema, required=True)
     training_set = fields.Nested(_ExampleDatasetElementSchema, many=True)
-    dataset = fields.Nested(_ExampleDatasetElementSchema, many=True, required=True)
+    dataset = fields.Nested(_ExampleDatasetElementSchema, many=True,
+                            required=True)
+
 
 class EmptySchema(Schema):
     pass
+
 
 class IDSchema(Schema):
     id = fields.Str(required=True)
@@ -48,10 +56,12 @@ class IDSchema(Schema):
 class DocumentIndexNestedSchema(Schema):
     data = fields.Nested(DocumentIndexFullSchema, many=True, required=True)
 
+
 class _DatasetDefinition(Schema):
     document_id = fields.Int()
     rendition_id = fields.Int()
     file_path = fields.Str()
+
 
 class FeaturesParsSchema(Schema):
     data_dir = fields.Str()
@@ -62,7 +72,7 @@ class FeaturesParsSchema(Schema):
     stop_words = fields.Str()
     n_jobs = fields.Int(missing=1)
     chunk_size = fields.Int()
-    ngram_range = fields.List(fields.Int(), missing=[1,1])
+    ngram_range = fields.List(fields.Int(), missing=[1, 1])
     use_idf = fields.Boolean(missing=False)
     sublinear_tf = fields.Boolean(missing=True)
     binary = fields.Boolean(missing=False)
@@ -75,21 +85,11 @@ class FeaturesParsSchema(Schema):
     parse_email_headers = fields.Boolean(missing=False)
 
 
-
 class FeaturesSchema(FeaturesParsSchema):
     id = fields.Str(required=True)
     filenames = fields.List(fields.Str())
 
 
-
-class EmailParserSchema(FeaturesParsSchema):
-    id = fields.Str(required=True)
-    filenames = fields.List(fields.Str())
-
-class EmailParserElementIndexSchema(Schema):
-    index = fields.List(fields.Int(), required=True)
-
-# TODO to delete after successful implementation of metrics
 class ClassificationScoresSchema(Schema):
     precision = fields.Number(required=True)
     recall = fields.Number(required=True)
@@ -112,17 +112,20 @@ class CategorizationPostSchema(Schema):
     id = fields.Str(required=True)
     training_scores = fields.Nested(ClassificationScoresSchema())
 
+
 class _CategorizationIndex(DocumentIndexSchema):
     category = fields.Str(required=True)
 
+
 class _CategorizationInputSchema(Schema):
     parent_id = fields.Str(required=True)
-        # Warning this should be changed to wfields.DelimitedList
-        # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
+    # Warning this should be changed to wfields.DelimitedList
+    # https://webargs.readthedocs.io/en/latest/api.html#webargs.fields.DelimitedList
     data = fields.Nested(_CategorizationIndex, many=True)
-    method =  fields.Str(default='LinearSVC')
+    method = fields.Str(default='LinearSVC')
     cv = fields.Boolean(missing=False)
     training_scores = fields.Boolean(missing=False)
+
 
 class _CategorizationScoreSchemaElement(DocumentIndexSchema):
     category = fields.Str(required=True)
@@ -130,19 +133,23 @@ class _CategorizationScoreSchemaElement(DocumentIndexSchema):
 
 
 class _CategorizationPredictSchemaElement(DocumentIndexSchema):
-    scores = fields.Nested(_CategorizationScoreSchemaElement, many=True, required=True)
+    scores = fields.Nested(_CategorizationScoreSchemaElement, many=True,
+                           required=True)
 
 
 class CategorizationPredictSchema(Schema):
-    data = fields.Nested(_CategorizationPredictSchemaElement, many=True, required=True)
+    data = fields.Nested(_CategorizationPredictSchemaElement, many=True,
+                         required=True)
 
 
 class CategorizationParsSchema(Schema):
     method = fields.Str(required=True)
     options = fields.Str(required=True)
 
+
 class _ClusteringElementSubSchema(DocumentIndexSchema):
     similarity = fields.Number()
+
 
 class _ClusteringElementSchema(Schema):
     cluster_id = fields.Int(required=True)
@@ -151,16 +158,21 @@ class _ClusteringElementSchema(Schema):
     cluster_depth = fields.Int()
     cluster_size = fields.Int()
     children = fields.List(fields.Int())
-    documents = fields.Nested(_ClusteringElementSubSchema, many=True, required=True)
+    documents = fields.Nested(_ClusteringElementSubSchema, many=True,
+                              required=True)
+
 
 class ClusteringSchema(Schema):
     data = fields.Nested(_ClusteringElementSchema, many=True, required=True)
 
+
 class EmailThreadingParsSchema(Schema):
     group_by_subject = fields.Boolean(required=True)
 
+
 class ErrorSchema(Schema):
     message = fields.Str(required=True)
+
 
 class TreeSchema(Schema):
     id = fields.Int(required=True)
@@ -172,7 +184,6 @@ class TreeSchema(Schema):
 class EmailThreadingSchema(Schema):
     id = fields.Str(required=True)
     data = fields.Nested(TreeSchema, many=True)
-
 
 
 class MetricsCategorizationSchema(Schema):

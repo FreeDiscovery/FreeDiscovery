@@ -8,6 +8,7 @@ import os.path
 import re
 import shutil
 import numpy as np
+import pandas as pd
 
 import pickle
 import warnings
@@ -279,7 +280,7 @@ class FeatureVectorizer(object):
         joblib.dump(pars, os.path.join(dsid_dir, 'pars'))
         if 'file_path' in db.data.columns:
             del db.data['file_path']
-        joblib.dump(db, os.path.join(dsid_dir, 'db'))
+        db.data.to_pickle(os.path.join(dsid_dir, 'db'))
         with open(os.path.join(self.dsid_dir, 'filenames'), 'wb') as fh:
             pickle.dump(self._filenames, fh)
         self._db = db
@@ -469,7 +470,8 @@ class FeatureVectorizer(object):
             dsid_dir = os.path.join(self.cache_dir, dsid)
             if not os.path.exists(dsid_dir):
                 raise DatasetNotFound('dsid {} not found!'.format(dsid))
-            self._db = joblib.load(os.path.join(dsid_dir, 'db'))
+            data = pd.read_pickle(os.path.join(dsid_dir, 'db'))
+            self._db = DocumentIndex(self.pars_['data_dir'], data)
         return self._db
 
     def delete(self):
@@ -548,6 +550,8 @@ class _FeatureVectorizerSampled(FeatureVectorizer):
                 raise TypeError('Wrong type {} for sampling_index,'
                                 ' must be list'.format(
                                     type(sampling_filenames).__name__))
+
+            self.db_.filenames_ = super(_FeatureVectorizerSampled, self).filenames_
             self.sampling_index = self.db_._search_filenames(self.sampling_filenames)
         else:
             self.sampling_filenames = None

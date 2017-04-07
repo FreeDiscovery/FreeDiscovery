@@ -8,16 +8,16 @@ import os
 from glob import glob
 from textwrap import dedent
 
-from flask import request
 from webargs import fields as wfields
 from flask_apispec import (marshal_with, use_kwargs as use_args,
                            MethodResource as Resource)
 from flask_apispec.annotations import doc
 import numpy as np
 import pandas as pd
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, \
-                            adjusted_rand_score, adjusted_mutual_info_score,\
-                            v_measure_score, average_precision_score
+from sklearn.metrics import (precision_score, recall_score, f1_score,
+                             roc_auc_score, adjusted_rand_score,
+                             adjusted_mutual_info_score,
+                             v_measure_score, average_precision_score)
 import warnings
 from sklearn.metrics.base import UndefinedMetricWarning
 
@@ -26,7 +26,8 @@ from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..utils import _docstring_description
-from ..cluster import _ClusteringWrapper, centroid_similarity, compute_optimal_sampling
+from ..cluster import (_ClusteringWrapper, centroid_similarity,
+                       compute_optimal_sampling)
 from ..search import _SearchWrapper
 from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
@@ -41,29 +42,27 @@ from .validators import _is_in_range
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema,
                       DocumentIndexNestedSchema,
-                      EmailParserSchema, EmailParserElementIndexSchema,
                       ExampleDatasetSchema,
                       LsiParsSchema, LsiPostSchema,
-                      ClassificationScoresSchema, _CategorizationInputSchema,
+                      _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
                       CategorizationPredictSchema, ClusteringSchema,
-                      _CategorizationIndex, _CategorizationPredictSchemaElement,
-                      ErrorSchema,
+                      _CategorizationIndex, ErrorSchema,
+                      _CategorizationPredictSchemaElement,
                       MetricsCategorizationSchema, MetricsClusteringSchema,
                       MetricsDupDetectionSchema,
                       EmailThreadingSchema, EmailThreadingParsSchema,
-                      SearchResponseSchema, DocumentIndexSchema,
+                      SearchResponseSchema,
                       EmptySchema,
                       CustomStopWordsSchema, CustomStopWordsLoadSchema
                       )
 
-EPSILON = 1e-3 # small numeric value
+EPSILON = 1e-3  # small numeric value
 
+# =========================================================================== #
+#                        Datasets download                                    #
+# =========================================================================== #
 
-
-# ============================================================================ #
-#                         Datasets download                                    #
-# ============================================================================ #
 
 class ExampleDatasetApi(Resource):
 
@@ -78,18 +77,20 @@ class ExampleDatasetApi(Resource):
         categories = None
         if "20newsgroups" in name:
             if n_categories == 3:
-                categories = ['comp.graphics', 'rec.sport.baseball', 'sci.space']
+                categories = ['comp.graphics', 'rec.sport.baseball',
+                              'sci.space']
             elif n_categories == 2:
                 categories = ['comp.graphics', 'rec.sport.baseball']
             elif n_categories == 1:
                 categories = ['comp.graphics']
 
-
-        md, training_set, test_set = load_dataset(name, self._cache_dir, verbose=True,
+        md, training_set, test_set = load_dataset(name, self._cache_dir,
+                                                  verbose=True,
                                                   verify_checksum=False,
                                                   categories=categories)
 
-        return {'metadata': md, 'training_set': training_set, 'dataset': test_set}
+        return {'metadata': md, 'training_set': training_set,
+                'dataset': test_set}
 
 
 # Definine the response formatting schemas
@@ -97,9 +98,10 @@ id_schema = IDSchema()
 features_schema = FeaturesSchema()
 error_schema = ErrorSchema()
 
-# ============================================================================ #
-#                      Feature extraction                                      #
-# ============================================================================ #
+# ========================================================================== #
+#                    Feature extraction                                      #
+# ========================================================================== #
+
 
 class FeaturesApi(Resource):
 
@@ -137,43 +139,51 @@ class FeaturesApi(Resource):
         if args['use_hashing']:
             for key in ['min_df', 'max_df']:
                 if key in args:
-                    del args[key] # the above parameters are ignored with caching
+                    # the above parameters are ignored with caching
+                    del args[key]
         for key in ['min_df', 'max_df']:
-            if key in args and args[key] > 1. + EPSILON: # + eps
+            if key in args and args[key] > 1. + EPSILON:  # + eps
                 args[key] = int(args[key])
 
         fe = FeatureVectorizer(self._cache_dir)
         dsid = fe.preprocess(**args)
-        pars = fe.get_params()
-        return {'id': dsid, 'filenames': pars['filenames']}
+        return {'id': dsid, 'filenames': fe.filenames_}
 
 
 class FeaturesApiElement(Resource):
-    @doc(description="Load extracted features (and obtain the processing status)")
+    @doc(description="Load extracted features "
+                     "(and obtain the processing status)")
     def get(self, dsid):
         sc = FeaturesSchema()
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        out = fe.get_params()
-        is_processing = os.path.exists(os.path.join(fe.cache_dir, dsid, 'processing'))
-        is_finished   = os.path.exists(os.path.join(fe.cache_dir, dsid, 'processing_finished'))
+        out = fe.pars_.copy()
+        is_processing = os.path.exists(os.path.join(fe.cache_dir,
+                                                    dsid, 'processing'))
+        is_finished = os.path.exists(os.path.join(fe.cache_dir,
+                                                  dsid, 'processing_finished'))
         if is_processing and not is_finished:
-            n_chunks = len(glob(os.path.join(fe.cache_dir, dsid, 'features-*[0-9]')))
-            out['n_samples_processed'] = min(n_chunks*out['chunk_size'], out['n_samples'])
+            n_chunks = len(glob(os.path.join(fe.cache_dir,
+                                             dsid, 'features-*[0-9]')))
+            out['n_samples_processed'] = min(n_chunks*out['chunk_size'],
+                                             out['n_samples'])
             return sc.dump(out).data, 202
         elif not is_processing and is_finished:
             out['n_samples_processed'] = out['n_samples']
+            out['filenames'] = fe.filenames_
             return sc.dump(out).data, 200
         else:
-            return error_schema.dump({"message": "Processing failed, see server logs!"}).data, 520
+            return error_schema.dump({"message":
+                                     "Processing failed, see server logs!"
+                                      }).data, 520
 
     @doc(description="Run feature extraction on a dataset")
     @marshal_with(IDSchema())
     def post(self, dsid):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        dsid, _ = fe.transform()
-        if fe._pars['parse_email_headers']:
+        fe.transform()
+        if fe.pars_['parse_email_headers']:
             fe.parse_email_headers()
-        return {'id': dsid}
+        return {'id': fe.dsid}
 
     @doc(description='Delete a processed dataset')
     @marshal_with(EmptySchema())
@@ -182,31 +192,31 @@ class FeaturesApiElement(Resource):
         fe.delete()
         return {}
 
+
 class FeaturesApiElementMappingNested(Resource):
     @doc(description='Compute correspondence between id fields for documents. '
-           'At least one of the fields used for indexing must be provided,'
-           'and all the rest will be computed (if available)')
+         'At least one of the fields used for indexing must be provided,'
+         'and all the rest will be computed (if available)')
     @use_args(DocumentIndexNestedSchema(strict=True))
     @marshal_with(DocumentIndexNestedSchema())
     def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         query = pd.DataFrame(args['data'])
-        res = fe.db.search(query)
-        res_repr = fe.db.render_dict(res, return_file_path=True)
+        fe.db_.filenames_ = fe.filenames_
+        res = fe.db_.search(query, return_file_path=True)
+        res_repr = fe.db_.render_dict(res, return_file_path=True)
         return {'data': res_repr}
 
 
-# ============================================================================ #
-#                  LSI decomposition
-# ============================================================================ #
+# =========================================================================== #
+#                 LSI decomposition
+# =========================================================================== #
 
-_lsi_api_get_args  = {'parent_id': wfields.Str(required=True) }
-_lsi_api_post_args = {'parent_id': wfields.Str(required=True),
-                      'n_components': wfields.Int(missing=150) }
+
 class LsiApi(Resource):
 
     @doc(description='List existing LSI models')
-    @use_args(_lsi_api_get_args)
+    @use_args({'parent_id': wfields.Str(required=True)})
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
         parent_id = args['parent_id']
@@ -225,7 +235,8 @@ class LsiApi(Resource):
              - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features.
              - `parent_id`: parent dataset identified by `dataset_id`
           """))
-    @use_args(_lsi_api_post_args)
+    @use_args({'parent_id': wfields.Str(required=True),
+               'n_components': wfields.Int(missing=150)})
     @marshal_with(LsiPostSchema())
     def post(self, **args):
         parent_id = args['parent_id']
@@ -253,10 +264,9 @@ class LsiApiElement(Resource):
         cat.delete()
         return {}
 
-# ============================================================================ #
-#                  Categorization (ML)
-# ============================================================================ #
-
+# =========================================================================== #
+#                 Categorization (ML)
+# =========================================================================== #
 
 
 class ModelsApi(Resource):
@@ -290,7 +300,7 @@ class ModelsApi(Resource):
         cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
 
         query = pd.DataFrame(args['data'])
-        res_q = cat.fe.db.search(query, drop=False)
+        res_q = cat.fe.db_.search(query, drop=False)
         del args['data']
 
         args['index'] = res_q.internal_id.values
@@ -309,7 +319,7 @@ class ModelsApi(Resource):
             Y_res, md = cat.predict()
             idx_res = np.arange(cat.fe.n_samples_, dtype='int')
             res['training_scores'] = categorization_score(idx_train, Y_train,
-                                       idx_res, np.argmax(Y_res, axis=1))
+                                                          idx_res, np.argmax(Y_res, axis=1))
         return res
 
 
@@ -347,20 +357,22 @@ class ModelsApiPredict(Resource):
     @use_args({'max_result_categories': wfields.Int(missing=1),
                'sort_by': wfields.Str(missing='score'),
                'sort_order': wfields.Str(missing='descending',
-                                         validate=_is_in_range(['descending', 'ascending'])),
+                                         validate=_is_in_range(['descending',
+                                                                'ascending'])),
                'max_results': wfields.Int(),
                'ml_output': wfields.Str(missing='probability'),
                'nn_metric': wfields.Str(missing='jaccard_norm'),
                'min_score': wfields.Number(missing=-1),
                'subset': wfields.Str(missing='test',
-                                     validate=_is_in_range(['all', 'train', 'test']))
+                                     validate=_is_in_range(['all', 'train',
+                                                            'test']))
                })
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
         sort_by = args.pop('sort_by')
         sort_reverse = args.pop('sort_order') == 'descending'
-        max_result_categories  = args.pop('max_result_categories')
+        max_result_categories = args.pop('max_result_categories')
         min_score = args.pop("min_score")
         max_results = args.pop("max_results", 0)
         subset = args.pop("subset")
@@ -369,7 +381,7 @@ class ModelsApiPredict(Resource):
         y_res, nn_res = cat.predict(**args)
         train_indices = cat._pars['index']
         res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
-                                          cat.fe.db.data,
+                                          cat.fe.db_.data,
                                           sort_by=sort_by,
                                           sort_reverse=sort_reverse,
                                           max_result_categories=max_result_categories,
@@ -380,16 +392,9 @@ class ModelsApiPredict(Resource):
             res['data'] = res['data'][:max_results]
         return res
 
-
-
-# ============================================================================ #
-#                              Clustering
-# ============================================================================ #
-
-_k_mean_clustering_api_post_args = {
-        'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(missing=150),
-        }
+# =========================================================================== #
+#                             Clustering
+# =========================================================================== #
 
 
 class KmeanClusteringApi(Resource):
@@ -403,18 +408,18 @@ class KmeanClusteringApi(Resource):
             - `parent_id`: `dataset_id` or `lsi_id`
             - `n_clusters`: the number of clusters
            """))
-    @use_args(_k_mean_clustering_api_post_args)
+    @use_args({'parent_id': wfields.Str(required=True),
+               'n_clusters': wfields.Int(missing=150)})
     @marshal_with(IDSchema())
     def post(self, **args):
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir,
+                                parent_id=args['parent_id'])
 
         del args['parent_id']
 
-        labels = cl.k_means(**args)  # TODO unused variable. Remove?
+        cl.k_means(**args)
         return {'id': cl.mid}
-
-
 
 
 class BirchClusteringApi(Resource):
@@ -431,24 +436,24 @@ class BirchClusteringApi(Resource):
             - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively. Decreasing this value would increase the number of clusters.
             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
            """))
-    @use_args( {
+    @use_args({
             'parent_id': wfields.Str(required=True),
             'n_clusters': wfields.Int(missing=-1),
             'branching_factor': wfields.Int(missing=20),
-            'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
+            # this corresponds approximately to threashold = 0.5
+            'min_similarity': wfields.Number(missing=0.75),
             'nn_metric': wfields.Str(missing='jaccard_norm')
             }
             )
     @marshal_with(IDSchema())
     def post(self, **args):
         from math import sqrt
-        
 
         S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
                                          metric=args.pop('nn_metric'),
                                          inverse=True)
         # cosine sim to euclidean distance
-        threshold = sqrt(2 *(1 - S_cos))
+        threshold = sqrt(2 * (1 - S_cos))
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir,
                                 parent_id=args.pop('parent_id'))
@@ -458,14 +463,6 @@ class BirchClusteringApi(Resource):
 
         cl.birch(threshold=threshold, **args)
         return {'id': cl.mid}
-
-
-_wardhc_clustering_api_post_args = {
-        'parent_id': wfields.Str(required=True),
-        'n_clusters': wfields.Int(missing=150),
-        'n_neighbors': wfields.Int(missing=5),
-        }
-
 
 
 class DBSCANClusteringApi(Resource):
@@ -481,11 +478,11 @@ class DBSCANClusteringApi(Resource):
              - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_samples`: (optional) int The number of samples (or total weight) in a neighborhood for a point to be considered as a core point. This includes the point itself.
             """))
-    @use_args({ 'parent_id': wfields.Str(required=True),
-                'min_samples': wfields.Int(missing=10),
-                'min_similarity': wfields.Number(missing=0.75), # this corresponds approximately to threashold = 0.5
-                'nn_metric': wfields.Str(missing='jaccard_norm')
-                })
+    @use_args({'parent_id': wfields.Str(required=True),
+               'min_samples': wfields.Int(missing=10),
+               # this corresponds approximately to threashold = 0.5
+               'min_similarity': wfields.Number(missing=0.75),
+               'nn_metric': wfields.Str(missing='jaccard_norm')})
     @marshal_with(IDSchema())
     def post(self, **args):
         from math import sqrt
@@ -493,9 +490,10 @@ class DBSCANClusteringApi(Resource):
                                          metric=args.pop('nn_metric'),
                                          inverse=True)
         # cosine sim to euclidean distance
-        eps = sqrt(2 *(1 - S_cos))
+        eps = sqrt(2 * (1 - S_cos))
 
-        cl = _ClusteringWrapper(cache_dir=self._cache_dir, parent_id=args.pop('parent_id'))
+        cl = _ClusteringWrapper(cache_dir=self._cache_dir,
+                                parent_id=args.pop('parent_id'))
 
         cl.dbscan(eps=eps, **args)
         return {'id': cl.mid}
@@ -513,12 +511,11 @@ class ClusteringApiElement(Resource):
             - `sampling_min_similarity` : Similarity threashold used by smart sampling. Decreasing this value would result in more sampled documents. Default: 1.0 (i.e. use the full cluster hierarichy).
             - `sampling_min_coverage` : Minimal coverage requirement in [0, 1] range. Increasing this value would result in a larger number of samples. (default: 0.9)
             """))
-    @use_args({ 'n_top_words': wfields.Int(missing=5),
+    @use_args({'n_top_words': wfields.Int(missing=5),
                'nn_metric': wfields.Str(missing='jaccard_norm'),
                'return_optimal_sampling': wfields.Bool(missing=False),
                'sampling_min_similarity': wfields.Number(missing=1.0),
-               'sampling_min_coverage': wfields.Number(missing=0.9),
-          })
+               'sampling_min_coverage': wfields.Number(missing=0.9)})
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):
         nn_metric = args.pop('nn_metric')
@@ -536,11 +533,10 @@ class ClusteringApiElement(Resource):
 
         htree = cl._get_htree(cl._fit_X, metric=nn_metric)
 
-
         if type(km).__name__ == 'Birch' and cl._pars['is_hierarchical']:
             # Hierarchical clustering
 
-            db = cl.fe.db.data
+            db = cl.fe.db_.data
 
             if return_optimal_sampling:
                 # cut the hierarchical tree to match the smart sampling
@@ -551,14 +547,16 @@ class ClusteringApiElement(Resource):
                 # we don't use optimal sampling
                 flat_tree = htree.flatten()
 
-                terms = cl.compute_labels(cluster_indices=[row['children_document_id'] for row in flat_tree],
-                                          **args)
+                terms = cl.compute_labels(
+                            cluster_indices=[row['children_document_id']
+                                             for row in flat_tree],
+                            **args)
                 for label, row in zip(terms, flat_tree):
                     row['cluster_label'] = label
 
             res = []
-            doc_keys = [key for key in db.columns \
-                            if key in ['document_id', 'rendering_id']]
+            doc_keys = [key for key in db.columns
+                        if key in ['document_id', 'rendering_id']]
             db = db[doc_keys]
 
             for idx, row in enumerate(flat_tree):
@@ -567,7 +565,8 @@ class ClusteringApiElement(Resource):
                         'cluster_id': idx}
                 if not return_optimal_sampling:
                     irow['cluster_label'] = ' '.join(row['cluster_label'])
-                    irow['children'] = [el['cluster_id'] for el in row.children]
+                    irow['children'] = [el['cluster_id']
+                                        for el in row.children]
                     irow['cluster_depth'] = row.depth
 
                 db_sl = db.iloc[row['children_document_id']].copy()
@@ -583,8 +582,6 @@ class ClusteringApiElement(Resource):
         else:
             # Non hierarchical clustering
 
-            
-
             if args['n_top_words'] > 0:
                 terms = cl.compute_labels(**args)
             else:
@@ -596,23 +593,25 @@ class ClusteringApiElement(Resource):
             for name, group in y.groupby('cluster_id'):
                 name = int(name)
 
-                S_sim_mean, S_sim = centroid_similarity(cl._fit_X, group.index.values, nn_metric)
+                S_sim_mean, S_sim = centroid_similarity(cl._fit_X,
+                                                        group.index.values,
+                                                        nn_metric)
                 group = group.assign(similarity=S_sim)
 
                 row_docs = []
                 for idx, row in group.iterrows():
-                    row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+                    row_docs.append({key: val
+                                     for key, val in row.to_dict().items()
+                                     if key in valid_keys})
                 row['documents'] = row_docs
                 irow = {'documents': row_docs, 'cluster_id': int(name),
-                            'cluster_similarity': S_sim_mean}
+                        'cluster_similarity': S_sim_mean}
                 irow['cluster_size'] = len(row_docs)
                 if terms is not None:
                     irow['cluster_label'] = ' '.join(terms[name])
                 res.append(irow)
 
-
         return {'data': res}
-
 
     @doc(description='Delete a clustering model')
     @marshal_with(EmptySchema())
@@ -621,14 +620,9 @@ class ClusteringApiElement(Resource):
         cl.delete()
         return {}
 
-# ============================================================================ #
-#                              Duplicate detection
-# ============================================================================ #
-
-_dup_detection_api_post_args = {
-        "parent_id": wfields.Str(required=True),
-        "method": wfields.Str(required=False, missing='simhash')
-        }
+# =========================================================================== #
+#                             Duplicate detection
+# =========================================================================== #
 
 
 class DupDetectionApi(Resource):
@@ -640,7 +634,8 @@ class DupDetectionApi(Resource):
             - `parent_id`: `dataset_id` or `lsi_id`
             - `method`: str, default='simhash' Method used for duplicate detection. One of "simhash", "i-match"
           """))
-    @use_args(_dup_detection_api_post_args)
+    @use_args({"parent_id": wfields.Str(required=True),
+               "method": wfields.Str(required=False, missing='simhash')})
     @marshal_with(IDSchema())
     def post(self, **args):
 
@@ -649,10 +644,10 @@ class DupDetectionApi(Resource):
 
         del args['parent_id']
 
-
         model.fit(args['method'])
 
         return {'id': model.mid}
+
 
 class DupDetectionApiElement(Resource):
 
@@ -677,7 +672,7 @@ class DupDetectionApiElement(Resource):
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
-        model._fit_X = model.pipeline.data # load the data
+        model._fit_X = model.pipeline.data  # load the data
         y = model._merge_response(cluster_id)
         res = []
         valid_keys = ['document_id', 'rendering_id', 'similarity']
@@ -685,18 +680,20 @@ class DupDetectionApiElement(Resource):
             if group.shape[0] <= 1:
                 continue
 
-            S_sim_mean, S_sim = centroid_similarity(model._fit_X, group.index.values, nn_metric)
+            S_sim_mean, S_sim = centroid_similarity(model._fit_X,
+                                                    group.index.values,
+                                                    nn_metric)
             group = group.assign(similarity=S_sim)
 
             row_docs = []
             for idx, row in group.iterrows():
-                row_docs.append({key: val for key, val in row.to_dict().items() if key in valid_keys})
+                row_docs.append({key: val for key, val in row.to_dict().items()
+                                 if key in valid_keys})
             row['documents'] = row_docs
             res.append({'documents': row_docs, 'cluster_id': name,
                         'cluster_similarity': S_sim_mean})
 
         return {'data': res}
-
 
     @marshal_with(EmptySchema())
     def delete(self, mid):
@@ -705,11 +702,10 @@ class DupDetectionApiElement(Resource):
         model.delete()
         return {}
 
+# =========================================================================== #
+#                            Metrics                                          #
+# =========================================================================== #
 
-
-# ============================================================================ #
-#                             Metrics                                          #
-# ============================================================================ #
 
 class MetricsCategorizationApiElement(Resource):
     @doc(description=dedent("""
@@ -724,8 +720,10 @@ class MetricsCategorizationApiElement(Resource):
             - y_pred: [required] predicted categorization results
             - metrics: [required] list of str. Metrics to compute, any combination of "precision", "recall", "f1", "roc_auc"
           """))
-    @use_args({'y_true': wfields.Nested(_CategorizationIndex, many=True, required=True),
-               'y_pred': wfields.Nested(_CategorizationPredictSchemaElement, many=True, required=True),
+    @use_args({'y_true': wfields.Nested(_CategorizationIndex,
+                                        many=True, required=True),
+               'y_pred': wfields.Nested(_CategorizationPredictSchemaElement,
+                                        many=True, required=True),
                'metrics': wfields.List(wfields.Str())})
     @marshal_with(MetricsCategorizationSchema())
     def post(self, **args):
@@ -774,8 +772,9 @@ class MetricsCategorizationApiElement(Resource):
             cy_pred_score = y.score.values
             cy_pred_score[cy_pred == 0] *= -1
 
-        # wrapping metrics calculations, as for example F1 score can frequently print warnings
-        # "F-score is ill defined and being set to 0.0 due to no predicted samples"
+        # wrapping metrics calculations, as for example F1 score
+        # can frequently print warnings "F-score is ill defined
+        # and being set to 0.0 due to no predicted samples"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
             for func in [precision_score,
@@ -786,7 +785,8 @@ class MetricsCategorizationApiElement(Resource):
                          recall_at_k_score]:
                 name = func.__name__.replace('_score', '')
                 opts = {}
-                if name in ['roc_auc', 'average_precision', 'recall_at_k'] and n_classes == 2:
+                if name in ['roc_auc', 'average_precision', 'recall_at_k'] \
+                        and n_classes == 2:
                     y_targ = cy_pred_score
                     if name == 'recall_at_k':
                         opts = {'k': 0.2}
@@ -806,11 +806,12 @@ class MetricsCategorizationApiElement(Resource):
         return output_metrics
 
 
-_metrics_clustering_api_get_args  = {
+_metrics_clustering_api_get_args = {
     'labels_true': wfields.List(wfields.Int(), required=True),
     'labels_pred': wfields.List(wfields.Int(), required=True),
     'metrics': wfields.List(wfields.Str(), required=True)
 }
+
 
 class MetricsClusteringApiElement(Resource):
     @doc(description=dedent("""
@@ -851,7 +852,8 @@ class MetricsDupDetectionApiElement(Resource):
             - labels_pred: [required] list of int. Predicted clustering labels
             - metrics: [required] list of str. Metrics to compute, any combination of "ratio_duplicates", "f1_same_duplicates", "mean_duplicates_count"
           """))
-    @use_args(_metrics_clustering_api_get_args)  # Arguments are the same as for clustering
+    # Arguments are the same as for clustering
+    @use_args(_metrics_clustering_api_get_args)
     @marshal_with(MetricsDupDetectionSchema())
     def post(self, **args):
         output_metrics = dict()
@@ -859,39 +861,44 @@ class MetricsDupDetectionApiElement(Resource):
         labels_pred = args['labels_pred']
         metrics = args['metrics']
 
-        # Methods 'ratio_duplicates_score' and 'f1_same_duplicates_score' in ..metrics.py
+        # Methods 'ratio_duplicates_score' and 'f1_same_duplicates_score'
+        # in ..metrics.py
         # accept Numpy array objects, not standard Python lists
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
             if 'ratio_duplicates' in metrics:
                 output_metrics['ratio_duplicates'] = \
-                   ratio_duplicates_score(np.array(labels_true), np.array(labels_pred))
+                   ratio_duplicates_score(np.array(labels_true),
+                                          np.array(labels_pred))
             if 'f1_same_duplicates' in metrics:
                 output_metrics['f1_same_duplicates'] = \
-                   f1_same_duplicates_score(np.array(labels_true), np.array(labels_pred))
+                   f1_same_duplicates_score(np.array(labels_true),
+                                            np.array(labels_pred))
             if 'mean_duplicates_count' in metrics:
                 output_metrics['mean_duplicates_count'] = \
                     mean_duplicates_count_score(labels_true, labels_pred)
         return output_metrics
 
-# ============================================================================ #
-#                              Email threading
-# ============================================================================ #
+# =========================================================================== #
+#                             Email threading
+# =========================================================================== #
 
 
 class EmailThreadingApi(Resource):
 
     @doc(description='Compute email threading')
-    @use_args({ "parent_id": wfields.Str(required=True)})
+    @use_args({"parent_id": wfields.Str(required=True)})
     @marshal_with(EmailThreadingSchema())
     def post(self, **args):
 
-        model = _EmailThreadingWrapper(cache_dir=self._cache_dir, parent_id=args['parent_id'])
+        model = _EmailThreadingWrapper(cache_dir=self._cache_dir,
+                                       parent_id=args['parent_id'])
 
-        tree =  model.thread()
+        tree = model.thread()
 
         return {'data': [el.to_dict(include=['subject']) for el in tree],
                 'id': model.mid}
+
 
 class EmailThreadingApiElement(Resource):
 
@@ -912,9 +919,9 @@ class EmailThreadingApiElement(Resource):
         return {}
 
 
-# ============================================================================ #
-#                              (Semantic) search
-# ============================================================================ #
+# =========================================================================== #
+#                             (Semantic) search
+# =========================================================================== #
 
 
 class SearchApi(Resource):
@@ -934,18 +941,19 @@ class SearchApi(Resource):
             - `batch_id`: retrieve a given subset of scores. Default: -1 (retrieves all scrores)
             - `batch_size`: the number of document scores retrieved per batch. Default: 5000
             """))
-    @use_args({ "parent_id": wfields.Str(required=True),
-                "query": wfields.Str(),
-                "query_document_id": wfields.Int(),
-                'nn_metric': wfields.Str(missing='jaccard_norm'),
-                'min_score': wfields.Number(missing=-1),
-                'max_results': wfields.Int(),
-                'sort_by': wfields.Str(missing='score'),
-                'sort_order': wfields.Str(missing='descending',
-                                          validate=_is_in_range(['descending', 'ascending'])),
-                'batch_id': wfields.Int(missing=-1),
-                'batch_size': wfields.Int(missing=5000),
-                })
+    @use_args({"parent_id": wfields.Str(required=True),
+               "query": wfields.Str(),
+               "query_document_id": wfields.Int(),
+               'nn_metric': wfields.Str(missing='jaccard_norm'),
+               'min_score': wfields.Number(missing=-1),
+               'max_results': wfields.Int(),
+               'sort_by': wfields.Str(missing='score'),
+               'sort_order': wfields.Str(missing='descending',
+                                         validate=_is_in_range(['descending',
+                                                                'ascending'])),
+               'batch_id': wfields.Int(missing=-1),
+               'batch_size': wfields.Int(missing=5000),
+               })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
         parent_id = args['parent_id']
@@ -956,7 +964,7 @@ class SearchApi(Resource):
             scores = model.search(query, metric=args['nn_metric'])
         elif 'query' not in args and 'query_document_id' in args:
             query = pd.DataFrame([{'document_id': args['query_document_id']}])
-            res_q = model.fe.db.search(query, drop=False)
+            res_q = model.fe.db_.search(query, drop=False)
 
             scores = model.search(None,
                                   internal_id=res_q.internal_id.values[0],
@@ -998,7 +1006,7 @@ class SearchApi(Resource):
         else:
             scores_batch = scores_pd
 
-        res = model.fe.db.render_dict(scores_batch)
+        res = model.fe.db_.render_dict(scores_batch)
 
         pagination = {'batch_id': args['batch_id'],
                       'current_response_count': scores_batch.shape[0],
@@ -1034,7 +1042,9 @@ class CustomStopWordsLoadApi(Resource):
     @doc(description="Load a stored list of stop words")
     @marshal_with(CustomStopWordsLoadSchema())
     def get(self, name):
-        return {'name': name, 'stop_words': _StopWordsWrapper(cache_dir=self._cache_dir).load(name)}
+        return {'name': name,
+                'stop_words': _StopWordsWrapper(
+                    cache_dir=self._cache_dir).load(name)}
 
     @doc(description='Delete a stored custom stop words')
     @marshal_with(EmptySchema())

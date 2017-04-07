@@ -89,7 +89,8 @@ class DocumentIndex(object):
         self.data.set_index(index_cols, verify_integrity=True)
         return index_cols
 
-    def search(self, query, strict=True, drop=True):
+    def search(self, query, strict=True, drop=True,
+               return_file_path=False):
         """Search the filenames given by some user query
 
         Parameters
@@ -114,8 +115,9 @@ class DocumentIndex(object):
         if not query.shape[0]:
             raise ValueError('Query has zero element!')
 
-        if 'file_path' in query.columns:
-            self.data['file_path'] = self.filenames_
+        if 'file_path' not in self.data.columns:
+            if 'file_path' in query.columns or return_file_path:
+                self.data['file_path'] = self.filenames_
 
         index_cols = self._check_index(query.columns)
 
@@ -146,6 +148,7 @@ class DocumentIndex(object):
                 raise NotFound('\n'.join(msg))
             else:
                 print('Warning: ' + '\n'.join(msg))
+        
 
         if drop:
             # ignore all additional columns

@@ -31,11 +31,12 @@ fnames_in_abs = [os.path.join(data_dir, el) for el in fnames_in]
 
 def test_ingestion_base_dir():
     dbi = DocumentIndex.from_folder(data_dir)
-    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames, dbi.data
+    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
     assert data_dir_res == os.path.normpath(data_dir)
     assert_array_equal(db.columns.values, ['file_path', 'internal_id'])
     assert_array_equal(db.file_path.values, fnames_in)
-    assert_array_equal([os.path.normpath(el) for el in filenames],
+    assert_array_equal([os.path.normpath(os.path.join(data_dir_res, el))
+                        for el in filenames],
                        [os.path.join(data_dir_res, el)
                         for el in db.file_path.values])
 
@@ -240,10 +241,8 @@ def test_ingestion_metadata(n_fields):
         metadata.append(el)
 
     dbi = DocumentIndex.from_list(metadata)
-    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames, dbi.data
+    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
 
-    assert data_dir_res == os.path.normpath(data_dir)
-    assert filenames == fnames_in_abs
     if n_fields == 1:
         columns_ref = sorted(['file_path', 'internal_id'])
     elif n_fields == 2:
@@ -253,6 +252,7 @@ def test_ingestion_metadata(n_fields):
                               'internal_id'])
 
     assert_array_equal(sorted(db.columns.values), columns_ref)
-    assert_array_equal([os.path.normpath(el) for el in filenames],
+    assert_array_equal([os.path.normpath(os.path.join(data_dir_res, el))
+                        for el in filenames],
                        [os.path.join(data_dir_res, el)
                         for el in db.file_path.values])

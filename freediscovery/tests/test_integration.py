@@ -1,15 +1,10 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-#from __future__ import unicode_literals
 
 import os.path
 from unittest import SkipTest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 import pytest
 import itertools
@@ -29,10 +24,12 @@ basename = os.path.dirname(__file__)
 data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 
 
-@pytest.mark.parametrize('use_hashing, use_lsi, method', itertools.product([False, True],
-                                                [False, True],
-                                                ['Categorization',
-                                                 'DuplicateDetection', 'Clustering']))
+@pytest.mark.parametrize('use_hashing, use_lsi, method',
+                         itertools.product([False, True],
+                                           [False, True],
+                                           ['Categorization',
+                                            'DuplicateDetection',
+                                            'Clustering']))
 def test_features_hashing(use_hashing, use_lsi, method):
     # check that models work both with and without hashing
 
@@ -41,18 +38,17 @@ def test_features_hashing(use_hashing, use_lsi, method):
     n_features = 20000
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt', n_features=n_features,
-                         use_hashing=use_hashing)
-    uuid, filenames  = fe.transform()
+    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
+                         n_features=n_features, use_hashing=use_hashing)
+    fe.transform()
 
-    ground_truth = parse_ground_truth_file(
-                            os.path.join(data_dir, "..", "ground_truth_file.txt"))
+    ground_truth = parse_ground_truth_file(os.path.join(data_dir,
+                                           "..", "ground_truth_file.txt"))
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
-    lsi_res, exp_var = lsi.fit_transform(n_components=100)  # TODO unused variables
+    lsi_res, exp_var = lsi.fit_transform(n_components=100)
     assert lsi._load_pars() is not None
     lsi._load_model()
-
 
     if method == 'Categorization':
         if use_lsi:
@@ -61,8 +57,10 @@ def test_features_hashing(use_hashing, use_lsi, method):
         else:
             parent_id = uuid
             method = 'LogisticRegression'
-        cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=parent_id, cv_n_folds=2)
-        index = cat.fe.db._search_filenames(ground_truth.file_path.values)
+        cat = _CategorizerWrapper(cache_dir=cache_dir, parent_id=parent_id,
+                                  cv_n_folds=2)
+        cat.fe.db_.filenames_ = cat.fe.filenames_
+        index = cat.fe.db_._search_filenames(ground_truth.file_path.values)
 
         try:
             coefs, Y_train = cat.fit(
@@ -75,11 +73,11 @@ def test_features_hashing(use_hashing, use_lsi, method):
 
         Y_pred, md = cat.predict()
         X_pred = np.arange(cat.fe.n_samples_, dtype='int')
-        idx_gt = cat.fe.db._search_filenames(ground_truth.file_path.values)
+        idx_gt = cat.fe.db_._search_filenames(ground_truth.file_path.values)
 
         scores = categorization_score(idx_gt,
-                            ground_truth.is_relevant.values,
-                            X_pred, np.argmax(Y_pred, axis=1))
+                                      ground_truth.is_relevant.values,
+                                      X_pred, np.argmax(Y_pred, axis=1))
         assert_allclose(scores['precision'], 1, rtol=0.5)
         assert_allclose(scores['recall'], 1, rtol=0.7)
         cat.delete()
@@ -90,7 +88,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
         except ImportError:
             raise SkipTest
         cluster_id = dd.query(distance=10)
-    elif method =='Clustering':
+    elif method == 'Clustering':
         if not use_hashing:
             if use_lsi:
                 parent_id = lsi.mid
@@ -108,7 +106,5 @@ def test_features_hashing(use_hashing, use_lsi, method):
         else:
             with pytest.raises(NotImplementedError):
                 _ClusteringWrapper(cache_dir=cache_dir, parent_id=uuid)
-
-
     else:
         raise ValueError

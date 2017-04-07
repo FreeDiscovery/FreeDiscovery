@@ -15,11 +15,8 @@ from sklearn.utils.extmath import randomized_svd, safe_sparse_dot, svd_flip
 from sklearn.utils.sparsefuncs import mean_variance_axis
 from sklearn.decomposition import TruncatedSVD
 
-from .text import FeatureVectorizer
 from .base import _BaseWrapper
-from .categorization import NearestNeighborRanker
 from .utils import setup_model
-from .exceptions import (WrongParameter, NotImplementedFD)
 
 
 def _touch(filename):
@@ -43,7 +40,8 @@ class _LSIWrapper(_BaseWrapper):
 
     _wrapper_type = "lsi"
 
-    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None, verbose=False):
+    def __init__(self, cache_dir='/tmp/', parent_id=None,
+                 mid=None, verbose=False):
 
         super(_LSIWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id, mid=mid)
@@ -52,11 +50,10 @@ class _LSIWrapper(_BaseWrapper):
         mid_dir = os.path.join(self.fe.dsid_dir, self._wrapper_type, self.mid)
         return joblib.load(os.path.join(mid_dir, 'data'))
 
-
     def fit_transform(self, n_components=150, n_iter=5):
         """
         Perform the SVD decomposition
-        
+
         Parameters
         ----------
         n_components : int
@@ -83,16 +80,14 @@ class _LSIWrapper(_BaseWrapper):
         pars = {'parent_id': parent_id, 'n_components': n_components}
 
         mid_dir_base = os.path.join(dsid_dir, self._wrapper_type)
-    
+
         if not os.path.exists(mid_dir_base):
             os.mkdir(mid_dir_base)
         mid, mid_dir = setup_model(mid_dir_base)
 
-
         ds = self.pipeline.data
         svd = _TruncatedSVD_LSI(n_components=n_components,
-                                n_iter=n_iter #, algorithm='arpack'
-                               )
+                                n_iter=n_iter)
         lsi = svd
         lsi.fit(ds)
 
@@ -109,19 +104,21 @@ class _LSIWrapper(_BaseWrapper):
 
 
 # The below class is identical to TruncatedSVD,
-# https://github.com/scikit-learn/scikit-learn/blob/51a765a/sklearn/decomposition/truncated_svd.py#L25
-# the only reason is the we need to save the Sigma matrix when performing this transform!
+# the only reason is the we need to save the Sigma matrix when
+# performing this transform!
 # This will not longer be necessary with sklearn v0.19
 
 class _TruncatedSVD_LSI(TruncatedSVD):
     """
-    A patch of `sklearn.decomposition.TruncatedSVD` to include whitening (`scikit-learn/scikit-learn#7832)`
+    A patch of `sklearn.decomposition.TruncatedSVD` to include whitening
+    (`scikit-learn/scikit-learn#7832)`
     """
 
     def transform_lsi(self, X):
         """ LSI transform, normalized by the inverse of the eigen values"""
         X = check_array(X, accept_sparse='csr')
-        return safe_sparse_dot(X, self.components_.T).dot(np.diag(1./self.Sigma))
+        return safe_sparse_dot(X, self.components_.T).dot(
+                 np.diag(1./self.Sigma))
 
     def transform_lsi_norm(self, X):
         Y = self.transform_lsi(X)
