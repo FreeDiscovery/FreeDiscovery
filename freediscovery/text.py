@@ -40,12 +40,13 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
 
     if pars['use_idf']:
-        pars['binary'] = False # need to apply TFIDF weights first 
+        pars['binary'] = False  # need to apply TFIDF weights first
 
-    hash_opts = {key: vals for key, vals in pars.items() \
-            if key in ['stop_words', 'n_features', 'binary', 'analyser', 'ngram_range']}
+    hash_opts = {key: vals for key, vals in pars.items()
+                 if key in ['stop_words', 'n_features',
+                            'binary', 'analyser', 'ngram_range']}
     fe = HashingVectorizer(input='filename', norm=None, decode_error='ignore',
-           non_negative=True, **hash_opts) 
+                           non_negative=True, **hash_opts)
     if pretend:
         return fe
     fset_new = fe.transform(filenames[mslice])
@@ -70,7 +71,6 @@ class _BaseTextTransformer(object):
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
         self.data_dir = None
         self.verbose = verbose
-
 
         self.cache_dir = cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
         if not os.path.exists(cache_dir):
