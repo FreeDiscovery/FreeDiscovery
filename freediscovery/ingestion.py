@@ -148,7 +148,6 @@ class DocumentIndex(object):
                 raise NotFound('\n'.join(msg))
             else:
                 print('Warning: ' + '\n'.join(msg))
-        
 
         if drop:
             # ignore all additional columns
@@ -196,14 +195,14 @@ class DocumentIndex(object):
 
         db = db[base_keys]
 
-        db_dict = db.to_dict(orient='records')
         if res is not None:
-            out = res[res_keys].to_dict(orient='records')
-            for idx, row in enumerate(out):
-                internal_id = int(row['internal_id'])
-                row.update(db_dict[internal_id])
+            db_dict = res[res_keys]\
+                           .merge(db, on='internal_id',
+                                  how='outer')
+
+            out = db_dict.to_dict(orient='records')
         else:
-            out = db_dict
+            out = db.to_dict(orient='records')
 
         return out
 

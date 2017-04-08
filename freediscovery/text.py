@@ -277,7 +277,8 @@ class FeatureVectorizer(object):
                 'parse_email_headers': parse_email_headers,
                 'type': type(self).__name__}
         self._pars = pars
-        joblib.dump(pars, os.path.join(dsid_dir, 'pars'))
+        with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
+            pickle.dump(self._pars, fh)
         if 'file_path' in db.data.columns:
             del db.data['file_path']
         db.data.to_pickle(os.path.join(dsid_dir, 'db'))

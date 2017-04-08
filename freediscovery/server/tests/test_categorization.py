@@ -34,40 +34,27 @@ def test_api_lsi(app):
     assert res.status_code == 200
     data = parse_res(res)
     method = V01 + "/lsi/"
-    res = app.get_check(method,
-            data=dict(
-                parent_id=dsid,
-                )
-            )
+    res = app.get_check(method, data=dict(parent_id=dsid,))
 
-    lsi_pars = dict( n_components=101, parent_id=dsid)
+    lsi_pars = dict(n_components=101, parent_id=dsid)
     method = V01 + "/lsi/"
     data = app.post_check(method, json=lsi_pars)
 
     assert sorted(data.keys()) == ['explained_variance', 'id']
     lid = data['id']
 
-
     # checking again that we can load all the lsi models
     method = V01 + "/lsi/"
-    data = app.get_check(method,
-            data=dict(
-                parent_id=dsid,
-                )
-            )
-    
+    data = app.get_check(method, data=dict(parent_id=dsid,))
     method = V01 + "/lsi/{}".format(lid)
     data = app.get_check(method)
     for key, vals in lsi_pars.items():
         assert vals == data[key]
 
-    assert sorted(data.keys()) == \
-            sorted(["n_components", "parent_id"])
-    
+    assert sorted(data.keys()) == sorted(["n_components", "parent_id"])
+
     for key in data.keys():
         assert data[key] == lsi_pars[key]
-
-
 
 
 def _api_categorization_wrapper(app, solver, cv, n_categories,
@@ -76,8 +63,9 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
 
     cv = (cv == 'cv')
 
-    if 'CIRCLECI' in os.environ and cv == 1 and solver in ['LinearSVC', 'xgboost']:
-        raise SkipTest # Circle CI is too slow and timesout
+    if 'CIRCLECI' in os.environ and cv == 1 and solver in ['LinearSVC',
+                                                           'xgboost']:
+        raise SkipTest  # Circle CI is too slow and timesout
 
     if solver.startswith('Nearest'):
         dsid, lsi_id, _, ds_input = get_features_lsi_cached(app, n_categories=n_categories)
@@ -97,7 +85,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
     else:
         assert n_categories_train <= n_categories
         training_set = list(filter(lambda x: x['category'] in categories_list[:n_categories_train],
-                              ds_input['training_set']))
+                            ds_input['training_set']))
 
     pars = {
           'parent_id': parent_id,
@@ -112,16 +100,15 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
     except OptionalDependencyMissing:
         raise SkipTest
 
-    assert dict2type(data) == {'id' : 'str',
+    assert dict2type(data) == {'id': 'str',
                                'training_scores': {'recall': 'float',
-                                                    'f1': 'float',
-                                                    'precision': 'float',
-                                                    'roc_auc': 'float',
-                                                    'average_precision': 'float',
-                                                    'recall_at_20p': 'float'}}
+                                                   'f1': 'float',
+                                                   'precision': 'float',
+                                                   'roc_auc': 'float',
+                                                   'average_precision': 'float',
+                                                   'recall_at_20p': 'float'}}
 
     training_scores = data['training_scores']
-    #print(training_scores)
 
     # it is very likely that there is an issue in the training scores
     if n_categories_train == 1:
@@ -154,10 +141,10 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
 
     data = app.get_check(method, json=json_data)
     data = data['data']
-    response_ref = { 'document_id': 'int',
-                     'scores': [ {'category': 'str',
-                                  'score': 'float',
-                                 }
+    response_ref = {'document_id': 'int',
+                    'scores': [{'category': 'str',
+                                'score': 'float',
+                                }
                                ]}
 
     if solver == 'NearestNeighbor':
@@ -207,29 +194,35 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
     res = app.delete_check(method)
 
 
-_categoriazation_pars = itertools.product( ["LinearSVC", "LogisticRegression",
-                                            #"NearestCentroid",
-                                            "NearestNeighbor", 'xgboost'],
-                                            ['', 'cv'])
+_categoriazation_pars = itertools.product(["LinearSVC", "LogisticRegression",
+                                           "NearestNeighbor", 'xgboost'],
+                                          ['', 'cv'])
 
 _categoriazation_pars = filter(lambda args: not (args[0].startswith('Nearest') and args[1] == 'cv'),
                                _categoriazation_pars)
+
 
 @pytest.mark.parametrize("solver, cv", _categoriazation_pars)
 def test_api_categorization_2cat(app, solver, cv):
     _api_categorization_wrapper(app, solver, cv, 2)
 
+
 @pytest.mark.parametrize("n_categories", [1, 2, 3])
 def test_api_categorization_2cat_unsupervised(app, n_categories):
     _api_categorization_wrapper(app, 'NearestNeighbor', cv='',
-                                n_categories=n_categories, n_categories_train=1)
+                                n_categories=n_categories,
+                                n_categories_train=1)
+
 
 @pytest.mark.parametrize("solver", ["LogisticRegression", "NearestNeighbor"])
 def test_api_categorization_3cat(app, solver):
     _api_categorization_wrapper(app, solver, '', 3)
 
+
 def test_api_categorization_max_results(app):
-    _api_categorization_wrapper(app, 'LogisticRegression', '', 2, max_results=100)
+    _api_categorization_wrapper(app, 'LogisticRegression', '',
+                                2, max_results=100)
+
 
 @pytest.mark.parametrize("subset", ['all', 'test', 'train'])
 def test_api_categorization_3cat(app, subset):
