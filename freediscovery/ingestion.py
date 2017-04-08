@@ -179,6 +179,7 @@ class DocumentIndex(object):
         out : dict
 
         """
+        from time import time
         if res is not None:
             res = res.set_index('internal_id', drop=False)
         db = self.data.set_index('internal_id', drop=False)
@@ -189,17 +190,15 @@ class DocumentIndex(object):
             base_keys = list(self.data.columns)
         if res is not None:
             res_keys = [key for key in res
-                        if key not in base_keys or key == 'internal_id']
+                        if key not in base_keys]
             if not return_file_path and 'file_path' in res_keys:
                 res_keys.remove('file_path')
 
         db = db[base_keys]
 
         if res is not None:
-            db_dict = res[res_keys]\
-                           .merge(db, on='internal_id',
-                                  how='outer')
-
+            t0 = time()
+            db_dict = res[res_keys].join(db, how='left')
             out = db_dict.to_dict(orient='records')
         else:
             out = db.to_dict(orient='records')
