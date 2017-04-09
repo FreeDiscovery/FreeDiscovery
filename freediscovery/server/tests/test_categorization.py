@@ -60,6 +60,7 @@ def test_api_lsi(app):
 def _api_categorization_wrapper(app, solver, cv, n_categories,
                                 n_categories_train=None, max_results=None,
                                 subset='all'):
+    from time import time
 
     cv = (cv == 'cv')
 
@@ -67,6 +68,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
                                                            'xgboost']:
         raise SkipTest  # Circle CI is too slow and timesout
 
+    t0 = time()
     if solver.startswith('Nearest'):
         dsid, lsi_id, _, ds_input = get_features_lsi_cached(app, n_categories=n_categories)
         parent_id = lsi_id
@@ -74,6 +76,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
         dsid, _, ds_input = get_features_cached(app, n_categories=n_categories)
         lsi_id = None
         parent_id = dsid
+    print('Loading ds: {:.4f}'.format(time() - t0))
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)

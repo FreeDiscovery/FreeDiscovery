@@ -152,3 +152,42 @@ def dict2type(d, collapse_lists=False, max_depth=10):
 def sdict_keys(x):
     """Sorted dictionary keys of x"""
     return list(sorted(x.keys()))
+
+def _paginate(df, batch_id, batch_size):
+    """ Given a dataframe df, return a batch of rows 
+    specified by `batch_id` and `batch_size`
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+       the input dataframe
+    batch_id : int
+       the batch_id element
+    batch_size : int
+       the batch size
+       
+
+    Returns
+    -------
+    df_out : pd.DataFrame
+       sliced dataframe
+    md : dict
+       a dictionationary with pagination information
+    """
+    n_samples = df.shape[0]
+    if batch_id >= 0:
+        mslice = slice(batch_id*batch_size,
+                       min((batch_id + 1)*batch_size, n_samples))
+        df_out = df.iloc[mslice, :]
+    else:
+        df_out = df
+
+    pagination = {'batch_id': batch_id,
+                  'current_response_count': df_out.shape[0],
+                  'total_response_count': n_samples}
+    if batch_id < 0:
+        pagination['batch_id_last'] = batch_id
+    else:
+        pagination['batch_id_last'] = n_samples // batch_size
+
+    return df_out, pagination
