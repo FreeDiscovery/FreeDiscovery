@@ -25,7 +25,7 @@ from ..text import FeatureVectorizer
 from ..ingestion import _check_mutual_index
 from ..lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
-from ..utils import _docstring_description
+from ..utils import _docstring_description, _paginate
 from ..cluster import (_ClusteringWrapper, centroid_similarity,
                        compute_optimal_sampling)
 from ..search import _SearchWrapper
@@ -353,6 +353,8 @@ class ModelsApiPredict(Resource):
              - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
              - `min_score` : filter out results below a similarity threashold
              - `subset`: apply prediction to a document subset. Must be one of ['all', 'train', 'test']. Default: 'test'.
+             - `batch_id`: retrieve a given subset of scores (-1 to retrieve all). Default: 0
+             - `batch_size`: the number of document scores retrieved per batch. Default: 10000
             """))
     @use_args({'max_result_categories': wfields.Int(missing=1),
                'sort_by': wfields.Str(missing='score'),
@@ -365,32 +367,114 @@ class ModelsApiPredict(Resource):
                'min_score': wfields.Number(missing=-1),
                'subset': wfields.Str(missing='test',
                                      validate=_is_in_range(['all', 'train',
-                                                            'test']))
+                                                            'test'])),
+               'batch_id': wfields.Int(missing=0),
+               'batch_size': wfields.Int(missing=10000),
                })
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
+        from time import time
 
         sort_by = args.pop('sort_by')
-        sort_reverse = args.pop('sort_order') == 'descending'
+        sort_ascending = args.pop('sort_order') == 'ascending'
         max_result_categories = args.pop('max_result_categories')
         min_score = args.pop("min_score")
         max_results = args.pop("max_results", 0)
         subset = args.pop("subset")
+        batch_size = args.pop("batch_size")
+        batch_id = args.pop("batch_id")
 
+        t0 = time()
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
+        t1 = time()
         y_res, nn_res = cat.predict(**args)
+        t2 = time()
         train_indices = cat._pars['index']
-        res = _CategorizerWrapper.to_dict(y_res, nn_res, cat.le.classes_,
-                                          cat.fe.db_.data,
-                                          sort_by=sort_by,
-                                          sort_reverse=sort_reverse,
-                                          max_result_categories=max_result_categories,
-                                          min_score=min_score,
-                                          subset=subset,
-                                          train_indices=train_indices)
+
+        labels = cat.le.classes_
+        Y_pred = y_res
+       
+        if max_result_categories <= 0:
+            raise ValueError('the max_result_categories={} must be strictly positive'.format(max_result_categories))
+
+        id_mapping = cat.fe.db_.data
+        # have to cast to object as otherwise we get serializing np.int64 issues...
+        base_keys = [key for key in id_mapping.columns if key in ['internal_id',
+                                                                  'document_id',
+                                                                  'rendition_id']]
+        id_mapping = id_mapping[base_keys].set_index('internal_id', drop=True).astype('object')
+        # create dataframe out of results
+        Y_pred = id_mapping.copy()
+        for idx, el in enumerate(labels):
+            Y_pred[el] = y_res[:,idx]
+        if nn_res is not None:
+            nn_range = np.arange(nn_res.shape[0])
+            NN_map = []
+            for idx, el in enumerate(labels):
+                NN_map_el = pd.DataFrame({'internal_id': nn_res[:, idx]},
+                                         index=nn_range)
+                NN_map_el = NN_map_el.join(id_mapping, on='internal_id', how='left')
+                NN_map.append(NN_map_el)
+        else:
+            NN_map = None
+
+        # optionally filter out test or training set
+        if subset in ['train', 'test']:
+            _mask = np.in1d(Y_pred.index.values, train_indices)
+            if subset == 'test':
+                _mask = ~_mask
+            Y_pred = Y_pred.loc[_mask, :]
+
+        # sort output
+        Y_pred_max = Y_pred[labels].max(axis=1)
+        if sort_by:
+            valid_sort = ['score']
+            if sort_by == 'score':
+                Y_pred_max = Y_pred_max.sort_values(ascending=sort_ascending)
+            else:
+                raise ValueError('sort_by={} not in {}'.format(sort_by, valid_sort))
+
+        # filter out low scores
+        if min_score is not None:
+            Y_pred_max = Y_pred_max[Y_pred_max > min_score]
+        
+        Y_pred = Y_pred.loc[Y_pred_max.index.values, :]
+
+        # return only first N results
         if max_results > 0:
-            res['data'] = res['data'][:max_results]
-        return res
+            Y_pred = Y_pred.iloc[:max_results]
+
+        Y_pred, pagination = _paginate(Y_pred, batch_id, batch_size)
+
+        # render NN mapping
+        if NN_map is not None:
+            for idx, NN_map_el in enumerate(NN_map):
+                NN_map[idx] = NN_map_el.loc[Y_pred.index, :].to_dict(orient='records')
+        
+        res = Y_pred.to_dict(orient='records')
+
+        # convert scores to a more usable format
+        for idx, row in enumerate(res):
+            scores = []
+            for label_id, key in enumerate(labels):
+                scores_el = {'category': key,
+                             'score': row.pop(key)}
+                if NN_map is not None:
+                    scores_el.update(NN_map[label_id][idx])
+                scores.append(scores_el)
+            row['scores'] = scores
+
+        def sort_func(scores):
+            return -scores['score']
+
+        # sort categories and return only the first max_result_categories
+        for idx, row in enumerate(res):
+            row['scores'] = sorted(row['scores'], key=sort_func)[:max_result_categories]
+
+        t3 = time()
+        print('Loading: {:.4f}, predicting {:.4f} rendering {:.4f}'.format(
+                      t1-t0, t2-t1, t3-t2))
+        return {'data': res, 'pagination': pagination}
 
 # =========================================================================== #
 #                             Clustering
@@ -938,8 +1022,8 @@ class SearchApi(Resource):
             - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
             - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
-            - `batch_id`: retrieve a given subset of scores. Default: -1 (retrieves all scrores)
-            - `batch_size`: the number of document scores retrieved per batch. Default: 5000
+            - `batch_id`: retrieve a given subset of scores (-1 to retrieve all). Default: 0
+            - `batch_size`: the number of document scores retrieved per batch. Default: 10000
             """))
     @use_args({"parent_id": wfields.Str(required=True),
                "query": wfields.Str(),
@@ -951,8 +1035,8 @@ class SearchApi(Resource):
                'sort_order': wfields.Str(missing='descending',
                                          validate=_is_in_range(['descending',
                                                                 'ascending'])),
-               'batch_id': wfields.Int(missing=-1),
-               'batch_size': wfields.Int(missing=5000),
+               'batch_id': wfields.Int(missing=0),
+               'batch_size': wfields.Int(missing=10000),
                })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
@@ -996,25 +1080,10 @@ class SearchApi(Resource):
             scores_pd = scores_pd.iloc[:args['max_results'], :]
 
         # make the pagination happen
-        n_samples = scores_pd.shape[0]
-        batch_id = args['batch_id']
-        batch_size = args['batch_size']
-        if batch_id >= 0:
-            mslice = slice(batch_id*batch_size,
-                           min((batch_id + 1)*batch_size, n_samples))
-            scores_batch = scores_pd.iloc[mslice, :]
-        else:
-            scores_batch = scores_pd
+        scores_batch, pagination = _paginate(scores_pd, args['batch_id'],
+                                             args['batch_size'])
 
         res = model.fe.db_.render_dict(scores_batch)
-
-        pagination = {'batch_id': args['batch_id'],
-                      'current_response_count': scores_batch.shape[0],
-                      'total_response_count': n_samples}
-        if args['batch_id'] < 0:
-            pagination['batch_id_last'] = args['batch_id']
-        else:
-            pagination['batch_id_last'] = n_samples // batch_size
 
         return {'data': res, 'pagination': pagination}
 

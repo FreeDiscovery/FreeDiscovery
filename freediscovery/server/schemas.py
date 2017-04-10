@@ -108,6 +108,13 @@ class LsiPostSchema(IDSchema):
     explained_variance = fields.Number(required=True)
 
 
+class _ResponsePaginaton(Schema):
+    total_response_count = fields.Int()
+    current_response_count = fields.Int()
+    batch_id = fields.Int()
+    batch_id_last = fields.Int()
+
+
 class CategorizationPostSchema(Schema):
     id = fields.Str(required=True)
     training_scores = fields.Nested(ClassificationScoresSchema())
@@ -140,6 +147,7 @@ class _CategorizationPredictSchemaElement(DocumentIndexSchema):
 class CategorizationPredictSchema(Schema):
     data = fields.Nested(_CategorizationPredictSchemaElement, many=True,
                          required=True)
+    pagination = fields.Nested(_ResponsePaginaton, required=True)
 
 
 class CategorizationParsSchema(Schema):
@@ -209,13 +217,6 @@ class MetricsDupDetectionSchema(Schema):
 
 class _SearchResponseSchemaElement(DocumentIndexSchema):
     score = fields.Number(required=True)
-
-
-class _ResponsePaginaton(Schema):
-    total_response_count = fields.Int()
-    current_response_count = fields.Int()
-    batch_id = fields.Int()
-    batch_id_last = fields.Int()
 
 
 class SearchResponseSchema(Schema):
