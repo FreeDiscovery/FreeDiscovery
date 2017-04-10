@@ -373,7 +373,6 @@ class ModelsApiPredict(Resource):
                })
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
-        from time import time
 
         sort_by = args.pop('sort_by')
         sort_ascending = args.pop('sort_order') == 'ascending'
@@ -384,11 +383,8 @@ class ModelsApiPredict(Resource):
         batch_size = args.pop("batch_size")
         batch_id = args.pop("batch_id")
 
-        t0 = time()
         cat = _CategorizerWrapper(self._cache_dir, mid=mid)
-        t1 = time()
         y_res, nn_res = cat.predict(**args)
-        t2 = time()
         train_indices = cat._pars['index']
 
         labels = cat.le.classes_
@@ -471,9 +467,6 @@ class ModelsApiPredict(Resource):
         for idx, row in enumerate(res):
             row['scores'] = sorted(row['scores'], key=sort_func)[:max_result_categories]
 
-        t3 = time()
-        print('Loading: {:.4f}, predicting {:.4f} rendering {:.4f}'.format(
-                      t1-t0, t2-t1, t3-t2))
         return {'data': res, 'pagination': pagination}
 
 # =========================================================================== #
