@@ -13,7 +13,7 @@ from unittest import SkipTest
 from numpy.testing import assert_equal, assert_almost_equal
 
 from ...utils import _silent, dict2type, sdict_keys
-from .base import parse_res, V01, app, app_notest, get_features, get_features_lsi
+from .base import parse_res, V01, app, app_notest, get_features_cached, get_features_lsi
 
 
 #=============================================================================#
@@ -62,7 +62,7 @@ def test_get_model_predict_404(app_notest, method):
 
 
 def test_exception_handling(app_notest):
-    dsid, _ = get_features(app_notest)
+    dsid, pars, _ = get_features_cached(app_notest)
 
     method = V01 + "/categorization/"
     with _silent('stderr'):

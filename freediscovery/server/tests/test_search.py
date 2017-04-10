@@ -7,19 +7,15 @@ from __future__ import unicode_literals
 
 import os
 import pytest
-import json
 from unittest import SkipTest
+import pandas as pd
 import numpy as np
 from numpy.testing import assert_equal, assert_array_less
 
-from .. import fd_app
-from ...utils import _silent, dict2type, sdict_keys
-from ...ingestion import DocumentIndex
-from ...exceptions import OptionalDependencyMissing
-from ...tests.run_suite import check_cache
+from ...utils import _silent, dict2type
 
 from .base import (parse_res, V01, app, app_notest, get_features_cached,
-                   get_features_lsi, get_features_lsi_cached)
+                   get_features_lsi, get_features_lsi_cached, CACHE_DIR)
 
 
 @pytest.mark.parametrize("method, min_score, max_results",
@@ -31,11 +27,10 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
                           ('semantic', -1, 0)])
 def test_search(app, method, min_score, max_results):
 
+    dsid, lsi_id, _, input_ds = get_features_lsi_cached(app, hashed=False)
     if method == 'semantic':
-        dsid, lsi_id, _, input_ds = get_features_lsi_cached(app, hashed=False)
         parent_id = lsi_id
     elif method == 'regular':
-        dsid, _, input_ds = get_features_cached(app, hashed=False)
         lsi_id = None
         parent_id = dsid
     query = """The American National Standards Institute sells ANSI standards, and also
@@ -145,3 +140,33 @@ def test_search_document_id(app):
     assert len(data) == min(max_results, len(input_ds['dataset']))
     # assert data[0]['document_id'] == query_document_id
     # assert data[0]['score'] >= 0.99
+
+
+
+def test_search_consistency(app):
+    from scipy.stats import pearsonr
+    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app, hashed=False)
+    query_document_id = 3844
+
+    input_ds = pd.DataFrame(input_ds['dataset']).set_index('document_id')
+
+    # compute semantic search
+    pars = dict(parent_id=lsi_id,
+                query_document_id=query_document_id)
+    data = app.post_check(V01 + "/search/", json=pars)
+    df_s = pd.DataFrame(data['data']).set_index('document_id')
+    df_s = df_s.merge(input_ds, how='left', left_index=True, right_index=True)
+
+    # compute regular search
+    pars = dict(parent_id=dataset_id,
+                query_document_id=query_document_id)
+    data = app.post_check(V01 + "/search/", json=pars)
+    df_n = pd.DataFrame(data['data']).set_index('document_id')
+    df_n = df_n.merge(input_ds, how='left', left_index=True, right_index=True)
+
+    df_m = df_s.merge(df_n, how='left', left_index=True, right_index=True,
+                      suffixes=('_s', '_n'))
+    print(df_m)
+    print(ds_pars)
+    df_m.to_pickle('/tmp/search_ex.pkl')
+    #assert pearsonr(df_m.score_s.values, df_m.score_n.values)[0] > 1.0 

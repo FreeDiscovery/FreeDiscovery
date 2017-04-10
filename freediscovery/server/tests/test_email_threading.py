@@ -1,22 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-import os
-import pytest
-import json
-import itertools
-from unittest import SkipTest
 from numpy.testing import assert_equal, assert_almost_equal
-
-from .. import fd_app
-from ...utils import _silent, dict2type, sdict_keys
-from ...ingestion import DocumentIndex
-from ...exceptions import OptionalDependencyMissing
-from ...tests.run_suite import check_cache
 
 from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
                    email_data_dir)
@@ -31,23 +15,22 @@ from .base import (parse_res, V01, app, app_notest, get_features, get_features_l
 
 def test_api_thread_emails(app):
 
-    dsid, _ = get_features(app, parse_email_headers=True)
+    dsid, pars, _ = get_features(app, parse_email_headers=True,
+                                 dataset='fedora_ml_3k_subset')
 
-
-    url = V01 + "/email-threading" 
-    pars = { 'parent_id': dsid }
+    url = V01 + "/email-threading"
+    pars = {'parent_id': dsid}
 
     data = app.post_check(url, json=pars)
     assert sorted(data.keys()) == sorted(['data', 'id'])
     mid = data['id']
 
-    tree_ref = [ {'id': 0, 'parent': None, 'children': [
-                  {'id': 1, 'children': [], 'parent': 0},
-                  {'id': 2, 'parent': 0,  'children': [
-                         {'id': 3, 'children': [], 'parent': 2},
-                         {'id': 4, 'children': [], 'parent': 2}],
-                         }]
-                  }]
+    tree_ref = [{'id': 0, 'parent': None, 'children': [
+                 {'id': 1, 'children': [], 'parent': 0},
+                 {'id': 2, 'parent': 0,  'children': [
+                        {'id': 3, 'children': [], 'parent': 2},
+                        {'id': 4, 'children': [], 'parent': 2}]}]
+                 }]
 
     def remove_subject_field(d):
         del d['subject']

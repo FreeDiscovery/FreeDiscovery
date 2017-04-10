@@ -28,7 +28,7 @@ from .base import (parse_res, V01, app, app_notest, get_features, get_features_l
 #=============================================================================#
 
 def test_api_lsi(app):
-    dsid, _ = get_features(app)
+    dsid, pars, _ = get_features_cached(app)
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.get(method)
     assert res.status_code == 200
@@ -60,15 +60,12 @@ def test_api_lsi(app):
 def _api_categorization_wrapper(app, solver, cv, n_categories,
                                 n_categories_train=None, max_results=None,
                                 subset='all'):
-    from time import time
-
     cv = (cv == 'cv')
 
     if 'CIRCLECI' in os.environ and cv == 1 and solver in ['LinearSVC',
                                                            'xgboost']:
         raise SkipTest  # Circle CI is too slow and timesout
 
-    t0 = time()
     if solver.startswith('Nearest'):
         dsid, lsi_id, _, ds_input = get_features_lsi_cached(app, n_categories=n_categories)
         parent_id = lsi_id
@@ -76,7 +73,6 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
         dsid, _, ds_input = get_features_cached(app, n_categories=n_categories)
         lsi_id = None
         parent_id = dsid
-    print('Loading ds: {:.4f}'.format(time() - t0))
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)

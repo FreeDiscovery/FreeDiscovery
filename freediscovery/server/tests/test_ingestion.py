@@ -38,7 +38,7 @@ def test_get_features(app):
         assert val == data[key]
 
 def test_delete_feature_extraction(app):
-    dsid, _ = get_features(app)
+    dsid, pars, _ = get_features(app)
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     app.delete_check(method)
@@ -80,16 +80,16 @@ def test_stop_words_integration(app, hashed):
             'stop_words': ['and', 'or', 'in']}
 
     res = app.post_check(url, json=pars)
-    assert dict2type(res, collapse_lists=True) == {'name' : 'str'}
+    assert dict2type(res, collapse_lists=True) == {'name': 'str'}
     assert res['name'] == sw_name
 
     res = app.get_check(url + sw_name)
-    assert dict2type(res, collapse_lists=True) == {'name' : 'str',
+    assert dict2type(res, collapse_lists=True) == {'name': 'str',
                                                    'stop_words': ['str']}
     assert res['name'] == sw_name
     assert res['stop_words'] == pars['stop_words']
 
-    dsid, _ = get_features(app, hashed=hashed, stop_words=sw_name)
+    dsid, pars, _ = get_features(app, hashed=hashed, stop_words=sw_name)
 
 
 
@@ -103,11 +103,11 @@ def test_get_search_filenames(app):
         return {key: val for key, val in x.items() if key == filter_field}
 
     response_ref = {'internal_id': 'int',
-                    'file_path' : 'str',
+                    'file_path': 'str',
                     'document_id': 'int'}
 
     # Query 1
-    file_path_obj  = [{'file_path': val} for val in ['00401.txt', '00506.txt']]
+    file_path_obj = [{'file_path': val} for val in ['00401.txt', '00506.txt']]
     data = app.post_check(method, json={'data': file_path_obj})
     data = data['data']
 
@@ -117,12 +117,11 @@ def test_get_search_filenames(app):
     assert_equal(np.asarray([row['internal_id'] for row in data])**2,
                  [row['document_id'] for row in data])
 
-
     with pytest.raises(NotFound):
         res = app.post(method, json={'data': [{'file_path': '00400.txt'}]})
 
     # Query 2
-    file_path_obj  = [{'document_id': 4 }, {'document_id': 9}]
+    file_path_obj = [{'document_id': 4}, {'document_id': 9}]
     data = app.post_check(method, json={'data': file_path_obj})
     data = data['data']
 
@@ -131,5 +130,3 @@ def test_get_search_filenames(app):
     assert [_filter_dict(row, 'document_id') for row in data] == file_path_obj
     assert_equal(np.asarray([row['internal_id'] for row in data])**2,
                  [row['document_id'] for row in data])
-
-
