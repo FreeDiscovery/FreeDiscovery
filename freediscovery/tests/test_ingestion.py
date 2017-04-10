@@ -6,10 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os.path
-import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 from pandas.util.testing import assert_frame_equal
-import itertools
 import pytest
 import pandas as pd
 
@@ -30,14 +28,17 @@ fnames_in = ['0.7.47.101442.txt',
              '0.7.6.28638.txt']
 fnames_in_abs = [os.path.join(data_dir, el) for el in fnames_in]
 
+
 def test_ingestion_base_dir():
     dbi = DocumentIndex.from_folder(data_dir)
-    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames, dbi.data
+    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
     assert data_dir_res == os.path.normpath(data_dir)
     assert_array_equal(db.columns.values, ['file_path', 'internal_id'])
     assert_array_equal(db.file_path.values, fnames_in)
-    assert_array_equal([os.path.normpath(el) for el in  filenames],
-                       [os.path.join(data_dir_res, el) for el in db.file_path.values])
+    assert_array_equal([os.path.normpath(os.path.join(data_dir_res, el))
+                        for el in filenames],
+                       [os.path.join(data_dir_res, el)
+                        for el in db.file_path.values])
 
 
 def test_search_2fields():
@@ -48,26 +49,30 @@ def test_search_2fields():
                           {'internal_id': 2}])
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [3, 1, 2])
-    assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path']))
+    assert_array_equal(sorted(sres.columns),
+                       sorted(['internal_id', 'file_path']))
 
-    # make sure that if we have some additional field we still use the internal_id
+    # make sure that if we have some additional field,
+    # we still use the internal_id
     query = pd.DataFrame([{'internal_id': 1, 'a': 2},
                           {'internal_id': 2, 'b': 4},
                           {'internal_id': 1, 'a': 3}])
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [1, 2, 1])
-    assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path']))
+    assert_array_equal(sorted(sres.columns),
+                       sorted(['internal_id', 'file_path']))
 
     sres = dbi.search(query, drop=False)
     assert_equal(sres.internal_id.values, [1, 2, 1])
-    assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path', 'a', 'b']))
+    assert_array_equal(sorted(sres.columns),
+                       sorted(['internal_id', 'file_path', 'a', 'b']))
 
     query = pd.DataFrame([{'file_path': "0.7.6.28637.txt"},
                           {'file_path': "0.7.47.117435.txt"}])
     sres = dbi.search(query)
-    query_res = [dbi.data.file_path.values.tolist().index(el) for el in query.file_path.values]
+    query_res = [dbi.data.file_path.values.tolist().index(el)
+                 for el in query.file_path.values]
     assert_array_equal(query_res, sres.internal_id)
-
 
 
 def test_search_not_found():
@@ -77,7 +82,9 @@ def test_search_not_found():
     with pytest.raises(NotFound):
         sres = dbi.search(query)
 
-@pytest.mark.parametrize('return_file_path', ['return_file_path', 'dont_return_file_path'])
+
+@pytest.mark.parametrize('return_file_path',
+                         ['return_file_path', 'dont_return_file_path'])
 def test_ingestion_render(return_file_path):
 
     def _process_results(rd):
@@ -94,15 +101,14 @@ def test_ingestion_render(return_file_path):
           {'file_path': '/test2', 'document_id': 1},
           {'file_path': '/test3', 'document_id': 7},
           {'file_path': '/test8', 'document_id': 9},
-          {'file_path': '/test9', 'document_id': 4},
-         ]
+          {'file_path': '/test9', 'document_id': 4}]
 
     for idx, el in enumerate(md):
         el['internal_id'] = idx
 
     dbi = DocumentIndex.from_list(md)
     query = pd.DataFrame([{'a': 2, 'internal_id': 3},
-                        {'a': 4, 'internal_id': 1}])
+                          {'a': 4, 'internal_id': 1}])
     res = pd.DataFrame([{'a': 2, 'internal_id': 3, 'document_id': 9},
                         {'a': 4, 'internal_id': 1, 'document_id': 1}])
 
@@ -112,7 +118,7 @@ def test_ingestion_render(return_file_path):
     rd = dbi.render_dict(return_file_path=return_file_path)
     rd = _process_results(rd)
     assert_frame_equal(rd.loc[[0]],
-            pd.DataFrame([{'internal_id': 0, 'document_id': 2}]))
+                       pd.DataFrame([{'internal_id': 0, 'document_id': 2}]))
     assert len(rd) == len(md)
 
     rd = dbi.render_list(res, return_file_path=return_file_path)
@@ -121,8 +127,6 @@ def test_ingestion_render(return_file_path):
     assert_frame_equal(pd.DataFrame(rd),
                        pd.DataFrame([{'a': 2, 'internal_id': 3, 'document_id': 9},
                                      {'a': 4, 'internal_id': 1, 'document_id': 1}]))
-
-
 
     rd = dbi.render_list()
     assert sorted(rd.keys()) == sorted(['internal_id', 'document_id'])
@@ -133,8 +137,7 @@ def test_search_document_id():
           {'file_path': '/test2', 'document_id': 1},
           {'file_path': '/test3', 'document_id': 7},
           {'file_path': '/test8', 'document_id': 9},
-          {'file_path': '/test9', 'document_id': 4},
-         ]
+          {'file_path': '/test9', 'document_id': 4}]
 
     for idx, el in enumerate(md):
         el['internal_id'] = idx
@@ -145,7 +148,8 @@ def test_search_document_id():
                           {'internal_id': 1}])
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [1, 2, 1])
-    assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path', 'document_id']))
+    assert_array_equal(sorted(sres.columns),
+                       sorted(['internal_id', 'file_path', 'document_id']))
 
     # make sure we use internal id first
     query = pd.DataFrame([{'internal_id': 1, 'document_id': 2},
@@ -160,13 +164,13 @@ def test_search_document_id():
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [4, 3, 0])
 
+
 def test_search_document_rendition_id():
     md = [{'file_path': '/test',  'document_id': 0, 'rendition_id': 0},
           {'file_path': '/test2', 'document_id': 0, 'rendition_id': 1},
           {'file_path': '/test3', 'document_id': 1, 'rendition_id': 0},
           {'file_path': '/test8', 'document_id': 2, 'rendition_id': 0},
-          {'file_path': '/test9', 'document_id': 3, 'rendition_id': 0},
-         ]
+          {'file_path': '/test9', 'document_id': 3, 'rendition_id': 0}]
 
     for idx, el in enumerate(md):
         el['internal_id'] = idx
@@ -178,8 +182,9 @@ def test_search_document_rendition_id():
                           {'internal_id': 1}])
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [1, 2, 1])
-    assert_array_equal(sorted(sres.columns), sorted(['internal_id', 'file_path',
-                                                     'document_id', 'rendition_id']))
+    assert_array_equal(sorted(sres.columns),
+                       sorted(['internal_id', 'file_path',
+                               'document_id', 'rendition_id']))
 
     # the internal id is not sufficient to fully index documents in this case
     query = pd.DataFrame([{'document_id': 0},
@@ -201,8 +206,7 @@ def test_bad_search_document_rendition_id():
           {'file_path': '/test2', 'document_id': 0, 'rendition_id': 1},
           {'file_path': '/test3', 'document_id': 1, 'rendition_id': 0},
           {'file_path': '/test8', 'document_id': 2, 'rendition_id': 0},
-          {'file_path': '/test9', 'document_id': 3, 'rendition_id': 0},
-         ]
+          {'file_path': '/test9', 'document_id': 3, 'rendition_id': 0}]
     for idx, el in enumerate(md):
         el['internal_id'] = idx
 
@@ -229,7 +233,7 @@ def test_ingestion_pickling():
 def test_ingestion_metadata(n_fields):
     metadata = []
     for idx, fname in enumerate(fnames_in_abs):
-        el = {'file_path': fname }
+        el = {'file_path': fname}
         if n_fields >= 2:
             el['document_id'] = 'a' + str(idx + 100)
         if n_fields >= 3:
@@ -237,17 +241,18 @@ def test_ingestion_metadata(n_fields):
         metadata.append(el)
 
     dbi = DocumentIndex.from_list(metadata)
-    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames, dbi.data
+    data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
 
-    assert data_dir_res == os.path.normpath(data_dir)
-    assert filenames == fnames_in_abs
     if n_fields == 1:
         columns_ref = sorted(['file_path', 'internal_id'])
     elif n_fields == 2:
         columns_ref = sorted(['file_path', 'document_id', 'internal_id'])
     elif n_fields == 3:
-        columns_ref = sorted(['file_path', 'document_id', 'rendition_id', 'internal_id'])
+        columns_ref = sorted(['file_path', 'document_id', 'rendition_id',
+                              'internal_id'])
 
     assert_array_equal(sorted(db.columns.values), columns_ref)
-    assert_array_equal([os.path.normpath(el) for el in  filenames],
-                       [os.path.join(data_dir_res, el) for el in db.file_path.values])
+    assert_array_equal([os.path.normpath(os.path.join(data_dir_res, el))
+                        for el in filenames],
+                       [os.path.join(data_dir_res, el)
+                        for el in db.file_path.values])

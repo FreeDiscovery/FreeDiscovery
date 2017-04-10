@@ -39,7 +39,8 @@ class _DendrogramChildren(object):
                 right = max(right, iright)
 
         extent = np.array([left, right])
-        extent = (extent - self.icoord_min)*(len(self.leaves) - 1)/(self.icoord_max - self.icoord_min)
+        extent = (extent - self.icoord_min)*(len(self.leaves) - 1)
+        extent /= (self.icoord_max - self.icoord_min)
         extent = extent.astype(int)
         extent = slice(extent[0], extent[1]+1)
         return self.leaves[extent]

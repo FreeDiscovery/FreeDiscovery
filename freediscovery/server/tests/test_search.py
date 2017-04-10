@@ -108,8 +108,6 @@ def test_search_retrieve_batch(app):
                                   'batch_id_last': 'int'}
         scores = np.array([row['score'] for row in data['data']])
         assert_equal(np.diff(scores) <= 0, True)
-        if batch_id <= 0:
-            print(data['data'][0])
         assert len(data['data']) == data['pagination']['current_response_count']
         assert data['pagination']['total_response_count'] == total_document_number
         assert data['pagination']['batch_id'] == batch_id
@@ -122,8 +120,6 @@ def test_search_retrieve_batch(app):
                 assert data['pagination']['current_response_count'] == batch_size
             elif batch_id == 2:
                 assert data['pagination']['current_response_count'] == 0
-
-
 
 
 def test_search_document_id(app):

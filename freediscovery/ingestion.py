@@ -8,7 +8,8 @@ from __future__ import unicode_literals
 import os.path
 import os
 import pandas as pd
-from .exceptions import (DatasetNotFound, InitException, NotFound, WrongParameter)
+from .exceptions import (NotFound, WrongParameter)
+
 
 def _list_filenames(data_dir, dir_pattern=None, file_pattern=None):
     """ List all files in a data_dir"""
@@ -19,17 +20,19 @@ def _list_filenames(data_dir, dir_pattern=None, file_pattern=None):
         if dir_pattern is None or re.match(dir_pattern, root):
             for fname in files:
                 if file_pattern is None or re.match(file_pattern, fname):
-                    filenames.append(os.path.normpath(os.path.join(root, fname)))
+                    filenames.append(os.path.normpath(os.path.join(root,
+                                                                   fname)))
 
     # make sure that sorting order is deterministic
     return sorted(filenames)
+
 
 def _check_mutual_index(keys1, keys2):
     """ Given two datasets with columns keys1 and keys2,
     returns the columns that could be used as an index
     """
     if 'internal_id' in keys1 and 'internal_id' in keys2:
-        index_cols = ['internal_id',]
+        index_cols = ['internal_id']
     elif "document_id" in keys1 and \
          "document_id" in keys2 and \
          "rendition_id" in keys1 and \
@@ -42,18 +45,17 @@ def _check_mutual_index(keys1, keys2):
          "file_path" in keys2:
         index_cols = ['file_path']
     else:
-        raise ValueError("Cannot create a mutual index from columns\n keys1 : {}\n keys2: {}".format(
-             list(keys1), list(keys2)))
+        raise ValueError("Cannot create a mutual index from "
+                         "columns\n keys1 : {}\n keys2: {}".format(
+                               list(keys1), list(keys2)))
 
     return index_cols
 
 
 class DocumentIndex(object):
-    def __init__(self, data_dir, data, filenames):
+    def __init__(self, data_dir, data):
         self.data_dir = data_dir
         self.data = data
-        self.filenames = filenames
-
 
     def _check_index(self, keys=None):
         """ Given a list of keys check which keys will be used for indexing
@@ -62,8 +64,8 @@ class DocumentIndex(object):
         Parameters
         ----------
         keys : list
-          one or multiple choices among "internal_id", "document_id", "rendition_id", "file_path".
-          default=["internal_id"]
+          one or multiple choices among "internal_id", "document_id",
+          "rendition_id", "file_path".  default=["internal_id"]
         Returns
         -------
         index_cols : list
@@ -74,9 +76,11 @@ class DocumentIndex(object):
             keys = ['internal_id']
 
         index_cols = _check_mutual_index(keys, self.data.columns)
-        if index_cols == ["document_id"] and not self.data.document_id.is_unique:
-            raise ValueError('document_id cannot be used as an index, since it has duplicates'
-                                 ' (and rendition_id has duplicates)')
+        if index_cols == ["document_id"] \
+           and not self.data.document_id.is_unique:
+            raise ValueError('document_id cannot be used as an index, '
+                             'since it has duplicates '
+                             ' (and rendition_id has duplicates)')
 
         if len(index_cols) == 1:
             index_cols = index_cols[0]
@@ -85,7 +89,8 @@ class DocumentIndex(object):
         self.data.set_index(index_cols, verify_integrity=True)
         return index_cols
 
-    def search(self, query, strict=True, drop=True):
+    def search(self, query, strict=True, drop=True,
+               return_file_path=False):
         """Search the filenames given by some user query
 
         Parameters
@@ -102,38 +107,47 @@ class DocumentIndex(object):
         -------
         df : pd.DataFrame
             the response dataframe with fields
-            "internal_id", "file_path" and optionally "document_id" and "rendition_id"
+            "internal_id", "file_path" and optionally "document_id"
+            and "rendition_id"
         """
         if not isinstance(query, pd.DataFrame):
             raise ValueError('The query {} must be a pandas DataFrame')
         if not query.shape[0]:
             raise ValueError('Query has zero element!')
 
+        if 'file_path' not in self.data.columns:
+            if 'file_path' in query.columns or return_file_path:
+                self.data['file_path'] = self.filenames_
+
         index_cols = self._check_index(query.columns)
 
         query['sort_order'] = query.index.values
 
-        res = self.data.merge(query, on=index_cols, how='inner', suffixes=('', '_query'))
+        res = self.data.merge(query, on=index_cols, how='inner',
+                              suffixes=('', '_query'))
         # make sure we preserve the original order in the query
         res.sort_values(by='sort_order', inplace=True)
         del res['sort_order']
 
         if res.shape[0] != query.shape[0]:
             # some documents were not found
-            msg = ['{} out of {} query elements not found \n(using "{}" as index):'.format(
-                                 (query.shape[0] - res.shape[0]), query.shape[0],
-                                  index_cols)]
+            msg = ['{} out of {} query elements not found'
+                   '\n(using "{}" as index):'.format(
+                          query.shape[0] - res.shape[0],
+                          query.shape[0], index_cols)]
             for index, row in query.iterrows():
                 if row[index_cols] not in self.data[index_cols].values:
                     msg.append('   * {}'.format(row.to_dict()))
 
-            msg.append('Expected format: \n {}'.format(self.data.iloc[0, :].to_dict()))
-            msg.append('with a total of {} documents'.format(self.data.shape[0]))
+            msg.append('Expected format: \n {}'.format(
+                       self.data.iloc[0, :].to_dict()))
+            msg.append('with a total of {} documents'.format(
+                       self.data.shape[0]))
 
             if strict:
                 raise NotFound('\n'.join(msg))
             else:
-                print('Warning: '+ '\n'.join(msg))
+                print('Warning: ' + '\n'.join(msg))
 
         if drop:
             # ignore all additional columns
@@ -141,14 +155,13 @@ class DocumentIndex(object):
 
         return res
 
-
     def _search_filenames(self, filenames):
-        """ A helper function that reproduces the previous behaviour in FeaturesVectorizer"""
+        """ A helper function that reproduces the previous
+        behaviour in FeaturesVectorizer"""
         query = pd.DataFrame(filenames, columns=['file_path'])
 
         res = self.search(query)
         return res.internal_id.values
-
 
     def render_dict(self, res=None, return_file_path=False):
         """Render a pandas dataframe as a list of dicts
@@ -156,7 +169,8 @@ class DocumentIndex(object):
         Parameters
         ----------
         res : {pandas.DataFrame, None}
-            some dataset with additional data that must contain the 'internal_id' key
+            some dataset with additional data that must contain
+            the 'internal_id' key
         return_file_path : bool
             return the file paths, default: False
 
@@ -165,39 +179,40 @@ class DocumentIndex(object):
         out : dict
 
         """
+        from time import time
         if res is not None:
             res = res.set_index('internal_id', drop=False)
         db = self.data.set_index('internal_id', drop=False)
         if not return_file_path:
-            base_keys = [key for key in self.data.columns if key != 'file_path']
+            base_keys = [key for key in self.data.columns
+                         if key != 'file_path']
         else:
             base_keys = list(self.data.columns)
         if res is not None:
-            res_keys = [key for key in res if key not in base_keys or key == 'internal_id']
+            res_keys = [key for key in res
+                        if key not in base_keys]
             if not return_file_path and 'file_path' in res_keys:
                 res_keys.remove('file_path')
 
         db = db[base_keys]
 
-
-        db_dict = db.to_dict(orient='records')
         if res is not None:
-            out = res[res_keys].to_dict(orient='records')
-            for idx, row in enumerate(out):
-                internal_id = int(row['internal_id'])
-                row.update(db_dict[internal_id])
+            t0 = time()
+            db_dict = res[res_keys].join(db, how='left')
+            out = db_dict.to_dict(orient='records')
         else:
-            out = db_dict
+            out = db.to_dict(orient='records')
 
         return out
 
     def render_list(self, res=None, return_file_path=False):
-        """Render a pandas dataframe as a dict of lists 
+        """Render a pandas dataframe as a dict of lists
 
         Parameters
         ----------
         res : {pandas.DataFrame, None}
-            some dataset with additional data that must contain the 'internal_id' key
+            some dataset with additional data that must contain
+            the 'internal_id' key
         return_file_path : bool
             return the file paths, default: False
 
@@ -206,11 +221,13 @@ class DocumentIndex(object):
         out : dict
 
         """
+        # TODO: this can be better rewritten with df.to_dict()
         if res is not None:
             res = res.set_index('internal_id', drop=False)
         db = self.data.set_index('internal_id', drop=False)
         if not return_file_path:
-            base_keys = [key for key in self.data.columns if key != 'file_path']
+            base_keys = [key for key in self.data.columns
+                         if key != 'file_path']
         else:
             base_keys = list(self.data.columns)
         db = db[base_keys]
@@ -240,9 +257,6 @@ class DocumentIndex(object):
                     out[key].append(val)
         return out
 
-
-
-
     @classmethod
     def from_list(cls, metadata):
         """ Create a DocumentIndex from a list of dictionaries, for instance
@@ -258,7 +272,8 @@ class DocumentIndex(object):
         Parmaters
         ---------
         metadata : list of dicts
-            a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
+            a list of dictionaries with keys
+            ['file_path', 'document_id', 'rendition_id']
             describing the data ingestion (this overwrites data_dir)
 
         Returns
@@ -272,7 +287,7 @@ class DocumentIndex(object):
 
         data_dir = cls._detect_data_dir(filenames)
 
-        if not filenames: # no files were found
+        if not filenames:  # no files were found
             raise WrongParameter('No files to process were found!')
         filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
 
@@ -282,7 +297,9 @@ class DocumentIndex(object):
             db_el['internal_id'] = idx
         db = pd.DataFrame(metadata)
 
-        return cls(data_dir, db, filenames)
+        res = cls(data_dir, db)
+        res.filenames_ = filenames_rel
+        return res
 
     @staticmethod
     def _detect_data_dir(filenames):
@@ -296,7 +313,6 @@ class DocumentIndex(object):
         else:
             raise IOError('data_dir={} does not exist!'.format(data_dir))
 
-
     @classmethod
     def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None):
         """ Create a DocumentIndex from files in data_dir
@@ -304,7 +320,8 @@ class DocumentIndex(object):
         Parmaters
         ---------
         data_dir : str
-            path to the data directory (used only if metadata not provided), default: None
+            path to the data directory (used only if metadata not provided),
+            default: None
 
         Returns
         -------
@@ -319,9 +336,11 @@ class DocumentIndex(object):
 
         filenames = _list_filenames(data_dir, dir_pattern, file_pattern)
         filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
-        db = [{'file_path': file_path, 'internal_id': idx} \
-                            for idx, file_path in enumerate(filenames_rel)]
+        db = [{'file_path': file_path, 'internal_id': idx}
+              for idx, file_path in enumerate(filenames_rel)]
 
         db = pd.DataFrame(db)
 
-        return cls(data_dir, db, filenames)
+        res = cls(data_dir, db)
+        res.filenames_ = filenames_rel
+        return res

@@ -5,11 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path
-import re
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-import pytest
+from numpy.testing import assert_allclose
 
 from sklearn.preprocessing import normalize
 
@@ -27,20 +25,16 @@ def test_lsi():
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt')
-    uuid, filenames = fe.transform()
+    fe.transform()
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
-    lsi_res, exp_var = lsi.fit_transform(n_components=n_components)  # TODO unused variables
+    lsi_res, exp_var = lsi.fit_transform(n_components=n_components)
     assert lsi_res.components_.shape == (n_components, fe.n_features_)
     assert lsi._load_pars() is not None
     lsi._load_model()
     X_lsi = lsi._load_features()
 
     assert_allclose(normalize(X_lsi), X_lsi)
-
-
-    # test pipeline
-
 
     lsi.list_models()
     lsi.delete()
@@ -59,14 +53,16 @@ def test_lsi_helper_class():
     assert X_p2.shape == (100, 20)
 
 
-
 def test_lsi_book_example():
-    """ LSI example taken from the "Information retrieval" (2004) book by Grossman & Ophir
+    """ LSI example taken from the "Information retrieval" (2004)
+    book by Grossman & Ophir
 
-    This illustrates the general principle of LSI using sklearn API with _TruncatedSVD_LSI
+    This illustrates the general principle of LSI using
+    sklearn API with _TruncatedSVD_LSI
     """
 
-    # replacing "a" with "aa" as the former seems to be ignored by the CountVectorizer
+    # replacing "a" with "aa" as the former seems
+    # to be ignored by the CountVectorizer
     documents = ["Shipment of gold damaged in aa fire.",
                  "Delivery of silver arrived in aa silver truck.",
                  "Shipment of gold arrived in aa truck.",
@@ -80,32 +76,27 @@ def test_lsi_book_example():
     X = dm_vec.transform(documents)
 
     assert X.shape[1] == 11
-    assert X.sum() == 22  # checking the total number of elements in the document matrix
+    # checking the total number of elements in the document matrix
+    assert X.sum() == 22
 
-    #print(X.todense().T)
     q = dm_vec.transform([querry])
 
-    lsi = _TruncatedSVD_LSI(n_components=2)  #, algorithm='arpack')
+    lsi = _TruncatedSVD_LSI(n_components=2)  # algorithm='arpack')
 
     lsi.fit(X)
     X_p = lsi.transform_lsi(X)
     q_p = lsi.transform_lsi(q)
 
     U, s, Vh = scipy.linalg.svd(X.todense().T, full_matrices=False)
-    #print(' ')
-    #print(U[:, :-1])
 
-    q_p_2 = q.dot(U[:,:-1]).dot(np.diag(1./s[:-1]))
+    q_p_2 = q.dot(U[:, :-1]).dot(np.diag(1./s[:-1]))
     assert_allclose(np.abs(q_p_2), np.array([[0.2140, 0.1821]]), 1e-3)
-    X_p_2 = X.dot(U[:,:-1]).dot(np.diag(1./s[:-1]))
+    X_p_2 = X.dot(U[:, :-1]).dot(np.diag(1./s[:-1]))
 
     assert_allclose(np.abs(np.abs(X_p_2)), np.abs(X_p))
     assert_allclose(np.abs(np.abs(q_p_2)), np.abs(q_p))
-    #print(lsi.Sigma)
-    #print(' ')
-    #print(X_p)
-    #print(q_p)
 
     D = cosine_similarity(X_p, q_p)
 
-    assert_allclose(D[:2], np.array([ -0.05, 0.9910, 0.9543])[:2,None], 2e-2, 1e-2)
+    assert_allclose(D[:2],
+                    np.array([-0.05, 0.9910, 0.9543])[:2, None], 2e-2, 1e-2)

@@ -1,13 +1,8 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os.path
 from unittest import SkipTest
 import numpy as np
-from numpy.testing import assert_equal
 import pytest
 
 from freediscovery.text import FeatureVectorizer
@@ -56,11 +51,9 @@ def fd_setup(**fe_options):
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
                          n_features=n_features, use_hashing=True,
                          stop_words='english',
-                         **fe_options
-
-                         )  # TODO unused variable (overwritten on the next line)
-    uuid, filenames  = fe.transform()
-    return cache_dir, uuid, filenames, fe
+                         **fe_options)
+    fe.transform()
+    return cache_dir, uuid, fe.filenames_, fe
 
 
 def test_simhash():
@@ -74,7 +67,7 @@ def test_simhash():
 
     DISTANCE = 4
 
-    fe = HashingVectorizer(ngram_range=(4,4), analyzer='word')
+    fe = HashingVectorizer(ngram_range=(4, 4), analyzer='word')
 
     X = fe.fit_transform([jabberwocky,
                           jabberwocky + jabberwocky_author,

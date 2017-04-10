@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 import numpy as np
 from sklearn.utils.validation import check_array
 
-from freediscovery.externals.jwzthreading import Container
 
 def _binary_linkage2clusters(linkage, n_samples):
     """ Given a list of elements of size n_sample and a linkage matrix
@@ -21,7 +20,7 @@ def _binary_linkage2clusters(linkage, n_samples):
        arrays indicating binary links between elements
     n_samples : int
        total number of elements
-    
+
     Returns
     -------
     labels : array (n_samples)
@@ -34,7 +33,6 @@ def _binary_linkage2clusters(linkage, n_samples):
     if n_samples < 0:
         raise ValueError
 
-    
     dmap = {}
     idx = 0
     for a, b in linkage:
@@ -64,8 +62,8 @@ def _merge_clusters(X, rename=False):
     """
     Compute a union of all clusters
 
-    Used to determine which cluster_id a document should belong to if at least one of it's
-    lexicons suggest that it's a duplicate
+    Used to determine which cluster_id a document should belong to
+    if at least one of it's lexicons suggest that it's a duplicate
 
     Approximate time complexity O(n_samples*n_features)
 
@@ -79,7 +77,6 @@ def _merge_clusters(X, rename=False):
     Parameters
     ----------
       cluster_id: array (n_samples)
-         
     """
     X = check_array(X, ensure_2d=True)
 
@@ -95,7 +92,7 @@ def _merge_clusters(X, rename=False):
                 res = out[(j_idx, X_el)]
                 break
         else:
-            res = X_row[0] # use the 1st columnt index for this cluster id
+            res = X_row[0]  # use the 1st columnt index for this cluster id
 
         for (j_idx, X_el) in enumerate(X_row):
             out[(j_idx, X_el)] = res
@@ -106,6 +103,7 @@ def _merge_clusters(X, rename=False):
         return labels_renamed
     else:
         return y
+
 
 def _dbscan_noisy2unique(labels_):
     """
@@ -118,6 +116,7 @@ def _dbscan_noisy2unique(labels_):
     indices += labels_.max()+1
     labels_[mask] = indices
     return labels_
+
 
 def _dbscan_unique2noisy(labels_):
     """
@@ -167,4 +166,4 @@ def centroid_similarity(X, internal_ids, nn_metric='jaccard_norm'):
     S_cos = 1 - pairwise_distances(X_sl, centroid, metric='cosine')
     S_sim = _scale_cosine_similarity(S_cos, metric=nn_metric)
     S_sim_mean = np.mean(S_sim)
-    return float(S_sim_mean), S_sim[:,0]
+    return float(S_sim_mean), S_sim[:, 0]

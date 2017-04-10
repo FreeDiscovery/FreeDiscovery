@@ -31,8 +31,8 @@ class _SearchWrapper(_BaseWrapper):
     def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None):
 
         super(_SearchWrapper, self).__init__(cache_dir=cache_dir,
-                                          parent_id=parent_id,
-                                          mid=mid)
+                                             parent_id=parent_id,
+                                             mid=mid)
 
     def search(self, text, internal_id=None, metric='cosine'):
         """
@@ -41,18 +41,19 @@ class _SearchWrapper(_BaseWrapper):
         Parameters
         ----------
         text : str
-          the query string. This will be ignored if an internal_id parameter is provided.
+          the query string. This will be ignored if an
+          internal_id parameter is provided.
         internal_id : int
-          the document id used as a search query. If provided the text input will be ignored.
+          the document id used as a search query.
+          If provided the text input will be ignored.
         metric : str
           the output metric to use
         """
         if internal_id is not None:
             vect = None
         else:
-            vect = self.fe._load_model()
+            vect = self.fe.vect_
             vect.set_params(input='content')
-
 
         X = self.pipeline.data
 
@@ -63,7 +64,6 @@ class _SearchWrapper(_BaseWrapper):
         else:
             lsi = None
 
-
         s = Search(vect, lsi)
         s.fit(X)
 
@@ -73,7 +73,6 @@ class _SearchWrapper(_BaseWrapper):
             dist = s.search(text, metric=metric)
 
         return dist
-
 
 
 class Search(object):
@@ -91,7 +90,6 @@ class Search(object):
         self.vectorizer = vectorizer
         self.lsi = lsi
         self._fit_X = None
-
 
     def fit(self, X):
         """
@@ -119,12 +117,13 @@ class Search(object):
         from .lsi import _TruncatedSVD_LSI
 
         if self._fit_X is None:
-            raise ValueError('Estomator must be fitted before using the search method!')
+            raise ValueError('Estomator must be fitted before '
+                             'using the search method!')
         q_vect = self.vectorizer.transform([text])
 
-
         if self.lsi is not None:
-            if isinstance(self.lsi, _TruncatedSVD_LSI): # this is a hack need to be rewritten
+            # this is a hack need to be rewritten
+            if isinstance(self.lsi, _TruncatedSVD_LSI):
                 q_lsi = self.lsi.transform_lsi_norm(q_vect)
             else:  # a regular TruncatedSVD object
                 q_lsi = self.lsi.transform(q_vect)
@@ -135,7 +134,6 @@ class Search(object):
         scores = self._compute_score(q, self._fit_X, metric)
 
         return scores
-
 
     def search_id(self, internal_id, metric='jaccard_norm'):
         """
@@ -149,7 +147,8 @@ class Search(object):
           the output metric to use
         """
         if self._fit_X is None:
-            raise ValueError('Estomator must be fitted before using the search method!')
+            raise ValueError('Estomator must be fitted before '
+                             'using the search method!')
 
         X = self._fit_X
 

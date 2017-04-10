@@ -7,11 +7,7 @@ from __future__ import unicode_literals
 
 
 import os.path
-from unittest import SkipTest
-
-import numpy as np
-from numpy.testing import (assert_allclose, assert_equal,
-                           assert_array_less)
+from numpy.testing import (assert_array_less, )
 
 import pytest
 
@@ -26,6 +22,7 @@ from .run_suite import check_cache
 basename = os.path.dirname(__file__)
 cache_dir = check_cache()
 data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
+
 
 @pytest.mark.parametrize('kind,', ['regular', 'semantic'])
 def test_search(kind):
@@ -44,7 +41,6 @@ def test_search(kind):
               "When we have shuffled off this mortal coil,",
               "Must give us pause: there’s the respect",
               "That makes calamity of so long life;"]
-
 
     vect = TfidfVectorizer()
     X_vect = vect.fit_transform(corpus)
@@ -76,7 +72,7 @@ def test_search_wrapper(kind):
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
     vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt')
-    vect_uuid, filenames  = fe.transform()
+    fe.transform()
 
     if kind == 'semantic':
         lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
@@ -88,7 +84,7 @@ def test_search_wrapper(kind):
     sw = _SearchWrapper(cache_dir=cache_dir, parent_id=parent_id)
     dist = sw.search("so that I can reserve a room")
     assert dist.shape == (fe.n_samples_,)
-    assert dist.argmax() == 1 # document 1 found by
-                              # grep -rn "so that I can reserve a room"
-                              # freediscovery/data/ds_001/raw/
-
+    # document 1 found by
+    # grep -rn "so that I can reserve a room"
+    # freediscovery/data/ds_001/raw/
+    assert dist.argmax() == 1

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
-
 from freediscovery.cluster.utils import centroid_similarity
 from freediscovery.externals.jwzthreading import Container
+
 
 class _HCContainer(Container):
 
@@ -23,9 +22,9 @@ class _HCContainer(Container):
 def _check_birch_tree_consistency(node):
     """ Check that the _id we added is consistent """
     for el in node.subclusters_:
-        if el.n_samples_  != len(el.id_):
-            raise ValueError('For subcluster {}, n_samples={} but len(id_)={}'.format(el,
-                                     el.n_samples_, el.id_))
+        if el.n_samples_ != len(el.id_):
+            raise ValueError('For subcluster '
+                             '{}, n_samples={} but len(id_)={}'.format(el, el.n_samples_, el.id_))
         if el.child_ is not None:
             _check_birch_tree_consistency(el.child_)
 
@@ -36,11 +35,12 @@ class _BirchHierarchy(object):
         self.htree, _n_clusters = self._make_birch_hierarchy(model.root_)
         if len(self.htree._get_children_document_id()) != self.model.n_samples_:
             raise ValueError("Building hierarchy failed: "
-        	             "root node contains {} documents, while the total document number is {}".format(
-		                len(self.htree._get_children_document_id()), self.model.n_samples_))
+                             "root node contains "
+                             "{} documents, while the total document number is {}".format(
+                             len(self.htree._get_children_document_id()),
+                             self.model.n_samples_))
         self._n_clusters = _n_clusters
         self.metric_ = metric
-
 
     @staticmethod
     def _make_birch_hierarchy(node, depth=0, cluster_id=0):
@@ -59,22 +59,22 @@ class _BirchHierarchy(object):
 
         htree = _HCContainer()
         htree['document_id'] = []
-        htree['cluster_id'] =  cluster_id
+        htree['cluster_id'] = cluster_id
 
         document_id_list = htree['document_id']
 
         for el in node.subclusters_:
             if el.child_ is not None:
                 cluster_id += 1
-                subtree, cluster_id = _BirchHierarchy._make_birch_hierarchy(el.child_, depth=depth+1, cluster_id=cluster_id)
+                subtree, cluster_id = _BirchHierarchy._make_birch_hierarchy(
+                         el.child_, depth=depth+1, cluster_id=cluster_id)
                 htree.add_child(subtree)
             else:
                 document_id_list += el.id_
         if depth == 0:
-            #make sure we return the correct number of clusters
+            # make sure we return the correct number of clusters
             cluster_id += 1
         return htree, cluster_id
-
 
     def fit(self, X):
         """ Compute all the required parameters """
@@ -83,7 +83,8 @@ class _BirchHierarchy(object):
             document_id_lst = row._get_children_document_id()
             row['children_document_id'] = document_id_lst
             row['cluster_size'] = len(document_id_lst)
-            inertia, S_sim = centroid_similarity(X, document_id_lst, nn_metric=self.metric_)
+            inertia, S_sim = centroid_similarity(X, document_id_lst,
+                                                 nn_metric=self.metric_)
             row['document_similarity'] = S_sim
             row['cluster_similarity'] = inertia
 
@@ -94,8 +95,8 @@ def _print_container(ctr, depth=0, debug=0):
         message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject)
     else:
         message = str(ctr['cluster_id']) + ' N_children: ' \
-		      + str(len(ctr.children)) + ' N_docs: ' + str(len(ctr['document_id']))
-
+                       + str(len(ctr.children)) + ' N_docs: '\
+                       + str(len(ctr['document_id']))
 
     print(''.join(['> ' * depth, message]))
 
