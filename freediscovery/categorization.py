@@ -329,16 +329,18 @@ class _CategorizerWrapper(_BaseWrapper):
             indices of the training set
         """
         if max_result_categories <= 0:
-            raise ValueError('the max_result_categories={} must be strictly positive'.format(max_result_categories))
+            raise ValueError('the max_result_categories'
+                             '={} must be strictly positive'.format(
+                                 max_result_categories))
 
-        # have to cast to object as otherwise we get serializing np.int64 issues...
-        base_keys = [key for key in id_mapping.columns if key in ['internal_id',
-                                                                  'document_id',
-                                                                  'rendition_id']]
+        # have to cast to object as otherwise 
+        # we get serializing np.int64 issues...
+        base_keys = [key for key in id_mapping.columns
+                     if key in ['internal_id', 'document_id', 'rendition_id']]
         id_mapping = id_mapping[base_keys].set_index('internal_id', drop=True).astype('object')
 
         if min_score is None:
-            min_score = -1e9
+            min_score = -1e9   # ugly, should be changed
 
         def sort_func(x):
             return x[0]
@@ -382,7 +384,8 @@ class _CategorizerWrapper(_BaseWrapper):
             else:
                 # no nearest neighbors available
                 for Y_el, label_el in sorted(zip(Y_row, labels),
-                                                    key=sort_func, reverse=True)[:max_result_categories]:
+                                             key=sort_func,
+                                             reverse=True)[:max_result_categories]:
                     iiel = {'score': Y_el, 'category': label_el}
                     iscores.append(iiel)
             ires['scores'] = iscores
