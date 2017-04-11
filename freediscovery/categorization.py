@@ -196,6 +196,10 @@ class _CategorizerWrapper(_BaseWrapper):
         if cv not in [None, 'fast', 'full']:
             raise WrongParameter('cv')
 
+        if method in ['NearestCentroid', 'NearestNeighbor']:
+            #print(self.pipeline[-1])
+            pass
+
         d_all = self.pipeline.data
 
         X_train = d_all[index, :]
@@ -213,7 +217,6 @@ class _CategorizerWrapper(_BaseWrapper):
             cmod.fit(X_train, Y_train, eval_metric='auc')
         else:
             cmod.fit(X_train, Y_train)
-
 
 
         joblib.dump(self.le, os.path.join(mid_dir, 'label_encoder'))
@@ -294,7 +297,7 @@ class _CategorizerWrapper(_BaseWrapper):
             else:
                 res_p = res
                 res_n = 1 - res
-            res = np.hstack((res_n[:,None], res_p[:, None]))
+            res = np.hstack((res_n[:, None], res_p[:, None]))
         return res, nn_ind
 
     def _load_pars(self, mid=None):
