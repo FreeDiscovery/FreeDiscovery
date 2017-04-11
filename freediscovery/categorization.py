@@ -196,6 +196,13 @@ class _CategorizerWrapper(_BaseWrapper):
         if cv not in [None, 'fast', 'full']:
             raise WrongParameter('cv')
 
+        if method in ['NearestCentroid', 'NearestNeighbor'] \
+                and 'lsi' not in self.pipeline:
+            raise WrongParameter(method +
+                                 ' should not be applied onto raw document term vectors due'
+                                 ' to the curse of dimensionality. Please add an LSI processing'
+                                 ' step before this classifier (i.e. use `parent_id=lsi_id`)')
+
         d_all = self.pipeline.data
 
         X_train = d_all[index, :]
@@ -215,7 +222,6 @@ class _CategorizerWrapper(_BaseWrapper):
             cmod.fit(X_train, Y_train)
 
 
-
         joblib.dump(self.le, os.path.join(mid_dir, 'label_encoder'))
         joblib.dump(cmod, os.path.join(mid_dir, 'model'))
 
@@ -233,7 +239,7 @@ class _CategorizerWrapper(_BaseWrapper):
         self.cmod = cmod
         return cmod, Y_train
 
-    def predict(self, chunk_size=5000, ml_output='probability', nn_metric='cosine'):
+    def predict(self, chunk_size=5000, ml_output='probability', metric='cosine'):
         """
         Predict the relevance using a previously trained model
 
@@ -243,7 +249,7 @@ class _CategorizerWrapper(_BaseWrapper):
            chunk size
         ml_output : str
            type of the output in ['decision_function', 'probability'], only affects ML methods. default: 'probability'
-        nn_metric : str   
+        metric : str   
             The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']. default: 'cosine'
 
         Returns
@@ -270,7 +276,7 @@ class _CategorizerWrapper(_BaseWrapper):
         nn_ind = None
         if isinstance(cmod, NearestNeighborRanker):
             res, nn_ind_orig = cmod.kneighbors(ds)
-            res = _scale_cosine_similarity(res, metric=nn_metric)
+            res = _scale_cosine_similarity(res, metric=metric)
             nn_ind = self._pars['index'][nn_ind_orig]
         elif hasattr(cmod, ml_output):
             res = getattr(cmod, ml_output)(ds)
@@ -294,7 +300,7 @@ class _CategorizerWrapper(_BaseWrapper):
             else:
                 res_p = res
                 res_n = 1 - res
-            res = np.hstack((res_n[:,None], res_p[:, None]))
+            res = np.hstack((res_n[:, None], res_p[:, None]))
         return res, nn_ind
 
     def _load_pars(self, mid=None):

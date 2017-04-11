@@ -34,7 +34,7 @@ def check_cache(test_env=True):
     else:
         subfolder = 'freediscovery-cache'
 
-    cache_dir, _ = _get_temp_dir(subfolder)
+    cache_dir, _ = _get_temp_dir(subfolder, temp_folder=tempfile.gettempdir())
 
     if not os.path.exists(cache_dir):
         os.mkdir(cache_dir)
@@ -43,5 +43,3 @@ def check_cache(test_env=True):
 
 if __name__ == '__main__':
     run_cli()
-
-

@@ -42,6 +42,8 @@ def test_api_clustering(app, model, use_lsi, n_clusters, optimal_sampling):
         lsi_id = None
         parent_id = dsid
 
+    pars = { 'parent_id': parent_id, }
+
     if model == 'birch' and n_clusters <= 0:
         is_hierarchical = True
     else:
@@ -51,11 +53,12 @@ def test_api_clustering(app, model, use_lsi, n_clusters, optimal_sampling):
     data = app.get_check(method)
 
     url = V01 + "/clustering/" + model
-    pars = { 'parent_id': parent_id, }
     if model != 'dbscan':
         pars['n_clusters'] = n_clusters
     if model == 'dbscan':
         pars.update({'eps': 0.1, "min_samples": 2})
+    elif model == 'birch':
+        pars['min_similarity'] = 0.7
     data = app.post_check(url, json=pars)
 
     assert sorted(data.keys()) == sorted(['id'])

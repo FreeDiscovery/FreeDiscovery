@@ -49,9 +49,6 @@ class PipelineFinder(OrderedDict):
       a unique model id
     cache_dir : str
       folder where models are saved
-    ingestion_method : str, default='vectorizer'
-      default ingestion method (one of ['vectorizer', 'parser'])
-      unless email threading is used, this whould be set to 'vectorizer'
 
     Returns
     -------
@@ -60,8 +57,7 @@ class PipelineFinder(OrderedDict):
       and as values the model ids
     """
 
-    def __init__(self, mid=None, cache_dir="/tmp/", ingestion_method='vectorizer', steps=None):
-        self.ingestion_method = ingestion_method
+    def __init__(self, mid=None, cache_dir="/tmp/", steps=None):
         self._loaded_models = {}
 
         self.mid = mid
@@ -82,9 +78,8 @@ class PipelineFinder(OrderedDict):
             cache_dir = os.path.join(cache_dir, "ediscovery_cache")
         return cache_dir
 
-
     @classmethod
-    def by_id(cls, mid, cache_dir="/tmp/", ingestion_method='vectorizer'):
+    def by_id(cls, mid, cache_dir="/tmp/"):
         """ Find a pipeline by id
 
         Parameters
@@ -93,9 +88,6 @@ class PipelineFinder(OrderedDict):
           a unique model id
         cache_dir : str
           folder where models are saved
-        ingestion_method : str, default='vectorizer'
-          default ingestion method (one of ['vectorizer', 'parser'])
-          unless email threading is used, this whould be set to 'vectorizer'
 
         Returns
         -------
@@ -105,8 +97,7 @@ class PipelineFinder(OrderedDict):
         """
         cache_dir = cls._normalize_cachedir(cache_dir)
 
-        pipeline = cls(mid=mid, cache_dir=cache_dir,
-                       ingestion_method=ingestion_method)
+        pipeline = cls(mid=mid, cache_dir=cache_dir)
 
         cache_dir_base = os.path.dirname(cache_dir)
         _break_flag = False
@@ -132,7 +123,7 @@ class PipelineFinder(OrderedDict):
             raise ModelNotFound('Model id {} not found in {}!'.format(mid, cache_dir))
 
         if path_hierarchy[0] == 'ediscovery_cache':
-            path_hierarchy[0] = ingestion_method
+            path_hierarchy[0] = 'vectorizer'
         else:
             raise ValueError('path_hierarchy should start with ediscovery_cache',
                              'this indicates a bug in the code')
@@ -159,9 +150,7 @@ class PipelineFinder(OrderedDict):
         steps.popitem(last=True)
 
         return PipelineFinder(mid=list(steps.values())[-1],
-                              cache_dir=self.cache_dir,
-                              ingestion_method=self.ingestion_method,
-                              steps=steps)
+                              cache_dir=self.cache_dir, steps=steps)
 
     @property
     def data(self):
@@ -174,9 +163,6 @@ class PipelineFinder(OrderedDict):
         elif last_node == 'lsi':
             full_path = os.path.join(ds_path, 'data')
         return joblib.load(full_path)
-
-
-
 
     def get_path(self, mid=None, absolute=True):
         """ Find the path to the model specified by mid """
@@ -192,7 +178,7 @@ class PipelineFinder(OrderedDict):
         path = list(itertools.chain.from_iterable(
                             [[key, self[key]] for key in valid_keys]))
         if absolute:
-            del path[0] # "ediscovery_cache" is already present in cache_dir
+            del path[0]  # "ediscovery_cache" is already present in cache_dir
             rel_path = os.path.join(*path)
             return os.path.join(self.cache_dir, rel_path)
         else:

@@ -121,7 +121,7 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
        The ground truth files for categorization are adapted from TAR Toolkit.
 
     2. Fedora mailing list (2009-2009)
-       - `fedora_ml`
+       - `fedora_ml_3k_subset`
 
     3. The 20 newsgoups dataset
        - `20newsgroups_3categories`: only the ['comp.graphics', 'rec.sport.baseball', 'sci.space'] categories
