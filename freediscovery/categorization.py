@@ -196,9 +196,12 @@ class _CategorizerWrapper(_BaseWrapper):
         if cv not in [None, 'fast', 'full']:
             raise WrongParameter('cv')
 
-        if method in ['NearestCentroid', 'NearestNeighbor']:
-            #print(self.pipeline[-1])
-            pass
+        if method in ['NearestCentroid', 'NearestNeighbor'] \
+                and 'lsi' not in self.pipeline:
+            raise WrongParameter(method +
+                                 ' should not be applied onto raw document term vectors due'
+                                 ' to the curse of dimensionality. Please add an LSI processing'
+                                 ' step before this classifier (i.e. use `parent_id=lsi_id`)')
 
         d_all = self.pipeline.data
 

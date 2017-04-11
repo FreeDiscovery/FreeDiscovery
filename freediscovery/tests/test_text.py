@@ -239,18 +239,14 @@ def test_sampling_filenames():
     fe.delete()
 
 
-@pytest.mark.parametrize("analyzer, ngram_range, use_hashing",
-                         list(itertools.product(['word', 'char'],
-                                                [[1, 1], [1, 2]],
-                                                ['hashed', 'non-hashed'])))
-def test_feature_extraction_cyrillic(analyzer, ngram_range, use_hashing):
+@pytest.mark.parametrize("use_hashing", ['hashed', 'non-hashed'])
+def test_feature_extraction_cyrillic(use_hashing):
     data_dir = os.path.join(basename, "..", "data", "ds_002", "raw")
     cache_dir = check_cache()
     use_hashing = (use_hashing == 'hashed')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         analyzer=analyzer, ngram_range=ngram_range,
                          use_hashing=use_hashing)
     fe.transform()
 
@@ -261,7 +257,8 @@ def test_feature_extraction_cyrillic(analyzer, ngram_range, use_hashing):
     filenames2 = fe.filenames_
 
     assert_equal(filenames2, filenames)
-    assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), "not an array {}".format(res2)
+    assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2),\
+        "not an array {}".format(res2)
 
     assert np.isfinite(res2.data).all()
     fe.delete()

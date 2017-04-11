@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_less,
                            assert_allclose)
+from sklearn.externals import joblib
 
 from ...utils import dict2type
 
@@ -148,33 +149,29 @@ def test_search_consistency(app):
 
     input_ds = pd.DataFrame(input_ds['dataset']).set_index('document_id')
 
-    # compute regular search
-    pars = dict(parent_id=dataset_id,
-                query_document_id=query_document_id)
-    data = app.post_check(V01 + "/search/", json=pars)
-    df_n = pd.DataFrame(data['data']).set_index('document_id')
-    df_n = df_n.merge(input_ds, how='left', left_index=True, right_index=True)
-
-    # manually compute the similarity for a pair of documents and
-    # check that it's the same as the one computed by the system
-    with open(os.path.join(CACHE_DIR, 'ediscovery_cache', dataset_id, 'vectorizer'), 'rb') as fh:
-        vect = pickle.load(fh)
-    print(vect)
-    X_tmp = []
-    comp_document_id = 2365444
-    for document_id in [query_document_id, comp_document_id]:
-        X_tmp.append(os.path.join(ds_pars['data_dir'],
-                                  input_ds.loc[document_id].file_path))
-    X_tmp = vect.transform(X_tmp)
-    assert_allclose(cosine_similarity(X_tmp[0], X_tmp[1]),
-                    df_n.loc[comp_document_id].score)
-
     # compute semantic search
     pars = dict(parent_id=lsi_id,
                 query_document_id=query_document_id)
     data = app.post_check(V01 + "/search/", json=pars)
     df_s = pd.DataFrame(data['data']).set_index('document_id')
     df_s = df_s.merge(input_ds, how='left', left_index=True, right_index=True)
+
+    # manually compute the similarity for a pair of documents and
+    # check that it's the same as the one computed by the system
+    with open(os.path.join(CACHE_DIR, 'ediscovery_cache', dataset_id, 'vectorizer'), 'rb') as fh:
+        vect = pickle.load(fh)
+    lsi_est = joblib.load(os.path.join(CACHE_DIR, 'ediscovery_cache', dataset_id,
+                          'lsi', lsi_id, 'model'))
+    X_tmp = []
+    comp_document_id = 2365444
+    for document_id in [query_document_id, comp_document_id]:
+        X_tmp.append(os.path.join(ds_pars['data_dir'],
+                                  input_ds.loc[document_id].file_path))
+    X_tmp = vect.transform(X_tmp)
+    X_tmp = lsi_est.transform_lsi_norm(X_tmp)
+    assert_allclose(cosine_similarity(X_tmp[[0]], X_tmp[[1]]),
+                    df_s.loc[comp_document_id].score)
+
 
     # check that providing the query_document_id or the same document as text
     # produces the same results
@@ -191,18 +188,10 @@ def test_search_consistency(app):
     df_s_txt = df_s_txt[df_s_txt.index != query_document_id]
     assert_allclose(df_s.score.values, df_s_txt.score.values)
 
-    df_m = df_s.merge(df_n, how='left', left_index=True, right_index=True,
-                      suffixes=('_s', '_n'))
-    df_m.to_pickle('/tmp/search_ex.pkl')
-    #assert pearsonr(df_m.score_s.values, df_m.score_n.values)[0] > 1.0
-
     # check that query document is on average closer to the documents of its class
     query_category = input_ds.loc[query_document_id].category
     assert df_s[df_s.category == query_category].score.quantile(q=0.75) \
         > df_s[df_s.category != query_category].score.quantile(q=0.75)
-
-    # 
-    print(ds_pars)
 
 
 def test_search_eq_categorization(app):

@@ -17,7 +17,7 @@ from freediscovery.lsi import _LSIWrapper
 from freediscovery.categorization import _CategorizerWrapper
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.metrics import categorization_score
-from freediscovery.exceptions import OptionalDependencyMissing
+from freediscovery.exceptions import OptionalDependencyMissing, WrongParameter
 from .run_suite import check_cache
 
 
@@ -47,6 +47,7 @@ _test_cases = itertools.product(
                        ["LinearSVC", "LogisticRegression", 'xgboost',
                         "NearestNeighbor", "NearestCentroid"],
                        [None, 'fast'])
+
 # 'MLPClassifier', 'ensemble-stacking' not supported in production the moment
 _test_cases = filter(lambda x: not (x[1].startswith("Nearest") and x[2]),
                      _test_cases)
@@ -83,6 +84,11 @@ def test_categorization(use_lsi, method, cv):
                                 cv=cv)
     except OptionalDependencyMissing:
         raise SkipTest
+    except WrongParameter:
+        if method in ['NearestNeighbor', 'NearestCentroid']:
+            return
+        else:
+            raise
 
     Y_pred, md = cat.predict()
     X_pred = np.arange(cat.fe.n_samples_, dtype='int')

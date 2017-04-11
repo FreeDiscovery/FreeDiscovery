@@ -11,6 +11,7 @@ from sklearn.metrics import pairwise_distances
 from sklearn.externals import joblib
 
 from .base import _BaseWrapper
+from .exceptions import WrongParameter
 
 
 class _SearchWrapper(_BaseWrapper):
@@ -50,6 +51,13 @@ class _SearchWrapper(_BaseWrapper):
           the output metric to use
         """
         if internal_id is not None:
+            if 'lsi' not in self.pipeline:
+                raise WrongParameter('Search using a document_id as a query'
+                                     ' should not be applied in the space of '
+                                     ' raw document term vectors due'
+                                     ' to the curse of dimensionality.'
+                                     ' Please add an LSI processing'
+                                     ' step (i.e. use `parent_id=lsi_id`)')
             vect = None
         else:
             vect = self.fe.vect_
