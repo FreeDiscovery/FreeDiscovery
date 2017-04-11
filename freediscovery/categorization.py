@@ -233,7 +233,7 @@ class _CategorizerWrapper(_BaseWrapper):
         self.cmod = cmod
         return cmod, Y_train
 
-    def predict(self, chunk_size=5000, ml_output='probability', nn_metric='cosine'):
+    def predict(self, chunk_size=5000, ml_output='probability', metric='cosine'):
         """
         Predict the relevance using a previously trained model
 
@@ -243,7 +243,7 @@ class _CategorizerWrapper(_BaseWrapper):
            chunk size
         ml_output : str
            type of the output in ['decision_function', 'probability'], only affects ML methods. default: 'probability'
-        nn_metric : str   
+        metric : str   
             The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']. default: 'cosine'
 
         Returns
@@ -270,7 +270,7 @@ class _CategorizerWrapper(_BaseWrapper):
         nn_ind = None
         if isinstance(cmod, NearestNeighborRanker):
             res, nn_ind_orig = cmod.kneighbors(ds)
-            res = _scale_cosine_similarity(res, metric=nn_metric)
+            res = _scale_cosine_similarity(res, metric=metric)
             nn_ind = self._pars['index'][nn_ind_orig]
         elif hasattr(cmod, ml_output):
             res = getattr(cmod, ml_output)(ds)

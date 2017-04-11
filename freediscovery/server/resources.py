@@ -126,7 +126,7 @@ class FeaturesApi(Resource):
              - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
              - `binary`: If set to 1, all non zero counts are set to 1. (default: False)
              - `use_idf`: Enable inverse-document-frequency reweighting (default: False).
-             - `sublinear_tf`: Apply sublinear tf scaling, i.e. replace tf with log(1 + tf) (default: False).
+             - `sublinear_tf`: Apply sublinear tf scaling, i.e. replace tf with log(1 + tf) (default: True).
              - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True)
              - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
@@ -363,7 +363,7 @@ class ModelsApiPredict(Resource):
                                                                 'ascending'])),
                'max_results': wfields.Int(),
                'ml_output': wfields.Str(missing='probability'),
-               'metric': wfields.Str(missing='jaccard_norm'),
+               'metric': wfields.Str(missing='cosine'),
                'min_score': wfields.Number(missing=-1),
                'subset': wfields.Str(missing='test',
                                      validate=_is_in_range(['all', 'train',
@@ -518,8 +518,8 @@ class BirchClusteringApi(Resource):
             'n_clusters': wfields.Int(missing=-1),
             'branching_factor': wfields.Int(missing=20),
             # this corresponds approximately to threashold = 0.5
-            'min_similarity': wfields.Number(missing=0.75),
-            'metric': wfields.Str(missing='jaccard_norm')
+            'min_similarity': wfields.Number(missing=0.5),
+            'metric': wfields.Str(missing='cosine')
             }
             )
     @marshal_with(IDSchema())
@@ -558,7 +558,7 @@ class DBSCANClusteringApi(Resource):
     @use_args({'parent_id': wfields.Str(required=True),
                'min_samples': wfields.Int(missing=10),
                # this corresponds approximately to threashold = 0.5
-               'min_similarity': wfields.Number(missing=0.75),
+               'min_similarity': wfields.Number(missing=0.5),
                'metric': wfields.Str(missing='jaccard_norm')})
     @marshal_with(IDSchema())
     def post(self, **args):
@@ -589,7 +589,7 @@ class ClusteringApiElement(Resource):
             - `sampling_min_coverage` : Minimal coverage requirement in [0, 1] range. Increasing this value would result in a larger number of samples. (default: 0.9)
             """))
     @use_args({'n_top_words': wfields.Int(missing=5),
-               'metric': wfields.Str(missing='jaccard_norm'),
+               'metric': wfields.Str(missing='cosine'),
                'return_optimal_sampling': wfields.Bool(missing=False),
                'sampling_min_similarity': wfields.Number(missing=1.0),
                'sampling_min_coverage': wfields.Number(missing=0.9)})
@@ -740,7 +740,7 @@ class DupDetectionApiElement(Resource):
     @use_args({'distance': wfields.Int(),
                'n_rand_lexicons': wfields.Int(),
                'rand_lexicon_ratio': wfields.Number(),
-               'metric': wfields.Str(missing='jaccard_norm')
+               'metric': wfields.Str(missing='cosine')
                })
     @marshal_with(ClusteringSchema())
     def get(self, mid, **args):
@@ -1021,7 +1021,7 @@ class SearchApi(Resource):
     @use_args({"parent_id": wfields.Str(required=True),
                "query": wfields.Str(),
                "query_document_id": wfields.Int(),
-               'metric': wfields.Str(missing='jaccard_norm'),
+               'metric': wfields.Str(missing='cosine'),
                'min_score': wfields.Number(missing=-1),
                'max_results': wfields.Int(),
                'sort_by': wfields.Str(missing='score'),

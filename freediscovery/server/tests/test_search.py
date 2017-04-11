@@ -4,7 +4,8 @@ import os
 import pytest
 import pandas as pd
 import numpy as np
-from numpy.testing import assert_equal, assert_array_less
+from numpy.testing import (assert_array_equal, assert_array_less,
+                           assert_allclose)
 
 from ...utils import dict2type
 
@@ -15,7 +16,7 @@ from .base import (parse_res, V01, app, get_features_cached,
 @pytest.mark.parametrize("method, min_score, max_results",
                          [('regular', -1, None),
                           ('semantic', -1, None),
-                          ('semantic', 0.5, None),
+                          ('semantic', 0.2, None),
                           ('semantic', -1, 1000000),
                           ('semantic', -1, 3),
                           ('semantic', -1, 0)])
@@ -47,7 +48,7 @@ def test_search(app, method, min_score, max_results):
         assert dict2type(row) == {'score': 'float',
                                   'document_id': 'int'}
     scores = np.array([row['score'] for row in data])
-    assert_equal(np.diff(scores) <= 0, True)
+    assert (np.diff(scores) <= 0).all()
     assert_array_less(min_score, scores)
     if max_results:
         assert len(data) == min(max_results, len(input_ds['dataset']))
@@ -96,7 +97,7 @@ def test_search_retrieve_batch(app):
                                   'batch_id': 'int',
                                   'batch_id_last': 'int'}
         scores = np.array([row['score'] for row in data['data']])
-        assert_equal(np.diff(scores) <= 0, True)
+        assert (np.diff(scores) <=  0).all()
         assert len(data['data']) == data['pagination']['current_response_count']
         assert data['pagination']['total_response_count'] == total_document_number
         assert data['pagination']['batch_id'] == batch_id
@@ -130,7 +131,7 @@ def test_search_document_id(app):
         assert dict2type(row) == {'score': 'float',
                                   'document_id': 'int'}
     scores = np.array([row['score'] for row in data])
-    assert_equal(np.diff(scores) <= 0, True)
+    assert (np.diff(scores) <= 0).all()
     assert len(data) == min(max_results, len(input_ds['dataset']))
     # assert data[0]['document_id'] == query_document_id
     # assert data[0]['score'] >= 0.99
@@ -138,11 +139,12 @@ def test_search_document_id(app):
 
 
 def test_search_consistency(app):
+    """ A number of consistency checks"""
     import pickle
     from scipy.stats import pearsonr
     from sklearn.metrics.pairwise import cosine_similarity
-    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app)
-    query_document_id = 3034564
+    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app)  # n_components=1000)
+    query_document_id = 1
 
     input_ds = pd.DataFrame(input_ds['dataset']).set_index('document_id')
 
@@ -153,7 +155,8 @@ def test_search_consistency(app):
     df_n = pd.DataFrame(data['data']).set_index('document_id')
     df_n = df_n.merge(input_ds, how='left', left_index=True, right_index=True)
 
-    # manually compute the similarity to a few documents
+    # manually compute the similarity for a pair of documents and
+    # check that it's the same as the one computed by the system
     with open(os.path.join(CACHE_DIR, 'ediscovery_cache', dataset_id, 'vectorizer'), 'rb') as fh:
         vect = pickle.load(fh)
     print(vect)
@@ -161,10 +164,10 @@ def test_search_consistency(app):
     comp_document_id = 2365444
     for document_id in [query_document_id, comp_document_id]:
         X_tmp.append(os.path.join(ds_pars['data_dir'],
-                                  input_ds.loc[query_document_id].file_path))
+                                  input_ds.loc[document_id].file_path))
     X_tmp = vect.transform(X_tmp)
-    print(X_tmp)
-    
+    assert_allclose(cosine_similarity(X_tmp[0], X_tmp[1]),
+                    df_n.loc[comp_document_id].score)
 
     # compute semantic search
     pars = dict(parent_id=lsi_id,
@@ -182,20 +185,59 @@ def test_search_consistency(app):
                 query=query_txt)
     data = app.post_check(V01 + "/search/", json=pars)
     df_s_txt = pd.DataFrame(data['data']).set_index('document_id')
-    df_s_txt = df_s_txt.merge(input_ds, how='left', left_index=True, right_index=True)
+    df_s_txt = df_s_txt.merge(input_ds, how='left',
+                              left_index=True, right_index=True)
     df_s_txt.loc[query_document_id].score == 1.0
     df_s_txt = df_s_txt[df_s_txt.index != query_document_id]
-    assert_equal(df_s.score.values, df_s_txt.score.values)
+    assert_allclose(df_s.score.values, df_s_txt.score.values)
 
     df_m = df_s.merge(df_n, how='left', left_index=True, right_index=True,
                       suffixes=('_s', '_n'))
-    #print(df_m)
-    #df_m.to_pickle('/tmp/search_ex.pkl')
-    #assert pearsonr(df_m.score_s.values, df_m.score_n.values)[0] > 1.0 
+    df_m.to_pickle('/tmp/search_ex.pkl')
+    #assert pearsonr(df_m.score_s.values, df_m.score_n.values)[0] > 1.0
 
     # check that query document is on average closer to the documents of its class
     query_category = input_ds.loc[query_document_id].category
-    print(df_s[df_s.category == query_category].score.mean())
-    print(df_s[df_s.category != query_category].score.mean())
+    assert df_s[df_s.category == query_category].score.quantile(q=0.75) \
+        > df_s[df_s.category != query_category].score.quantile(q=0.75)
 
+    # 
     print(ds_pars)
+
+
+def test_search_eq_categorization(app):
+    """Check that NN categorization with a single training document and semantic search
+    returns the same results
+    """
+    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app)
+    query_document_id = 1
+
+    input_ds = pd.DataFrame(input_ds['dataset']).set_index('document_id')
+
+    # compute regular search
+    pars = dict(parent_id=lsi_id,
+                query_document_id=query_document_id)
+    data = app.post_check(V01 + "/search/", json=pars)
+    df_s = pd.DataFrame(data['data']).set_index('document_id')
+
+    pars = {
+          'parent_id': lsi_id,
+          'data': [{'document_id': query_document_id, 'category': 'search'}],
+          'method': 'NearestNeighbor',
+          'subset': 'test'
+           }
+
+    method = V01 + "/categorization/"
+    data = app.post_check(method, json=pars)
+
+    method = V01 + "/categorization/{}/predict".format(data['id'])
+    data = app.get_check(method)
+    categories = [el['scores'][0]['category'] for el in data['data']]
+    assert categories == ['search']*len(categories)
+
+    df_c = pd.DataFrame([{'document_id': row['document_id'],
+                          'score': row['scores'][0]['score']}
+                         for row in data['data']]).set_index('document_id')
+    # The results do not appear to be exactly matching (probably due to tie-breaking)
+    assert (df_c.index == df_s.index).sum() / df_s.shape[0] > 0.995
+    assert_allclose(df_c.score.values, df_s.score.values)
