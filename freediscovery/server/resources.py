@@ -350,7 +350,7 @@ class ModelsApiPredict(Resource):
              - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
              - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
-             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+             - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
              - `min_score` : filter out results below a similarity threashold
              - `subset`: apply prediction to a document subset. Must be one of ['all', 'train', 'test']. Default: 'test'.
              - `batch_id`: retrieve a given subset of scores (-1 to retrieve all). Default: 0
@@ -363,7 +363,7 @@ class ModelsApiPredict(Resource):
                                                                 'ascending'])),
                'max_results': wfields.Int(),
                'ml_output': wfields.Str(missing='probability'),
-               'nn_metric': wfields.Str(missing='jaccard_norm'),
+               'metric': wfields.Str(missing='jaccard_norm'),
                'min_score': wfields.Number(missing=-1),
                'subset': wfields.Str(missing='test',
                                      validate=_is_in_range(['all', 'train',
@@ -511,7 +511,7 @@ class BirchClusteringApi(Resource):
             - `n_clusters`: the number of clusters or -1 to use hierarchical clustering (default: -1)
             - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html). Increasing this value would increase the hierarchical tree depth (and the number of clusters).
             - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively. Decreasing this value would increase the number of clusters.
-            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
            """))
     @use_args({
             'parent_id': wfields.Str(required=True),
@@ -519,7 +519,7 @@ class BirchClusteringApi(Resource):
             'branching_factor': wfields.Int(missing=20),
             # this corresponds approximately to threashold = 0.5
             'min_similarity': wfields.Number(missing=0.75),
-            'nn_metric': wfields.Str(missing='jaccard_norm')
+            'metric': wfields.Str(missing='jaccard_norm')
             }
             )
     @marshal_with(IDSchema())
@@ -527,7 +527,7 @@ class BirchClusteringApi(Resource):
         from math import sqrt
 
         S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
-                                         metric=args.pop('nn_metric'),
+                                         metric=args.pop('metric'),
                                          inverse=True)
         # cosine sim to euclidean distance
         threshold = sqrt(2 * (1 - S_cos))
@@ -552,19 +552,19 @@ class DBSCANClusteringApi(Resource):
            **Parameters**
              - `parent_id`: `dataset_id` or `lsi_id`
              - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
-             - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+             - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
              - `min_samples`: (optional) int The number of samples (or total weight) in a neighborhood for a point to be considered as a core point. This includes the point itself.
             """))
     @use_args({'parent_id': wfields.Str(required=True),
                'min_samples': wfields.Int(missing=10),
                # this corresponds approximately to threashold = 0.5
                'min_similarity': wfields.Number(missing=0.75),
-               'nn_metric': wfields.Str(missing='jaccard_norm')})
+               'metric': wfields.Str(missing='jaccard_norm')})
     @marshal_with(IDSchema())
     def post(self, **args):
         from math import sqrt
         S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
-                                         metric=args.pop('nn_metric'),
+                                         metric=args.pop('metric'),
                                          inverse=True)
         # cosine sim to euclidean distance
         eps = sqrt(2 * (1 - S_cos))
@@ -583,19 +583,19 @@ class ClusteringApiElement(Resource):
 
            **Parameters**
             - `n_top_words`: keep only most relevant `n_top_words` words
-            - `nn_metric` : The similarity metric in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `metric` : The similarity metric in ['cosine', 'jaccard'].
             - `return_optimal_sampling` : Instead of cluster results, the optimal sampling results will be returned (with no cluster labels). This option is only valid with Birch algorithm. Note that optimal sampling cannot return more samples than the subclusters in the birch clustering results (default: false)
             - `sampling_min_similarity` : Similarity threashold used by smart sampling. Decreasing this value would result in more sampled documents. Default: 1.0 (i.e. use the full cluster hierarichy).
             - `sampling_min_coverage` : Minimal coverage requirement in [0, 1] range. Increasing this value would result in a larger number of samples. (default: 0.9)
             """))
     @use_args({'n_top_words': wfields.Int(missing=5),
-               'nn_metric': wfields.Str(missing='jaccard_norm'),
+               'metric': wfields.Str(missing='jaccard_norm'),
                'return_optimal_sampling': wfields.Bool(missing=False),
                'sampling_min_similarity': wfields.Number(missing=1.0),
                'sampling_min_coverage': wfields.Number(missing=0.9)})
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):
-        nn_metric = args.pop('nn_metric')
+        metric = args.pop('metric')
         return_optimal_sampling = args.pop('return_optimal_sampling')
         sampling_min_coverage = args.pop('sampling_min_coverage')
         sampling_min_similarity = args.pop('sampling_min_similarity')
@@ -608,7 +608,7 @@ class ClusteringApiElement(Resource):
 
         cl._fit_X = cl.pipeline.data
 
-        htree = cl._get_htree(cl._fit_X, metric=nn_metric)
+        htree = cl._get_htree(cl._fit_X, metric=metric)
 
         if type(km).__name__ == 'Birch' and cl._pars['is_hierarchical']:
             # Hierarchical clustering
@@ -672,7 +672,7 @@ class ClusteringApiElement(Resource):
 
                 S_sim_mean, S_sim = centroid_similarity(cl._fit_X,
                                                         group.index.values,
-                                                        nn_metric)
+                                                        metric)
                 group = group.assign(similarity=S_sim)
 
                 row_docs = []
@@ -735,17 +735,17 @@ class DupDetectionApiElement(Resource):
             - `distance` : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only)
             - `n_rand_lexicons` : int, default=1 number of random lexicons used for duplicate detection (I-Match method only)
             - `rand_lexicon_ratio` : float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
-            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
           """))
     @use_args({'distance': wfields.Int(),
                'n_rand_lexicons': wfields.Int(),
                'rand_lexicon_ratio': wfields.Number(),
-               'nn_metric': wfields.Str(missing='jaccard_norm')
+               'metric': wfields.Str(missing='jaccard_norm')
                })
     @marshal_with(ClusteringSchema())
     def get(self, mid, **args):
 
-        nn_metric = args.pop('nn_metric')
+        metric = args.pop('metric')
 
         model = _DuplicateDetectionWrapper(cache_dir=self._cache_dir, mid=mid)
         cluster_id = model.query(**args)
@@ -759,7 +759,7 @@ class DupDetectionApiElement(Resource):
 
             S_sim_mean, S_sim = centroid_similarity(model._fit_X,
                                                     group.index.values,
-                                                    nn_metric)
+                                                    metric)
             group = group.assign(similarity=S_sim)
 
             row_docs = []
@@ -1010,7 +1010,7 @@ class SearchApi(Resource):
             - `parent_id` : the id of the previous processing step (either `dataset_id` or `lsi_id`)
             - `query` : the seach query. Either `query` or `query_document_id` must be provided.
             - `query_document_id` : the id of the document used as the search query. Either `query` or `query_document_id` must be provided.
-            - `nn_metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
             - `min_score` : filter out results below a similarity threashold
             - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
@@ -1021,7 +1021,7 @@ class SearchApi(Resource):
     @use_args({"parent_id": wfields.Str(required=True),
                "query": wfields.Str(),
                "query_document_id": wfields.Int(),
-               'nn_metric': wfields.Str(missing='jaccard_norm'),
+               'metric': wfields.Str(missing='jaccard_norm'),
                'min_score': wfields.Number(missing=-1),
                'max_results': wfields.Int(),
                'sort_by': wfields.Str(missing='score'),
@@ -1038,14 +1038,14 @@ class SearchApi(Resource):
 
         if 'query' in args and 'query_document_id' not in args:
             query = args['query']
-            scores = model.search(query, metric=args['nn_metric'])
+            scores = model.search(query, metric=args['metric'])
         elif 'query' not in args and 'query_document_id' in args:
             query = pd.DataFrame([{'document_id': args['query_document_id']}])
             res_q = model.fe.db_.search(query, drop=False)
 
             scores = model.search(None,
                                   internal_id=res_q.internal_id.values[0],
-                                  metric=args['nn_metric'])
+                                  metric=args['metric'])
         else:
             raise WrongParameter("One of the 'query', "
                                  "'query_document_id' must be provided")

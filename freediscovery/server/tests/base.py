@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import pytest
 import json
 import os.path
 
 from .. import fd_app
 from ...tests.run_suite import check_cache
-from ...ingestion import DocumentIndex
 from ...utils import dict2type
 
 from sklearn.externals.joblib import Memory
@@ -21,19 +15,22 @@ V01 = '/api/v0'
 data_dir = os.path.dirname(__file__)
 email_data_dir = os.path.join(data_dir, "..", "..", "data", "fedora-devel-list-2008-October")
 data_dir = os.path.join(data_dir, "..", "..", "data", "ds_001", "raw")
-cache_dir = check_cache()
-CACHE_DIR = cache_dir
+CACHE_DIR = check_cache()
+
 
 def parse_res(res):
     return json.loads(res.data.decode('utf-8'))
+
 
 def _internal2document_id(value):
     """A custom internal_id to document_id mapping used in tests"""
     return 2*value + 1
 
+
 def _document2internal_id(value):
     """A custom internal_id to document_id mapping used in tests"""
     return (value - 1)//2
+
 
 def app_call_wrapper(func):
     """Wrapp the POST, GET, DELETE methods of flask.testing.FlaskClient
@@ -50,12 +47,13 @@ def app_call_wrapper(func):
         return data
     return inner_function
 
+
 @pytest.fixture
 def app():
-    tapp = fd_app(cache_dir)
+    tapp = fd_app(CACHE_DIR)
     tapp.config['TESTING'] = True
 
-    client =  tapp.test_client()
+    client = tapp.test_client()
     client.post_check = app_call_wrapper(client.post)
     client.get_check = app_call_wrapper(client.get)
     client.delete_check = app_call_wrapper(client.delete)
@@ -64,7 +62,7 @@ def app():
 
 @pytest.fixture
 def app_notest():
-    tapp = fd_app(cache_dir)
+    tapp = fd_app(CACHE_DIR)
     tapp.config['TESTING'] = False
 
     client = tapp.test_client()
@@ -74,7 +72,7 @@ def app_notest():
     return client
 
 
-memory = Memory(cachedir=os.path.join(cache_dir, '_joblib_cache'), verbose=0)
+memory = Memory(cachedir=os.path.join(CACHE_DIR, '_joblib_cache'), verbose=0)
 
 # ===========================================================================#
 #
@@ -103,21 +101,19 @@ def get_features(app, hashed=False, metadata_fields='data_dir',
     pars.update(kwargs)
 
     method = V01 + "/feature-extraction/"
-    res = app.post(method, json=pars)
-    if 'dataset_defintion' in pars:
-        del pars['dataset_definition']
+    data = app.post_check(method, json=pars)
 
-    assert res.status_code == 200, method
-    data = parse_res(res)
+    pars.pop('dataset_definition', None)
+
     assert dict2type(data, collapse_lists=True) == {'filenames': ['str'],
                                                     'id': 'str'}
     dsid = data['id']
 
     method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.post(method)
-    assert res.status_code == 200, method
-    data = parse_res(res)
-    assert dict2type(data) == {'id': 'str'}
+    res = app.post_check(method)
+    assert dict2type(res) == {'id': 'str'}
+    pars = app.get_check(method)
+    pars.pop('filenames')
     return dsid, pars, input_ds
 
 
@@ -128,7 +124,7 @@ def get_features_cached(app, hashed=False, n_categories=2,
                         dataset=dataset, **kwargs)
 
 
-def get_features_lsi(app, hashed=True, metadata_fields='data_dir', **kwargs):
+def get_features_lsi(app, hashed=False, metadata_fields='data_dir', **kwargs):
     dsid, pars = get_features(app, hashed=hashed,
                               metadata_fields=metadata_fields, **kwargs)
     lsi_pars = dict(n_components=101, parent_id=dsid)
@@ -140,11 +136,12 @@ def get_features_lsi(app, hashed=True, metadata_fields='data_dir', **kwargs):
     lsi_id = data['id']
     return dsid, lsi_id, pars
 
+
 @memory.cache(ignore=['app'])
-def get_features_lsi_cached(app, hashed=True, n_categories=2, n_components=101,
+def get_features_lsi_cached(app, hashed=False, n_categories=2, n_components=101,
                             dataset="20newsgroups_3categories"):
     dsid, pars, input_ds = get_features_cached(app, hashed=hashed,
-                              n_categories=n_categories)
+                                               n_categories=n_categories)
     lsi_pars = dict(n_components=n_components, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, json=lsi_pars)

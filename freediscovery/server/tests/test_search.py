@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 import pytest
-from unittest import SkipTest
 import pandas as pd
 import numpy as np
 from numpy.testing import assert_equal, assert_array_less
 
-from ...utils import _silent, dict2type
+from ...utils import dict2type
 
-from .base import (parse_res, V01, app, app_notest, get_features_cached,
-                   get_features_lsi, get_features_lsi_cached, CACHE_DIR)
+from .base import (parse_res, V01, app, get_features_cached,
+                   get_features_lsi_cached, CACHE_DIR)
 
 
 @pytest.mark.parametrize("method, min_score, max_results",
@@ -27,7 +21,7 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
                           ('semantic', -1, 0)])
 def test_search(app, method, min_score, max_results):
 
-    dsid, lsi_id, _, input_ds = get_features_lsi_cached(app, hashed=False)
+    dsid, lsi_id, _, input_ds = get_features_lsi_cached(app)
     if method == 'semantic':
         parent_id = lsi_id
     elif method == 'regular':
@@ -71,7 +65,7 @@ def test_search(app, method, min_score, max_results):
 
 
 def test_search_retrieve_batch(app):
-    dsid, lsi_id, _, input_ds = get_features_lsi_cached(app, hashed=False)
+    dsid, lsi_id, _, input_ds = get_features_lsi_cached(app)
     parent_id = lsi_id
 
     max_results = -1
@@ -144,18 +138,13 @@ def test_search_document_id(app):
 
 
 def test_search_consistency(app):
+    import pickle
     from scipy.stats import pearsonr
-    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app, hashed=False)
-    query_document_id = 3844
+    from sklearn.metrics.pairwise import cosine_similarity
+    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app)
+    query_document_id = 3034564
 
     input_ds = pd.DataFrame(input_ds['dataset']).set_index('document_id')
-
-    # compute semantic search
-    pars = dict(parent_id=lsi_id,
-                query_document_id=query_document_id)
-    data = app.post_check(V01 + "/search/", json=pars)
-    df_s = pd.DataFrame(data['data']).set_index('document_id')
-    df_s = df_s.merge(input_ds, how='left', left_index=True, right_index=True)
 
     # compute regular search
     pars = dict(parent_id=dataset_id,
@@ -164,9 +153,49 @@ def test_search_consistency(app):
     df_n = pd.DataFrame(data['data']).set_index('document_id')
     df_n = df_n.merge(input_ds, how='left', left_index=True, right_index=True)
 
+    # manually compute the similarity to a few documents
+    with open(os.path.join(CACHE_DIR, 'ediscovery_cache', dataset_id, 'vectorizer'), 'rb') as fh:
+        vect = pickle.load(fh)
+    print(vect)
+    X_tmp = []
+    comp_document_id = 2365444
+    for document_id in [query_document_id, comp_document_id]:
+        X_tmp.append(os.path.join(ds_pars['data_dir'],
+                                  input_ds.loc[query_document_id].file_path))
+    X_tmp = vect.transform(X_tmp)
+    print(X_tmp)
+    
+
+    # compute semantic search
+    pars = dict(parent_id=lsi_id,
+                query_document_id=query_document_id)
+    data = app.post_check(V01 + "/search/", json=pars)
+    df_s = pd.DataFrame(data['data']).set_index('document_id')
+    df_s = df_s.merge(input_ds, how='left', left_index=True, right_index=True)
+
+    # check that providing the query_document_id or the same document as text
+    # produces the same results
+    with open(os.path.join(ds_pars['data_dir'],
+                           input_ds.loc[query_document_id].file_path), 'rt') as fh:
+        query_txt = fh.read()
+    pars = dict(parent_id=lsi_id,
+                query=query_txt)
+    data = app.post_check(V01 + "/search/", json=pars)
+    df_s_txt = pd.DataFrame(data['data']).set_index('document_id')
+    df_s_txt = df_s_txt.merge(input_ds, how='left', left_index=True, right_index=True)
+    df_s_txt.loc[query_document_id].score == 1.0
+    df_s_txt = df_s_txt[df_s_txt.index != query_document_id]
+    assert_equal(df_s.score.values, df_s_txt.score.values)
+
     df_m = df_s.merge(df_n, how='left', left_index=True, right_index=True,
                       suffixes=('_s', '_n'))
-    print(df_m)
-    print(ds_pars)
-    df_m.to_pickle('/tmp/search_ex.pkl')
+    #print(df_m)
+    #df_m.to_pickle('/tmp/search_ex.pkl')
     #assert pearsonr(df_m.score_s.values, df_m.score_n.values)[0] > 1.0 
+
+    # check that query document is on average closer to the documents of its class
+    query_category = input_ds.loc[query_document_id].category
+    print(df_s[df_s.category == query_category].score.mean())
+    print(df_s[df_s.category != query_category].score.mean())
+
+    print(ds_pars)
