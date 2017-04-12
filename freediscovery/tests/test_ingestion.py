@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os.path
 from numpy.testing import assert_equal, assert_array_equal
 from pandas.util.testing import assert_frame_equal
@@ -33,7 +28,7 @@ def test_ingestion_base_dir():
     dbi = DocumentIndex.from_folder(data_dir)
     data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
     assert data_dir_res == os.path.normpath(data_dir)
-    assert_array_equal(db.columns.values, ['file_path', 'internal_id'])
+    assert_array_equal(db.columns.values, ['file_path', 'internal_id', 'document_id'])
     assert_array_equal(db.file_path.values, fnames_in)
     assert_array_equal([os.path.normpath(os.path.join(data_dir_res, el))
                         for el in filenames],
@@ -50,7 +45,7 @@ def test_search_2fields():
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [3, 1, 2])
     assert_array_equal(sorted(sres.columns),
-                       sorted(['internal_id', 'file_path']))
+                       sorted(['internal_id', 'file_path', 'document_id']))
 
     # make sure that if we have some additional field,
     # we still use the internal_id
@@ -60,12 +55,13 @@ def test_search_2fields():
     sres = dbi.search(query)
     assert_equal(sres.internal_id.values, [1, 2, 1])
     assert_array_equal(sorted(sres.columns),
-                       sorted(['internal_id', 'file_path']))
+                       sorted(['internal_id', 'file_path', 'document_id']))
 
     sres = dbi.search(query, drop=False)
     assert_equal(sres.internal_id.values, [1, 2, 1])
     assert_array_equal(sorted(sres.columns),
-                       sorted(['internal_id', 'file_path', 'a', 'b']))
+                       sorted(['internal_id', 'file_path', 'document_id',
+                               'a', 'b']))
 
     query = pd.DataFrame([{'file_path': "0.7.6.28637.txt"},
                           {'file_path': "0.7.47.117435.txt"}])
@@ -243,9 +239,7 @@ def test_ingestion_metadata(n_fields):
     dbi = DocumentIndex.from_list(metadata)
     data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
 
-    if n_fields == 1:
-        columns_ref = sorted(['file_path', 'internal_id'])
-    elif n_fields == 2:
+    if n_fields in [1, 2]:
         columns_ref = sorted(['file_path', 'document_id', 'internal_id'])
     elif n_fields == 3:
         columns_ref = sorted(['file_path', 'document_id', 'rendition_id',

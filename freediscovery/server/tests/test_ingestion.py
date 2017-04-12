@@ -1,31 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+import os.path
 
-import os
 import pytest
-import json
-import itertools
-from unittest import SkipTest
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal
+import pandas as pd
+from numpy.testing import assert_equal
 
-from ...utils import dict2type, sdict_keys
-from ...ingestion import DocumentIndex
-from ...exceptions import OptionalDependencyMissing, NotFound
-from ...tests.run_suite import check_cache
-from .base import (parse_res, V01, app, app_notest, get_features,
-               email_data_dir, get_features_cached)
+from freediscovery.utils import dict2type, sdict_keys
+from .base import (parse_res, V01, app, get_features, data_dir,
+                   get_features_cached)
+from freediscovery.exceptions import (NotFound)
 
 
-#=============================================================================#
+# ============================================================================#
 #
 #                     Feature extraction
 #
-#=============================================================================#
+# ============================================================================#
 
 def test_get_features(app):
     dsid, pars, _ = get_features_cached(app)
@@ -130,3 +122,38 @@ def test_get_search_filenames(app):
     assert [_filter_dict(row, 'document_id') for row in data] == file_path_obj
     assert_equal(np.asarray([row['internal_id'] for row in data])**2,
                  [row['document_id'] for row in data])
+
+
+def test_append_documents(app):
+    method = V01 + "/feature-extraction/"
+    data = app.post_check(method, json={'data_dir': data_dir})
+    dsid = data['id']
+    method += dsid
+    app.post_check(method)
+
+    data = app.get_check(method)
+    filenames = data['filenames']
+
+    # check that the file_path is correctly returned by the id-mapping
+    data = app.post_check(method + '/id-mapping',
+                          json={'return_file_path': False})
+    assert dict2type(data['data'][0]) == \
+        {'document_id': 'int', 'internal_id': 'int'}
+
+    data = app.post_check(method + '/id-mapping',
+                          json={'return_file_path': True})
+    assert dict2type(data['data'][0]) == \
+        {'document_id': 'int', 'file_path': 'str', 'internal_id': 'int'}
+    db_old = data['data']
+
+    dataset_definition = [{'file_path': os.path.join(data_dir, row['file_path']),
+                           'document_id': idx + 10} 
+                          for idx, row in enumerate(db_old)]
+
+    app.post_check(method + '/append', json={'dataset_definition': dataset_definition})
+    data = app.post_check(method + '/id-mapping',
+                          json={'return_file_path': True})
+
+    db_old = pd.DataFrame(db_old)
+    db_new = pd.DataFrame(data['data'])
+    assert db_old.shape[0]*2 == db_new.shape[0]

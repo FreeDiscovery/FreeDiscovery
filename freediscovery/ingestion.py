@@ -188,6 +188,10 @@ class DocumentIndex(object):
                          if key != 'file_path']
         else:
             base_keys = list(self.data.columns)
+            if 'file_path' not in db.columns:
+                db['file_path'] = self.filenames_
+                base_keys += ['file_path']
+
         if res is not None:
             res_keys = [key for key in res
                         if key not in base_keys]
@@ -258,7 +262,7 @@ class DocumentIndex(object):
         return out
 
     @classmethod
-    def from_list(cls, metadata):
+    def from_list(cls, metadata, data_dir=None, internal_id_offset=0):
         """ Create a DocumentIndex from a list of dictionaries, for instance
 
         .. code:: javascript
@@ -275,6 +279,11 @@ class DocumentIndex(object):
             a list of dictionaries with keys
             ['file_path', 'document_id', 'rendition_id']
             describing the data ingestion (this overwrites data_dir)
+        data_dir : str
+            path to an exisitng data dir
+        internal_id_offset : int
+            the offset for internal_id (used when appending files
+            to an existing dataset)
 
         Returns
         -------
@@ -285,7 +294,8 @@ class DocumentIndex(object):
         metadata = sorted(metadata, key=lambda x: x['file_path'])
         filenames = [el['file_path'] for el in metadata]
 
-        data_dir = cls._detect_data_dir(filenames)
+        if data_dir is None:
+            data_dir = cls._detect_data_dir(filenames)
 
         if not filenames:  # no files were found
             raise WrongParameter('No files to process were found!')
@@ -294,8 +304,11 @@ class DocumentIndex(object):
         # modify the metadata list inplace
         for idx, (db_el, file_path) in enumerate(zip(metadata, filenames_rel)):
             db_el['file_path'] = file_path
-            db_el['internal_id'] = idx
+            db_el['internal_id'] = idx + internal_id_offset
         db = pd.DataFrame(metadata)
+
+        if 'document_id' not in db:
+            db['document_id'] = db.internal_id
 
         res = cls(data_dir, db)
         res.filenames_ = filenames_rel
@@ -340,6 +353,9 @@ class DocumentIndex(object):
               for idx, file_path in enumerate(filenames_rel)]
 
         db = pd.DataFrame(db)
+
+        if 'document_id' not in db:
+            db['document_id'] = db.internal_id
 
         res = cls(data_dir, db)
         res.filenames_ = filenames_rel

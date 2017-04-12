@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from marshmallow import Schema as BaseSchema, fields
 
 
@@ -54,7 +49,7 @@ class IDSchema(Schema):
 
 
 class DocumentIndexNestedSchema(Schema):
-    data = fields.Nested(DocumentIndexFullSchema, many=True, required=True)
+    data = fields.Nested(DocumentIndexFullSchema, many=True)
 
 
 class _DatasetDefinition(Schema):

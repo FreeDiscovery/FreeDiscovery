@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os.path
-import re
 import shutil
-import numpy as np
-import pandas as pd
-
 import pickle
 import warnings
 
+import numpy as np
+import pandas as pd
+import scipy.sparse
 from sklearn.externals import joblib
 from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.preprocessing import normalize
 from sklearn.pipeline import make_pipeline
 
+from ._version import __version__
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
 from .ingestion import DocumentIndex
@@ -81,7 +77,6 @@ class FeatureVectorizer(object):
     _wrapper_type = "vectorizer"
 
     def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
-        self.data_dir = None
         self.verbose = verbose
 
         self._filenames = None
@@ -96,8 +91,9 @@ class FeatureVectorizer(object):
         if dsid is not None:
             dsid_dir = os.path.join(self.cache_dir, dsid)
             if not os.path.exists(dsid_dir):
-                raise DatasetNotFound('Dataset {} ({}) not found in {}!'.format(
-                                            dsid, type(self).__name__, cache_dir))
+                raise DatasetNotFound('Dataset '
+                                      '{} ({}) not found in {}!'.format(
+                                       dsid, type(self).__name__, cache_dir))
         else:
             dsid_dir = None
         self.dsid_dir = dsid_dir
@@ -110,14 +106,14 @@ class FeatureVectorizer(object):
     @property
     def filenames_(self):
         """ Lazily load the list of filenames if needed """
-        if self._filenames is None:
+        if not hasattr(self, '_filenames') or self._filenames is None:
             with open(os.path.join(self.dsid_dir, 'filenames'), 'rb') as fh:
                 self._filenames = pickle.load(fh)
         return self._filenames
 
     @property
     def pars_(self):
-        if self._pars is None:
+        if not hasattr(self, '_pars') or self._pars is None:
             # Load parameters from disk
             dsid = self.dsid
             if self.cache_dir is None:
@@ -131,7 +127,7 @@ class FeatureVectorizer(object):
 
     @property
     def vect_(self):
-        if self._vect is None:
+        if not hasattr(self, '_vect') or self._vect is None:
             mid = self.dsid
             mid_dir = os.path.join(self.cache_dir, mid)
             if not os.path.exists(mid_dir):
@@ -168,7 +164,8 @@ class FeatureVectorizer(object):
                    parse_email_headers=False):
         """Initalize the features extraction.
 
-        See sklearn.feature_extraction.text for a detailed description of the input parameters
+        See sklearn.feature_extraction.text for a detailed description
+        of the input parameters
 
         Parameters
         ----------
@@ -229,13 +226,13 @@ class FeatureVectorizer(object):
                              'must be provided')
         data_dir = db.data_dir
 
-        self.data_dir = data_dir
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
 
         if not isinstance(ngram_range, tuple) \
            and not isinstance(ngram_range, list):
-            raise WrongParameter('not a valid input ngram_range={}: should be a list or a typle!'.format(ngram_range))
+            raise WrongParameter('not a valid input ngram_range='
+                                 '{}: should be a list or a typle!'.format(ngram_range))
 
         if not len(ngram_range) == 2:
             raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
@@ -275,7 +272,8 @@ class FeatureVectorizer(object):
                 'binary': binary, 'use_hashing': use_hashing,
                 'norm': norm, 'min_df': min_df, 'max_df': max_df,
                 'parse_email_headers': parse_email_headers,
-                'type': type(self).__name__}
+                'type': type(self).__name__,
+                'freediscovery_version': __version__}
         self._pars = pars
         with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
             pickle.dump(self._pars, fh)
@@ -325,6 +323,7 @@ class FeatureVectorizer(object):
         """ Return the absolute path to filenames """
         data_dir = self.pars_['data_dir']
         return [os.path.join(data_dir, el) for el in self.filenames_]
+
 
     def transform(self):
         """
@@ -416,6 +415,58 @@ class FeatureVectorizer(object):
             os.remove(processing_lock)
         _touch(os.path.join(dsid_dir, 'processing_finished'))
 
+    def append(self, dataset_definition):
+        """ Add some files to the dataset
+
+        This is by no mean an efficient operation, processing all the files
+        at once might be more suitable in most occastions.
+        """
+        from .lsi import _LSIWrapper
+        dsid_dir = self.dsid_dir
+        db_old = self.db_.data
+        internal_id_offset = db_old.internal_id.max()
+        data_dir = self.pars_['data_dir']
+        db_extra = DocumentIndex.from_list(dataset_definition, data_dir,
+                                           internal_id_offset + 1)
+        db_new = db_extra.data
+        vect = self.vect_
+
+        filenames_abs = [os.path.join(data_dir, el)
+                         for el in db_new.file_path.values]
+
+        # write down the new features file
+        X_new = vect.transform(filenames_abs)
+        X_old = self._load_features()
+        X = scipy.sparse.vstack((X_new, X_old))
+        joblib.dump(X, os.path.join(dsid_dir, 'features'))
+
+        # write down the new filenames file
+        filenames_old = list(self.filenames_)
+        filenames_new = list(db_new.file_path.values)
+        filenames = filenames_old + filenames_new
+        with open(os.path.join(dsid_dir, 'filenames'), 'wb') as fh:
+            pickle.dump(filenames, fh)
+        del self._filenames
+        del db_new['file_path']
+
+        # write down the new database file
+        db = pd.concat((db_old, db_new))
+        db.to_pickle(os.path.join(dsid_dir, 'db'))
+        del self._db
+
+        # write down the new pars file
+        self._pars = self.pars_
+        self._pars['n_samples'] = len(filenames)
+        with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
+            pickle.dump(self._pars, fh)
+
+        # find all exisisting LSI models and update them as well
+        if os.path.exists(os.path.join(dsid_dir, 'lsi')):
+            for lsi_id in os.listdir(os.path.join(dsid_dir, 'lsi')):
+                lsi_obj = _LSIWrapper(cache_dir=self.cache_dir,
+                                      mid=lsi_id)
+                lsi_obj.append(X_new)
+
     @property
     def n_features_(self):
         """ Number of features of the vecotorizer"""
@@ -453,7 +504,6 @@ class FeatureVectorizer(object):
         """ Agregate features loaded as separate files features-<number>
         into a single file features"""
         from glob import glob
-        import scipy.sparse
         out = []
         for filename in sorted(glob(os.path.join(self.dsid_dir, 'features-*[0-9]'))):
             ds = joblib.load(filename)
@@ -464,7 +514,7 @@ class FeatureVectorizer(object):
     @property
     def db_(self):
         """ DatasetIndex """
-        if self._db is None:
+        if not hasattr(self, '_db') or self._db is None:
             dsid = self.dsid
             if self.cache_dir is None:
                 raise InitException('cache_dir is None: cannot load from cache!')
@@ -499,7 +549,7 @@ class FeatureVectorizer(object):
             row = {"id": dsid}
             self.dsid = dsid
             try:
-                pars = self._load_pars()
+                pars = self.pars_
             except:
                 # traceback.print_exc()
                 continue

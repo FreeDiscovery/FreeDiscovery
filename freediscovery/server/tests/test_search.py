@@ -172,7 +172,6 @@ def test_search_consistency(app):
     assert_allclose(cosine_similarity(X_tmp[[0]], X_tmp[[1]]),
                     df_s.loc[comp_document_id].score)
 
-
     # check that providing the query_document_id or the same document as text
     # produces the same results
     with open(os.path.join(ds_pars['data_dir'],
@@ -230,3 +229,20 @@ def test_search_eq_categorization(app):
     # The results do not appear to be exactly matching (probably due to tie-breaking)
     assert (df_c.index == df_s.index).sum() / df_s.shape[0] > 0.995
     assert_allclose(df_c.score.values, df_s.score.values)
+
+
+def test_ingestion_no_document_id_provided(app):
+    """ Test what happens if no document id are provided during ingestion
+    We use search merely because it's the simplest processing that can be done
+    in a single API call"""
+    data_dir = os.path.dirname(__file__)
+    data_dir = os.path.join(data_dir, "..", "..", "data", "ds_001", "raw")
+    method = V01 + "/feature-extraction/"
+    data = app.post_check(method, json={'data_dir': data_dir})
+    dsid = data['id']
+    app.post_check(method + dsid)
+
+    data = app.post_check(V01 + "/search/", json={'parent_id': dsid,
+                                                  'query': 'test'})
+    assert dict2type(data['data'][0]) == {'score': 'float',
+                                          'document_id': 'int'}

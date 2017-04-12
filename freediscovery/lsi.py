@@ -102,6 +102,22 @@ class _LSIWrapper(_BaseWrapper):
 
         return lsi, exp_var
 
+    def append(self, X):
+        """ Add new documents to an existing LSI model
+
+        Parameters
+        ----------
+        X : scipy.sparse CSR array
+          the additional data to add to the index
+
+        """
+        mid_dir = os.path.join(self.model_dir, self.mid)
+        lsi = joblib.load(os.path.join(mid_dir, 'model'))
+        Y_old = joblib.load(os.path.join(mid_dir, 'data'))
+        Y_new = lsi.transform_lsi_norm(X)
+        Y = np.vstack((Y_old, Y_new))
+        joblib.dump(Y, os.path.join(mid_dir, 'data'))
+
 
 # The below class is identical to TruncatedSVD,
 # the only reason is the we need to save the Sigma matrix when

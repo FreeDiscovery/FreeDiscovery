@@ -243,8 +243,7 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
 
     if has_categories:
         mask = di.data['is_train']
-        training_set = di.render_dict(di.data[mask],
-                             return_file_path=True)
+        training_set = di.render_dict(di.data[mask], return_file_path=True)
         training_set = filter_dict(training_set, valid_fields)
         if name == '20newsgroups_3categories':
             # make a smaller training set
