@@ -615,7 +615,7 @@ class DBSCANClusteringApi(Resource):
                'min_samples': wfields.Int(missing=10),
                # this corresponds approximately to threashold = 0.5
                'min_similarity': wfields.Number(missing=0.5),
-               'metric': wfields.Str(missing='jaccard_norm')})
+               'metric': wfields.Str(missing='cosine')})
     @marshal_with(IDSchema())
     def post(self, **args):
         from math import sqrt
