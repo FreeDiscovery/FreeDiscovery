@@ -75,6 +75,25 @@ def test_lsi_append_documents():
     assert_equal(X_lsi_new[:n_samples], X_lsi_new[:n_samples])
 
 
+def test_lsi_remove_documents():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir)
+    fe.transform()
+
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
+    lsi_res, exp_var = lsi.fit_transform(n_components=2)
+    X_lsi = lsi._load_features()
+
+    docs = DocumentIndex.from_folder(data_dir).data
+    dataset_definition = docs[['document_id']].to_dict(orient='records')
+    fe.remove([dataset_definition[2], dataset_definition[4]])
+
+    X_lsi_new = lsi._load_features()
+    assert X_lsi_new.shape[0] == X_lsi.shape[0] - 2
+
+
 def test_lsi_book_example():
     """ LSI example taken from the "Information retrieval" (2004)
     book by Grossman & Ophir

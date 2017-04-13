@@ -10,7 +10,7 @@ from apispec import APISpec
 
 from .resources import (FeaturesApi, FeaturesApiElement,
                         FeaturesApiElementMappingNested,
-                        FeaturesApiAppend,
+                        FeaturesApiAppend, FeaturesApiRemove,
                         ModelsApi, ModelsApiElement, ModelsApiPredict,
                         LsiApi, LsiApiElement,
                         ClusteringApiElement, KmeanClusteringApi,
@@ -80,6 +80,7 @@ def fd_app(cache_dir):
          (FeaturesApiElement              , '/feature-extraction/<dsid>')     ,
          (FeaturesApiElementMappingNested , '/feature-extraction/<dsid>/id-mapping'),
          (FeaturesApiAppend               , '/feature-extraction/<dsid>/append') ,
+         (FeaturesApiRemove               , '/feature-extraction/<dsid>/delete') ,
          (ModelsApi                       , '/categorization/')               ,
          (ModelsApiElement                , '/categorization/<mid>')          ,
          (ModelsApiPredict                , '/categorization/<mid>/predict')  ,

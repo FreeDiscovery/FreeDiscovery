@@ -132,7 +132,6 @@ def test_append_documents(app):
     app.post_check(method)
 
     data = app.get_check(method)
-    filenames = data['filenames']
 
     # check that the file_path is correctly returned by the id-mapping
     data = app.post_check(method + '/id-mapping',
@@ -157,3 +156,27 @@ def test_append_documents(app):
     db_old = pd.DataFrame(db_old)
     db_new = pd.DataFrame(data['data'])
     assert db_old.shape[0]*2 == db_new.shape[0]
+
+def test_remove_documents(app):
+    method = V01 + "/feature-extraction/"
+    data = app.post_check(method, json={'data_dir': data_dir})
+    dsid = data['id']
+    method += dsid
+    app.post_check(method)
+
+    data = app.get_check(method)
+
+    data = app.post_check(method + '/id-mapping')
+    db_old = pd.DataFrame(data['data'])
+
+    dataset_definition = db_old.iloc[[2, 4]][['document_id']].to_dict(orient='records')
+    for row in dataset_definition:
+        # convert int64 to int
+        row['document_id'] = int(row['document_id'])
+
+    app.post_check(method + '/delete', json={'dataset_definition': dataset_definition})
+
+    data = app.post_check(method + '/id-mapping')
+
+    db_new = pd.DataFrame(data['data'])
+    assert db_old.shape[0] - 2 == db_new.shape[0]

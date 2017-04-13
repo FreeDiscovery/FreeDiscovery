@@ -219,9 +219,13 @@ class FeaturesApiElementMappingNested(Resource):
 class FeaturesApiAppend(Resource):
     @doc(description=dedent("""Add new documents to an existing processed dataset.
          This will also automatically update the LSI model if any
-         is present.
-         Warning: all clustering, duplicate detection models associated
-         with this dataset will be removed.
+         is present. Raw documents on disk are not affected.
+
+         This operation cannot be undone.
+
+         Warning: all categorization, clustering, duplicate detection and
+         email threading models associated with this dataset will be removed and
+         need to be re-trained.
 
          **Parameters**
           - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional.
@@ -233,6 +237,30 @@ class FeaturesApiAppend(Resource):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         fe.append(args['dataset_definition'])
         return {}
+
+
+class FeaturesApiRemove(Resource):
+    @doc(description=dedent("""Remove documents from an existing processed dataset.
+         This will also automatically update the LSI model if any
+         is present.  Raw documents on disk are not affected.
+
+         This operation cannot be undone.
+
+         Warning: all categorization, clustering, duplicate detection and
+         email threading models associated with this dataset will be removed and
+         need to be re-trained.
+
+         **Parameters**
+          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional.
+          """))
+    @use_args({'dataset_definition': wfields.Nested(_DatasetDefinition, many=True,
+                                                    required=True)})
+    @marshal_with(EmptySchema())
+    def post(self, dsid, **args):
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe.remove(args['dataset_definition'])
+        return {}
+
 
 # =========================================================================== #
 #                 LSI decomposition

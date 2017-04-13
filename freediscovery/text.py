@@ -324,7 +324,6 @@ class FeatureVectorizer(object):
         data_dir = self.pars_['data_dir']
         return [os.path.join(data_dir, el) for el in self.filenames_]
 
-
     def transform(self):
         """
         Run the feature extraction
@@ -394,7 +393,7 @@ class FeatureVectorizer(object):
                 res = normalize(res, norm=pars['norm'], copy=False)
             else:
                 # scale feature to [0, 1]
-                # this is necessary e.g. by SVM
+                # this is necessary e.g. for SVM
                 # and does not hurt anyway
                 res /= res.max()
 
@@ -416,7 +415,7 @@ class FeatureVectorizer(object):
         _touch(os.path.join(dsid_dir, 'processing_finished'))
 
     def append(self, dataset_definition):
-        """ Add some files to the dataset
+        """ Add some documents to the dataset
 
         This is by no mean an efficient operation, processing all the files
         at once might be more suitable in most occastions.
@@ -466,6 +465,66 @@ class FeatureVectorizer(object):
                 lsi_obj = _LSIWrapper(cache_dir=self.cache_dir,
                                       mid=lsi_id)
                 lsi_obj.append(X_new)
+
+        # remove all trained models for this dataset
+        for model_type in ['categorizer', 'dupdet', 'cluster', 'threading']:
+            if os.path.exists(os.path.join(dsid_dir, model_type)):
+                for mid in os.listdir(os.path.join(dsid_dir, model_type)):
+                    shutil.rmtree(os.path.join(dsid_dir, model_type, mid))
+
+    def remove(self, dataset_definition):
+        """ Remove some documents from the dataset
+
+        This is by no mean an efficient operation, processing all the files
+        at once might be more suitable in most occastions.
+        """
+        from .lsi import _LSIWrapper
+        dsid_dir = self.dsid_dir
+        db_old = self.db_.data
+        query = pd.DataFrame(dataset_definition)
+        res = self.db_.search(query, drop=False)
+        del_internal_id = res.internal_id.values
+        internal_id_mask = ~np.in1d(db_old.internal_id.values, del_internal_id)
+
+        # write down the new features file
+        X_old = self._load_features()
+        X = X_old[internal_id_mask, :]
+        joblib.dump(X, os.path.join(dsid_dir, 'features'))
+
+        # write down the new filenames file
+        filenames = list(np.array(self.filenames_)[internal_id_mask])
+        with open(os.path.join(dsid_dir, 'filenames'), 'wb') as fh:
+            pickle.dump(filenames, fh)
+        del self._filenames
+
+        # write down the new database file
+        db = db_old.iloc[internal_id_mask].copy()
+        # create a new contiguous internal_id
+        db['internal_id'] = np.arange(db.shape[0], dtype='int')
+        db.to_pickle(os.path.join(dsid_dir, 'db'))
+        del self._db
+
+        # write down the new pars file
+        self._pars = self.pars_
+        self._pars['n_samples'] = len(filenames)
+        with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
+            pickle.dump(self._pars, fh)
+
+        # find all exisisting LSI models and update them as well
+        if os.path.exists(os.path.join(dsid_dir, 'lsi')):
+            for lsi_id in os.listdir(os.path.join(dsid_dir, 'lsi')):
+                _fname = os.path.join(dsid_dir, 'lsi', lsi_id, 'data')
+                if os.path.exists(_fname):
+                    X_lsi_old = joblib.load(_fname)
+                    X_lsi = X_lsi_old[internal_id_mask]
+                    joblib.dump(X_lsi, _fname)
+
+        # remove all trained models for this dataset
+        for model_type in ['categorizer', 'dupdet', 'cluster', 'threading']:
+            if os.path.exists(os.path.join(dsid_dir, model_type)):
+                for mid in os.listdir(os.path.join(dsid_dir, model_type)):
+                    shutil.rmtree(os.path.join(dsid_dir, model_type, mid))
+
 
     @property
     def n_features_(self):

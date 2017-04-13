@@ -14,9 +14,7 @@ or by downloading the latest stable version from the [Github releases page](http
 
  1. Download and install [Miniconda](http://conda.pydata.org/miniconda.html) 64 bit for Python 3.5 (a cross-platform package manager for Python & R)
 
- 2. To install the optional simhash-py dependency, a g++ (GCC >= 4.8) compiler is required on Linux (on Windows it is not installed). 
- 
- 3. A virtual environment with all the dependencies can be setup with the following commands,
+ 2. A virtual environment with all the dependencies can be setup with the following commands,
  
           cd FreeDiscovery
           conda config --append channels conda-forge
@@ -25,30 +23,19 @@ or by downloading the latest stable version from the [Github releases page](http
           source activate freediscovery-env   # on Linux/Mac OS X
           # or "activate freediscovery-env"   # on Windows 
 
-          # (optional, Linux only) requires g++ compiler
-          pip install -r build_tools/requirements_pip_comp.txt 
+          # (optional dependencies, Linux only) 
+          conda install -r build_tools/requirements_pip_comp.txt 
 
           python setup.py develop
  
- 4. [optional] The test suite can then be run with,
+ 3. [optional] The test suite can then be run with,
  
           python -c "import freediscovery.tests as ft; ft.run()"
 
 
 **Note 1**: all of the above commands (except the installation of the compiler) should be run without `sudo` and with regular user permissions.
 
-**Note 2**: for convenience, running steps 2 and 3 can be automated:
-
-- on Linux and Mac OS X:
-
-          bash build_tools/conda_setup.sh
-
-- on Windows by double-clicking on `build_tools/conda_setup.bat` in files explorer, or running,
-
-          cd build_tools
-          conda_setup.bat
-
-**Note 3**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python (3.5 or 3.6), and install the list of dependencies (split between `requirements.txt` and `scripts/requirements_pip*.txt` under `build_tools/`) with `pip`.
+**Note 2**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python (3.5 or 3.6), and install the list of dependencies (split between `requirements.txt` and `scripts/requirements_pip*.txt` under `build_tools/`) with `pip`.
 
 
       
