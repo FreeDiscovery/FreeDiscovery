@@ -196,11 +196,18 @@ def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     inverse : bool
       perform the inverse de-normalization operation
     """
-    valid_metrics = ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']
+    valid_metrics = ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm',
+                     'cosine-positive']
     if metric not in valid_metrics:
         raise ValueError('metric {} not supported, must be in {}'.format(metric, valid_metrics))
     if metric == 'cosine':
         return x
+    elif metric == 'cosine-positive':
+        if isinstance(x, (int, float)):
+            return max(x, 0.0)
+        else:
+            return np.fmax(x, 0.0)
+
     if metric.startswith('jaccard'):
         if not inverse:
             x = cosine2jaccard_similarity(x)

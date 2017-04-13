@@ -59,7 +59,7 @@ def test_api_lsi(app):
 
 def _api_categorization_wrapper(app, solver, cv, n_categories,
                                 n_categories_train=None, max_results=None,
-                                subset='all'):
+                                subset='all', metric='cosine'):
     cv = (cv == 'cv')
 
     if 'CIRCLECI' in os.environ and cv == 1 and solver in ['LinearSVC',
@@ -137,6 +137,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
     else:
         json_data = {}
     json_data['subset'] = subset
+    json_data['metric'] = metric
 
     data = app.get_check(method, json=json_data)
     data = data['data']
@@ -226,3 +227,8 @@ def test_api_categorization_max_results(app):
 @pytest.mark.parametrize("subset", ['all', 'test', 'train'])
 def test_api_categorization_3cat(app, subset):
     _api_categorization_wrapper(app, 'LogisticRegression', '', 2, subset=subset)
+
+
+def test_api_categorization_cosine_positive(app):
+    _api_categorization_wrapper(app, 'NearestNeighbor', '', 2, metric='cosine-positive')
+

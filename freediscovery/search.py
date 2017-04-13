@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 
 from sklearn.metrics import pairwise_distances
@@ -111,7 +106,7 @@ class Search(object):
         """
         self._fit_X = X
 
-    def search(self, text, metric='jaccard_norm'):
+    def search(self, text, metric='cosine'):
         """
         Perform the search operation
 

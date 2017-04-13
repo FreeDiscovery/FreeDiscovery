@@ -406,7 +406,7 @@ class ModelsApiPredict(Resource):
              - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
              - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
-             - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
+             - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
              - `min_score` : filter out results below a similarity threashold
              - `subset`: apply prediction to a document subset. Must be one of ['all', 'train', 'test']. Default: 'test'.
              - `batch_id`: retrieve a given subset of scores (-1 to retrieve all). Default: 0
@@ -535,7 +535,7 @@ class KmeanClusteringApi(Resource):
     @doc(description=dedent("""
            Compute K-mean clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for feature extraction include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for feature extraction include, `use_idf=0, sublinear_tf=1, binary=0`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -560,14 +560,14 @@ class BirchClusteringApi(Resource):
     @doc(description=dedent("""
            Compute birch clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `use_idf=0, sublinear_tf=1, binary=0`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
             - `n_clusters`: the number of clusters or -1 to use hierarchical clustering (default: -1)
             - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html). Increasing this value would increase the hierarchical tree depth (and the number of clusters).
             - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively. Decreasing this value would increase the number of clusters.
-            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
+            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
            """))
     @use_args({
             'parent_id': wfields.Str(required=True),
@@ -603,12 +603,12 @@ class DBSCANClusteringApi(Resource):
     @doc(description=dedent("""
            Compute clustering (DBSCAN)
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for the data ingestion also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for the data ingestion also include, `use_idf=0, sublinear_tf=1, binary=0`.
 
            **Parameters**
              - `parent_id`: `dataset_id` or `lsi_id`
              - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html)
-             - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
+             - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
              - `min_samples`: (optional) int The number of samples (or total weight) in a neighborhood for a point to be considered as a core point. This includes the point itself.
             """))
     @use_args({'parent_id': wfields.Str(required=True),
@@ -639,7 +639,7 @@ class ClusteringApiElement(Resource):
 
            **Parameters**
             - `n_top_words`: keep only most relevant `n_top_words` words
-            - `metric` : The similarity metric in ['cosine', 'jaccard'].
+            - `metric` : The similarity metric in ['cosine', 'jaccard', 'cosine-positive'].
             - `return_optimal_sampling` : Instead of cluster results, the optimal sampling results will be returned (with no cluster labels). This option is only valid with Birch algorithm. Note that optimal sampling cannot return more samples than the subclusters in the birch clustering results (default: false)
             - `sampling_min_similarity` : Similarity threashold used by smart sampling. Decreasing this value would result in more sampled documents. Default: 1.0 (i.e. use the full cluster hierarichy).
             - `sampling_min_coverage` : Minimal coverage requirement in [0, 1] range. Increasing this value would result in a larger number of samples. (default: 0.9)
@@ -791,7 +791,7 @@ class DupDetectionApiElement(Resource):
             - `distance` : int, default=2 Maximum number of differnet bits in the simhash (Simhash method only)
             - `n_rand_lexicons` : int, default=1 number of random lexicons used for duplicate detection (I-Match method only)
             - `rand_lexicon_ratio` : float, default=0.7 ratio of the vocabulary used in random lexicons (I-Match method only)
-            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
+            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
           """))
     @use_args({'distance': wfields.Int(),
                'n_rand_lexicons': wfields.Int(),
@@ -1066,7 +1066,7 @@ class SearchApi(Resource):
             - `parent_id` : the id of the previous processing step (either `dataset_id` or `lsi_id`)
             - `query` : the seach query. Either `query` or `query_document_id` must be provided.
             - `query_document_id` : the id of the document used as the search query. Either `query` or `query_document_id` must be provided.
-            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard'].
+            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
             - `min_score` : filter out results below a similarity threashold
             - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']

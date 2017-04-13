@@ -34,15 +34,14 @@ from .base import (parse_res, V01, app, app_notest, get_features_cached,
                           ('dbscan', True, None, False)])
 def test_api_clustering(app, model, use_lsi, n_clusters, optimal_sampling):
 
+    dsid, lsi_id, _, _ = get_features_lsi_cached(app)
     if use_lsi:
-        dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
         parent_id = lsi_id
     else:
-        dsid, _, _ = get_features_cached(app, hashed=False)
         lsi_id = None
         parent_id = dsid
 
-    pars = { 'parent_id': parent_id, }
+    pars = {'parent_id': parent_id, }
 
     if model == 'birch' and n_clusters <= 0:
         is_hierarchical = True
@@ -94,3 +93,16 @@ def test_api_clustering(app, model, use_lsi, n_clusters, optimal_sampling):
     #            sorted(['n_leaves', 'n_components', 'children'])
 
     app.delete_check(url)
+
+
+def test_clustering_birch_cosine_positive(app):
+    dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
+    parent_id = lsi_id
+    url = V01 + "/clustering/birch"
+    pars = {'min_similarity': 0.5, 'parent_id': parent_id}
+    data = app.post_check(url, json=pars)
+    mid = data['id']
+    url += '/{}'.format(mid)
+    with pytest.raises(ValueError):
+        data = app.get_check(url, query_string={'metric': 'cosine-p'})
+    data = app.get_check(url, query_string={'metric': 'cosine-positive'})

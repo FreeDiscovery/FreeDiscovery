@@ -1,17 +1,9 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-import os.path
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 import pytest
 from sklearn.preprocessing import normalize
-
-from freediscovery.text import FeatureVectorizer
-from .run_suite import check_cache
 
 from freediscovery.metrics import (ratio_duplicates_score,
                                    f1_same_duplicates_score,
@@ -65,6 +57,7 @@ def test_cosine2jaccard():
     S_cos2 = jaccard2cosine_similarity(S_jac)
     assert_allclose(S_cos2, S_cos)
 
+
 @pytest.mark.parametrize('metric', ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']) 
 def test_cosine_jaccard_norm(metric):
     from freediscovery.metrics import _scale_cosine_similarity
@@ -77,6 +70,15 @@ def test_cosine_jaccard_norm(metric):
         assert_allclose(S_res, 0.5, rtol=0.1)
     S_res2 = _scale_cosine_similarity(S_res, metric=metric, inverse=True)
     assert_allclose(S_res2, S_cos, rtol=0.1)
+
+
+def test_cosine_positive():
+    from freediscovery.metrics import _scale_cosine_similarity
+
+    S_res = _scale_cosine_similarity(0.5, metric='cosine-positive')
+    assert S_res == 0.5
+    S_res = _scale_cosine_similarity(-0.5, metric='cosine-positive')
+    assert S_res == 0
 
 
 def test_recall_at_k_score():

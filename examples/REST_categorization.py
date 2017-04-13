@@ -146,7 +146,7 @@ if __name__ == '__main__':
         print("\n3.c Categorize the complete dataset with this model")
         url = BASE_URL + '/categorization/{}/predict'.format(mid)
         print(" GET", url)
-        res = requests.get(url).json()
+        res = requests.get(url, json={'subset': 'test'}).json()
 
         data = []
         for row in res['data']:

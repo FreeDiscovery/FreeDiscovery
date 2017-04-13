@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 import os.path
 import sys
@@ -241,7 +236,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
 
         return labels_
 
-    def _get_htree(self, X=None, metric='jaccard_norm'):
+    def _get_htree(self, X=None, metric='cosine'):
         km = self.km
         method_name = type(km).__name__
         if method_name == 'AgglomerativeClustering':

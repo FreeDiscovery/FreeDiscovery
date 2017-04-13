@@ -20,5 +20,5 @@ A more detailed description of different metrics can be found below,
   For positive vectors, the results are in the ``[0, 1]`` range, or in general in the ``[-1/3, 1]`` range. ``jaccard_similarity(A, B) = 0.54``.
   **Note:** the exact jaccard similarity in this case is ``0.5``. 
 
-- ``cosine_norm`` is the cosine similarity normalized from ``[-1, 1]`` to ``[0, 1]`` range. ``cosine_norm_similarity(A, B) = 0.85``
-- ``jaccard_norm`` is the approximate jaccard similarity normalized from ``[-1/3, 1]`` to ``[0, 1]`` range. ``jaccard_norm_similarity(A, B) = 0.66``
+- ``cosine-positive`` is the equal to 
+  .. math:: max(S_cosine, 0)

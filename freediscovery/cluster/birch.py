@@ -30,7 +30,7 @@ def _check_birch_tree_consistency(node):
 
 
 class _BirchHierarchy(object):
-    def __init__(self, model, metric='jaccard_norm'):
+    def __init__(self, model, metric='cosine'):
         self.model = model
         self.htree, _n_clusters = self._make_birch_hierarchy(model.root_)
         if len(self.htree._get_children_document_id()) != self.model.n_samples_:
