@@ -190,7 +190,8 @@ class FeaturesApiElement(Resource):
 
 
 class FeaturesApiElementMappingNested(Resource):
-    @doc(description=dedent("""Compute correspondence between id fields for documents. 
+    @doc(description=dedent("""
+         Compute correspondence between id fields for documents. 
          At least one of the fields used for indexing must be provided,
          and all the rest will be computed (if available).
          If the data parameter is not provided, return all the correspondence table
@@ -217,7 +218,8 @@ class FeaturesApiElementMappingNested(Resource):
 
 
 class FeaturesApiAppend(Resource):
-    @doc(description=dedent("""Add new documents to an existing processed dataset.
+    @doc(description=dedent("""
+         Add new documents to an existing processed dataset.
          This will also automatically update the LSI model if any
          is present. Raw documents on disk are not affected.
 
