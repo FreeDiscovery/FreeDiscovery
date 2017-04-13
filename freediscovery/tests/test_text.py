@@ -1,8 +1,4 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os.path
 import numpy as np
@@ -15,7 +11,9 @@ from sklearn.preprocessing import normalize
 
 from freediscovery.text import (FeatureVectorizer,
                                 _FeatureVectorizerSampled)
-from .run_suite import check_cache
+from freediscovery.ingestion import DocumentIndex
+
+from freediscovery.tests.run_suite import check_cache
 from freediscovery.exceptions import (NotFound)
 
 basename = os.path.dirname(__file__)
@@ -159,6 +157,75 @@ def test_df_filtering(use_hashing, min_df, max_df):
     else:
         # min/max_df removes some features
         assert X.shape[1] < X2.shape[1]
+
+    fe.delete()
+
+
+def test_append_documents():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir)
+    fe.transform()
+
+    X = fe._load_features(uuid)
+    db = fe.db_
+    filenames = fe.filenames_
+    n_samples = len(fe.filenames_)
+
+    docs = DocumentIndex.from_folder(data_dir).data
+    docs['document_id'] += 10
+    dataset_definition = docs[['file_path', 'document_id']].to_dict(orient='records')
+    for row in dataset_definition:
+        row['file_path'] = os.path.join(data_dir, row['file_path'])
+    fe.append(dataset_definition)
+    X_new = fe._load_features(uuid)
+    assert X_new.shape[0] == X.shape[0]*2
+    assert fe.db_.data.shape[0] == db.data.shape[0]*2
+    assert len(fe.filenames_) == len(filenames)*2
+
+    dbn = fe.db_.data
+    assert_equal(dbn.iloc[:n_samples]['document_id'].values,
+                 dbn.iloc[n_samples:]['document_id'].values - 10)
+    # check that internal id is contiguous
+    assert (np.diff(dbn.internal_id.values) == 1).all()
+
+    # check the number of samples is consistent
+    del fe._pars
+    assert fe.n_samples_ == n_samples * 2
+
+    fe.delete()
+
+
+def test_remove_documents():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir)
+    fe.transform()
+
+    X = fe._load_features(uuid)
+    db = fe.db_.data
+    filenames = fe.filenames_
+    n_samples = len(fe.filenames_)
+
+    docs = DocumentIndex.from_folder(data_dir).data
+    dataset_definition = docs[['document_id']].to_dict(orient='records')
+    fe.remove([dataset_definition[2], dataset_definition[4]])
+    X_new = fe._load_features(uuid)
+    assert X_new.shape[0] == X.shape[0] - 2
+    assert fe.db_.data.shape[0] == db.shape[0] - 2
+    assert len(fe.filenames_) == len(filenames) - 2
+
+    dbn = fe.db_.data
+    assert_equal(db.iloc[[0, 1, 3, 5]]['document_id'].values,
+                 dbn['document_id'].values)
+    # check that internal id is contiguous
+    assert (np.diff(dbn.internal_id.values) == 1).all()
+
+    # check the number of samples is consistent
+    del fe._pars
+    assert fe.n_samples_ == n_samples - 2
 
     fe.delete()
 

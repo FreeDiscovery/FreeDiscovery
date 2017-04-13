@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 from glob import glob
 from textwrap import dedent
@@ -41,8 +37,8 @@ from .validators import _is_in_range
 
 from .schemas import (IDSchema, FeaturesParsSchema,
                       FeaturesSchema,
-                      DocumentIndexNestedSchema,
-                      ExampleDatasetSchema,
+                      DocumentIndexNestedSchema, _DatasetDefinition,
+                      ExampleDatasetSchema, DocumentIndexFullSchema,
                       LsiParsSchema, LsiPostSchema,
                       _CategorizationInputSchema,
                       CategorizationParsSchema, CategorizationPostSchema,
@@ -194,18 +190,76 @@ class FeaturesApiElement(Resource):
 
 
 class FeaturesApiElementMappingNested(Resource):
-    @doc(description='Compute correspondence between id fields for documents. '
-         'At least one of the fields used for indexing must be provided,'
-         'and all the rest will be computed (if available)')
-    @use_args(DocumentIndexNestedSchema(strict=True))
+    @doc(description=dedent("""Compute correspondence between id fields for documents. 
+         At least one of the fields used for indexing must be provided,
+         and all the rest will be computed (if available).
+         If the data parameter is not provided, return all the correspondence table
+
+         **Parameters**
+          - `data`: the ids of documents used as the query
+          - `return_file_path`: whether the results should include the file path
+         """))
+    @use_args({'data': wfields.Nested(DocumentIndexFullSchema, many=True),
+               'return_file_path': wfields.Bool(missing=True)})
     @marshal_with(DocumentIndexNestedSchema())
     def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        query = pd.DataFrame(args['data'])
-        fe.db_.filenames_ = fe.filenames_
-        res = fe.db_.search(query, return_file_path=True)
-        res_repr = fe.db_.render_dict(res, return_file_path=True)
+        if 'data' in args and args['data']:
+            query = pd.DataFrame(args['data'])
+            fe.db_.filenames_ = fe.filenames_
+            res = fe.db_.search(query, return_file_path=args['return_file_path'])
+        else:
+            res = None
+        if args['return_file_path']:
+            fe.db_.filenames_ = fe.filenames_
+        res_repr = fe.db_.render_dict(res, return_file_path=args['return_file_path'])
         return {'data': res_repr}
+
+
+class FeaturesApiAppend(Resource):
+    @doc(description=dedent("""Add new documents to an existing processed dataset.
+         This will also automatically update the LSI model if any
+         is present. Raw documents on disk are not affected.
+
+         This operation cannot be undone.
+
+         Warning: all categorization, clustering, duplicate detection and
+         email threading models associated with this dataset will be removed and
+         need to be re-trained.
+
+         **Parameters**
+          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional.
+          """))
+    @use_args({'dataset_definition': wfields.Nested(_DatasetDefinition, many=True,
+                                                    required=True)})
+    @marshal_with(EmptySchema())
+    def post(self, dsid, **args):
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe.append(args['dataset_definition'])
+        return {}
+
+
+class FeaturesApiRemove(Resource):
+    @doc(description=dedent("""Remove documents from an existing processed dataset.
+         This will also automatically update the LSI model if any
+         is present.  Raw documents on disk are not affected.
+
+         This operation cannot be undone.
+
+         Warning: all categorization, clustering, duplicate detection and
+         email threading models associated with this dataset will be removed and
+         need to be re-trained.
+
+         **Parameters**
+          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional.
+          """))
+    @use_args({'dataset_definition': wfields.Nested(_DatasetDefinition, many=True,
+                                                    required=True)})
+    @marshal_with(EmptySchema())
+    def post(self, dsid, **args):
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe.remove(args['dataset_definition'])
+        return {}
 
 
 # =========================================================================== #

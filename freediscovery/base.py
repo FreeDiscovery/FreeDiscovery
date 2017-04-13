@@ -82,6 +82,10 @@ class _BaseWrapper(object):
         self.model_dir = os.path.join(self.pipeline.get_path(),
                                       self._wrapper_type)
 
+        if self._wrapper_type == 'search':
+            # no data need to be stored on disk
+            return
+
         if not os.path.exists(self.model_dir):
             os.mkdir(self.model_dir)
 

@@ -1,26 +1,24 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os.path
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from sklearn.preprocessing import normalize
 
 from freediscovery.text import FeatureVectorizer
 from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
+from freediscovery.ingestion import DocumentIndex
 from .run_suite import check_cache
+
+basename = os.path.dirname(__file__)
+data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 
 
 def test_lsi():
-    basename = os.path.dirname(__file__)
 
     cache_dir = check_cache()
-    data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
     n_components = 5
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
@@ -51,6 +49,49 @@ def test_lsi_helper_class():
     assert lsi.components_.shape == (20, X.shape[1])
     assert X_p.shape == (100, 20)
     assert X_p2.shape == (100, 20)
+
+
+def test_lsi_append_documents():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir)
+    fe.transform()
+
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
+    lsi_res, exp_var = lsi.fit_transform(n_components=2)
+    X_lsi = lsi._load_features()
+    n_samples = fe.n_samples_
+
+    docs = DocumentIndex.from_folder(data_dir).data
+    docs['document_id'] += 10
+    dataset_definition = docs[['file_path', 'document_id']].to_dict(orient='records')
+    for row in dataset_definition:
+        row['file_path'] = os.path.join(data_dir, row['file_path'])
+    fe.append(dataset_definition)
+
+    X_lsi_new = lsi._load_features()
+    assert X_lsi_new.shape[0] == X_lsi.shape[0]*2
+    assert_equal(X_lsi_new[:n_samples], X_lsi_new[:n_samples])
+
+
+def test_lsi_remove_documents():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.preprocess(data_dir)
+    fe.transform()
+
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
+    lsi_res, exp_var = lsi.fit_transform(n_components=2)
+    X_lsi = lsi._load_features()
+
+    docs = DocumentIndex.from_folder(data_dir).data
+    dataset_definition = docs[['document_id']].to_dict(orient='records')
+    fe.remove([dataset_definition[2], dataset_definition[4]])
+
+    X_lsi_new = lsi._load_features()
+    assert X_lsi_new.shape[0] == X_lsi.shape[0] - 2
 
 
 def test_lsi_book_example():
