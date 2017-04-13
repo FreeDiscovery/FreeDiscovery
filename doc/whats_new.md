@@ -1,5 +1,26 @@
 # Release history
 
+
+## Version 1.0
+
+**In developpement**
+
+### New features  
+
+ * Ability to add / remove documents in an existing processed dataset using `/api/v0/feature-extraction/{dsid}/append` and `/api/v0/feature-extraction/{dsid}/delete` URL endpoints 
+ * Pagination in search and document categorization with the `batch_id` and `batch_size` parameters.
+
+### Enhancements
+
+ * Better handling of data persistence, which leads to faster response time for all URL endpoints, and in particular semantic search and categorization. This breaks backward compatibility for the internal data format: datasets need to re-processed and models re-trained. 
+ * Additional tests for categorization and semantic search 
+
+### API Changes
+ * The `nn_metric` parameter was renamed to `metric`; a new metric `cosine-positive` was added
+ * Breaking change: by default, the `cosine` similarity score is used.
+ * The `/email-parser/*` endpoints are removed and merged into the `/feature-extraction/` endpoint, thus unifying data ingestion.
+
+
 ## Version 0.9
 
 **Jan 28, 2017**
