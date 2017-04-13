@@ -7,7 +7,11 @@ The latest development version of FreeDiscovery can be obtained from [Github](ht
       
     git clone https://github.com/FreeDiscovery/FreeDiscovery.git
 
-or by downloading the latest stable version from the [Github releases page](https://github.com/FreeDiscovery/FreeDiscovery/releases).
+It is recommended to use the latest stable version with,
+  
+    git checkout v1.0.0-rc1
+
+Althernaitively, the latest stable version can be donwloaded from the [Github releases page](https://github.com/FreeDiscovery/FreeDiscovery/releases).
 
 
 ## 2. Installing the Dependencies
@@ -21,10 +25,10 @@ or by downloading the latest stable version from the [Github releases page](http
           conda create -n freediscovery-env --file requirements.txt python=3.6
  
           source activate freediscovery-env   # on Linux/Mac OS X
-          # or "activate freediscovery-env"   # on Windows 
+          # Note: on Windows the above command is "activate freediscovery-env"
 
           # (optional dependencies, Linux only) 
-          conda install -r build_tools/requirements_pip_comp.txt 
+          conda install simhash-py
 
           python setup.py develop
  
@@ -35,7 +39,7 @@ or by downloading the latest stable version from the [Github releases page](http
 
 **Note 1**: all of the above commands (except the installation of the compiler) should be run without `sudo` and with regular user permissions.
 
-**Note 2**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python (3.5 or 3.6), and install the list of dependencies (split between `requirements.txt` and `scripts/requirements_pip*.txt` under `build_tools/`) with `pip`.
+**Note 2**: is recommended to use conda in a virtual environment for reproducibility. However, it is also possible to use system Python (3.5 or 3.6), and install the list of dependencies manually.
 
 
       

@@ -19,8 +19,7 @@ before_install:
 
 install: 
     - conda config --append channels conda-forge
-    - conda install --yes --file requirements.txt python=${TRAVIS_PYTHON_VERSION}
-    - pip install -r ./build_tools/requirements_pip_comp.txt
+    - conda install --yes --file requirements.txt simhash-py python=${TRAVIS_PYTHON_VERSION}
     # reinstall the tested version of SKLEARN
     - | 
         if [ "${SKLEARN}" != "0.18.1" ]; then

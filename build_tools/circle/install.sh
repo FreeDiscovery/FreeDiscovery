@@ -42,7 +42,7 @@ create_new_conda_env() {
 
     # Configure the conda environment and put it in the path using the
     # provided versions
-    conda create -n testenv --quiet --yes --file requirements.txt python=3.6
+    conda create -n testenv --quiet --yes --file requirements.txt simhash-py python=3.6
     source activate testenv
 
 }
@@ -50,7 +50,6 @@ create_new_conda_env() {
 
 create_new_conda_env
 
-pip install -r ./build_tools/requirements_pip_comp.txt
 pip install -r ./build_tools/requirements_extra_pip.txt
 
 

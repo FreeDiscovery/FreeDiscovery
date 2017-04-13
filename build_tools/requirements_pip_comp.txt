@@ -1,4 +1,0 @@
-git+https://github.com/rth/simhash-py.git
-# don't install xgboost
-# xgboost==0.4a30 # version 0.6 currently broken for sparse arrays https://github.com/dmlc/xgboost/issues/1238#issuecomment-247787192
-
