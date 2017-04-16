@@ -4,7 +4,8 @@ import time
 import argparse
 
 from .server import fd_app
-from .cli import _query_yes_no, _TeeLogger
+from .cli import (_query_yes_no, _TeeLogger,
+                  _number_of_workers)
 from ._version import __version__
 
 DEFAULT_CACHE_DIR = '../freediscovery_shared/'
@@ -22,9 +23,8 @@ def _run(args):
             print('Cache directory not created. Exiting.')
             return
     else:
-        _cache_dir_exists = False
-        #print('Using an existing cache directory {}'.format(cache_dir))
-    log_fname = args.log.replace('${CACHE_DIR}', cache_dir)
+        _cache_dir_exists = True
+    log_fname = args.log_file.replace('${CACHE_DIR}', cache_dir)
     log_fname = os.path.normpath(os.path.abspath(log_fname))
 
     # redirect stdout / stderr to a file
@@ -34,14 +34,47 @@ def _run(args):
     print(' '*21, '(version {})'.format(__version__))
     print('='*80)
     print(' * Started on {}'.format(time.strftime("%c")))
-    print(' * CACHE_DIR: {}'.format(cache_dir))
+    print(' * CACHE_DIR: {} [{}]'.format(cache_dir,
+                                         'EXISTING' if _cache_dir_exists else 'NEW'))
     print(' * LOG_FILE: {}'.format(log_fname))
 
+    app = fd_app(cache_dir)
+    if args.server in ['auto', 'gunicorn']:
+        try:
+            from .server.gunicorn import GunicornApplication
+            options = {
+                'bind': '%s:%s' % (args.hostname, str(args.port)),
+                'workers': args.n,
+                'accesslog': '-',  # stdout
+                'check_config': True,
+                'limit_request_field_size': 0,  # unlimited
+                'limit_request_line': 8190,
+                'graceful_timeout': 3600,
+                'timeout': 3600,
+            }
+            parent_pid = os.getpid()
+            print(' * Server: gunicorn with {} workers'.format(args.n))
+            print(' * Running on http://{}/ (Press CTRL+C to quit)'.format(options['bind']))
+            GunicornApplication(app, options).run()
+            return
+        except SystemExit:
+            if os.getpid() == parent_pid:
+                print("Stopping FreeDiscovery server.")
+            return
+        except ImportError:
+            print('Gunicorn not installed')
+            pass
+        except:
+            if os.getpid() == parent_pid:
+                print('Exiting.')
+            return
 
+    # run the built-in server
+    print(' * Server: flask (Werkzeug) threaded')
 
-    fd_app(cache_dir).run(debug=False, host='0.0.0.0',
-                          processes=1, threaded=True,
-                          port=args.port, use_reloader=False)
+    app.run(debug=False, host=args.hostname,
+            processes=1, threaded=True,
+            port=args.port, use_reloader=False)
 
 
 def _info(args):
@@ -88,12 +121,13 @@ def main(args=None):
                                  'When server="auto", gunicorn is used '
                                  'if installed otherwise the "flask" '
                                  'server is used as a fallback.')
-    run_parser.add_argument('--log',
+    run_parser.add_argument('--log-file',
                             default='${CACHE_DIR}/freediscovery-backend.log',
                             help='Path to the log file.')
-    run_parser.add_argument('-n', default=4, type=int,
+    run_parser.add_argument('-n', default=_number_of_workers(), type=int,
                             help='Number of workers to use when starting '
-                                 'the freediscovery server.')
+                                 'the freediscovery server. Only affects'
+                                 'the gunicorn server.')
     run_parser.set_defaults(func=_run)
 
     # info parser

@@ -1,4 +1,5 @@
 import sys
+import multiprocessing
 
 # Adapter from
 # http://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input
@@ -59,3 +60,11 @@ class _TeeLogger(object):
     def write(self, data):
         self.file.write(data)
         self.stdout.write(data)
+
+
+def _number_of_workers(max_workers=4):
+    """ Compute the number of worker processes for gunicorn"""
+    num_w = (multiprocessing.cpu_count() * 2) + 1
+    if num_w > max_workers:
+        num_w = max_workers
+    return num_w
