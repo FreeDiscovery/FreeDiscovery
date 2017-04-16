@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
-import os
-import sys
 import re
 
 
 # a define the version sting inside the package
 # see https://stackoverflow.com/questions/458550/standard-way-to-embed-version-into-python-package
-VERSIONFILE="freediscovery/_version.py"
+VERSIONFILE = "freediscovery/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -23,13 +21,19 @@ with open('README.rst', 'rt') as fh:
 
 setup(name='freediscovery',
       version=version,
-      description='Open source software for E-Discovery and Information Retrieval',
+      description='Open source software for E-Discovery '
+                  'and Information Retrieval',
       author='Grossman Labs',
       url="https://github.com/FreeDiscovery/FreeDiscovery",
       license='BSD',
       packages=find_packages(),
       include_package_data=True,
       long_description=LONG_DESCRIPTION,
+      entry_points={
+          'console_scripts': [
+              'freediscovery = freediscovery.__main__:main'
+          ]
+      },
       classifiers=[
           'Development Status :: 4 - Beta',
 
@@ -45,8 +49,6 @@ setup(name='freediscovery',
           'Operating System :: OS Independent',
 
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
-          'Topic :: Text Processing :: General'
-     ],
-     keywords='information-retrieval machine-learning text-classification',
-     )
+          'Topic :: Text Processing :: General'],
+      keywords='information-retrieval machine-learning text-classification')
 
