@@ -16,6 +16,7 @@ Contents
    installation_instructions
    rest_api
    python_api
+   cli
    examples/index
    user_manual/index
    contributing

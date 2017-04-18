@@ -64,7 +64,8 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinxcontrib.napoleon',
     'sphinx_gallery.gen_gallery',
-    'sphinx.ext.linkcode'
+    'sphinx.ext.linkcode',
+    'sphinxcontrib.autoprogram'
 ]
 
 

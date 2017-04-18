@@ -191,18 +191,25 @@ class _ArgParser(argparse.ArgumentParser):
         super(_ArgParser, self).__init__(**kwargs)
 
 
-def main(args=None):
+def main(args=None, return_parser=False):
     """The main CLI interface."""
 
     parser = _ArgParser()
     subparsers = parser.add_subparsers(help='action')
     # parser.add_argument("-v", ..)
 
-    run_parser = subparsers.add_parser("run")
-    info_parser = subparsers.add_parser("info")
-    list_parser = subparsers.add_parser("list")
-    show_parser = subparsers.add_parser("show")
-    rm_parser = subparsers.add_parser("rm")
+    run_parser = subparsers.add_parser("run",
+                     description='The command used to start the server.')
+    info_parser = subparsers.add_parser("info",
+                     description='Return debug information about '
+                                 'the FreeDiscovery install.')
+    list_parser = subparsers.add_parser("list",
+                     description='List trained models.')
+    show_parser = subparsers.add_parser("show", 
+                     description='Show detailed information about '
+                                 'a trained model.')
+    rm_parser = subparsers.add_parser("rm", 
+                     description='Remove a trained model specified by its ID.')
 
     for subparser in [run_parser, list_parser, show_parser,
                       rm_parser]:
@@ -262,6 +269,9 @@ def main(args=None):
                            help='Remove all models.')
     rm_parser.add_argument('mid', nargs='?', help='Model id')
     rm_parser.set_defaults(func=_rm)
+    if return_parser:
+        # used to generate sphinx docs
+        return parser
 
     args = parser.parse_args()
     args.func(args)
