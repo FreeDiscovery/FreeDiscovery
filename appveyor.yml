@@ -40,17 +40,12 @@ install:
 
 test_script:
   - activate freediscovery-env # activate the virtualenv
-  - "cd C:\\projects\\freediscovery\\freediscovery\\tests" # just to avoid full relative path in py.test
-  - python -c "import freediscovery.tests as ft; ft.run_cli()"
   - "cd C:\\projects\\freediscovery"
+  - "py.test -sv" 
   # install matplotlib which we don't add as a core dependency but which is used in examples
   - pip install matplotlib==1.5.3
   # now start the server and run the examples
-  - ps: |
-        if (!(Test-Path -Path ".\\freediscovery_shared")) {
-            New-Item -ItemType directory -Path ".\\freediscovery_shared"
-        }
-  - ps: Start-Process -FilePath "python" -ArgumentList "scripts\\run_api.py freediscovery_shared" -WorkingDirectory ".\\" -Verbose
+  - ps: Start-Process -FilePath "freediscovery" -ArgumentList "run -y --cache-dir ..\\freediscovery_shared" -WorkingDirectory ".\\" -Verbose
   - ps: |
         cd ".\\examples"
         Get-ChildItem ".\\" -Filter *.py | 

@@ -31,7 +31,8 @@ def _run(args):
     if not os.path.exists(cache_dir):
         _cache_dir_exists = False
         _create_cache_dir = _query_yes_no('Cache directory does not exist. '
-                                          'Create {} ?'.format(cache_dir))
+                                          'Create {} ?'.format(cache_dir),
+                                          overwrite=args.yes)
         if _create_cache_dir:
             os.makedirs(cache_dir)
         else:
@@ -171,7 +172,8 @@ def _rm(args):
         return
     _del_mid = _query_yes_no('Are you sure you want to delete\n'
                              '        {} ?'.format(fpath),
-                             default='no')
+                             default='no',
+                             overwrite=args.yes)
     if _del_mid:
         shutil.rmtree(fpath)
         print('Folder {} deleted.'.format(fpath))
@@ -213,6 +215,9 @@ def main(args=None):
                                     'FREEDISCOVERY_CACHE_DIR will be used if '
                                     'it is specified. Otherwise the default '
                                     'value is used.')
+    for subparser in [run_parser, rm_parser]:
+        subparser.add_argument('-y', '--yes', action='store_true',
+                               help='Do not ask for confirmation.')
 
     # start parser
     run_parser.add_argument('--debug',

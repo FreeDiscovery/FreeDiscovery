@@ -18,7 +18,7 @@ dependencies:
   # run sphinx to build the doc.
   override:
     - source build_tools/circle/install.sh
-    - source activate testenv && python scripts/run_api.py ../freediscovery_shared:
+    - source activate testenv && freediscovery run -y --cache-dir ../freediscovery_shared:
        background: true
     - sleep 20
     # The pipefail is requested to propagate exit code

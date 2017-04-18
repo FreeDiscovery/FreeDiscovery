@@ -51,6 +51,7 @@ create_new_conda_env() {
 create_new_conda_env
 
 pip install -r ./build_tools/requirements_extra_pip.txt
+pip install gunicorn
 
 
 # Build and install scikit-learn in dev mode

@@ -5,7 +5,7 @@ import multiprocessing
 # http://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input
 
 
-def _query_yes_no(question, default="yes"):
+def _query_yes_no(question, default="yes", overwrite=False):
     """Ask a yes/no question via input() and return their answer.
 
     "question" is a string that is presented to the user.
@@ -15,6 +15,8 @@ def _query_yes_no(question, default="yes"):
 
     The "answer" return value is True for "yes" or False for "no".
     """
+    if overwrite:
+        return overwrite
     valid = {"yes": True, "y": True, "ye": True,
              "no": False, "n": False}
     if default is None:
