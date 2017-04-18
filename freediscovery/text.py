@@ -4,6 +4,7 @@ import os.path
 import shutil
 import pickle
 import warnings
+import time
 
 import numpy as np
 import pandas as pd
@@ -72,7 +73,8 @@ class FeatureVectorizer(object):
     _PARS_SHORT = ['data_dir', 'n_samples', 'n_features',
                    'n_jobs', 'chunk_size', 'norm',
                    'analyzer', 'ngram_range', 'stop_words',
-                   'use_idf', 'sublinear_tf', 'binary', 'use_hashing']
+                   'use_idf', 'sublinear_tf', 'binary', 'use_hashing',
+                   'creation_date']
 
     _wrapper_type = "vectorizer"
 
@@ -612,9 +614,14 @@ class FeatureVectorizer(object):
             except:
                 # traceback.print_exc()
                 continue
+            
 
             if pars['type'] != type(self).__name__:
                 continue
+
+            creation_date = os.stat(os.path.join(self.cache_dir, dsid)).st_ctime
+            pars['creation_date'] = time.strftime('%c',
+                                                  time.gmtime(creation_date))
 
             try:
                 for key in self._PARS_SHORT:

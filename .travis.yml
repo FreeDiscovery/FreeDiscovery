@@ -34,11 +34,10 @@ script:
     - pip install pytest-cov codecov
     - py.test -sv --cov=./
     # install matplotlib which we don't add as a core dependency but which is used in examples
-    - pip install matplotlib==1.5.3
+    - pip install matplotlib==1.5.3 gunicorn
     # now start the server and run the examples
     - | 
-        mkdir -p ../freediscovery_shared;
-        python scripts/run_api.py ../freediscovery_shared &
+        freediscovery run -y --cache-dir ../freediscovery_shared &
         FDSERVER_PID=$!
         sleep 20  
     - | 
