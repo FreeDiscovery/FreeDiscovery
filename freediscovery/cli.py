@@ -62,7 +62,7 @@ class _TeeLogger(object):
         self.stdout.write(data)
 
 
-def _number_of_workers(max_workers=4):
+def _number_of_workers(max_workers=6):
     """ Compute the number of worker processes for gunicorn"""
     num_w = (multiprocessing.cpu_count() * 2) + 1
     if num_w > max_workers:

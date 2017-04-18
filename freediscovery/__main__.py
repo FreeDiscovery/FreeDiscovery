@@ -2,17 +2,32 @@ import os
 import sys
 import time
 import argparse
+import shutil
+from subprocess import call
+
+from sklearn.externals import joblib
 
 from .server import fd_app
 from .cli import (_query_yes_no, _TeeLogger,
                   _number_of_workers)
+from .text import FeatureVectorizer
+from .pipeline import PipelineFinder
 from ._version import __version__
 
-DEFAULT_CACHE_DIR = '../freediscovery_shared/'
+DEFAULT_CACHE_DIR = os.path.join('..', 'freediscovery_shared')
+
+
+def _parse_cache_dir(cache_dir):
+    if cache_dir == DEFAULT_CACHE_DIR:
+        cache_dir_new = os.environ.get('FREEDISCOVERY_CACHE_DIR')
+        if cache_dir_new is not None:
+            cache_dir = cache_dir
+    return cache_dir
 
 
 def _run(args):
-    cache_dir = os.path.normpath(os.path.abspath(args.cache_dir))
+    cache_dir = _parse_cache_dir(args.cache_dir)
+    cache_dir = os.path.normpath(os.path.abspath(cache_dir))
     if not os.path.exists(cache_dir):
         _cache_dir_exists = False
         _create_cache_dir = _query_yes_no('Cache directory does not exist. '
@@ -49,8 +64,8 @@ def _run(args):
                 'check_config': True,
                 'limit_request_field_size': 0,  # unlimited
                 'limit_request_line': 8190,
-                'graceful_timeout': 3600,
-                'timeout': 3600,
+                'timeout': 18000,  # 5 hours
+                'graceful_timeout': 18000,
             }
             parent_pid = os.getpid()
             print(' * Server: gunicorn with {} workers'.format(args.n))
@@ -78,7 +93,90 @@ def _run(args):
 
 
 def _info(args):
-    pass
+
+    print('FreeDiscovery version: {}'.format(__version__))
+
+    conda_exec = shutil.which('conda')
+    pip_exec = shutil.which('pip')
+
+    if conda_exec is not None:
+        print("\n# Conda setup\n")
+        if args.all:
+            call([conda_exec, 'info', '-a'])
+            print('\n# List of installed packages\n')
+            call([conda_exec, 'list'])
+        else:
+            call([conda_exec, 'info'])
+    elif pip_exec is not None:
+        print("\n# Python setup\n")
+        call([pip_exec, '-V'])
+        print('\n# List of installed packages\n')
+        call([pip_exec, 'list'])
+    else:
+        print('Warning: neither pip nor conda found in $PATH!')
+
+
+def _list(args):
+    cache_dir = _parse_cache_dir(args.cache_dir)
+    fe = FeatureVectorizer(cache_dir)
+    res = fe.list_datasets()
+    res = sorted(res, key=lambda row: row['creation_date'], reverse=True)
+    for row in res:
+        print(' * Processed dataset {}'.format(row['id']))
+        print('    - data_dir: {}'.format(row['data_dir']))
+        print('    - creation_date: {}'.format(row['creation_date']))
+        for method in ['lsi', 'categorizer', 'cluster', 'dupdet',
+                       'threading']:
+            dpath = os.path.join(fe.cache_dir, row['id'], method)
+            if not os.path.exists(dpath):
+                continue
+            mid_list = os.listdir(dpath)
+            if mid_list:
+                print('     # {}'.format(method))
+                for mid in mid_list:
+                    print('       * {}'.format(mid))
+        print(' ')
+
+
+def _show(args):
+    cache_dir = _parse_cache_dir(args.cache_dir)
+    p = PipelineFinder.by_id(mid=args.mid, cache_dir=cache_dir)
+    print(p)
+    print(' * model_id: {}'.format(args.mid))
+    print(' * model_type: {}'.format(list(p.keys())[-1]))
+    print(' * file_path: {}'.format(p.get_path()))
+    try:
+        pars = joblib.load(os.path.join(p.get_path(), 'pars'))
+        for key, val in pars.items():
+            val_str = str(val)
+            if len(val_str) > 30 and not isinstance(val, dict):
+                continue
+            print(' * {}: {}'.format(key, val_str))
+    except:
+        pass
+
+
+def _rm(args):
+    cache_dir = _parse_cache_dir(args.cache_dir)
+    if args.all:
+        p = PipelineFinder(cache_dir=cache_dir)
+        fpath = p.cache_dir
+    elif args.mid:
+        mid = args.mid
+        p = PipelineFinder.by_id(mid=mid, cache_dir=cache_dir)
+        fpath = p.get_path()
+    else:
+        print('Error: either mid or the -a (--all) flag should be provided. '
+              'Exiting.')
+        return
+    _del_mid = _query_yes_no('Are you sure you want to delete\n'
+                             '        {} ?'.format(fpath),
+                             default='no')
+    if _del_mid:
+        shutil.rmtree(fpath)
+        print('Folder {} deleted.'.format(fpath))
+    else:
+        print('Nothing to be done. Exiting.')
 
 
 # Allow to propagate formatter_class to subparsers
@@ -100,18 +198,30 @@ def main(args=None):
 
     run_parser = subparsers.add_parser("run")
     info_parser = subparsers.add_parser("info")
+    list_parser = subparsers.add_parser("list")
+    show_parser = subparsers.add_parser("show")
+    rm_parser = subparsers.add_parser("rm")
+
+    for subparser in [run_parser, list_parser, show_parser,
+                      rm_parser]:
+        subparser.add_argument('-c', '--cache-dir',
+                               default=DEFAULT_CACHE_DIR,
+                               help='The cache directory in which '
+                                    'the trained models are saved. '
+                                    'If this parameter is not specified '
+                                    'the value in the environement variable '
+                                    'FREEDISCOVERY_CACHE_DIR will be used if '
+                                    'it is specified. Otherwise the default '
+                                    'value is used.')
 
     # start parser
-    run_parser.add_argument('--debug',  type=bool,
-                            default=False,
+    run_parser.add_argument('--debug',
+                            default=False, action='store_true',
                             help='Start server in debug mode.')
-    run_parser.add_argument('-c', '--cache-dir',
-                            default=DEFAULT_CACHE_DIR,
-                            help='The cache directory in which '
-                                 'the trained models will be saved.')
     run_parser.add_argument('--hostname', default='0.0.0.0',
                             help='Server hostname.')
-    run_parser.add_argument('-p', '--port', default=5001, type=int)
+    run_parser.add_argument('-p', '--port', default=5001, type=int,
+                            help='Server port.')
     run_parser.add_argument('-s', '--server', default='auto',
                             choices=['auto', 'flask', 'gunicorn'],
                             help='The server used to run freediscovery. '
@@ -126,12 +236,27 @@ def main(args=None):
                             help='Path to the log file.')
     run_parser.add_argument('-n', default=_number_of_workers(), type=int,
                             help='Number of workers to use when starting '
-                                 'the freediscovery server. Only affects'
+                                 'the freediscovery server. Only affects '
                                  'the gunicorn server.')
     run_parser.set_defaults(func=_run)
 
     # info parser
+    info_parser.add_argument('-a', '--all', action='store_true',
+                             help='Print detailed report.')
     info_parser.set_defaults(func=_info)
+
+    # list parser
+    list_parser.set_defaults(func=_list)
+
+    # show parser
+    show_parser.add_argument('mid', help='Model id')
+    show_parser.set_defaults(func=_show)
+
+    # rm parser
+    rm_parser.add_argument('-a', '--all', action='store_true',
+                           help='Remove all models.')
+    rm_parser.add_argument('mid', nargs='?', help='Model id')
+    rm_parser.set_defaults(func=_rm)
 
     args = parser.parse_args()
     args.func(args)
