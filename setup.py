@@ -29,6 +29,7 @@ setup(name='freediscovery',
       packages=find_packages(),
       include_package_data=True,
       long_description=LONG_DESCRIPTION,
+      python_requires='>=3.5',
       entry_points={
           'console_scripts': [
               'freediscovery = freediscovery.__main__:main'

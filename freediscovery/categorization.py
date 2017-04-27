@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
+import warnings
+
 import numpy as np
 from scipy.special import logit, expit
 from sklearn.externals import joblib
@@ -192,7 +194,7 @@ class _CategorizerWrapper(_BaseWrapper):
 
         if method in ['NearestCentroid', 'NearestNeighbor'] \
                 and 'lsi' not in self.pipeline:
-            raise WrongParameter(method +
+            warnings.warn(method +
                                  ' should not be applied onto raw document term vectors due'
                                  ' to the curse of dimensionality. Please add an LSI processing'
                                  ' step before this classifier (i.e. use `parent_id=lsi_id`)')

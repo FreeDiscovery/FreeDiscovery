@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import warnings
 
 from sklearn.metrics import pairwise_distances
 from sklearn.externals import joblib
@@ -47,7 +48,7 @@ class _SearchWrapper(_BaseWrapper):
         """
         if internal_id is not None:
             if 'lsi' not in self.pipeline:
-                raise WrongParameter('Search using a document_id as a query'
+                warnings.warn('Search using a document_id as a query'
                                      ' should not be applied in the space of '
                                      ' raw document term vectors due'
                                      ' to the curse of dimensionality.'
