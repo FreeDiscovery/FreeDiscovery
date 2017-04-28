@@ -6,7 +6,6 @@ Cluster documents into clusters
 """
 
 import os.path
-import numpy as np
 import pandas as pd
 from time import time
 import requests
@@ -26,8 +25,8 @@ input_ds = requests.get(url).json()
 # To use a custom dataset, simply specify the following variables
 data_dir = input_ds['metadata']['data_dir']
 dataset_definition = [{'document_id': row['document_id'],
-                       'file_path': os.path.join(data_dir, row['file_path'])} \
-                               for row in input_ds['dataset']]
+                       'file_path': os.path.join(data_dir, row['file_path'])}
+                      for row in input_ds['dataset']]
 
 # # 1. Feature extraction (non hashed)
 
@@ -36,7 +35,7 @@ url = BASE_URL + '/feature-extraction'
 print(" POST", url)
 fe_opts = {'dataset_definition': dataset_definition,
            'use_idf': 1, 'n_features': 30001,
-           'min_df': 4, 'max_df': 0.75 # filter out unfrequent / too frequent words
+           'min_df': 4, 'max_df': 0.75  # filter out (too)/(un)frequent words
            }
 res = requests.post(url, json=fe_opts).json()
 
@@ -56,8 +55,8 @@ url = BASE_URL + '/feature-extraction/{}'.format(dsid)
 print(' GET', url)
 res = requests.get(url).json()
 
-print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                  if "filenames" not in key]))
+print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items()
+                 if "filenames" not in key]))
 
 print("\n2. Calculate LSI")
 
@@ -72,8 +71,9 @@ res = requests.post(url,
 
 lsi_id = res['id']
 print('  => LSI model id = {}'.format(lsi_id))
-print('  => SVD decomposition with {} dimensions explaining {:.2f} % variabilty of the data'.format(
-                        n_components, res['explained_variance']*100))
+print(('  => SVD decomposition with {} dimensions '
+       'explaining {:.2f} % variabilty of the data')
+      .format(n_components, res['explained_variance']*100))
 
 # # 3. Document Clustering (LSI + K-Means)
 
@@ -117,8 +117,8 @@ t0 = time()
 res = requests.post(url,
                     json={'parent_id': lsi_id,
                           'n_clusters': -1,
-                          #'min_similarity': 0.95,
-                          'branching_factor': 20 
+                          'min_similarity': 0.7,
+                          'branching_factor': 20
                           }).json()
 
 mid = res['id']

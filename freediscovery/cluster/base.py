@@ -211,8 +211,17 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         if type(km).__name__ == 'Birch' and n_clusters is None:
             # hierarcical clustering, centroids are computed at a later time..
             labels_ = None
-            sys.setrecursionlimit(os.environ.get('FREEDISCOVERY_RECURSION_LIM',
-                                                 50000))
+
+            def _del_cross_links(node):
+                # otherwise we get a recursion problem when pickling
+                # https://github.com/scikit-learn/scikit-learn/issues/8806
+                for el in node.subclusters_:
+                    if el.child_ is not None:
+                        del el.child_.prev_leaf_
+                        del el.child_.next_leaf_
+                        _del_cross_links(el.child_)
+
+            _del_cross_links(km.root_)
         else:
             if type(km).__name__ == "DBSCAN":
                 labels_ = _dbscan_noisy2unique(km.labels_)
