@@ -660,7 +660,10 @@ class ClusteringApiElement(Resource):
         km = cl._load_model()
 
         if return_optimal_sampling and not cl._pars['is_hierarchical']:
-            raise WrongParameter('Model {} does not support optimal sampling, please use Birch clustering'.format(type(km).__name__))
+            raise WrongParameter(('Model {} does not support optimal sampling,'
+                                  'please use hierarchical Birch clustering '
+                                  '(with n_clusters=-1)')
+                                 .format(type(km).__name__))
 
         cl._fit_X = cl.pipeline.data
 
