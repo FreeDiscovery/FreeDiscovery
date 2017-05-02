@@ -78,7 +78,7 @@ def _run(args):
                 print("Stopping FreeDiscovery server.")
             return
         except ImportError:
-            print('Gunicorn not installed')
+            #print('Gunicorn not installed')
             pass
         except:
             if os.getpid() == parent_pid:
@@ -239,7 +239,6 @@ def main(args=None, return_parser=False):
                             help='The server used to run freediscovery. '
                                  '"flask" is the server built-in in flask '
                                  'suitable for developpement. '
-                                 'In production please use gunicorn. '
                                  'When server="auto", gunicorn is used '
                                  'if installed otherwise the "flask" '
                                  'server is used as a fallback.')
