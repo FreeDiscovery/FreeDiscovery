@@ -34,9 +34,11 @@ class _BirchHierarchy(object):
         self.model = model
         self.htree, _n_clusters = self._make_birch_hierarchy(model.root_)
         if len(self.htree._get_children_document_id()) != self.model.n_samples_:
-            raise ValueError("Building hierarchy failed: "
-                             "root node contains "
-                             "{} documents, while the total document number is {}".format(
+            raise ValueError(("Building hierarchy failed: ",
+                              "root node contains ",
+                              "{} documents, while the total document number "
+                              "is {}")
+                             .format(
                              len(self.htree._get_children_document_id()),
                              self.model.n_samples_))
         self._n_clusters = _n_clusters

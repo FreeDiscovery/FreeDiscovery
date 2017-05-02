@@ -106,3 +106,25 @@ def test_clustering_birch_cosine_positive(app):
     with pytest.raises(ValueError):
         data = app.get_check(url, query_string={'metric': 'cosine-p'})
     data = app.get_check(url, query_string={'metric': 'cosine-positive'})
+
+
+def test_clustering_max_tree_depth(app):
+    dsid, lsi_id, _, _ = get_features_lsi_cached(app, hashed=False)
+    parent_id = lsi_id
+    url = V01 + "/clustering/birch"
+    pars = {'min_similarity': 0.8, 'parent_id': parent_id,
+            'branching_factor': 10}
+    data = app.post_check(url, json=pars)
+    mid = data['id']
+    data = app.get_check(url + '/' + mid)
+    max_depth = max(el['cluster_depth'] for el in data['data'])
+    max_depth_lim = 2
+    assert max_depth > max_depth_lim
+
+    pars['max_tree_depth'] = max_depth_lim
+
+    data = app.post_check(url, json=pars)
+    mid = data['id']
+    data2 = app.get_check(url + '/' + mid)
+
+    assert max(el['cluster_depth'] for el in data2['data']) == max_depth_lim

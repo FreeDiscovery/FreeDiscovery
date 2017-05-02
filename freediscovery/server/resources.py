@@ -567,12 +567,14 @@ class BirchClusteringApi(Resource):
             - `n_clusters`: the number of clusters or -1 to use hierarchical clustering (default: -1)
             - `min_similarity`: The radius of the subcluster obtained by merging a new sample and the closest subcluster should be lesser than the threshold. Otherwise a new subcluster is started. See [sklearn.cluster.Birch](http://scikit-learn.org/stable/modules/generated/sklearn.cluster.Birch.html). Increasing this value would increase the hierarchical tree depth (and the number of clusters).
             - `branching_factor`: Maximum number of CF subclusters in each node. If a new samples enters such that the number of subclusters exceed the branching_factor then the node has to be split. The corresponding parent also has to be split and if the number of subclusters in the parent is greater than the branching factor, then it has to be split recursively. Decreasing this value would increase the number of clusters.
+            - `max_tree_depth` : Maximum hierarchy depth (only applicable when `n_clusters=-1`)
             - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
            """))
     @use_args({
             'parent_id': wfields.Str(required=True),
             'n_clusters': wfields.Int(missing=-1),
             'branching_factor': wfields.Int(missing=20),
+            'max_tree_depth': wfields.Int(),
             # this corresponds approximately to threashold = 0.5
             'min_similarity': wfields.Number(missing=0.5),
             'metric': wfields.Str(missing='cosine')
@@ -682,6 +684,10 @@ class ClusteringApiElement(Resource):
             else:
                 # we don't use optimal sampling
                 flat_tree = htree.flatten()
+                if cl._pars['max_tree_depth'] is not None:
+                    max_tree_depth = cl._pars['max_tree_depth']
+                    flat_tree = [row for row in flat_tree
+                                if row.depth <= max_tree_depth]
 
                 terms = cl.compute_labels(
                             cluster_indices=[row['children_document_id']

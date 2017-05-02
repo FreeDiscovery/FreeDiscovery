@@ -327,7 +327,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
                              init_size=batch_size, batch_size=batch_size)
         return self._cluster_func(n_clusters, km, pars)
 
-    def birch(self, n_clusters=None, threshold=0.5, branching_factor=50):
+    def birch(self, n_clusters=None, threshold=0.5, branching_factor=50,
+              max_tree_depth=None):
         """
         Perform Birch clustering
 
@@ -339,9 +340,12 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             apply LSA before the clustering algorithm
         threshold : float
             birch threshold
+        max_tree_depth : {int, None}
+            maximum depth of the hierarchical tree
         """
         from freediscovery.externals.birch import Birch
-        pars = {'threshold': threshold, 'is_hierarchical': n_clusters is None}
+        pars = {'threshold': threshold, 'is_hierarchical': n_clusters is None,
+                'max_tree_depth': max_tree_depth}
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering "
                              "for scaling reasons.")
