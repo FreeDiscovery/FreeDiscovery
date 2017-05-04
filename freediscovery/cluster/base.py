@@ -46,6 +46,10 @@ def select_top_words(word_list, n=10):
             break
     return out
 
+class _BirchDummy(object):
+    """ A dummy class for Birch """
+    pass
+
 
 class ClusterLabels(object):
     """Calculate the cluster labels.
@@ -85,7 +89,7 @@ class ClusterLabels(object):
     def _get_model_centroids(self):
         method_name = type(self.model).__name__
         if method_name not in ['MiniBatchKMeans', 'AgglomerativeClustering',
-                               'Birch', 'DBSCAN']:
+                               'Birch', '_BirchDummy', 'DBSCAN']:
             raise NotImplementedError('Method name: '
                                       '{} not implented!'.format(method_name))
         # centroids were previously computed
@@ -172,7 +176,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
 
     _wrapper_type = "cluster"
 
-    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None):
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None, metric='cosine'):
 
         super(_ClusteringWrapper, self).__init__(cache_dir=cache_dir,
                                                  parent_id=parent_id,
@@ -182,9 +186,16 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             raise NotImplementedError('Using clustering with hashed features '
                                       'is not supported by FreeDiscovery!')
 
+        if mid is None:
+            self.metric = metric
+        else:
+            self.metric = self._pars['metric']
         self.km = self.cmod
         del self.cmod
         self._fit_X = None
+
+    def _load_htree(self):
+        return joblib.load(os.path.join(self.model_dir, self.mid, 'htree'))
 
     def _cluster_func(self, n_clusters, km, pars=None):
         """ A helper function for clustering, includes base method used by
@@ -192,7 +203,9 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         import warnings
         from sklearn.neighbors import NearestCentroid
 
-        pars.update(km.get_params(deep=True))
+        new_pars = km.get_params(deep=True)
+        new_pars.pop('metric', None)  # dbscan always uses the euclidean metric
+        pars.update(new_pars)
         if self._fit_X is None:
             self._fit_X = X = self.pipeline.data
         else:
@@ -208,20 +221,10 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         self.mid = mid
         self.mid_dir = mid_dir
 
-        if type(km).__name__ == 'Birch' and n_clusters is None:
+        if type(km).__name__ in ['Birch', '_BirchDummy'] and n_clusters is None:
             # hierarcical clustering, centroids are computed at a later time..
             labels_ = None
 
-            def _del_cross_links(node):
-                # otherwise we get a recursion problem when pickling
-                # https://github.com/scikit-learn/scikit-learn/issues/8806
-                for el in node.subclusters_:
-                    if el.child_ is not None:
-                        del el.child_.prev_leaf_
-                        del el.child_.next_leaf_
-                        _del_cross_links(el.child_)
-
-            _del_cross_links(km.root_)
         else:
             if type(km).__name__ == "DBSCAN":
                 labels_ = _dbscan_noisy2unique(km.labels_)
@@ -234,13 +237,27 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             if not hasattr(km, 'cluster_centers_'):
                 km.cluster_centers_ = NearestCentroid().fit(X,
                                                             labels_).centroids_
+        if type(km).__name__ in ['Birch', '_BirchDummy']:
+            if pars['n_clusters'] is None:
+                hmod = _BirchHierarchy(km, metric=pars['metric'])
+                hmod.fit(X)
+                htree = hmod.htree
+                km = _BirchDummy()
+            else:
+                del km.root_
+                del km.dummy_leaf_
+                htree = None
+        else:
+            htree = None
 
         pars['n_clusters'] = n_clusters
 
         joblib.dump(km, os.path.join(self.model_dir, mid,  'model'))
+        joblib.dump(htree, os.path.join(self.model_dir, mid,  'htree'))
         joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'))
 
         self.km = km
+        self.htree = htree
         self._pars = pars
 
         return labels_
@@ -252,7 +269,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             htree = {'n_leaves': km.n_leaves_,
                      'n_components': km.n_components_,
                      'children': km.children_.tolist()}
-        elif method_name == 'Birch' and self._pars['n_clusters'] is None:
+        elif method_name in ['Birch', '_BirchDummy']\
+                and self._pars['n_clusters'] is None:
             hmod = _BirchHierarchy(km, metric=metric)
             hmod.fit(X)
             htree = hmod.htree
@@ -321,7 +339,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
            the bath size for the MiniBatchKMeans algorithm
         """
         from sklearn.cluster import MiniBatchKMeans
-        pars = {"batch_size": batch_size, 'is_hierarchical': False}
+        pars = {"batch_size": batch_size, 'is_hierarchical': False,
+                "metric": self.metric}
         km = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++',
                              n_init=10,
                              init_size=batch_size, batch_size=batch_size)
@@ -345,7 +364,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         """
         from freediscovery.externals.birch import Birch
         pars = {'threshold': threshold, 'is_hierarchical': n_clusters is None,
-                'max_tree_depth': max_tree_depth}
+                'max_tree_depth': max_tree_depth, "metric": self.metric}
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering "
                              "for scaling reasons.")
@@ -376,7 +395,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         """
         from sklearn.cluster import AgglomerativeClustering
         from sklearn.neighbors import kneighbors_graph
-        pars = {'n_neighbors': n_neighbors, 'is_hierarchical': True}
+        pars = {'n_neighbors': n_neighbors, 'is_hierarchical': True,
+                "metric": self.metric}
         if 'lsi' not in self.pipeline:
             raise ValueError("you must use lsi with birch clustering "
                              "for scaling reasons.")
@@ -414,7 +434,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
             This includes the point itself.
         """
         from sklearn.cluster import DBSCAN
-        pars = {'is_hierarchical': False}
+        pars = {'is_hierarchical': False, "metric": self.metric}
 
         km = DBSCAN(eps=eps, min_samples=min_samples, algorithm=algorithm,
                     leaf_size=leaf_size)

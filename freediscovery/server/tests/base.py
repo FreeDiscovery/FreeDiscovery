@@ -4,6 +4,8 @@ import pytest
 import json
 import os.path
 
+import numpy as np
+
 from .. import fd_app
 from ...tests.run_suite import check_cache
 from ...utils import dict2type
@@ -16,6 +18,8 @@ data_dir = os.path.dirname(__file__)
 email_data_dir = os.path.join(data_dir, "..", "..", "data", "fedora-devel-list-2008-October")
 data_dir = os.path.join(data_dir, "..", "..", "data", "ds_001", "raw")
 CACHE_DIR = check_cache()
+
+np.random.seed(43)
 
 
 def parse_res(res):

@@ -18,13 +18,22 @@ class _HCContainer(Container):
             res += el._get_children_document_id()
         return res
 
+    def limit_depth(self, max_depth=None):
+        """ Truncate the tree to the provided maximum depth """
+        if self.depth >= max_depth:
+            self.children = []
+
+        for el in self.children:
+            el.limit_depth(max_depth)
+
 
 def _check_birch_tree_consistency(node):
     """ Check that the _id we added is consistent """
     for el in node.subclusters_:
         if el.n_samples_ != len(el.id_):
-            raise ValueError('For subcluster '
-                             '{}, n_samples={} but len(id_)={}'.format(el, el.n_samples_, el.id_))
+            raise ValueError(('For subcluster ',
+                             '{}, n_samples={} but len(id_)={}')
+                             .format(el, el.n_samples_, el.id_))
         if el.child_ is not None:
             _check_birch_tree_consistency(el.child_)
 

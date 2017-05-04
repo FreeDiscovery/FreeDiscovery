@@ -47,7 +47,7 @@ def check_cluster_consistency(labels, terms):
                           ['k_means', True,   {}, {}],
                           ['birch', True, {'threshold': 0.5}, {}],
                           ['birch', True, {'threshold': 0.5, 'branching_factor': 3, 'n_clusters': None}, {}],
-                          ['ward_hc', True, {'n_neighbors': 5}, {}],
+                          #['ward_hc', True, {'n_neighbors': 5}, {}],
                           ['dbscan', False, {'eps': 0.5, 'min_samples': 2}, {}],
                           ['dbscan', True,   {'eps': 0.5, 'min_samples': 2}, {}]])
 def test_clustering(method, use_lsi, args, cl_args):
@@ -67,7 +67,7 @@ def test_clustering(method, use_lsi, args, cl_args):
         args['n_clusters'] = NCLUSTERS
     labels = cm(**args)
 
-    htree = cat._get_htree(cat.pipeline.data)
+    htree = cat._load_htree()
 
     mid = cat.mid
 
@@ -87,7 +87,7 @@ def test_clustering(method, use_lsi, args, cl_args):
             assert sorted(htree.keys()) == sorted(['n_leaves',
                                                    'n_components', 'children'])
         else:
-            assert htree == {}
+            assert not htree
 
         if method == 'dbscan':
             assert (labels != -1).all()

@@ -540,14 +540,18 @@ class KmeanClusteringApi(Resource):
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
             - `n_clusters`: the number of clusters
+            - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
            """))
     @use_args({'parent_id': wfields.Str(required=True),
-               'n_clusters': wfields.Int(missing=150)})
+               'n_clusters': wfields.Int(missing=150),
+               'metric': wfields.Str(missing='cosine')})
     @marshal_with(IDSchema())
     def post(self, **args):
+        metric = args.pop('metric')
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir,
-                                parent_id=args['parent_id'])
+                                parent_id=args['parent_id'],
+                                metric=metric)
 
         del args['parent_id']
 
@@ -584,14 +588,16 @@ class BirchClusteringApi(Resource):
     def post(self, **args):
         from math import sqrt
 
+        metric = args.pop('metric')
         S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
-                                         metric=args.pop('metric'),
+                                         metric=metric,
                                          inverse=True)
         # cosine sim to euclidean distance
         threshold = sqrt(2 * (1 - S_cos))
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir,
-                                parent_id=args.pop('parent_id'))
+                                parent_id=args.pop('parent_id'),
+                                metric=metric)
 
         if args.get('n_clusters') <= 0:
             args['n_clusters'] = None
@@ -621,14 +627,16 @@ class DBSCANClusteringApi(Resource):
     @marshal_with(IDSchema())
     def post(self, **args):
         from math import sqrt
+        metric = args.pop('metric')
         S_cos = _scale_cosine_similarity(args.pop('min_similarity'),
-                                         metric=args.pop('metric'),
+                                         metric=metric,
                                          inverse=True)
         # cosine sim to euclidean distance
         eps = sqrt(2 * (1 - S_cos))
 
         cl = _ClusteringWrapper(cache_dir=self._cache_dir,
-                                parent_id=args.pop('parent_id'))
+                                parent_id=args.pop('parent_id'),
+                                metric=metric)
 
         cl.dbscan(eps=eps, **args)
         return {'id': cl.mid}
@@ -641,19 +649,16 @@ class ClusteringApiElement(Resource):
 
            **Parameters**
             - `n_top_words`: keep only most relevant `n_top_words` words
-            - `metric` : The similarity metric in ['cosine', 'jaccard', 'cosine-positive'].
             - `return_optimal_sampling` : Instead of cluster results, the optimal sampling results will be returned (with no cluster labels). This option is only valid with Birch algorithm. Note that optimal sampling cannot return more samples than the subclusters in the birch clustering results (default: false)
             - `sampling_min_similarity` : Similarity threashold used by smart sampling. Decreasing this value would result in more sampled documents. Default: 1.0 (i.e. use the full cluster hierarichy).
             - `sampling_min_coverage` : Minimal coverage requirement in [0, 1] range. Increasing this value would result in a larger number of samples. (default: 0.9)
             """))
     @use_args({'n_top_words': wfields.Int(missing=5),
-               'metric': wfields.Str(missing='cosine'),
                'return_optimal_sampling': wfields.Bool(missing=False),
                'sampling_min_similarity': wfields.Number(missing=1.0),
                'sampling_min_coverage': wfields.Number(missing=0.9)})
     @marshal_with(ClusteringSchema())
     def get(self, method, mid, **args):
-        metric = args.pop('metric')
         return_optimal_sampling = args.pop('return_optimal_sampling')
         sampling_min_coverage = args.pop('sampling_min_coverage')
         sampling_min_similarity = args.pop('sampling_min_similarity')
@@ -669,10 +674,10 @@ class ClusteringApiElement(Resource):
 
         cl._fit_X = cl.pipeline.data
 
-        htree = cl._get_htree(cl._fit_X, metric=metric)
-
-        if type(km).__name__ == 'Birch' and cl._pars['is_hierarchical']:
+        if type(km).__name__ in ['_BirchDummy', 'Birch'] and cl._pars['is_hierarchical']:
             # Hierarchical clustering
+
+            htree = cl._load_htree()
 
             db = cl.fe.db_.data
 
@@ -683,11 +688,10 @@ class ClusteringApiElement(Resource):
                                                      sampling_min_coverage)
             else:
                 # we don't use optimal sampling
-                flat_tree = htree.flatten()
                 if cl._pars['max_tree_depth'] is not None:
                     max_tree_depth = cl._pars['max_tree_depth']
-                    flat_tree = [row for row in flat_tree
-                                if row.depth <= max_tree_depth]
+                    htree.limit_depth(max_tree_depth)
+                flat_tree = htree.flatten()
 
                 terms = cl.compute_labels(
                             cluster_indices=[row['children_document_id']
@@ -701,10 +705,10 @@ class ClusteringApiElement(Resource):
                         if key in ['document_id', 'rendering_id']]
             db = db[doc_keys]
 
-            for idx, row in enumerate(flat_tree):
+            for row in flat_tree:
                 irow = {'cluster_similarity': row['cluster_similarity'],
                         'cluster_size': row['cluster_size'],
-                        'cluster_id': idx}
+                        'cluster_id': row['cluster_id']}
                 if not return_optimal_sampling:
                     irow['cluster_label'] = ' '.join(row['cluster_label'])
                     irow['children'] = [el['cluster_id']
@@ -712,7 +716,7 @@ class ClusteringApiElement(Resource):
                     irow['cluster_depth'] = row.depth
 
                 db_sl = db.iloc[row['children_document_id']].copy()
-                db_sl['similarity'] = row['cluster_similarity']
+                db_sl['similarity'] = row['document_similarity']
                 tmp = []
                 for index, row_tmp in db_sl.iterrows():
                     row_dict = row_tmp.to_dict()
@@ -737,7 +741,7 @@ class ClusteringApiElement(Resource):
 
                 S_sim_mean, S_sim = centroid_similarity(cl._fit_X,
                                                         group.index.values,
-                                                        metric)
+                                                        cl._pars['metric'])
                 group = group.assign(similarity=S_sim)
 
                 row_docs = []

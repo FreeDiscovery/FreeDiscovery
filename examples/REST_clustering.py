@@ -34,8 +34,7 @@ print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
 fe_opts = {'dataset_definition': dataset_definition,
-           'use_idf': 1, 'n_features': 30001,
-           'min_df': 4, 'max_df': 0.75  # filter out (too)/(un)frequent words
+           #'min_df': 4, 'max_df': 0.75  # filter out (too)/(un)frequent words
            }
 res = requests.post(url, json=fe_opts).json()
 
@@ -63,7 +62,7 @@ print("\n2. Calculate LSI")
 url = BASE_URL + '/lsi/'
 print("POST", url)
 
-n_components = 100
+n_components = 300
 res = requests.post(url,
                     json={'n_components': n_components,
                           'parent_id': dsid
@@ -118,7 +117,8 @@ res = requests.post(url,
                     json={'parent_id': lsi_id,
                           'n_clusters': -1,
                           'min_similarity': 0.7,
-                          'branching_factor': 20
+                          'branching_factor': 20,
+                          'max_tree_depth': 2,
                           }).json()
 
 mid = res['id']
