@@ -16,7 +16,8 @@ def test_threading():
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir=data_dir)
+    uuid = fe.setup()
+    fe.ingest(data_dir=data_dir)
     fe.transform()
     fe.parse_email_headers()
 

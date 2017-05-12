@@ -33,8 +33,7 @@ dataset_definition = [{'document_id': row['document_id'],
 print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-fe_opts = {'dataset_definition': dataset_definition,
-           #'min_df': 4, 'max_df': 0.75  # filter out (too)/(un)frequent words
+fe_opts = {  # 'min_df': 4, 'max_df': 0.75  # filter out (too)/(un)frequent words
            }
 res = requests.post(url, json=fe_opts).json()
 
@@ -47,7 +46,7 @@ print("\n1.b Run feature extraction")
 # progress status is available for the hashed version only
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
 print(" POST", url)
-res = requests.post(url)
+res = requests.post(url, json={'dataset_definition': dataset_definition})
 
 print("\n1.d. check the parameters of the extracted features")
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)

@@ -32,7 +32,8 @@ EPSILON = 1e-4
 data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 
 fe = FeatureVectorizer(cache_dir=cache_dir)
-vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt')
+vect_uuid = fe.setup()
+fe.ingest(data_dir, file_pattern='.*\d.txt')
 fe.transform()
 
 

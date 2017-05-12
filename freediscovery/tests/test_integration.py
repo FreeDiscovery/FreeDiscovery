@@ -38,8 +38,8 @@ def test_features_hashing(use_hashing, use_lsi, method):
     n_features = 20000
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         n_features=n_features, use_hashing=use_hashing)
+    uuid = fe.setup(n_features=n_features, use_hashing=use_hashing)
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
     fe.transform()
 
     ground_truth = parse_ground_truth_file(os.path.join(data_dir,

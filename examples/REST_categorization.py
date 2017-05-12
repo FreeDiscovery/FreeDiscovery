@@ -30,8 +30,8 @@ if __name__ == '__main__':
 
     data_dir = input_ds['metadata']['data_dir']
     dataset_definition = [{'document_id': row['document_id'],
-                           'file_path': os.path.join(data_dir, row['file_path'])} \
-                                   for row in input_ds['dataset']]
+                           'file_path': os.path.join(data_dir, row['file_path'])}
+                          for row in input_ds['dataset']]
     # create a custom dataset definition for ingestion
 
     # 1. Feature extraction
@@ -39,8 +39,7 @@ if __name__ == '__main__':
     print("\n1.a Load dataset and initalize feature extraction")
     url = BASE_URL + '/feature-extraction'
     print(" POST", url)
-    res = requests.post(url, json={'dataset_definition': dataset_definition,
-                                   'use_hashing': True}).json()
+    res = requests.post(url).json()
 
     dsid = res['id']
     print("   => received {}".format(list(res.keys())))
@@ -51,9 +50,10 @@ if __name__ == '__main__':
     # Make this call in a background process (there should be a better way of doing it)
     url = BASE_URL+'/feature-extraction/{}'.format(dsid)
     print(" POST", url)
-    p = Process(target=requests.post, args=(url,))
+    p = Process(target=requests.post, args=(url,),
+                kwargs={'json': {'dataset_definition': dataset_definition}})
     p.start()
-    sleep(5.0) # wait a bit for the processing to start
+    sleep(5.0)  # wait a bit for the processing to start
 
     print('\n1.c Monitor feature extraction progress')
     url = BASE_URL+'/feature-extraction/{}'.format(dsid)
@@ -66,22 +66,22 @@ if __name__ == '__main__':
             p.terminate()
             raise ValueError('Processing did not start')
         elif res.status_code == 200:
-            break # processing finished
+            break  # processing finished
         data = res.json()
         print('     ... {}k/{}k files processed in {:.1f} min'.format(
-                    data['n_samples_processed']//1000, data['n_samples']//1000, (time() - t0)/60.))
+                    data['n_samples_processed']//1000, data['n_samples']//1000,
+                    (time() - t0)/60.))
         sleep(15.0)
 
     p.terminate()  # just in case, should not be necessary
-
 
     print("\n1.d. check the parameters of the extracted features")
     url = BASE_URL + '/feature-extraction/{}'.format(dsid)
     print(' GET', url)
     res = requests.get(url).json()
 
-    print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                      if "filenames" not in key]))
+    print('\n'.join(['     - {}: {}'.format(key, val)
+          for key, val in res.items() if "filenames" not in key]))
 
     # 3. Document categorization with LSI (used for Nearest Neighbors method)
 
@@ -101,12 +101,12 @@ if __name__ == '__main__':
     print('  => SVD decomposition with {} dimensions explaining {:.2f} % variabilty of the data'.format(
                             n_components, res['explained_variance']*100))
 
-
     # 3. Document categorization
 
     print("\n3.a. Train the categorization model")
-    print("   {} positive, {} negative files".format(pd.DataFrame(input_ds['training_set'])\
-                             .groupby('category').count()['document_id'], 0))
+    print("   {} positive, {} negative files".format(
+          pd.DataFrame(input_ds['training_set'])
+            .groupby('category').count()['document_id'], 0))
 
     for method, use_lsi in [('LinearSVC', False),
                             ('NearestNeighbor', True)]:
@@ -140,8 +140,8 @@ if __name__ == '__main__':
         print(" GET", url)
         res = requests.get(url).json()
 
-        print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                          if key not in ['index', 'category']]))
+        print('\n'.join(['     - {}: {}'.format(key, val)
+              for key, val in res.items() if key not in ['index', 'category']]))
 
         print("\n3.c Categorize the complete dataset with this model")
         url = BASE_URL + '/categorization/{}/predict'.format(mid)
@@ -157,7 +157,6 @@ if __name__ == '__main__':
                 nrow['nearest_document_id'] = row['scores'][0]['document_id']
             data.append(nrow)
 
-
         df = pd.DataFrame(data).set_index('document_id')
         print(df)
 
@@ -165,8 +164,7 @@ if __name__ == '__main__':
         url = BASE_URL + '/metrics/categorization'
         print(" GET", url)
         res = requests.post(url, json={'y_true': input_ds['dataset'],
-                                      'y_pred': res['data'] }).json()
-
+                                       'y_pred': res['data']}).json()
 
         print('    => Test scores: MAP = {average_precision:.3f}, ROC-AUC = {roc_auc:.3f}, recall @20%: {recall_at_20p:.3f} '.format(**res))
 

@@ -30,9 +30,9 @@ def test_feature_extraction_tokenization(analyzer, ngram_range, use_hashing):
     use_hashing = (use_hashing == 'hashed')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         analyzer=analyzer, ngram_range=ngram_range,
-                         use_hashing=use_hashing)
+    uuid = fe.setup(analyzer=analyzer, ngram_range=ngram_range,
+                    use_hashing=use_hashing)
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
     fe.transform()
 
     res2 = fe._load_features(uuid)
@@ -60,9 +60,9 @@ def test_feature_extraction_weighting(use_idf, sublinear_tf, binary,
     use_hashing = (use_hashing == 'hashed')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         use_idf=use_idf, binary=binary,
-                         use_hashing=use_hashing, sublinear_tf=sublinear_tf)
+    uuid = fe.setup(use_idf=use_idf, binary=binary,
+                    use_hashing=use_hashing, sublinear_tf=sublinear_tf)
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
     fe.transform()
 
     res2 = fe._load_features(uuid)
@@ -86,9 +86,9 @@ def test_feature_extraction_nfeatures(n_features, use_idf, use_hashing):
     use_idf = (use_idf == 'IDF')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         n_features=n_features,
-                         use_idf=use_idf, use_hashing=use_hashing)
+    uuid = fe.setup(n_features=n_features,
+                    use_idf=use_idf, use_hashing=use_hashing)
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
     fe.transform()
 
     res2 = fe._load_features(uuid)
@@ -107,8 +107,8 @@ def test_search_filenames(use_hashing):
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         use_hashing=use_hashing)
+    uuid = fe.setup(use_hashing=use_hashing)
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
     fe.transform()
 
     assert fe.db_ is not None
@@ -139,14 +139,15 @@ def test_df_filtering(use_hashing, min_df, max_df):
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, use_hashing=use_hashing,
-                         min_df=min_df, max_df=max_df)
+    uuid = fe.setup(min_df=min_df, max_df=max_df, use_hashing=use_hashing)
+    fe.ingest(data_dir)
     fe.transform()
 
     X = fe._load_features(uuid)
 
     fe2 = FeatureVectorizer(cache_dir=cache_dir)
-    uuid2 = fe2.preprocess(data_dir, use_hashing=use_hashing)
+    uuid2 = fe2.setup(use_hashing=use_hashing)
+    fe2.ingest(data_dir)
     fe2.transform()
 
     X2 = fe2._load_features(uuid2)
@@ -165,7 +166,8 @@ def test_append_documents():
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir)
+    uuid = fe.setup()
+    fe.ingest(data_dir)
     fe.transform()
 
     X = fe._load_features(uuid)
@@ -201,7 +203,8 @@ def test_remove_documents():
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir)
+    uuid = fe.setup()
+    fe.ingest(data_dir)
     fe.transform()
 
     X = fe._load_features(uuid)
@@ -238,8 +241,8 @@ def test_sampling_filenames():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     with pytest.warns(UserWarning):
         # there is a warning because we don't use norm='l2'
-        uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                             use_hashing=True, **fe_pars)
+        uuid = fe.setup(use_hashing=True, **fe_pars)
+        fe.ingest(data_dir, file_pattern='.*\d.txt')
     fe.transform()
     X = fe._load_features(uuid)
 
@@ -313,8 +316,8 @@ def test_feature_extraction_cyrillic(use_hashing):
     use_hashing = (use_hashing == 'hashed')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         use_hashing=use_hashing)
+    uuid = fe.setup(use_hashing=use_hashing)
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
     fe.transform()
 
     res2 = fe._load_features(uuid)
@@ -337,7 +340,8 @@ def test_email_parsing():
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir)
+    uuid = fe.setup()
+    fe.ingest(data_dir)
     fe.transform()
 
     email_md = fe.parse_email_headers()

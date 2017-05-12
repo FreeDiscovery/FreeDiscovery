@@ -111,8 +111,6 @@ class FeaturesApi(Resource):
             Initialize the feature extraction on a document collection.
 
             **Parameters**
-             - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
-             - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.
              - `n_features`: [optional] number of features (overlapping character/word n-grams that are hashed).  n_features refers to the number of buckets in the hash.  The larger the number, the fewer collisions.   (default: 1100000)
              - `analyzer`: 'word', 'char', 'char_wb' Whether the feature should be made of word or character n-grams.  Option ‘char_wb’ creates character n-grams only from text inside word boundaries.  ( default: 'word')
              - `ngram_range` : tuple (min_n, max_n), default=(1, 1) The lower and upper boundary of the range of n-values for different n-grams to be extracted. All values of n such that min_n <= n <= max_n will be used.
@@ -128,8 +126,8 @@ class FeaturesApi(Resource):
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
              - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
             """))
-    @use_args(FeaturesParsSchema(strict=True, exclude=('norm',)))
-    @marshal_with(FeaturesSchema())
+    @use_args(FeaturesParsSchema(strict=True, exclude=('norm', 'data_dir')))
+    @marshal_with(IDSchema())
     def post(self, **args):
         args['use_idf'] = args['use_idf'] > 0
         if args['use_hashing']:
@@ -142,8 +140,8 @@ class FeaturesApi(Resource):
                 args[key] = int(args[key])
 
         fe = FeatureVectorizer(self._cache_dir)
-        dsid = fe.preprocess(**args)
-        return {'id': dsid, 'filenames': fe.filenames_}
+        dsid = fe.setup(**args)
+        return {'id': dsid}
 
 
 class FeaturesApiElement(Resource):
@@ -172,10 +170,19 @@ class FeaturesApiElement(Resource):
                                      "Processing failed, see server logs!"
                                       }).data, 520
 
-    @doc(description="Run feature extraction on a dataset")
+    @doc(description=dedent("""
+         Run feature extraction on a dataset,
+         
+         **Parameters**
+          - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
+          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.
+         """))
+    @use_args({"data_dir":  wfields.Str(),
+               "dataset_definition": wfields.Nested(_DatasetDefinition, many=True)})
     @marshal_with(IDSchema())
-    def post(self, dsid):
+    def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe.ingest(**args)
         fe.transform()
         if fe.pars_['parse_email_headers']:
             fe.parse_email_headers()

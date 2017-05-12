@@ -126,10 +126,10 @@ def test_get_search_filenames(app):
 
 def test_append_documents(app):
     method = V01 + "/feature-extraction/"
-    data = app.post_check(method, json={'data_dir': data_dir})
+    data = app.post_check(method)
     dsid = data['id']
     method += dsid
-    app.post_check(method)
+    app.post_check(method, json={'data_dir': data_dir})
 
     data = app.get_check(method)
 
@@ -159,10 +159,10 @@ def test_append_documents(app):
 
 def test_remove_documents(app):
     method = V01 + "/feature-extraction/"
-    data = app.post_check(method, json={'data_dir': data_dir})
+    data = app.post_check(method)
     dsid = data['id']
     method += dsid
-    app.post_check(method)
+    app.post_check(method, json={'data_dir': data_dir})
 
     data = app.get_check(method)
 

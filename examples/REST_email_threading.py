@@ -9,21 +9,17 @@ from __future__ import print_function
 from time import time
 import sys
 import platform
-from itertools import groupby
+import sys
 
-import numpy as np
 import pandas as pd
 import requests
-import sys
-import os
 
 pd.options.display.float_format = '{:,.3f}'.format
 
 
 if platform.system() == 'Windows' and sys.version_info > (3, 0):
-   print('This example currently fails on Windows with PY3 (issue #')
-   sys.exit()
-
+    print('This example currently fails on Windows with PY3 (issue #')
+    sys.exit()
 
 dataset_name = "fedora_ml_3k_subset"     # see list of available datasets
 
@@ -42,8 +38,7 @@ data_dir = res['metadata']['data_dir']
 print("\n1.a Parse emails")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-res = requests.post(url, json={'data_dir': data_dir,
-                               'parse_email_headers': True}).json()
+res = requests.post(url, json={'parse_email_headers': True}).json()
 
 dsid = res['id']
 print("   => received {}".format(list(res.keys())))
@@ -52,7 +47,7 @@ print("   => dsid = {}".format(dsid))
 
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
 print(" POST", url)
-requests.post(url)
+requests.post(url, json={'data_dir': data_dir})
 
 
 print("\n2. Email threading")
@@ -60,10 +55,9 @@ print("\n2. Email threading")
 url = BASE_URL + '/email-threading/'
 print(" POST", url)
 t0 = time()
-res = requests.post(url,
-        json={'parent_id': dsid }).json()
+res = requests.post(url, json={'parent_id': dsid}).json()
 
-mid  = res['id']
+mid = res['id']
 print("     => model id = {}".format(mid))
 
 

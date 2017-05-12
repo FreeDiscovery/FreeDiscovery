@@ -60,8 +60,6 @@ class _DatasetDefinition(Schema):
 
 class FeaturesParsSchema(Schema):
     data_dir = fields.Str()
-    dataset_definition = fields.Nested(_DatasetDefinition, many=True)
-    dir_pattern = fields.Str()
     n_features = fields.Int(missing=100001)
     analyzer = fields.Str(missing='word')
     stop_words = fields.Str()

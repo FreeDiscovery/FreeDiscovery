@@ -157,13 +157,12 @@ class FeatureVectorizer(object):
         fset_new = joblib.load(os.path.join(dsid_dir, 'features'))
         return fset_new
 
-    def preprocess(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
-                   dataset_definition=None, n_features=None,
-                   chunk_size=5000, analyzer='word', ngram_range=(1, 1),
-                   stop_words=None, n_jobs=1, use_idf=False, sublinear_tf=True,
-                   binary=False, use_hashing=False,
-                   norm='l2', min_df=0.0, max_df=1.0,
-                   parse_email_headers=False):
+    def setup(self, n_features=None, chunk_size=5000, analyzer='word',
+              ngram_range=(1, 1), stop_words=None, n_jobs=1,
+              use_idf=False, sublinear_tf=True,
+              binary=False, use_hashing=False,
+              norm='l2', min_df=0.0, max_df=1.0,
+              parse_email_headers=False):
         """Initalize the features extraction.
 
         See sklearn.feature_extraction.text for a detailed description
@@ -171,11 +170,6 @@ class FeatureVectorizer(object):
 
         Parameters
         ----------
-        data_dir : str
-            path to the data directory (used only if metadata not provided), default: None
-        dataset_defintion : list of dicts
-            a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
-            describing the data ingestion (this overwrites data_dir)
         analyzer : string, {'word', 'char'} or callable
             Whether the feature should be made of word or character n-grams.
             If a callable is passed it is used to extract the sequence of features
@@ -219,22 +213,14 @@ class FeatureVectorizer(object):
 
         """
 
-        if dataset_definition is not None:
-            db = DocumentIndex.from_list(dataset_definition)
-        elif data_dir is not None:
-            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
-        else:
-            raise ValueError('At least one of data_dir, dataset_definition '
-                             'must be provided')
-        data_dir = db.data_dir
-
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
 
         if not isinstance(ngram_range, tuple) \
            and not isinstance(ngram_range, list):
-            raise WrongParameter('not a valid input ngram_range='
-                                 '{}: should be a list or a typle!'.format(ngram_range))
+            raise WrongParameter(('not a valid input ngram_range='
+                                  '{}: should be a list or a typle!')
+                                 .format(ngram_range))
 
         if not len(ngram_range) == 2:
             raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
@@ -255,8 +241,6 @@ class FeatureVectorizer(object):
         if n_features is None and use_hashing:
             n_features = 100001  # default size of the hashing table
 
-        self._filenames = db.data.file_path.values.tolist()
-        del db.data['file_path']
         self.dsid = dsid = generate_uuid()
         self.dsid_dir = dsid_dir = os.path.join(self.cache_dir, dsid)
 
@@ -265,8 +249,8 @@ class FeatureVectorizer(object):
             shutil.rmtree(dsid_dir)
 
         os.mkdir(dsid_dir)
-        pars = {'data_dir': data_dir,
-                'n_samples': len(self._filenames), "n_features": n_features,
+        pars = {'data_dir': None,
+                'n_samples': None, "n_features": n_features,
                 'chunk_size': chunk_size, 'stop_words': stop_words,
                 'analyzer': analyzer, 'ngram_range': ngram_range,
                 'n_jobs': n_jobs, 'use_idf': use_idf,
@@ -279,13 +263,50 @@ class FeatureVectorizer(object):
         self._pars = pars
         with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
             pickle.dump(self._pars, fh)
+        return dsid
+
+    def ingest(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
+               dataset_definition=None):
+        """Perform data ingestion
+
+        Parameters
+        ----------
+        data_dir : str
+            path to the data directory (used only if metadata not provided),
+            default: None
+        dataset_defintion : list of dicts
+            a list of dictionaries with keys
+            ['file_path', 'document_id', 'rendition_id']
+            describing the data ingestion (this overwrites data_dir)
+        """
+
+        if dataset_definition is not None:
+            db = DocumentIndex.from_list(dataset_definition)
+        elif data_dir is not None:
+            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
+        else:
+            raise ValueError('At least one of data_dir, dataset_definition '
+                             'must be provided')
+        data_dir = db.data_dir
+
+        self._filenames = db.data.file_path.values.tolist()
+        del db.data['file_path']
+
+        pars = self.pars_
+        pars['data_dir'] = data_dir
+        pars['n_samples'] = len(self._filenames)
+
+        dsid_dir = os.path.join(self.cache_dir, self.dsid)
+        # overwrite pars on disk
+        with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
+            pickle.dump(self._pars, fh)
         if 'file_path' in db.data.columns:
             del db.data['file_path']
         db.data.to_pickle(os.path.join(dsid_dir, 'db'))
         with open(os.path.join(self.dsid_dir, 'filenames'), 'wb') as fh:
             pickle.dump(self._filenames, fh)
         self._db = db
-        return dsid
+        return
 
     @staticmethod
     def _generate_stop_words(stop_words):
@@ -343,7 +364,7 @@ class FeatureVectorizer(object):
         use_hashing = pars['use_hashing']
 
         if use_hashing:
-            # just make sure that we can initialize the vectorizer
+            # make sure that we can initialize the vectorizer
             # (easier outside of the paralel loop
             vect = _vectorize_chunk(dsid_dir, 0, pars, pretend=True)
 
@@ -527,7 +548,6 @@ class FeatureVectorizer(object):
                 for mid in os.listdir(os.path.join(dsid_dir, model_type)):
                     shutil.rmtree(os.path.join(dsid_dir, model_type, mid))
 
-
     @property
     def n_features_(self):
         """ Number of features of the vecotorizer"""
@@ -614,12 +634,12 @@ class FeatureVectorizer(object):
             except:
                 # traceback.print_exc()
                 continue
-            
 
             if pars['type'] != type(self).__name__:
                 continue
 
-            creation_date = os.stat(os.path.join(self.cache_dir, dsid)).st_ctime
+            creation_date = os.stat(os.path.join(self.cache_dir,
+                                    dsid)).st_ctime
             pars['creation_date'] = time.strftime('%c',
                                                   time.gmtime(creation_date))
 
