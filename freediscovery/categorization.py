@@ -13,7 +13,8 @@ from .base import _BaseWrapper
 from .utils import setup_model, _rename_main_thread
 from .neighbors import NearestCentroidRanker, NearestNeighborRanker
 from .metrics import _scale_cosine_similarity
-from .exceptions import (ModelNotFound, WrongParameter, NotImplementedFD, OptionalDependencyMissing)
+from .exceptions import (WrongParameter, NotImplementedFD,
+                         OptionalDependencyMissing)
 
 
 def binary_sensitivity_analysis(estimator, vocabulary, X_row):
@@ -25,7 +26,7 @@ def binary_sensitivity_analysis(estimator, vocabulary, X_row):
       the binary categorization estimator
       (must have a `decision_function` method)
     vocabulary : list [n_features]
-      vocabulary (list of words or n-grams) 
+      vocabulary (list of words or n-grams)
     X_row : sparse CSR ndarray [n_features]
       a row of the document term matrix
     """
@@ -33,18 +34,17 @@ def binary_sensitivity_analysis(estimator, vocabulary, X_row):
         raise ValueError('X_row must be an 2D sparse array,'
                          'with shape (1, N) not {}'.format(X_row.shape))
     if X_row.shape[1] != len(vocabulary):
-        raise ValueError(
-                'The vocabulary length ({}) does not match '.format(len(vocabulary)) +\
-                'the number of features in X_row ({})'.format(X_row.shape[1]))
+        raise ValueError(('The vocabulary length ({}) does not match '
+                          'the number of features in X_row ({})')
+                         .format(len(vocabulary), X_row.shape[1]))
 
     vocabulary_inv = {ind: key for key, ind in vocabulary.items()}
-
 
     if type(estimator).__name__ == 'LogisticRegression':
         coef_ = estimator.coef_
         if X_row.shape[1] != coef_.shape[1]:
-            raise ValueError("Coefficients size {} does not match n_features={}".format(
-                                        coef_.shape[1], X_row.shape[1]))
+            raise ValueError("Coefficients size {} does not match n_features={}"
+                             .format(coef_.shape[1], X_row.shape[1]))
 
         indices = X_row.indices
         weights = X_row.data*estimator.coef_[0, indices]
@@ -80,17 +80,16 @@ class _CategorizerWrapper(_BaseWrapper):
     _wrapper_type = "categorizer"
 
     def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None,
-            cv_scoring='roc_auc', cv_n_folds=3):
+                 cv_scoring='roc_auc', cv_n_folds=3):
 
         super(_CategorizerWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id,
                                           mid=mid, load_model=True)
 
         if mid is not None:
-            self.le = joblib.load(os.path.join(self.model_dir, mid, 'label_encoder'))
+            self.le = joblib.load(str(self.model_dir / mid / 'label_encoder'))
         self.cv_scoring = cv_scoring
         self.cv_n_folds = cv_n_folds
-
 
     @staticmethod
     def _build_estimator(Y_train, method, cv, cv_scoring, cv_n_folds, **options):
@@ -124,7 +123,7 @@ class _CategorizerWrapper(_BaseWrapper):
                     raise OptionalDependencyMissing('freediscovery_extra')
                 cmod = make_logregr_cv_model(cv_obj, cv_scoring, **options)
         elif method == 'NearestCentroid':
-            cmod  = NearestCentroidRanker()
+            cmod = NearestCentroidRanker()
         elif method == 'NearestNeighbor':
             cmod = NearestNeighborRanker()
         elif method == 'xgboost':
@@ -217,9 +216,8 @@ class _CategorizerWrapper(_BaseWrapper):
         else:
             cmod.fit(X_train, Y_train)
 
-
-        joblib.dump(self.le, os.path.join(mid_dir, 'label_encoder'))
-        joblib.dump(cmod, os.path.join(mid_dir, 'model'))
+        joblib.dump(self.le, str(mid_dir / 'label_encoder'))
+        joblib.dump(cmod, str(mid_dir / 'model'))
 
         pars = {
             'method': method,
@@ -229,7 +227,7 @@ class _CategorizerWrapper(_BaseWrapper):
             }
         pars['options'] = cmod.get_params()
         self._pars = pars
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'))
+        joblib.dump(pars, str(mid_dir / 'pars'))
 
         self.mid = mid
         self.cmod = cmod
@@ -244,19 +242,25 @@ class _CategorizerWrapper(_BaseWrapper):
         chunck_size : int
            chunk size
         ml_output : str
-           type of the output in ['decision_function', 'probability'], only affects ML methods. default: 'probability'
+           type of the output in ['decision_function', 'probability'],
+           only affects ML methods. default: 'probability'
         metric : str   
-            The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm']. default: 'cosine'
+            The similarity returned by nearest neighbor classifier in
+            ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm'].
+            default: 'cosine'
 
         Returns
         -------
         res : ndarray [n_samples, n_classes]
            the score for each class
         nn_ind : {ndarray [n_samples, n_classes], None}
-           the index of the nearest neighbor for each class (when the NearestNeighborRanker is used)
+           the index of the nearest neighbor for each class
+           (when the NearestNeighborRanker is used)
         """
         if ml_output not in ['probability', 'decision_function']:
-            raise ValueError("Wrong input value ml_output={}, must be one of ['probability', 'decision_function']".format(ml_output))
+            raise ValueError(("Wrong input value ml_output={}, must be one of "
+                              "['probability', 'decision_function']")
+                             .format(ml_output))
 
         if ml_output == 'probability':
             ml_output = 'predict_proba'
@@ -303,8 +307,8 @@ class _CategorizerWrapper(_BaseWrapper):
         """Load model parameters from disk"""
         if mid is None:
             mid = self.mid
-        mid_dir = os.path.join(self.model_dir, mid)
+        mid_dir = self.model_dir / mid
         pars = super(_CategorizerWrapper, self)._load_pars(mid)
-        cmod = joblib.load(os.path.join(mid_dir, 'model'))
+        cmod = joblib.load(str(mid_dir / 'model'))
         pars['options'] = cmod.get_params()
         return pars

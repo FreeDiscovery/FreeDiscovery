@@ -191,10 +191,10 @@ class _StopWordsWrapper(object):
           the cache directory
         """
         self.cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
-        self.model_dir = os.path.join(self.cache_dir, 'stop_words')
+        self.model_dir = self.cache_dir / 'stop_words'
 
-        if not os.path.exists(self.model_dir):
-            os.makedirs(self.model_dir)
+        if not self.model_dir.exists():
+            self.model_dir.mkdir()
 
     def save(self, name, stop_words):
         """
@@ -211,31 +211,28 @@ class _StopWordsWrapper(object):
 
         self.stop_words = stop_words  # list of stop words
 
+        self.name = self.model_dir / (str(name) + '.pkl')
 
-        self.name = os.path.join(self.model_dir, str(name) + '.pkl')
-
-        dump(self.stop_words, self.name)
+        dump(self.stop_words, str(self.name))
 
     def load(self, name):
         """Retrive stop words specified by a name
         """
-        self.name = os.path.join(self.model_dir, str(name) + '.pkl')
-        self.stop_words = load(self.name)
+        self.name = self.model_dir / (str(name) + '.pkl')
+        self.stop_words = load(str(self.name))
         return (self.stop_words)
 
     def delete(self, name):
         """Delete stop words specified by a name
         """
-        if os.path.exists(os.path.join(self.model_dir, str(name) + '.pkl')):
-            os.remove(os.path.join(self.model_dir, str(name) + '.pkl'))
+        if (self.model_dir / (str(name) + '.pkl')).exists():
+            (self.model_dir / (str(name) + '.pkl')).unlink()
 
     def __contains__(self, name):
         """ Check if a given stop words set exists """
-        return os.path.exists(os.path.join(self.model_dir, str(name) + '.pkl'))
+        return (self.model_dir / (str(name) + '.pkl')).exists()
 
     def list(self):
         """ Returns a list of exiting stop-words """
-        return [os.splitext(el)[0] for el in  os.listdir(self.model_dir)]
-
-
-
+        return [os.splitext(el)[0] for el in
+                os.listdir(str(self.model_dir))]

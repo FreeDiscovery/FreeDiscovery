@@ -1,20 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 from sklearn.externals import joblib
 import numpy as np
 
 from ..base import _BaseWrapper
-from ..text import FeatureVectorizer
-from ..utils import setup_model, _rename_main_thread
-from ..exceptions import (DatasetNotFound, ModelNotFound, InitException,
-                            WrongParameter)
+from ..utils import setup_model
+from ..exceptions import WrongParameter
 from ..cluster.base import _BaseClusteringWrapper
+
 
 class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
     """Find near duplicates in a document collection.
@@ -63,16 +57,14 @@ class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
 
         self.mid = mid
 
-
         X = self.pipeline.data
         if method == 'simhash':
             shash.fit(X)
 
         self._fit_X = X
-        
-        joblib.dump(self.model, os.path.join(self.model_dir, mid,  'model'), compress=9)
-        joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'), compress=9)
 
+        joblib.dump(self.model, str(self.model_dir / mid / 'model'))
+        joblib.dump(pars, str(self.model_dir / mid / 'pars'))
 
     def query(self, **args):
         """ Find all the nearests neighbours for the dataset
@@ -92,10 +84,9 @@ class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
             are grouped by in cluster_id
         """
 
-
         if self._pars['method'] == 'simhash':
-            from ..cluster.utils import (_binary_linkage2clusters, 
-                                    _merge_clusters)
+            from ..cluster.utils import (_binary_linkage2clusters,
+                                         _merge_clusters)
 
             shash = self.model
 
@@ -122,7 +113,7 @@ class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
         elif self._pars['method'] == 'i-match':
             from .imatch import IMatchDuplicates
             if not hasattr(self, '_fit_X'):
-                self._fit_X = joblib.load(os.path.join(self.fe.dsid_dir, 'features'))
+                self._fit_X = joblib.load(str(self.fe.dsid_dir / 'features'))
             model = IMatchDuplicates(**args)
             model.fit(self._fit_X)
             cluster_id = model.labels_
@@ -131,4 +122,3 @@ class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
             raise ValueError
 
         return cluster_id
-

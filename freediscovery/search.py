@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import os
 import warnings
 
 from sklearn.metrics import pairwise_distances
 from sklearn.externals import joblib
 
 from .base import _BaseWrapper
-from .exceptions import WrongParameter
 
 
 class _SearchWrapper(_BaseWrapper):
@@ -49,11 +47,11 @@ class _SearchWrapper(_BaseWrapper):
         if internal_id is not None:
             if 'lsi' not in self.pipeline:
                 warnings.warn('Search using a document_id as a query'
-                                     ' should not be applied in the space of '
-                                     ' raw document term vectors due'
-                                     ' to the curse of dimensionality.'
-                                     ' Please add an LSI processing'
-                                     ' step (i.e. use `parent_id=lsi_id`)')
+                              ' should not be applied in the space of '
+                              ' raw document term vectors due'
+                              ' to the curse of dimensionality.'
+                              ' Please add an LSI processing'
+                              ' step (i.e. use `parent_id=lsi_id`)')
             vect = None
         else:
             vect = self.fe.vect_
@@ -62,8 +60,8 @@ class _SearchWrapper(_BaseWrapper):
         X = self.pipeline.data
 
         if "lsi" in self.pipeline:
-            lsi = joblib.load(os.path.join(
-                              self.pipeline.get_path(self.pipeline['lsi']),
+            lsi = joblib.load(str(
+                              self.pipeline.get_path(self.pipeline['lsi']) /
                               'model'))
         else:
             lsi = None

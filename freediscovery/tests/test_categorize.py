@@ -278,7 +278,7 @@ def test_pipeline(n_steps):
             pf.parent.parent.parent
 
         for estimator_type, mid in pf.items():
-            path = pf.get_path(mid, absolute=False)
+            path = str(pf.get_path(mid, absolute=False))
             if estimator_type == 'vectorizer':
                 assert re.match('ediscovery_cache.*', path)
             elif estimator_type == 'lsi':

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import os.path
 import sys
 
 import numpy as np
@@ -195,7 +194,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         self._fit_X = None
 
     def _load_htree(self):
-        return joblib.load(os.path.join(self.model_dir, self.mid, 'htree'))
+        return joblib.load(str(self.model_dir / self.mid / 'htree'))
 
     def _cluster_func(self, n_clusters, km, pars=None):
         """ A helper function for clustering, includes base method used by
@@ -252,9 +251,9 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
 
         pars['n_clusters'] = n_clusters
 
-        joblib.dump(km, os.path.join(self.model_dir, mid,  'model'))
-        joblib.dump(htree, os.path.join(self.model_dir, mid,  'htree'))
-        joblib.dump(pars, os.path.join(self.model_dir, mid,  'pars'))
+        joblib.dump(km, str(self.model_dir / mid / 'model'))
+        joblib.dump(htree, str(self.model_dir / mid / 'htree'))
+        joblib.dump(pars, str(self.model_dir / mid / 'pars'))
 
         self.km = km
         self.htree = htree
@@ -299,8 +298,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         vect = self.fe.vect_
 
         if 'lsi' in self.pipeline:
-            lsi = joblib.load(os.path.join(
-                              self.pipeline.get_path(self.pipeline['lsi']),
+            lsi = joblib.load(str(
+                              self.pipeline.get_path(self.pipeline['lsi']) /
                               'model'))
         else:
             lsi = None

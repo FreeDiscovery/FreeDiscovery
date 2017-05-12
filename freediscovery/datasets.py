@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-
 import os
-import sys
 import shutil
 import hashlib
 import platform
 import random
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -36,6 +30,7 @@ DATASET_SIZE = {'treclegal09_2k_subset' : 2.8,
                 '20newsgroups_micro': 0.03
                 }
 
+
 def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
     """ Internal helper function to download datasets"""
     import tarfile
@@ -44,8 +39,8 @@ def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
     base_url = "http://r0h.eu/d/{}.tar.gz".format(name)
 
     if verbose:
-        print('\nWarning: downloading dataset {} ({} MB) !'.format(name,
-                                    DATASET_SIZE[name]))
+        print('\nWarning: downloading dataset {} ({} MB) !'
+              .format(name, DATASET_SIZE[name]))
     response = requests.get(base_url, stream=False, allow_redirects=True)
     with open(fname, "wb") as fh:
         for idx, chunk in enumerate(response.iter_content(chunk_size=1024)):
@@ -57,7 +52,7 @@ def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
     if verify_checksum:
         # compute the md5 hash by chunks
         with open(fname, 'rb') as fh:
-            block_size=2**20
+            block_size = 2**20
             md5 = hashlib.md5()
             while True:
                 data = fh.read(block_size)
@@ -79,17 +74,17 @@ def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
 
 def _load_erdm_ground_truth(outdir):
     """A helper function to load Legal TREC 2009 data"""
-    with open(os.path.join(outdir,'seed_relevant.txt'), 'rt') as fh:
+    with (outdir / 'seed_relevant.txt').open('rt') as fh:
         relevant_files = [el.strip() for el in fh.readlines()]
 
-    with open(os.path.join(outdir,'seed_non_relevant.txt'), 'rt') as fh:
+    with (outdir / 'seed_non_relevant.txt').open('rt') as fh:
         non_relevant_files = [el.strip() for el in fh.readlines()]
-
 
     if platform.system() == 'Windows':
         relevant_files = [el.replace('/', '\\') for el in relevant_files]
         non_relevant_files = [el.replace('/', '\\') for el in non_relevant_files]
     return non_relevant_files, relevant_files
+
 
 def _compute_document_id(internal_id, mode):
     if mode == 'squared':
@@ -171,53 +166,52 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
 
     has_categories = '20newsgroups' in name or 'treclegal09' in name
 
-
     # make sure we don't have "ediscovery_cache" in the path
     cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
-    cache_dir = os.path.dirname(cache_dir)
-    
+    cache_dir = cache_dir.parent
 
-    outdir = os.path.join(cache_dir, name)
-    fname = outdir + ".tar.gz"
+    outdir = cache_dir / name
+    fname = outdir.with_suffix(".tar.gz")
 
-    if os.path.exists(outdir) and force:
-        shutil.rmtree(outdir)
+    if outdir.exists() and force:
+        shutil.rmtree(str(outdir))
 
     if '20newsgroups' in name:
-        internal_data_dir = os.path.dirname(os.path.abspath(__file__))
-        internal_data_dir = os.path.join(internal_data_dir, 'data')
+        internal_data_dir = Path(os.path.dirname(os.path.abspath(__file__)),
+                                 'data')
         if name == '20newsgroups_3categories':
             fname = name + '.pkl.xz'
         else:
             fname = name + '.pkl'
 
-        twenty_news = joblib.load(os.path.join(internal_data_dir, fname))
+        twenty_news = joblib.load(str(internal_data_dir / fname))
 
     # Download the dataset if it doesn't exist
-    if not os.path.exists(outdir):
+    if not (outdir).exists():
         if '20newsgroups' in name:
-            os.mkdir(outdir)
+            outdir.mkdir()
             for idx, doc in enumerate(twenty_news.data):
-                with open(os.path.join(outdir, '{:05}.txt'.format(idx)), 'wt') as fh:
+                with (outdir / '{:05}.txt'.format(idx)).open('wt') as fh:
                     fh.write(doc)
         else:
-            _download_dataset(cache_dir, fname, name, verify_checksum, verbose)
+            _download_dataset(str(cache_dir), str(fname), name,
+                              verify_checksum, verbose)
 
     if 'treclegal09' in name or 'fedora_ml' in name:
-        data_dir = os.path.join(outdir, 'data')
+        data_dir = (outdir / 'data')
     else:
         data_dir = outdir
-    md = {'data_dir': data_dir, 'name': name}
+    md = {'data_dir': str(data_dir), 'name': name}
 
-    di = DocumentIndex.from_folder(data_dir)
+    di = DocumentIndex.from_folder(str(data_dir))
 
     training_set = None
 
     if 'treclegal09' in name:
             negative_files, positive_files = _load_erdm_ground_truth(outdir)
 
-            ground_truth_file = os.path.join(outdir, "ground_truth_file.txt")  
-            gt = parse_ground_truth_file(ground_truth_file)
+            ground_truth_file = outdir / "ground_truth_file.txt"
+            gt = parse_ground_truth_file(str(ground_truth_file))
 
             res = di.search(gt, drop=False)
             di.data['category'] = res.is_relevant
@@ -256,8 +250,3 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
     dataset = filter_dict(dataset, valid_fields)
 
     return md, training_set, dataset
-
-
-
-
-

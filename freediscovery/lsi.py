@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import os.path
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse.linalg import svds
@@ -47,8 +42,8 @@ class _LSIWrapper(_BaseWrapper):
                                           parent_id=parent_id, mid=mid)
 
     def _load_features(self):
-        mid_dir = os.path.join(self.fe.dsid_dir, self._wrapper_type, self.mid)
-        return joblib.load(os.path.join(mid_dir, 'data'))
+        mid_dir = self.fe.dsid_dir / self._wrapper_type / self.mid
+        return joblib.load(str(mid_dir / 'data'))
 
     def fit_transform(self, n_components=150, n_iter=5):
         """
@@ -74,15 +69,15 @@ class _LSIWrapper(_BaseWrapper):
         parent_id = self.pipeline.mid
 
         dsid_dir = self.fe.dsid_dir
-        if not os.path.exists(dsid_dir):
+        if not dsid_dir.exists():
             raise IOError
 
         pars = {'parent_id': parent_id, 'n_components': n_components}
 
-        mid_dir_base = os.path.join(dsid_dir, self._wrapper_type)
+        mid_dir_base = dsid_dir / self._wrapper_type
 
-        if not os.path.exists(mid_dir_base):
-            os.mkdir(mid_dir_base)
+        if not mid_dir_base.exists():
+            mid_dir_base.mkdir()
         mid, mid_dir = setup_model(mid_dir_base)
 
         ds = self.pipeline.data
@@ -93,9 +88,9 @@ class _LSIWrapper(_BaseWrapper):
 
         ds_p = lsi.transform_lsi_norm(ds)
 
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'))
-        joblib.dump(lsi, os.path.join(mid_dir, 'model'))
-        joblib.dump(ds_p, os.path.join(mid_dir, 'data'))
+        joblib.dump(pars, str(mid_dir / 'pars'))
+        joblib.dump(lsi, str(mid_dir / 'model'))
+        joblib.dump(ds_p, str(mid_dir / 'data'))
 
         exp_var = lsi.explained_variance_ratio_.sum()
         self.mid = mid
@@ -111,12 +106,12 @@ class _LSIWrapper(_BaseWrapper):
           the additional data to add to the index
 
         """
-        mid_dir = os.path.join(self.model_dir, self.mid)
-        lsi = joblib.load(os.path.join(mid_dir, 'model'))
-        Y_old = joblib.load(os.path.join(mid_dir, 'data'))
+        mid_dir = self.model_dir / self.mid
+        lsi = joblib.load(str(mid_dir / 'model'))
+        Y_old = joblib.load(str(mid_dir / 'data'))
         Y_new = lsi.transform_lsi_norm(X)
         Y = np.vstack((Y_old, Y_new))
-        joblib.dump(Y, os.path.join(mid_dir, 'data'))
+        joblib.dump(Y, str(mid_dir / 'data'))
 
 
 # The below class is identical to TruncatedSVD,

@@ -77,17 +77,16 @@ class _BaseWrapper(object):
 
         # this is an alias that should be deprecated
         self.fe = FeatureVectorizer(cache_dir=cache_dir,
-                                     dsid=self.pipeline['vectorizer'])
+                                    dsid=self.pipeline['vectorizer'])
 
-        self.model_dir = os.path.join(self.pipeline.get_path(),
-                                      self._wrapper_type)
+        self.model_dir = self.pipeline.get_path() / self._wrapper_type
 
         if self._wrapper_type == 'search':
             # no data need to be stored on disk
             return
 
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
+        if not self.model_dir.exists():
+            self.model_dir.mkdir()
 
         if self.mid is not None:
             self._pars = self._load_pars()
@@ -103,12 +102,11 @@ class _BaseWrapper(object):
     def delete(self):
         """ Delete a trained model"""
         import shutil
-        mid_dir = os.path.join(self.model_dir, self.mid)
-        shutil.rmtree(mid_dir, ignore_errors=True)
+        mid_dir = self.model_dir / self.mid
+        shutil.rmtree(str(mid_dir), ignore_errors=True)
 
     def __contains__(self, mid):
-        mid_dir = os.path.join(self.model_dir, mid)
-        return os.path.exists(mid_dir)
+        return (self.model_dir / mid).exists()
 
     def get_params(self):
         """ Get model parameters """
@@ -117,32 +115,31 @@ class _BaseWrapper(object):
     def _load_model(self):
         """ Load model from disk """
         mid = self.mid
-        mid_dir = os.path.join(self.model_dir, mid)
-        if not os.path.exists(mid_dir):
-            raise ValueError('Model id {} ({}) not found in the cache {}!'.format(
-                             mid, self._wrapper_type, mid_dir))
-        cmod = joblib.load(os.path.join(mid_dir, 'model'))
+        mid_dir = self.model_dir / mid
+        if not mid_dir.exists():
+            raise ValueError('Model id {} ({}) not found in the cache {}!'
+                             .format(mid, self._wrapper_type, mid_dir))
+        cmod = joblib.load(str(mid_dir / 'model'))
         return cmod
-
 
     def _load_pars(self, mid=None):
         """Load model parameters from disk"""
         if mid is None:
             mid = self.mid
-        model_path = os.path.join(self.model_dir, mid)
-        if not os.path.exists(model_path):
-            raise ValueError('Model id {} ({}) not found in the cache {}!'.format(
-                             mid, self._wrapper_type, model_path))
-        pars = joblib.load(os.path.join(model_path, 'pars'))
+        model_path = self.model_dir / mid
+        if not model_path.exists():
+            raise ValueError('Model id {} ({}) not found in the cache {}!'
+                             .format(mid, self._wrapper_type, model_path))
+        pars = joblib.load(str(model_path / 'pars'))
         pars['id'] = mid
         return pars
 
     def list_models(self):
         """ List existing models of this type """
         out = []
-        if not os.path.exists(self.model_dir):
+        if not self.model_dir.exists():
             return out
-        for mid in os.listdir(self.model_dir):
+        for mid in os.listdir(str(self.model_dir)):
             try:
                 pars = self._load_pars(mid)
                 pars['id'] = mid
@@ -150,5 +147,3 @@ class _BaseWrapper(object):
             except:
                 raise
         return out
-
-

@@ -151,13 +151,10 @@ class FeaturesApiElement(Resource):
         sc = FeaturesSchema()
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         out = fe.pars_.copy()
-        is_processing = os.path.exists(os.path.join(fe.cache_dir,
-                                                    dsid, 'processing'))
-        is_finished = os.path.exists(os.path.join(fe.cache_dir,
-                                                  dsid, 'processing_finished'))
+        is_processing = (fe.cache_dir / dsid / 'processing').exists()
+        is_finished = (fe.cache_dir / dsid / 'processing_finished').exists()
         if is_processing and not is_finished:
-            n_chunks = len(glob(os.path.join(fe.cache_dir,
-                                             dsid, 'features-*[0-9]')))
+            n_chunks = len((fe.cache_dir / dsid).glob('features-*[0-9]'))
             out['n_samples_processed'] = min(n_chunks*out['chunk_size'],
                                              out['n_samples'])
             return sc.dump(out).data, 202
@@ -172,7 +169,7 @@ class FeaturesApiElement(Resource):
 
     @doc(description=dedent("""
          Run feature extraction on a dataset,
-         
+
          **Parameters**
           - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
           - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.

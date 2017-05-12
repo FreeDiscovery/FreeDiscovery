@@ -1,25 +1,15 @@
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 import sys
 import os.path
+import shutil
 from contextlib import contextmanager
-import pandas as pd
 import numpy as np
 import uuid
-from sklearn.metrics.base import UndefinedMetricWarning
-
-from .exceptions import (DatasetNotFound, ModelNotFound, InitException,
-                            WrongParameter)
-
 
 # this is wrong, and should be eventually replaced
 INT_NAN = -99999
+
 
 @contextmanager
 def _silent(stream='stderr'):
@@ -38,9 +28,11 @@ def _rename_main_thread():
     """
     import threading
     if isinstance(threading.current_thread(), threading._MainThread) and \
-                    threading.current_thread().name != 'MainThread':
-        print('Warning: joblib: renaming current thread {} to "MainThread".'.format(threading.current_thread().name))
+       threading.current_thread().name != 'MainThread':
+        print('Warning: joblib: renaming current thread {} to "MainThread".'
+              .format(threading.current_thread().name))
         threading.current_thread().name = 'MainThread'
+
 
 def _count_duplicates(x):
     """Return y an array of the same shape as x with the number of
@@ -48,24 +40,26 @@ def _count_duplicates(x):
     _, indices, counts = np.unique(x, return_counts=True, return_inverse=True)
     return counts[indices]
 
+
 def generate_uuid(size=16):
     """
     Generate a unique id for the model
     """
     sl = slice(size)
-    return uuid.uuid4().hex[sl] # a new random id
+    return uuid.uuid4().hex[sl]  # a new random id
 
 
 def setup_model(base_path):
     """
-    Generate a unique model id and create the corresponding folder for storing results
+    Generate a unique model id and create the corresponding folder
+    for storing results
     """
     mid = generate_uuid()
-    mid_dir = os.path.join(base_path, mid)
+    mid_dir = base_path / mid
     # hash collision; should not happen
-    if os.path.exists(mid_dir):
-        os.remove(mid_dir)  # removing the old folder nevertheless
-    os.mkdir(mid_dir)
+    if mid_dir.exists():
+        shutil.rmtree(str(mid_dir))  # removing the old folder nevertheless
+    mid_dir.mkdir()
     return mid, mid_dir
 
 
@@ -79,6 +73,7 @@ def _docstring_description(docstring):
             break
         res.append(line)
     return '\n'.join(res)
+
 
 def _query_features(vect, X, indices, n_top_words=10, remove_stop_words=False):
     """ Query the features with most weight
@@ -115,12 +110,14 @@ def _query_features(vect, X, indices, n_top_words=10, remove_stop_words=False):
             out.append(terms[idx])
     return out
 
+
 def _type_mapper(mtype):
     mapper = {'unicode': 'str', 'long': 'str'}
     if mtype in mapper:
         return mapper[mtype]
     else:
         return mtype
+
 
 def dict2type(d, collapse_lists=False, max_depth=10):
     """Recursively walk though the object
@@ -149,12 +146,14 @@ def dict2type(d, collapse_lists=False, max_depth=10):
     else:
         return _type_mapper(type(d).__name__)
 
+
 def sdict_keys(x):
     """Sorted dictionary keys of x"""
     return list(sorted(x.keys()))
 
+
 def _paginate(df, batch_id, batch_size):
-    """ Given a dataframe df, return a batch of rows 
+    """ Given a dataframe df, return a batch of rows
     specified by `batch_id` and `batch_size`
 
     Parameters
@@ -165,7 +164,6 @@ def _paginate(df, batch_id, batch_size):
        the batch_id element
     batch_size : int
        the batch size
-       
 
     Returns
     -------
