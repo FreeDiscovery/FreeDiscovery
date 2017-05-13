@@ -283,6 +283,8 @@ class FeatureVectorizer(object):
         vectorize : bool (default: True)
         """
         dsid_dir = self.cache_dir / self.dsid
+        if (dsid_dir / 'db').exists():
+            raise ValueError('Dataset already vectorized!')
         db_list = list(sorted(dsid_dir.glob('db*')))
         if len(db_list) == 0:
             internal_id_offset = -1
@@ -291,7 +293,7 @@ class FeatureVectorizer(object):
 
         if dataset_definition is not None:
             db = DocumentIndex.from_list(dataset_definition, data_dir,
-                                         internal_id_offset + 1)
+                                         internal_id_offset + 1, dsid_dir)
         elif data_dir is not None:
             db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern,
                                            internal_id_offset + 1)

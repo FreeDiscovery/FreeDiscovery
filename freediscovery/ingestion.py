@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import os.path
 import os
+import warnings
+
+import numpy as np
 import pandas as pd
+
 from .exceptions import (NotFound, WrongParameter)
 
 
@@ -257,7 +260,8 @@ class DocumentIndex(object):
         return out
 
     @classmethod
-    def from_list(cls, metadata, data_dir=None, internal_id_offset=0):
+    def from_list(cls, metadata, data_dir=None, internal_id_offset=0,
+                  dsid_dir=None):
         """ Create a DocumentIndex from a list of dictionaries, for instance
 
         .. code:: javascript
@@ -279,27 +283,58 @@ class DocumentIndex(object):
         internal_id_offset : int
             the offset for internal_id (used when appending files
             to an existing dataset)
+        dsid_dir : str
+            In case content is provided, store it to a raw folder
+            in this directory
 
         Returns
         -------
         result : DocumentIndex
             a DocumentIndex object
         """
+        has_file_path = np.array(['file_path' in row for row in metadata])
+        has_content = np.array(['content' in row for row in metadata])
+        if has_file_path.all():
+            if has_content.any():
+                warnings.warn("Both 'file_path' and 'content' fields are "
+                              "provided, the latter will be ingored!")
+            metadata = sorted(metadata, key=lambda x: x['file_path'])
+            filenames = [el['file_path'] for el in metadata]
 
-        metadata = sorted(metadata, key=lambda x: x['file_path'])
-        filenames = [el['file_path'] for el in metadata]
+            if data_dir is None:
+                data_dir = cls._detect_data_dir(filenames)
 
-        if data_dir is None:
-            data_dir = cls._detect_data_dir(filenames)
+            if not filenames:  # no files were found
+                raise WrongParameter('No files to process were found!')
+            filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
 
-        if not filenames:  # no files were found
-            raise WrongParameter('No files to process were found!')
-        filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
+            # modify the metadata list inplace
+            for idx, (db_el, file_path) in enumerate(zip(metadata,
+                                                         filenames_rel)):
+                db_el['file_path'] = file_path
+                db_el['internal_id'] = idx + internal_id_offset
+        elif has_content.all():
+            if not (dsid_dir / 'raw').exists():
+                (dsid_dir / 'raw').mkdir()
+            data_dir = str(dsid_dir / 'raw')
+            for idx, db_el in enumerate(metadata):
+                db_el['internal_id'] = idx + internal_id_offset
+                if 'rendering_id' in db_el:
+                    rendering_id_el = db_el['rendering_id']
+                else:
+                    rendering_id_el = 0
+                file_path_el = '{}_{}.txt'.format(idx + internal_id_offset,
+                                                  rendering_id_el)
+                db_el['file_path'] = file_path_el
+                with (dsid_dir / 'raw' / file_path_el).open('wt') as fh:
+                    fh.write(db_el.pop('content'))
 
-        # modify the metadata list inplace
-        for idx, (db_el, file_path) in enumerate(zip(metadata, filenames_rel)):
-            db_el['file_path'] = file_path
-            db_el['internal_id'] = idx + internal_id_offset
+            filenames_rel = [el['file_path'] for el in metadata]
+
+        elif (~has_file_path).any():
+            raise ValueError('Some list elements do not include '
+                             'the "file_path" field!')
+
         db = pd.DataFrame(metadata)
 
         if 'document_id' not in db:

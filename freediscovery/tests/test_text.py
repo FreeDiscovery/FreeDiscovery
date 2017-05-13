@@ -357,3 +357,25 @@ def test_ingestion_batches():
     assert len(fe.filenames_) == 6*3
     X = fe._load_features()
     assert X.shape[0] == 6*3
+
+    with pytest.raises(ValueError):
+        fe.ingest(vectorize=True)  # already vectorized
+
+
+def test_ingestion_content():
+    dd = [{'document_id': 47,
+           'content': 'This is a test :$&'},
+          {'document_id': 99,
+           'content': 'Another test document!'}]
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.setup()
+    fe.ingest(dataset_definition=dd, vectorize=True)
+    assert len(fe.filenames_) == 2
+    assert fe.filenames_[0] == '0_0.txt'
+    assert fe._load_features().shape[0] == 2
+    assert fe.db_.data.shape[0] == len(fe.filenames_)
+
+
+
