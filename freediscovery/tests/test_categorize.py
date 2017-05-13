@@ -34,7 +34,6 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 fe = FeatureVectorizer(cache_dir=cache_dir)
 vect_uuid = fe.setup()
 fe.ingest(data_dir, file_pattern='.*\d.txt')
-fe.transform()
 
 
 lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)

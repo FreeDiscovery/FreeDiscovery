@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os.path
 import os
 import pandas as pd
@@ -327,7 +322,8 @@ class DocumentIndex(object):
             raise IOError('data_dir={} does not exist!'.format(data_dir))
 
     @classmethod
-    def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None):
+    def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None,
+                    internal_id_offset=0):
         """ Create a DocumentIndex from files in data_dir
 
         Parmaters
@@ -349,7 +345,7 @@ class DocumentIndex(object):
 
         filenames = _list_filenames(data_dir, dir_pattern, file_pattern)
         filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
-        db = [{'file_path': file_path, 'internal_id': idx}
+        db = [{'file_path': file_path, 'internal_id': idx + internal_id_offset}
               for idx, file_path in enumerate(filenames_rel)]
 
         db = pd.DataFrame(db)

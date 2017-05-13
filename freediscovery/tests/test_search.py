@@ -73,7 +73,6 @@ def test_search_wrapper(kind):
     fe = FeatureVectorizer(cache_dir=cache_dir)
     vect_uuid = fe.setup()
     fe.ingest(data_dir, file_pattern='.*\d.txt')
-    fe.transform()
 
     if kind == 'semantic':
         lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)

@@ -52,7 +52,6 @@ def fd_setup(**fe_options):
                     stop_words='english',
                     **fe_options)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
-    fe.transform()
     return cache_dir, uuid, fe.filenames_, fe
 
 

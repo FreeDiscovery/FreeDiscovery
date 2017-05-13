@@ -268,7 +268,7 @@ class FeatureVectorizer(object):
         return dsid
 
     def ingest(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
-               dataset_definition=None):
+               dataset_definition=None, vectorize=True):
         """Perform data ingestion
 
         Parameters
@@ -280,51 +280,101 @@ class FeatureVectorizer(object):
             a list of dictionaries with keys
             ['file_path', 'document_id', 'rendition_id']
             describing the data ingestion (this overwrites data_dir)
+        vectorize : bool (default: True)
         """
+        dsid_dir = self.cache_dir / self.dsid
+        db_list = list(sorted(dsid_dir.glob('db*')))
+        if len(db_list) == 0:
+            internal_id_offset = -1
+        elif len(db_list) >= 1:
+            internal_id_offset = int(db_list[-1].name[3:])
 
         if dataset_definition is not None:
-            db = DocumentIndex.from_list(dataset_definition)
+            db = DocumentIndex.from_list(dataset_definition, data_dir,
+                                         internal_id_offset + 1)
         elif data_dir is not None:
-            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
+            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern,
+                                           internal_id_offset + 1)
         else:
-            raise ValueError('At least one of data_dir, dataset_definition '
-                             'must be provided')
-        data_dir = db.data_dir
+            db = None
 
-        self._filenames = db.data.file_path.values.tolist()
-        del db.data['file_path']
+        if db is not None:
+            data_dir = db.data_dir
 
-        pars = self.pars_
-        pars['data_dir'] = data_dir
-        pars['n_samples'] = len(self._filenames)
+            batch_suffix = '.{:09}'.format(db.data.internal_id.iloc[-1])
 
-        dsid_dir = self.cache_dir / self.dsid
-        # overwrite pars on disk
-        with (dsid_dir / 'pars').open('wb') as fh:
-            pickle.dump(self._pars, fh)
-        if 'file_path' in db.data.columns:
+            if len(db_list) >= 1:
+                partial_ingest = True
+            else:
+                partial_ingest = False
+
+            self._filenames = db.data.file_path.values.tolist()
             del db.data['file_path']
-        db.data.to_pickle(str(dsid_dir / 'db'))
-        with (dsid_dir / 'filenames').open('wb') as fh:
-            pickle.dump(self._filenames, fh)
-        self._db = db
+
+            pars = self.pars_
+            pars['data_dir'] = data_dir
+            pars['n_samples'] = len(self._filenames)
+
+            if not partial_ingest:
+                # overwrite pars on disk
+                with (dsid_dir / 'pars').open('wb') as fh:
+                    pickle.dump(self._pars, fh)
+            if 'file_path' in db.data.columns:
+                del db.data['file_path']
+            db.data.to_pickle(str(dsid_dir / ('db' + batch_suffix)))
+            with (dsid_dir / ('filenames' + batch_suffix)).open('wb') as fh:
+                pickle.dump(self._filenames, fh)
+            self._db = db
+
+        if vectorize:
+            db_list = list(sorted(dsid_dir.glob('db*')))
+            filenames_list = list(sorted(dsid_dir.glob('filenames*')))
+            if len(db_list) == 0:
+                raise ValueError('No ingested files found!')
+            elif len(db_list) == 1:
+                db_list[0].rename(dsid_dir / 'db')
+                filenames_list[0].rename(dsid_dir / 'filenames')
+            elif len(db_list) >= 2:
+                # accumulate different batches into a single file
+                # Filenames
+                filenames_concat = []
+                for fname in filenames_list:
+                    with fname.open('rb') as fh:
+                        filenames_concat += pickle.load(fh)
+                with (dsid_dir / 'filenames').open('wb') as fh:
+                    pickle.dump(filenames_concat, fh)
+                for fname in filenames_list:
+                    fname.unlink()
+                self._filenames = filenames_concat
+
+                # databases
+                db_concat = []
+                for fname in db_list:
+                    db_concat.append(pd.read_pickle(str(fname)))
+                db_new = pd.concat(db_concat, axis=0)
+                db_new.set_index('internal_id', drop=False, inplace=True)
+                db_new.to_pickle(str(dsid_dir / 'db'))
+                for fname in db_list:
+                    fname.unlink()
+                self._db = DocumentIndex(self.pars_['data_dir'], db_new)
+
+                self._pars['n_samples'] = len(self._filenames)
+                with (dsid_dir / 'pars').open('wb') as fh:
+                    pickle.dump(self._pars, fh)
+
+            self.transform()
+
+        if db is None and not vectorize:
+            raise ValueError('At least one of data_dir, dataset_definition, '
+                             'vectorize parameters must be provided!')
         return
 
     @staticmethod
     def _generate_stop_words(stop_words):
-        # from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
-        # import string
-        # from itertools import product
         if stop_words in [None]:
             return None
         elif stop_words == 'english':
             return stop_words
-        # elif stop_words == 'english_alphanumeric':
-        #    stop_words_list = list(ENGLISH_STOP_WORDS)
-        #    stop_words_list += [''.join(i) for i in product(
-        #                        string.ascii_lowercase + string.digits,
-        #                         repeat=2)]
-        #    return stop_words_list
         else:
             raise ValueError
 
@@ -353,11 +403,13 @@ class FeatureVectorizer(object):
         """
         Run the feature extraction
         """
-        from glob import glob
-
         dsid_dir = self.dsid_dir
         if not dsid_dir.exists():
             raise DatasetNotFound()
+
+        if not (dsid_dir / 'db').exists():
+            raise ValueError('Please ingest some files before running '
+                             'the vectorizer!')
 
         pars = self.pars_
         pars['filenames_abs'] = self.filenames_abs_
@@ -469,19 +521,19 @@ class FeatureVectorizer(object):
         filenames = filenames_old + filenames_new
         with (dsid_dir / 'filenames').open('wb') as fh:
             pickle.dump(filenames, fh)
-        del self._filenames
+        self._filenames = filenames
         del db_new['file_path']
-
-        # write down the new database file
-        db = pd.concat((db_old, db_new))
-        db.to_pickle(str(dsid_dir / 'db'))
-        del self._db
 
         # write down the new pars file
         self._pars = self.pars_
         self._pars['n_samples'] = len(filenames)
         with (dsid_dir / 'pars').open('wb') as fh:
             pickle.dump(self._pars, fh)
+
+        # write down the new database file
+        db = pd.concat((db_old, db_new))
+        db.to_pickle(str(dsid_dir / 'db'))
+        self._db = DocumentIndex(self.pars_['data_dir'], db)
 
         # find all exisisting LSI models and update them as well
         if (dsid_dir / 'lsi').exists():
@@ -519,14 +571,14 @@ class FeatureVectorizer(object):
         filenames = list(np.array(self.filenames_)[internal_id_mask])
         with (dsid_dir / 'filenames').open('wb') as fh:
             pickle.dump(filenames, fh)
-        del self._filenames
+        self._filenames = filenames
 
         # write down the new database file
         db = db_old.iloc[internal_id_mask].copy()
         # create a new contiguous internal_id
         db['internal_id'] = np.arange(db.shape[0], dtype='int')
         db.to_pickle(str(dsid_dir / 'db'))
-        del self._db
+        self._db = DocumentIndex(self.pars_['data_dir'], db)
 
         # write down the new pars file
         self._pars = self.pars_

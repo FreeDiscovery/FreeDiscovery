@@ -173,14 +173,15 @@ class FeaturesApiElement(Resource):
          **Parameters**
           - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
           - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.
+          - `vectorize`: [optional] this option can be used to ingest the dataset_definition in batches (optionally with document content), then make one final call to vectorize all sent documents (bool, default: True)
          """))
     @use_args({"data_dir":  wfields.Str(),
-               "dataset_definition": wfields.Nested(_DatasetDefinition, many=True)})
+               "dataset_definition": wfields.Nested(_DatasetDefinition, many=True),
+               "vectorize": wfields.Bool(missing=True)})
     @marshal_with(IDSchema())
     def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
         fe.ingest(**args)
-        fe.transform()
         if fe.pars_['parse_email_headers']:
             fe.parse_email_headers()
         return {'id': fe.dsid}

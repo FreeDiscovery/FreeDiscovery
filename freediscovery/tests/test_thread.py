@@ -18,7 +18,6 @@ def test_threading():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.setup()
     fe.ingest(data_dir=data_dir)
-    fe.transform()
     fe.parse_email_headers()
 
     cat = _EmailThreadingWrapper(cache_dir=cache_dir, parent_id=uuid)

@@ -40,7 +40,6 @@ def test_features_hashing(use_hashing, use_lsi, method):
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.setup(n_features=n_features, use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
-    fe.transform()
 
     ground_truth = parse_ground_truth_file(os.path.join(data_dir,
                                            "..", "ground_truth_file.txt"))

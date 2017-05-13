@@ -29,7 +29,6 @@ def fd_setup():
                     stop_words='english',
                     min_df=0.1, max_df=0.9)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
-    fe.transform()
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=dsid)
     lsi.fit_transform(n_components=6)

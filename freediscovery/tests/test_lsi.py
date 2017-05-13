@@ -24,7 +24,6 @@ def test_lsi():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.setup()
     fe.ingest(data_dir, file_pattern='.*\d.txt')
-    fe.transform()
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
     lsi_res, exp_var = lsi.fit_transform(n_components=n_components)
@@ -58,7 +57,6 @@ def test_lsi_append_documents():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.setup()
     fe.ingest(data_dir)
-    fe.transform()
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
     lsi_res, exp_var = lsi.fit_transform(n_components=2)
@@ -83,7 +81,6 @@ def test_lsi_remove_documents():
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.setup()
     fe.ingest(data_dir)
-    fe.transform()
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
     lsi_res, exp_var = lsi.fit_transform(n_components=2)
