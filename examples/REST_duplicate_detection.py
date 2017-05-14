@@ -35,11 +35,10 @@ data_dir = input_ds['metadata']['data_dir']
 print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-fe_opts = {'data_dir': data_dir,
-           'use_idf': 1, # this is required to compute cluster labels (for now)
+fe_opts = {'use_idf': 1,  # this is required to compute cluster labels (for now)
            'n_features': 30001,
            'min_df': 4, 'max_df': 0.75
-          }
+           }
 res = requests.post(url, json=fe_opts)
 
 dsid = res.json()['id']
@@ -51,7 +50,7 @@ print("\n1.b Run feature extraction")
 # progress status is available for the hashed version only
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
 print(" POST", url)
-res = requests.post(url)
+res = requests.post(url, json={"data_dir": data_dir})
 
 print("\n1.d. check the parameters of the extracted features")
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
@@ -59,8 +58,8 @@ print(' GET', url)
 res = requests.get(url)
 
 data = res.json()
-print('\n'.join(['     - {}: {}'.format(key, val) for key, val in data.items() \
-                                                  if "filenames" not in key]))
+print('\n'.join(['     - {}: {}'.format(key, val)
+      for key, val in data.items() if "filenames" not in key]))
 
 
 print("\n2. Near Duplicates detection by cosine similarity (DBSCAN)")
