@@ -204,6 +204,7 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
     md = {'data_dir': str(data_dir), 'name': name}
 
     di = DocumentIndex.from_folder(str(data_dir))
+    di._make_relative_paths()
 
     training_set = None
 

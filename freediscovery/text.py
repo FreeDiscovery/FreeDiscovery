@@ -506,7 +506,7 @@ class FeatureVectorizer(object):
             processing_lock.unlink()
         _touch(dsid_dir / 'processing_finished')
 
-    def append(self, dataset_definition):
+    def append(self, dataset_definition, data_dir=None):
         """ Add some documents to the dataset
 
         This is by no mean an efficient operation, processing all the files
@@ -516,28 +516,31 @@ class FeatureVectorizer(object):
         dsid_dir = self.dsid_dir
         db_old = self.db_.data
         internal_id_offset = db_old.internal_id.max()
-        data_dir = self.pars_['data_dir']
         db_extra = DocumentIndex.from_list(dataset_definition, data_dir,
-                                           internal_id_offset + 1)
+                                           internal_id_offset + 1, dsid_dir)
         db_new = db_extra.data
         vect = self.vect_
 
-        filenames_abs = [os.path.join(data_dir, el)
-                         for el in db_new.file_path.values]
+        filenames_new = list(db_new.file_path.values)
 
         # write down the new features file
-        X_new = vect.transform(filenames_abs)
+        X_new = vect.transform(filenames_new)
         X_old = self._load_features()
         X = scipy.sparse.vstack((X_new, X_old))
         joblib.dump(X, str(dsid_dir / 'features'))
 
         # write down the new filenames file
         filenames_old = list(self.filenames_)
-        filenames_new = list(db_new.file_path.values)
         filenames = filenames_old + filenames_new
+
+        data_dir = DocumentIndex._detect_data_dir(filenames)
+        self._pars['data_dir'] = data_dir
+
+        self._filenames = [os.path.relpath(el, data_dir)
+                           for el in filenames]
+
         with (dsid_dir / 'filenames').open('wb') as fh:
-            pickle.dump(filenames, fh)
-        self._filenames = filenames
+            pickle.dump(self._filenames, fh)
         del db_new['file_path']
 
         # write down the new pars file

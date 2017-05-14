@@ -235,14 +235,16 @@ class FeaturesApiAppend(Resource):
          need to be re-trained.
 
          **Parameters**
+          - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
           - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional.
           """))
-    @use_args({'dataset_definition': wfields.Nested(_DatasetDefinition, many=True,
+    @use_args({'data_dir': wfields.Str(),
+               'dataset_definition': wfields.Nested(_DatasetDefinition, many=True,
                                                     required=True)})
     @marshal_with(EmptySchema())
     def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
-        fe.append(args['dataset_definition'])
+        fe.append(**args)
         return {}
 
 
