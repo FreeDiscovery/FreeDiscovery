@@ -153,7 +153,7 @@ def test_append_documents(app, ingestion_method):
         if ingestion_method == 'file_path':
             row_out['file_path'] = os.path.join(data_dir, row['file_path'])
         elif ingestion_method == 'content':
-            with Path(data_dir, row['file_path']).open('rt') as fh:
+            with Path(data_dir, row['file_path']).open('rt', encoding='utf-8') as fh:
                 row_out['content'] = fh.read()
         dataset_definition.append(row_out)
 
@@ -204,7 +204,7 @@ def test_batch_ingest(app, ingestion_method):
         dd = []
         for fname in data_dir_k.glob('*txt'):
             if ingestion_method == 'content':
-                with fname.open('rt') as fh:
+                with fname.open('rt', encoding='utf-8') as fh:
                     dd.append({'content': fh.read()})
             elif ingestion_method == 'file_path':
                 dd.append({'file_path': str(fname)})

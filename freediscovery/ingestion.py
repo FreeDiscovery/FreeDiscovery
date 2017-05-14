@@ -317,7 +317,7 @@ class DocumentIndex(object):
                 file_path_el = '{:09}_{}.txt'.format(idx + internal_id_offset,
                                                      rendering_id_el)
                 db_el['file_path'] = os.path.join(data_dir, file_path_el)
-                with (dsid_dir / 'raw' / file_path_el).open('wt') as fh:
+                with (dsid_dir / 'raw' / file_path_el).open('wt', encoding='utf-8') as fh:
                     fh.write(db_el.pop('content'))
 
         elif (~has_file_path).any():
@@ -389,6 +389,9 @@ class DocumentIndex(object):
     def _make_relative_paths(self):
         """ By default DocumentIndex uses absolute file paths,
         this makes the file_path to be relative to dir_path"""
+        if self.data_dir is None:
+            self.data_dir = self._detect_data_dir(self.filenames_)
+
         self.filenames_ = [os.path.relpath(el, self.data_dir)
                            for el in self.filenames_]
         self.data['file_path'] = self.filenames_

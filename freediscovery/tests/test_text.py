@@ -380,7 +380,7 @@ def test_ingestion_content():
 
     dd = []
     for idx, fname in enumerate(sorted(data_dir.glob('*txt'))):
-        with fname.open('rt') as fh:
+        with fname.open('rt', encoding='utf-8') as fh:
             dd.append({'document_id': idx + 19,
                        'content': fh.read()})
     cache_dir = check_cache()

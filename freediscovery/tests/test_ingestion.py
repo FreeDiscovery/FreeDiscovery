@@ -243,6 +243,7 @@ def test_ingestion_metadata(n_fields):
         metadata.append(el)
 
     dbi = DocumentIndex.from_list(metadata)
+    dbi._make_relative_paths()
     data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
 
     if n_fields in [1, 2]:
