@@ -55,6 +55,13 @@ def _run(args):
     print(' * LOG_FILE: {}'.format(log_fname))
 
     app = fd_app(cache_dir)
+    if args.hostname == '0.0.0.0':
+        print(' * Warning: running the server on hostname 0.0.0.0 '
+              '(accessible from any IP address). Please make sure '
+              'that this server runs in a protected environement '
+              '(e.g. is behind a firewall) or restrict '
+              'connections to localhost with --hostname 127.0.0.1 .')
+
     if args.server in ['auto', 'gunicorn']:
         try:
             from .server.gunicorn import GunicornApplication
