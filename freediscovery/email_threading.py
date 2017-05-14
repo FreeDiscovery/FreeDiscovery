@@ -1,21 +1,10 @@
 # -*- coding  utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-import os
 import numpy as np
-import scipy
-from scipy.special import logit
 from sklearn.externals import joblib
 
-from .text import FeatureVectorizer
 from .base import _BaseWrapper
-from .utils import setup_model, INT_NAN
-from .exceptions import (ModelNotFound, WrongParameter,
-             NotImplementedFD, OptionalDependencyMissing)
+from .utils import setup_model
 
 from .externals import jwzthreading as jwzt
 
@@ -40,17 +29,17 @@ class _EmailThreadingWrapper(_BaseWrapper):
                  decode_header=False):
 
         super(_EmailThreadingWrapper, self).__init__(cache_dir=cache_dir,
-                                          parent_id=parent_id, mid=mid,
-                                          load_model=True)
+                                                     parent_id=parent_id,
+                                                     mid=mid,
+                                                     load_model=True)
 
-        if not os.path.exists(os.path.join(self.fe.dsid_dir, 'email_metadata')):
+        if not (self.fe.dsid_dir / 'email_metadata').exists():
             raise ValueError('The email metadata was not found. Please rerun'
-                             ' feature extraction with `parse_email_headers=True`'
-                             ' option')
-
+                             ' feature extraction with '
+                             '`parse_email_headers=True` option')
 
     def thread(self, index=None, group_by_subject=False,
-            sort_by_key='message_idx', sort_missing=-1):
+               sort_by_key='message_idx', sort_missing=-1):
         """
         Thread the emails
 
@@ -79,29 +68,26 @@ class _EmailThreadingWrapper(_BaseWrapper):
         if index is None:
             index = np.arange(self.fe.n_samples_)
 
-        d_all = joblib.load(os.path.join(self.fe.dsid_dir, 'email_metadata'))
+        d_all = joblib.load(str(self.fe.dsid_dir / 'email_metadata'))
 
         threads = jwzt.thread(d_all, group_by_subject)
 
         threads = [el.collapse_empty() for el in threads]
 
         threads = jwzt.sort_threads(threads, key=sort_by_key,
-                                             missing=sort_missing)
+                                    missing=sort_missing)
 
         cmod = threads
 
         mid, mid_dir = setup_model(self.model_dir)
 
-
         pars = {
             'group_by_subject': group_by_subject
         }
         self._pars = pars
-        joblib.dump(pars, os.path.join(mid_dir, 'pars'))
-        joblib.dump(cmod, os.path.join(mid_dir, 'model'))
-
+        joblib.dump(pars, str(mid_dir / 'pars'))
+        joblib.dump(cmod, str(mid_dir / 'model'))
 
         self.mid = mid
         self.cmod = cmod
         return cmod
-

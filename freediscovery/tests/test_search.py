@@ -71,8 +71,8 @@ def test_search_wrapper(kind):
     # check for syntax errors etc in the wrapper
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt')
-    fe.transform()
+    vect_uuid = fe.setup()
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
 
     if kind == 'semantic':
         lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)

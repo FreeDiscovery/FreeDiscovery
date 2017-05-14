@@ -28,16 +28,15 @@ if __name__ == '__main__':
     # create a custom dataset definition for ingestion
     data_dir = input_ds['metadata']['data_dir']
     dataset_definition = [{'document_id': row['document_id'],
-                           'file_path': os.path.join(data_dir, row['file_path'])} \
-                                   for row in input_ds['dataset']]
+                           'file_path': os.path.join(data_dir, row['file_path'])}
+                          for row in input_ds['dataset']]
 
     # 1. Feature extraction
 
     print("\n1.a Load dataset and initalize feature extraction")
     url = BASE_URL + '/feature-extraction'
     print(" POST", url)
-    res = requests.post(url, json={'dataset_definition': dataset_definition,
-                                   'use_hashing': True}).json()
+    res = requests.post(url).json()
 
     dsid = res['id']
     print("   => received {}".format(list(res.keys())))
@@ -47,7 +46,7 @@ if __name__ == '__main__':
 
     url = BASE_URL+'/feature-extraction/{}'.format(dsid)
     print(" POST", url)
-    requests.post(url)
+    requests.post(url, json={'dataset_definition': dataset_definition})
 
     # 3. Document categorization with LSI (used for Nearest Neighbors method)
 

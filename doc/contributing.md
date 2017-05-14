@@ -53,7 +53,7 @@ which requires to install dependencies in `build_tools/requirements_extra_pip.tx
 
 Alternatively  `make latexpdf` generates documentation in .pdf format (requires `pdflatex`). 
 
-## 2. REST API documentation
+### 2. REST API documentation
 
 The rest API documentation can be generated with,
 

@@ -5,6 +5,7 @@ import shutil
 import pickle
 import warnings
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -24,14 +25,14 @@ from .exceptions import (DatasetNotFound, InitException, WrongParameter)
 
 
 def _touch(filename):
-    open(filename, 'ab').close()
+    filename.open('ab').close()
 
 
 def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     """ Extract features on a chunk of files """
-    import os.path
     from sklearn.feature_extraction.text import HashingVectorizer
     from sklearn.externals import joblib
+    import os.path
 
     filenames = pars['filenames_abs']
     chunk_size = pars['chunk_size']
@@ -53,7 +54,7 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
 
     fset_new.eliminate_zeros()
 
-    joblib.dump(fset_new, os.path.join(dsid_dir, 'features-{:05}'.format(k)))
+    joblib.dump(fset_new, str(dsid_dir / 'features-{:05}'.format(k)))
 
 
 class FeatureVectorizer(object):
@@ -87,12 +88,12 @@ class FeatureVectorizer(object):
         self._pars = None
 
         self.cache_dir = cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
-        if not os.path.exists(cache_dir):
-            os.mkdir(cache_dir)
+        if not cache_dir.exists():
+            cache_dir.mkdir()
         self.dsid = dsid
         if dsid is not None:
-            dsid_dir = os.path.join(self.cache_dir, dsid)
-            if not os.path.exists(dsid_dir):
+            dsid_dir = self.cache_dir / dsid
+            if not dsid_dir.exists():
                 raise DatasetNotFound('Dataset '
                                       '{} ({}) not found in {}!'.format(
                                        dsid, type(self).__name__, cache_dir))
@@ -109,7 +110,7 @@ class FeatureVectorizer(object):
     def filenames_(self):
         """ Lazily load the list of filenames if needed """
         if not hasattr(self, '_filenames') or self._filenames is None:
-            with open(os.path.join(self.dsid_dir, 'filenames'), 'rb') as fh:
+            with (self.dsid_dir / 'filenames').open('rb') as fh:
                 self._filenames = pickle.load(fh)
         return self._filenames
 
@@ -119,11 +120,12 @@ class FeatureVectorizer(object):
             # Load parameters from disk
             dsid = self.dsid
             if self.cache_dir is None:
-                raise InitException('cache_dir is None: cannot load from cache!')
-            dsid_dir = os.path.join(self.cache_dir, dsid)
-            if not os.path.exists(dsid_dir):
+                raise InitException('cache_dir is None: '
+                                    'cannot load from cache!')
+            dsid_dir = self.cache_dir / dsid
+            if not dsid_dir.exists():
                 raise DatasetNotFound('dsid {} not found!'.format(dsid))
-            with open(os.path.join(dsid_dir, 'pars'), 'rb') as fh:
+            with (dsid_dir / 'pars').open('rb') as fh:
                 self._pars = pickle.load(fh)
         return self._pars
 
@@ -131,17 +133,18 @@ class FeatureVectorizer(object):
     def vect_(self):
         if not hasattr(self, '_vect') or self._vect is None:
             mid = self.dsid
-            mid_dir = os.path.join(self.cache_dir, mid)
-            if not os.path.exists(mid_dir):
-                raise ValueError('Vectorizer model id {} ({}) not found in the cache {}!'.format(
-                                 mid, mid_dir))
-            fname = os.path.join(mid_dir, 'vectorizer')
+            mid_dir = self.cache_dir / mid
+            if not mid_dir.exists():
+                raise ValueError(('Vectorizer model id {} ({}) '
+                                  'not found in the cache {}!')
+                                 .format(mid, mid_dir))
+            fname = mid_dir / 'vectorizer'
             if self.pars_['use_hashing']:
-                self._vect = joblib.load(fname)
+                self._vect = joblib.load(str(fname))
             else:
                 # this is much faster in python 3 as cpickle is used
                 # (only works if no numpy arrays are used)
-                with open(fname, 'rb') as fh:
+                with fname.open('rb') as fh:
                     self._vect = pickle.load(fh)
         return self._vect
 
@@ -151,19 +154,18 @@ class FeatureVectorizer(object):
             raise InitException('cache_dir is None: cannot load from cache!')
         if dsid is None:
             dsid = self.dsid
-        dsid_dir = os.path.join(self.cache_dir, dsid)
-        if not os.path.exists(dsid_dir):
+        dsid_dir = self.cache_dir / dsid
+        if not dsid_dir.exists():
             raise DatasetNotFound('dsid not found!')
-        fset_new = joblib.load(os.path.join(dsid_dir, 'features'))
+        fset_new = joblib.load(str(dsid_dir / 'features'))
         return fset_new
 
-    def preprocess(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
-                   dataset_definition=None, n_features=None,
-                   chunk_size=5000, analyzer='word', ngram_range=(1, 1),
-                   stop_words=None, n_jobs=1, use_idf=False, sublinear_tf=True,
-                   binary=False, use_hashing=False,
-                   norm='l2', min_df=0.0, max_df=1.0,
-                   parse_email_headers=False):
+    def setup(self, n_features=None, chunk_size=5000, analyzer='word',
+              ngram_range=(1, 1), stop_words=None, n_jobs=1,
+              use_idf=False, sublinear_tf=True,
+              binary=False, use_hashing=False,
+              norm='l2', min_df=0.0, max_df=1.0,
+              parse_email_headers=False):
         """Initalize the features extraction.
 
         See sklearn.feature_extraction.text for a detailed description
@@ -171,23 +173,18 @@ class FeatureVectorizer(object):
 
         Parameters
         ----------
-        data_dir : str
-            path to the data directory (used only if metadata not provided), default: None
-        dataset_defintion : list of dicts
-            a list of dictionaries with keys ['file_path', 'document_id', 'rendition_id']
-            describing the data ingestion (this overwrites data_dir)
         analyzer : string, {'word', 'char'} or callable
             Whether the feature should be made of word or character n-grams.
-            If a callable is passed it is used to extract the sequence of features
-            out of the raw, unprocessed input.
+            If a callable is passed it is used to extract the sequence of
+            features out of the raw, unprocessed input.
         ngram_range : tuple (min_n, max_n)
             The lower and upper boundary of the range of n-values for different
-            n-grams to be extracted. All values of n such that min_n <= n <= max_n
-            will be used.
+            n-grams to be extracted. All values of n such that
+            min_n <= n <= max_n will be used.
         stop_words : string {'english'}, list, or None (default)
-            If a string, it is passed to _check_stop_list and the appropriate stop
-            list is returned. 'english' is currently the only supported string
-            value.
+            If a string, it is passed to _check_stop_list and the appropriate
+            stop list is returned. 'english' is currently the only supported
+            string value.
             If None, no stop words will be used. max_df can be set to a value
             in the range [0.7, 1.0) to automatically detect and filter stop
             words based on intra corpus document frequency of terms.
@@ -195,15 +192,15 @@ class FeatureVectorizer(object):
             When building the vocabulary ignore terms that have a document
             frequency strictly higher than the given threshold (corpus-specific
             stop words).
-            If float, the parameter represents a proportion of documents, integer
-            absolute counts.
+            If float, the parameter represents a proportion of documents,
+            integer absolute counts.
             This parameter is ignored if vocabulary is not None.
         min_df : float in range [0.0, 1.0] or int, default=1
             When building the vocabulary ignore terms that have a document
-            frequency strictly lower than the given threshold. This value is also
-            called cut-off in the literature.
-            If float, the parameter represents a proportion of documents, integer
-            absolute counts.
+            frequency strictly lower than the given threshold. This value is
+            also called cut-off in the literature.
+            If float, the parameter represents a proportion of documents,
+            integer absolute counts.
             This parameter is ignored if vocabulary is not None.
         max_features : int or None, default=None or 100001
             If not None, build a vocabulary that only consider the top
@@ -219,25 +216,18 @@ class FeatureVectorizer(object):
 
         """
 
-        if dataset_definition is not None:
-            db = DocumentIndex.from_list(dataset_definition)
-        elif data_dir is not None:
-            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern)
-        else:
-            raise ValueError('At least one of data_dir, dataset_definition '
-                             'must be provided')
-        data_dir = db.data_dir
-
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
 
         if not isinstance(ngram_range, tuple) \
            and not isinstance(ngram_range, list):
-            raise WrongParameter('not a valid input ngram_range='
-                                 '{}: should be a list or a typle!'.format(ngram_range))
+            raise WrongParameter(('not a valid input ngram_range='
+                                  '{}: should be a list or a typle!')
+                                 .format(ngram_range))
 
         if not len(ngram_range) == 2:
-            raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
+            raise WrongParameter('len(gram_range=={}!=2'
+                                 .format(len(ngram_range)))
 
         if norm != 'l2':
             warnings.warn("the use of 'l2' norm is stronly advised;"
@@ -255,18 +245,17 @@ class FeatureVectorizer(object):
         if n_features is None and use_hashing:
             n_features = 100001  # default size of the hashing table
 
-        self._filenames = db.data.file_path.values.tolist()
-        del db.data['file_path']
         self.dsid = dsid = generate_uuid()
-        self.dsid_dir = dsid_dir = os.path.join(self.cache_dir, dsid)
+        self.dsid_dir = dsid_dir = self.cache_dir / dsid
 
         # hash collision, should not happen
-        if os.path.exists(dsid_dir):
-            shutil.rmtree(dsid_dir)
+        if dsid_dir.exists():
+            shutil.rmtree(str(dsid_dir))
 
-        os.mkdir(dsid_dir)
-        pars = {'data_dir': data_dir,
-                'n_samples': len(self._filenames), "n_features": n_features,
+        dsid_dir.mkdir()
+
+        pars = {'data_dir': None,
+                'n_samples': None, "n_features": n_features,
                 'chunk_size': chunk_size, 'stop_words': stop_words,
                 'analyzer': analyzer, 'ngram_range': ngram_range,
                 'n_jobs': n_jobs, 'use_idf': use_idf,
@@ -277,31 +266,131 @@ class FeatureVectorizer(object):
                 'type': type(self).__name__,
                 'freediscovery_version': __version__}
         self._pars = pars
-        with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
+        with (dsid_dir / 'pars').open('wb') as fh:
             pickle.dump(self._pars, fh)
-        if 'file_path' in db.data.columns:
-            del db.data['file_path']
-        db.data.to_pickle(os.path.join(dsid_dir, 'db'))
-        with open(os.path.join(self.dsid_dir, 'filenames'), 'wb') as fh:
-            pickle.dump(self._filenames, fh)
-        self._db = db
         return dsid
+
+    def ingest(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
+               dataset_definition=None, vectorize=True):
+        """Perform data ingestion
+
+        Parameters
+        ----------
+        data_dir : str
+            path to the data directory (used only if metadata not provided),
+            default: None
+        dataset_defintion : list of dicts
+            a list of dictionaries with keys
+            ['file_path', 'document_id', 'rendition_id']
+            describing the data ingestion (this overwrites data_dir)
+        vectorize : bool (default: True)
+        """
+        dsid_dir = self.cache_dir / self.dsid
+        if (dsid_dir / 'db').exists():
+            raise ValueError('Dataset {} already vectorized!'
+                             .format(self.dsid))
+        db_list = list(sorted(dsid_dir.glob('db*')))
+        if len(db_list) == 0:
+            internal_id_offset = -1
+        elif len(db_list) >= 1:
+            internal_id_offset = int(db_list[-1].name[3:])
+
+        if dataset_definition is not None:
+            db = DocumentIndex.from_list(dataset_definition, data_dir,
+                                         internal_id_offset + 1, dsid_dir)
+        elif data_dir is not None:
+            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern,
+                                           internal_id_offset + 1)
+        else:
+            db = None
+
+        if db is not None:
+            data_dir = db.data_dir
+
+            batch_suffix = '.{:09}'.format(db.data.internal_id.iloc[-1])
+
+            self._filenames = db.data.file_path.values.tolist()
+            del db.data['file_path']
+
+            pars = self.pars_
+
+            if 'file_path' in db.data.columns:
+                del db.data['file_path']
+            db.data.to_pickle(str(dsid_dir / ('db' + batch_suffix)))
+            with (dsid_dir / ('filenames' + batch_suffix)).open('wb') as fh:
+                pickle.dump(self._filenames, fh)
+            self._db = db
+
+        if vectorize:
+            db_list = list(sorted(dsid_dir.glob('db*')))
+            filenames_list = list(sorted(dsid_dir.glob('filenames*')))
+            if len(db_list) == 0:
+                raise ValueError('No ingested files found!')
+
+            if len(db_list) == 1:
+                with filenames_list[0].open('rb') as fh:
+                    filenames_concat = pickle.load(fh)
+            elif len(db_list) >= 2:
+                # accumulate different batches into a single file
+                # filename file
+                filenames_concat = []
+                for fname in filenames_list:
+                    with fname.open('rb') as fh:
+                        filenames_concat += pickle.load(fh)
+
+            if self.pars_['data_dir'] is None:
+                data_dir = DocumentIndex._detect_data_dir(filenames_concat)
+                self._pars['data_dir'] = data_dir
+            else:
+                data_dir = self._pars['data_dir']
+
+            self._filenames = [os.path.relpath(el, data_dir)
+                               for el in filenames_concat]
+
+            with (dsid_dir / 'filenames').open('wb') as fh:
+                pickle.dump(self._filenames, fh)
+
+            for fname in filenames_list:
+                fname.unlink()
+
+            # save databases
+            if len(db_list) == 1:
+                db_list[0].rename(dsid_dir / 'db')
+                self.db_.filenames_ = self._filenames
+                self.db_.data['file_path'] = self._filenames
+            elif len(db_list) >= 2:
+
+                db_concat = []
+                for fname in db_list:
+                    db_concat.append(pd.read_pickle(str(fname)))
+                db_new = pd.concat(db_concat, axis=0)
+                db_new.filenames_ = self._filenames
+                db_new.set_index('internal_id', drop=False, inplace=True)
+                self._db = DocumentIndex(data_dir, db_new)
+                if 'file_path' in db_new.columns:
+                    del db_new['file_path']
+                db_new.to_pickle(str(dsid_dir / 'db'))
+
+            # save parameters
+            self._pars['n_samples'] = len(self._filenames)
+            self._pars['data_dir'] = data_dir
+
+            with (dsid_dir / 'pars').open('wb') as fh:
+                pickle.dump(self._pars, fh)
+
+            self.transform()
+
+        if db is None and not vectorize:
+            raise ValueError('At least one of data_dir, dataset_definition, '
+                             'vectorize parameters must be provided!')
+        return
 
     @staticmethod
     def _generate_stop_words(stop_words):
-        # from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
-        # import string
-        # from itertools import product
         if stop_words in [None]:
             return None
         elif stop_words == 'english':
             return stop_words
-        # elif stop_words == 'english_alphanumeric':
-        #    stop_words_list = list(ENGLISH_STOP_WORDS)
-        #    stop_words_list += [''.join(i) for i in product(
-        #                        string.ascii_lowercase + string.digits,
-        #                         repeat=2)]
-        #    return stop_words_list
         else:
             raise ValueError
 
@@ -317,7 +406,7 @@ class FeatureVectorizer(object):
                 msg_obj = Message(message, message_idx=idx)
 
                 features.append(msg_obj)
-        joblib.dump(features, os.path.join(self.dsid_dir, 'email_metadata'))
+        joblib.dump(features, str(self.dsid_dir / 'email_metadata'))
         return features
 
     @property
@@ -330,11 +419,13 @@ class FeatureVectorizer(object):
         """
         Run the feature extraction
         """
-        from glob import glob
-
         dsid_dir = self.dsid_dir
-        if not os.path.exists(dsid_dir):
+        if not dsid_dir.exists():
             raise DatasetNotFound()
+
+        if not (dsid_dir / 'db').exists():
+            raise ValueError('Please ingest some files before running '
+                             'the vectorizer!')
 
         pars = self.pars_
         pars['filenames_abs'] = self.filenames_abs_
@@ -343,11 +434,11 @@ class FeatureVectorizer(object):
         use_hashing = pars['use_hashing']
 
         if use_hashing:
-            # just make sure that we can initialize the vectorizer
+            # make sure that we can initialize the vectorizer
             # (easier outside of the paralel loop
             vect = _vectorize_chunk(dsid_dir, 0, pars, pretend=True)
 
-        processing_lock = os.path.join(dsid_dir, 'processing')
+        processing_lock = (dsid_dir / 'processing')
         _touch(processing_lock)
         custom_sw = _StopWordsWrapper(cache_dir=self.cache_dir)
         if pars['stop_words'] in custom_sw:
@@ -383,12 +474,12 @@ class FeatureVectorizer(object):
                                         decode_error='ignore', **opts_tfidf)
                 res = tfidf.fit_transform(pars['filenames_abs'])
                 self._vect = tfidf
-            fname = os.path.join(dsid_dir, 'vectorizer')
+            fname = dsid_dir / 'vectorizer'
             if self._pars['use_hashing']:
-                joblib.dump(self._vect, fname)
+                joblib.dump(self._vect, str(fname))
             else:
                 # faster for pure python objects
-                with open(fname, 'wb') as fh:
+                with fname.open('wb') as fh:
                     pickle.dump(self._vect, fh)
 
             if pars['norm'] is not None:
@@ -401,22 +492,21 @@ class FeatureVectorizer(object):
 
             del self.pars_['filenames_abs']
 
-            joblib.dump(res, os.path.join(dsid_dir, 'features'))
+            joblib.dump(res, str(dsid_dir / 'features'))
             # remove all identical files
             if use_hashing:
-                for filename in glob(os.path.join(dsid_dir,
-                                                  'features-*[0-9]*')):
-                    os.remove(filename)
+                for filename in dsid_dir.glob('features-*[0-9]*'):
+                    filename.unlink()
         except:
-            if os.path.exists(processing_lock):
-                os.remove(processing_lock)
+            if processing_lock.exists():
+                processing_lock.unlink()
             raise
         # remove processing lock if finished or if error
-        if os.path.exists(processing_lock):
-            os.remove(processing_lock)
-        _touch(os.path.join(dsid_dir, 'processing_finished'))
+        if processing_lock.exists():
+            processing_lock.unlink()
+        _touch(dsid_dir / 'processing_finished')
 
-    def append(self, dataset_definition):
+    def append(self, dataset_definition, data_dir=None):
         """ Add some documents to the dataset
 
         This is by no mean an efficient operation, processing all the files
@@ -426,53 +516,58 @@ class FeatureVectorizer(object):
         dsid_dir = self.dsid_dir
         db_old = self.db_.data
         internal_id_offset = db_old.internal_id.max()
-        data_dir = self.pars_['data_dir']
         db_extra = DocumentIndex.from_list(dataset_definition, data_dir,
-                                           internal_id_offset + 1)
+                                           internal_id_offset + 1, dsid_dir)
         db_new = db_extra.data
         vect = self.vect_
 
-        filenames_abs = [os.path.join(data_dir, el)
-                         for el in db_new.file_path.values]
+        filenames_new = list(db_new.file_path.values)
 
         # write down the new features file
-        X_new = vect.transform(filenames_abs)
+        X_new = vect.transform(filenames_new)
         X_old = self._load_features()
         X = scipy.sparse.vstack((X_new, X_old))
-        joblib.dump(X, os.path.join(dsid_dir, 'features'))
+        joblib.dump(X, str(dsid_dir / 'features'))
 
         # write down the new filenames file
         filenames_old = list(self.filenames_)
-        filenames_new = list(db_new.file_path.values)
         filenames = filenames_old + filenames_new
-        with open(os.path.join(dsid_dir, 'filenames'), 'wb') as fh:
-            pickle.dump(filenames, fh)
-        del self._filenames
-        del db_new['file_path']
 
-        # write down the new database file
-        db = pd.concat((db_old, db_new))
-        db.to_pickle(os.path.join(dsid_dir, 'db'))
-        del self._db
+        data_dir = DocumentIndex._detect_data_dir(filenames)
+        self._pars['data_dir'] = data_dir
+
+        self._filenames = [os.path.relpath(el, data_dir)
+                           for el in filenames]
+
+        with (dsid_dir / 'filenames').open('wb') as fh:
+            pickle.dump(self._filenames, fh)
+        del db_new['file_path']
 
         # write down the new pars file
         self._pars = self.pars_
         self._pars['n_samples'] = len(filenames)
-        with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
+        with (dsid_dir / 'pars').open('wb') as fh:
             pickle.dump(self._pars, fh)
 
+        # write down the new database file
+        db = pd.concat((db_old, db_new))
+        if 'file_path' in db.columns:
+            del db['file_path']
+        db.to_pickle(str(dsid_dir / 'db'))
+        self._db = DocumentIndex(self.pars_['data_dir'], db)
+
         # find all exisisting LSI models and update them as well
-        if os.path.exists(os.path.join(dsid_dir, 'lsi')):
-            for lsi_id in os.listdir(os.path.join(dsid_dir, 'lsi')):
+        if (dsid_dir / 'lsi').exists():
+            for lsi_id in os.listdir(str(dsid_dir / 'lsi')):
                 lsi_obj = _LSIWrapper(cache_dir=self.cache_dir,
                                       mid=lsi_id)
                 lsi_obj.append(X_new)
 
         # remove all trained models for this dataset
         for model_type in ['categorizer', 'dupdet', 'cluster', 'threading']:
-            if os.path.exists(os.path.join(dsid_dir, model_type)):
-                for mid in os.listdir(os.path.join(dsid_dir, model_type)):
-                    shutil.rmtree(os.path.join(dsid_dir, model_type, mid))
+            if (dsid_dir / model_type).exists():
+                for mid in os.listdir(str(dsid_dir / model_type)):
+                    shutil.rmtree(str(dsid_dir / model_type / mid))
 
     def remove(self, dataset_definition):
         """ Remove some documents from the dataset
@@ -491,42 +586,43 @@ class FeatureVectorizer(object):
         # write down the new features file
         X_old = self._load_features()
         X = X_old[internal_id_mask, :]
-        joblib.dump(X, os.path.join(dsid_dir, 'features'))
+        joblib.dump(X, str(dsid_dir / 'features'))
 
         # write down the new filenames file
         filenames = list(np.array(self.filenames_)[internal_id_mask])
-        with open(os.path.join(dsid_dir, 'filenames'), 'wb') as fh:
+        with (dsid_dir / 'filenames').open('wb') as fh:
             pickle.dump(filenames, fh)
-        del self._filenames
+        self._filenames = filenames
 
         # write down the new database file
         db = db_old.iloc[internal_id_mask].copy()
         # create a new contiguous internal_id
         db['internal_id'] = np.arange(db.shape[0], dtype='int')
-        db.to_pickle(os.path.join(dsid_dir, 'db'))
-        del self._db
+        self._db = DocumentIndex(self.pars_['data_dir'], db)
+        if 'file_path' in db.columns:
+            del db['file_path']
+        db.to_pickle(str(dsid_dir / 'db'))
 
         # write down the new pars file
         self._pars = self.pars_
         self._pars['n_samples'] = len(filenames)
-        with open(os.path.join(dsid_dir, 'pars'), 'wb') as fh:
+        with (dsid_dir / 'pars').open('wb') as fh:
             pickle.dump(self._pars, fh)
 
         # find all exisisting LSI models and update them as well
-        if os.path.exists(os.path.join(dsid_dir, 'lsi')):
-            for lsi_id in os.listdir(os.path.join(dsid_dir, 'lsi')):
-                _fname = os.path.join(dsid_dir, 'lsi', lsi_id, 'data')
-                if os.path.exists(_fname):
-                    X_lsi_old = joblib.load(_fname)
+        if (dsid_dir / 'lsi').exists():
+            for lsi_id in os.listdir(str(dsid_dir / 'lsi')):
+                _fname = dsid_dir / 'lsi' / lsi_id / 'data'
+                if _fname.exists():
+                    X_lsi_old = joblib.load(str(_fname))
                     X_lsi = X_lsi_old[internal_id_mask]
-                    joblib.dump(X_lsi, _fname)
+                    joblib.dump(X_lsi, str(_fname))
 
         # remove all trained models for this dataset
         for model_type in ['categorizer', 'dupdet', 'cluster', 'threading']:
-            if os.path.exists(os.path.join(dsid_dir, model_type)):
-                for mid in os.listdir(os.path.join(dsid_dir, model_type)):
-                    shutil.rmtree(os.path.join(dsid_dir, model_type, mid))
-
+            if (dsid_dir / model_type).exists():
+                for mid in os.listdir(str(dsid_dir / model_type)):
+                    shutil.rmtree(str(dsid_dir / model_type / mid))
 
     @property
     def n_features_(self):
@@ -566,8 +662,8 @@ class FeatureVectorizer(object):
         into a single file features"""
         from glob import glob
         out = []
-        for filename in sorted(glob(os.path.join(self.dsid_dir, 'features-*[0-9]'))):
-            ds = joblib.load(filename)
+        for filename in sorted(self.dsid_dir.glob('features-*[0-9]')):
+            ds = joblib.load(str(filename))
             out.append(ds)
         res = scipy.sparse.vstack(out)
         return res
@@ -579,10 +675,10 @@ class FeatureVectorizer(object):
             dsid = self.dsid
             if self.cache_dir is None:
                 raise InitException('cache_dir is None: cannot load from cache!')
-            dsid_dir = os.path.join(self.cache_dir, dsid)
-            if not os.path.exists(dsid_dir):
+            dsid_dir = self.cache_dir / dsid
+            if not dsid_dir.exists():
                 raise DatasetNotFound('dsid {} not found!'.format(dsid))
-            data = pd.read_pickle(os.path.join(dsid_dir, 'db'))
+            data = pd.read_pickle(str(dsid_dir / 'db'))
             self._db = DocumentIndex(self.pars_['data_dir'], data)
         return self._db
 
@@ -594,8 +690,7 @@ class FeatureVectorizer(object):
     def __contains__(self, dsid):
         """ This is a somewhat non standard call that checks if a dsid
         exist on disk (in general)"""
-        dsid_dir = os.path.join(self.cache_dir, dsid)
-        return os.path.exists(dsid_dir)
+        return (self.cache_dir / dsid).exists()
 
     def __getitem__(self, index):
         return np.asarray(self.filenames_)[index]
@@ -604,7 +699,7 @@ class FeatureVectorizer(object):
         """ List all datasets in the working directory """
         import traceback
         out = []
-        for dsid in os.listdir(self.cache_dir):
+        for dsid in os.listdir(str(self.cache_dir)):
             if dsid == 'stop_words':
                 continue
             row = {"id": dsid}
@@ -614,12 +709,11 @@ class FeatureVectorizer(object):
             except:
                 # traceback.print_exc()
                 continue
-            
 
             if pars['type'] != type(self).__name__:
                 continue
 
-            creation_date = os.stat(os.path.join(self.cache_dir, dsid)).st_ctime
+            creation_date = os.stat(str(self.cache_dir / dsid)).st_ctime
             pars['creation_date'] = time.strftime('%c',
                                                   time.gmtime(creation_date))
 

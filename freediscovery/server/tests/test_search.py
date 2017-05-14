@@ -238,9 +238,9 @@ def test_ingestion_no_document_id_provided(app):
     data_dir = os.path.dirname(__file__)
     data_dir = os.path.join(data_dir, "..", "..", "data", "ds_001", "raw")
     method = V01 + "/feature-extraction/"
-    data = app.post_check(method, json={'data_dir': data_dir})
+    data = app.post_check(method)
     dsid = data['id']
-    app.post_check(method + dsid)
+    app.post_check(method + dsid, json={'data_dir': data_dir})
 
     data = app.post_check(V01 + "/search/", json={'parent_id': dsid,
                                                   'query': 'test'})

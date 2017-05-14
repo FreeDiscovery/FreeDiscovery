@@ -32,8 +32,8 @@ EPSILON = 1e-4
 data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 
 fe = FeatureVectorizer(cache_dir=cache_dir)
-vect_uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt')
-fe.transform()
+vect_uuid = fe.setup()
+fe.ingest(data_dir, file_pattern='.*\d.txt')
 
 
 lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
@@ -277,7 +277,7 @@ def test_pipeline(n_steps):
             pf.parent.parent.parent
 
         for estimator_type, mid in pf.items():
-            path = pf.get_path(mid, absolute=False)
+            path = str(pf.get_path(mid, absolute=False))
             if estimator_type == 'vectorizer':
                 assert re.match('ediscovery_cache.*', path)
             elif estimator_type == 'lsi':

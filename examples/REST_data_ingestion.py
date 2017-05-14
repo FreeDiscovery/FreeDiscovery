@@ -34,13 +34,11 @@ if __name__ == '__main__':
                                    for row in input_ds['dataset']]
 
 
-    # 1. Ingest a dataset specified by folder path
-
+    # 2. Ingest a dataset specified by a path to each file in the dataset
     print("\n1.a Load dataset and initalize feature extraction")
     url = BASE_URL + '/feature-extraction'
     print(" POST", url)
-    res = requests.post(url, json={'dataset_definition': dataset_definition,
-                                   'use_hashing': True}).json()
+    res = requests.post(url, json={'use_hashing': True}).json()
 
     dsid = res['id']
     print("   => received {}".format(list(res.keys())))
@@ -50,26 +48,7 @@ if __name__ == '__main__':
 
     url = BASE_URL+'/feature-extraction/{}'.format(dsid)
     print(" POST", url)
-    res = requests.post(url,)
-
-    # 2. Ingest a dataset specified by a path to each file in the dataset
-
-
-    print("\n2.a Load dataset and initalize feature extraction")
-    url = BASE_URL + '/feature-extraction'
-    print(" POST", url)
-    res = requests.post(url, json={'dataset_definition': dataset_definition,
-                                   'use_hashing': True}).json()
-
-    dsid = res['id']
-    print("   => received {}".format(list(res.keys())))
-    print("   => dsid = {}".format(dsid))
-
-    print("\n2.b Start feature extraction")
-
-    url = BASE_URL+'/feature-extraction/{}'.format(dsid)
-    print(" POST", url)
-    res = requests.post(url,)
+    res = requests.post(url, json={'dataset_definition': dataset_definition})
 
 
     print("\n2.d. check the parameters of the extracted features")
@@ -77,8 +56,8 @@ if __name__ == '__main__':
     print(' GET', url)
     res = requests.get(url).json()
 
-    print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items() \
-                                                      if "filenames" not in key]))
+    print('\n'.join(['     - {}: {}'.format(key, val)
+          for key, val in res.items() if "filenames" not in key]))
 
     print("\n3. Examine the id mapping\n")
 

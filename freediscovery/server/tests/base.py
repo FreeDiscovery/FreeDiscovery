@@ -88,7 +88,15 @@ memory = Memory(cachedir=os.path.join(CACHE_DIR, '_joblib_cache'), verbose=0)
 def get_features(app, hashed=False, metadata_fields='data_dir',
                  n_categories=2, dataset='20newsgroups_3categories', **kwargs):
 
-    pars = {"use_hashing": hashed}
+    method = V01 + "/feature-extraction/"
+    pars = {'use_hashing': hashed}
+    pars.update(kwargs)
+    data = app.post_check(method, json=pars)
+
+    assert dict2type(data, collapse_lists=True) == {'id': 'str'}
+    dsid = data['id']
+
+    pars = {}
     if not kwargs.get('parse_email_headers'):
         url = V01 + '/example-dataset/{}'.format(dataset)
         res = app.get(url, json={'n_categories': n_categories})
@@ -96,28 +104,20 @@ def get_features(app, hashed=False, metadata_fields='data_dir',
         input_ds = parse_res(res)
         data_dir = input_ds['metadata']['data_dir']
         pars['dataset_definition'] = [{'document_id': row['document_id'],
-                                       'file_path': os.path.join(data_dir, row['file_path'])} 
+                                       'file_path': os.path.join(data_dir,
+                                                                 row['file_path'])} 
                                       for row in input_ds['dataset']]
     else:
         pars['data_dir'] = email_data_dir
         input_ds = None
 
-    pars.update(kwargs)
-
-    method = V01 + "/feature-extraction/"
-    data = app.post_check(method, json=pars)
-
-    pars.pop('dataset_definition', None)
-
-    assert dict2type(data, collapse_lists=True) == {'filenames': ['str'],
-                                                    'id': 'str'}
-    dsid = data['id']
 
     method = V01 + "/feature-extraction/{}".format(dsid)
-    res = app.post_check(method)
+    res = app.post_check(method, json=pars)
     assert dict2type(res) == {'id': 'str'}
     pars = app.get_check(method)
     pars.pop('filenames')
+    pars.pop('dataset_definition', None)
     return dsid, pars, input_ds
 
 

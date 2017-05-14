@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-import os.path
 import os
+import warnings
+
+import numpy as np
 import pandas as pd
+
 from .exceptions import (NotFound, WrongParameter)
 
 
@@ -262,7 +260,8 @@ class DocumentIndex(object):
         return out
 
     @classmethod
-    def from_list(cls, metadata, data_dir=None, internal_id_offset=0):
+    def from_list(cls, metadata, data_dir=None, internal_id_offset=0,
+                  dsid_dir=None):
         """ Create a DocumentIndex from a list of dictionaries, for instance
 
         .. code:: javascript
@@ -284,34 +283,60 @@ class DocumentIndex(object):
         internal_id_offset : int
             the offset for internal_id (used when appending files
             to an existing dataset)
+        dsid_dir : str
+            In case content is provided, store it to a raw folder
+            in this directory
 
         Returns
         -------
         result : DocumentIndex
             a DocumentIndex object
         """
+        has_file_path = np.array(['file_path' in row for row in metadata])
+        has_content = np.array(['content' in row for row in metadata])
+        if has_file_path.all():
+            if has_content.any():
+                warnings.warn("Both 'file_path' and 'content' fields are "
+                              "provided, the latter will be ingored!")
+            metadata = sorted(metadata, key=lambda x: x['file_path'])
 
-        metadata = sorted(metadata, key=lambda x: x['file_path'])
+            # modify the metadata list inplace
+            for idx, db_el in enumerate(metadata):
+                db_el['internal_id'] = idx + internal_id_offset
+                db_el['file_path'] = os.path.normpath(db_el['file_path'])
+        elif has_content.all():
+            if not (dsid_dir / 'raw').exists():
+                (dsid_dir / 'raw').mkdir()
+            data_dir = str(dsid_dir / 'raw')
+            for idx, db_el in enumerate(metadata):
+                db_el['internal_id'] = idx + internal_id_offset
+                if 'rendering_id' in db_el:
+                    rendering_id_el = db_el['rendering_id']
+                else:
+                    rendering_id_el = 0
+                file_path_el = '{:09}_{}.txt'.format(idx + internal_id_offset,
+                                                     rendering_id_el)
+                db_el['file_path'] = os.path.join(data_dir, file_path_el)
+                with (dsid_dir / 'raw' / file_path_el).open('wt', encoding='utf-8') as fh:
+                    fh.write(db_el.pop('content'))
+
+        elif (~has_file_path).any():
+            raise ValueError(("All the ingested elements must have a "
+                              "'file_path' or 'content' field. Currently, \n"
+                              " - {} / {} documents have the 'file_path' "
+                              "field,\n"
+                              " - {} / {} documents have the 'content' field."
+                              ).format(has_file_path.sum(), len(has_file_path),
+                                       has_content.sum(), len(has_content)))
+
         filenames = [el['file_path'] for el in metadata]
-
-        if data_dir is None:
-            data_dir = cls._detect_data_dir(filenames)
-
-        if not filenames:  # no files were found
-            raise WrongParameter('No files to process were found!')
-        filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
-
-        # modify the metadata list inplace
-        for idx, (db_el, file_path) in enumerate(zip(metadata, filenames_rel)):
-            db_el['file_path'] = file_path
-            db_el['internal_id'] = idx + internal_id_offset
         db = pd.DataFrame(metadata)
 
         if 'document_id' not in db:
             db['document_id'] = db.internal_id
 
         res = cls(data_dir, db)
-        res.filenames_ = filenames_rel
+        res.filenames_ = filenames
         return res
 
     @staticmethod
@@ -327,7 +352,8 @@ class DocumentIndex(object):
             raise IOError('data_dir={} does not exist!'.format(data_dir))
 
     @classmethod
-    def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None):
+    def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None,
+                    internal_id_offset=0):
         """ Create a DocumentIndex from files in data_dir
 
         Parmaters
@@ -348,9 +374,8 @@ class DocumentIndex(object):
             raise NotFound('data_dir={} does not exist'.format(data_dir))
 
         filenames = _list_filenames(data_dir, dir_pattern, file_pattern)
-        filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
-        db = [{'file_path': file_path, 'internal_id': idx}
-              for idx, file_path in enumerate(filenames_rel)]
+        db = [{'file_path': file_path, 'internal_id': idx + internal_id_offset}
+              for idx, file_path in enumerate(filenames)]
 
         db = pd.DataFrame(db)
 
@@ -358,5 +383,15 @@ class DocumentIndex(object):
             db['document_id'] = db.internal_id
 
         res = cls(data_dir, db)
-        res.filenames_ = filenames_rel
+        res.filenames_ = filenames
         return res
+
+    def _make_relative_paths(self):
+        """ By default DocumentIndex uses absolute file paths,
+        this makes the file_path to be relative to dir_path"""
+        if self.data_dir is None:
+            self.data_dir = self._detect_data_dir(self.filenames_)
+
+        self.filenames_ = [os.path.relpath(el, self.data_dir)
+                           for el in self.filenames_]
+        self.data['file_path'] = self.filenames_

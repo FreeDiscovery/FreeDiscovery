@@ -48,11 +48,10 @@ def fd_setup(**fe_options):
     data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
     n_features = 110000
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.preprocess(data_dir, file_pattern='.*\d.txt',
-                         n_features=n_features, use_hashing=True,
-                         stop_words='english',
-                         **fe_options)
-    fe.transform()
+    uuid = fe.setup(n_features=n_features, use_hashing=True,
+                    stop_words='english',
+                    **fe_options)
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
     return cache_dir, uuid, fe.filenames_, fe
 
 

@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 from collections import OrderedDict
+from pathlib import Path
 from .exceptions import (DatasetNotFound, InitException, ModelNotFound, WrongParameter)
 
 from sklearn.externals import joblib
@@ -73,10 +74,10 @@ class PipelineFinder(OrderedDict):
         """ Normalize the cachedir path. This ensures that the cache_dir
         ends with "ediscovery_cache"
         """
-        cache_dir = os.path.normpath(cache_dir)
+        cache_dir = os.path.normpath(str(cache_dir))
         if 'ediscovery_cache' not in cache_dir:  # not very pretty
             cache_dir = os.path.join(cache_dir, "ediscovery_cache")
-        return cache_dir
+        return Path(cache_dir)
 
     @classmethod
     def by_id(cls, mid, cache_dir="/tmp/"):
@@ -99,10 +100,10 @@ class PipelineFinder(OrderedDict):
 
         pipeline = cls(mid=mid, cache_dir=cache_dir)
 
-        cache_dir_base = os.path.dirname(cache_dir)
+        cache_dir_base = cache_dir.parent
         _break_flag = False
-        for root, subdirs, files in os.walk(cache_dir):
-            root = os.path.relpath(root, cache_dir_base)
+        for root, subdirs, files in os.walk(str(cache_dir)):
+            root = os.path.relpath(root, str(cache_dir_base))
             for sdir in subdirs:
                 path = os.path.join(root, sdir)
                 path_hierarchy = _split_path(path)
@@ -159,10 +160,10 @@ class PipelineFinder(OrderedDict):
         ds_path = self.get_path(self[last_node])
 
         if last_node == "vectorizer":
-            full_path = os.path.join(ds_path, 'features')
+            full_path = ds_path / 'features'
         elif last_node == 'lsi':
-            full_path = os.path.join(ds_path, 'data')
-        return joblib.load(full_path)
+            full_path = ds_path / 'data'
+        return joblib.load(str(full_path))
 
     def get_path(self, mid=None, absolute=True):
         """ Find the path to the model specified by mid """
@@ -180,7 +181,7 @@ class PipelineFinder(OrderedDict):
         if absolute:
             del path[0]  # "ediscovery_cache" is already present in cache_dir
             rel_path = os.path.join(*path)
-            return os.path.join(self.cache_dir, rel_path)
+            return self.cache_dir / rel_path
         else:
             path[0] = 'ediscovery_cache'
-            return os.path.join(*path)
+            return Path(os.path.join(*path))
