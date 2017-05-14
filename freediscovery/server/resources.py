@@ -36,7 +36,7 @@ from ..stop_words import _StopWordsWrapper
 from .validators import _is_in_range
 
 from .schemas import (IDSchema, FeaturesParsSchema,
-                      FeaturesSchema,
+                      FeaturesSchema, _DatasetDefinitionShort,
                       DocumentIndexNestedSchema, _DatasetDefinition,
                       ExampleDatasetSchema, DocumentIndexFullSchema,
                       LsiParsSchema, LsiPostSchema,
@@ -260,8 +260,8 @@ class FeaturesApiRemove(Resource):
          **Parameters**
           - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional.
           """))
-    @use_args({'dataset_definition': wfields.Nested(_DatasetDefinition, many=True,
-                                                    required=True)})
+    @use_args({'dataset_definition': wfields.Nested(_DatasetDefinitionShort,
+                                                    many=True, required=True)})
     @marshal_with(EmptySchema())
     def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os.path
+from pathlib import Path
 
 import pytest
 import numpy as np
@@ -124,7 +125,8 @@ def test_get_search_filenames(app):
                  [row['document_id'] for row in data])
 
 
-def test_append_documents(app):
+@pytest.mark.parametrize('ingestion_method', ['file_path', 'content'])
+def test_append_documents(app, ingestion_method):
     method = V01 + "/feature-extraction/"
     data = app.post_check(method)
     dsid = data['id']
@@ -145,11 +147,18 @@ def test_append_documents(app):
         {'document_id': 'int', 'file_path': 'str', 'internal_id': 'int'}
     db_old = data['data']
 
-    dataset_definition = [{'file_path': os.path.join(data_dir, row['file_path']),
-                           'document_id': idx + 10} 
-                          for idx, row in enumerate(db_old)]
+    dataset_definition = []
+    for idx, row in enumerate(db_old):
+        row_out = {'document_id': idx + 10}
+        if ingestion_method == 'file_path':
+            row_out['file_path'] = os.path.join(data_dir, row['file_path'])
+        elif ingestion_method == 'content':
+            with Path(data_dir, row['file_path']).open('rt') as fh:
+                row_out['content'] = fh.read()
+        dataset_definition.append(row_out)
 
-    app.post_check(method + '/append', json={'dataset_definition': dataset_definition})
+    app.post_check(method + '/append',
+                   json={'dataset_definition': dataset_definition})
     data = app.post_check(method + '/id-mapping',
                           json={'return_file_path': True})
 
@@ -180,3 +189,35 @@ def test_remove_documents(app):
 
     db_new = pd.DataFrame(data['data'])
     assert db_old.shape[0] - 2 == db_new.shape[0]
+
+
+@pytest.mark.parametrize('ingestion_method', ['content', 'file_path'])
+def test_batch_ingest(app, ingestion_method):
+    data_dir1 = Path(data_dir)
+    data_dir2 = Path(data_dir).parent.parent / 'ds_002' / 'raw'
+    method = V01 + "/feature-extraction/"
+    data = app.post_check(method)
+    dsid = data['id']
+    method += dsid
+    for data_dir_k in [data_dir1, data_dir2]:
+        # post content from different data dirs
+        dd = []
+        for fname in data_dir_k.glob('*txt'):
+            if ingestion_method == 'content':
+                with fname.open('rt') as fh:
+                    dd.append({'content': fh.read()})
+            elif ingestion_method == 'file_path':
+                dd.append({'file_path': str(fname)})
+            else:
+                raise ValueError('method={} not supported'
+                                 .format(ingestion_method))
+
+        app.post_check(method, json={'dataset_definition': dd,
+                                     'vectorize': False})
+    app.post_check(method, json={'data_dir': str(data_dir1),
+                                 'vectorize': False})
+
+    app.post_check(method, json={'vectorize': True})
+    data = app.get_check(method)
+    assert len(data['filenames']) == 6*3
+    assert data['n_samples'] == 6*3

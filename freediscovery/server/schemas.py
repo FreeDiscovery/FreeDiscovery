@@ -56,6 +56,13 @@ class _DatasetDefinition(Schema):
     document_id = fields.Int()
     rendition_id = fields.Int()
     file_path = fields.Str()
+    content = fields.Str()
+
+
+class _DatasetDefinitionShort(Schema):
+    document_id = fields.Int()
+    rendition_id = fields.Int()
+    file_path = fields.Str()
 
 
 class FeaturesParsSchema(Schema):

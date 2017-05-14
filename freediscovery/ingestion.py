@@ -299,20 +299,11 @@ class DocumentIndex(object):
                 warnings.warn("Both 'file_path' and 'content' fields are "
                               "provided, the latter will be ingored!")
             metadata = sorted(metadata, key=lambda x: x['file_path'])
-            filenames = [el['file_path'] for el in metadata]
-
-            if data_dir is None:
-                data_dir = cls._detect_data_dir(filenames)
-
-            if not filenames:  # no files were found
-                raise WrongParameter('No files to process were found!')
-            filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
 
             # modify the metadata list inplace
-            for idx, (db_el, file_path) in enumerate(zip(metadata,
-                                                         filenames_rel)):
-                db_el['file_path'] = file_path
+            for idx, db_el in enumerate(metadata):
                 db_el['internal_id'] = idx + internal_id_offset
+                db_el['file_path'] = os.path.normpath(db_el['file_path'])
         elif has_content.all():
             if not (dsid_dir / 'raw').exists():
                 (dsid_dir / 'raw').mkdir()
@@ -323,25 +314,29 @@ class DocumentIndex(object):
                     rendering_id_el = db_el['rendering_id']
                 else:
                     rendering_id_el = 0
-                file_path_el = '{}_{}.txt'.format(idx + internal_id_offset,
-                                                  rendering_id_el)
-                db_el['file_path'] = file_path_el
+                file_path_el = '{:09}_{}.txt'.format(idx + internal_id_offset,
+                                                     rendering_id_el)
+                db_el['file_path'] = os.path.join(data_dir, file_path_el)
                 with (dsid_dir / 'raw' / file_path_el).open('wt') as fh:
                     fh.write(db_el.pop('content'))
 
-            filenames_rel = [el['file_path'] for el in metadata]
-
         elif (~has_file_path).any():
-            raise ValueError('Some list elements do not include '
-                             'the "file_path" field!')
+            raise ValueError(("All the ingested elements must have a "
+                              "'file_path' or 'content' field. Currently, \n"
+                              " - {} / {} documents have the 'file_path' "
+                              "field,\n"
+                              " - {} / {} documents have the 'content' field."
+                              ).format(has_file_path.sum(), len(has_file_path),
+                                       has_content.sum(), len(has_content)))
 
+        filenames = [el['file_path'] for el in metadata]
         db = pd.DataFrame(metadata)
 
         if 'document_id' not in db:
             db['document_id'] = db.internal_id
 
         res = cls(data_dir, db)
-        res.filenames_ = filenames_rel
+        res.filenames_ = filenames
         return res
 
     @staticmethod
@@ -379,9 +374,8 @@ class DocumentIndex(object):
             raise NotFound('data_dir={} does not exist'.format(data_dir))
 
         filenames = _list_filenames(data_dir, dir_pattern, file_pattern)
-        filenames_rel = [os.path.relpath(el, data_dir) for el in filenames]
         db = [{'file_path': file_path, 'internal_id': idx + internal_id_offset}
-              for idx, file_path in enumerate(filenames_rel)]
+              for idx, file_path in enumerate(filenames)]
 
         db = pd.DataFrame(db)
 
@@ -389,5 +383,12 @@ class DocumentIndex(object):
             db['document_id'] = db.internal_id
 
         res = cls(data_dir, db)
-        res.filenames_ = filenames_rel
+        res.filenames_ = filenames
         return res
+
+    def _make_relative_paths(self):
+        """ By default DocumentIndex uses absolute file paths,
+        this makes the file_path to be relative to dir_path"""
+        self.filenames_ = [os.path.relpath(el, self.data_dir)
+                           for el in self.filenames_]
+        self.data['file_path'] = self.filenames_

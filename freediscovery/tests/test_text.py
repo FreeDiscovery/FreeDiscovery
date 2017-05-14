@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os.path
+from pathlib import Path
 import numpy as np
+import pandas as pd
 from numpy.testing import assert_equal, assert_array_equal
 from numpy.testing import assert_allclose
 import scipy.sparse
@@ -42,6 +44,17 @@ def test_feature_extraction_tokenization(analyzer, ngram_range, use_hashing):
     assert_allclose(normalize(res2).data, res2.data)  # data is l2 normalized
 
     fe.delete()
+
+
+def test_feature_extraction_storage():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir)
+    uuid = fe.setup()
+    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    db = pd.read_pickle(os.path.join(cache_dir, 'ediscovery_cache',
+                                     uuid, 'db'))
+    assert 'file_path' not in db.columns
 
 
 @pytest.mark.parametrize("sublinear_tf, use_idf, binary, use_hashing",
@@ -363,19 +376,29 @@ def test_ingestion_batches():
 
 
 def test_ingestion_content():
-    dd = [{'document_id': 47,
-           'content': 'This is a test :$&'},
-          {'document_id': 99,
-           'content': 'Another test document!'}]
+    data_dir = Path(basename, "..", "data", "ds_002", "raw")
+
+    dd = []
+    for idx, fname in enumerate(sorted(data_dir.glob('*txt'))):
+        with fname.open('rt') as fh:
+            dd.append({'document_id': idx + 19,
+                       'content': fh.read()})
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.setup()
     fe.ingest(dataset_definition=dd, vectorize=True)
-    assert len(fe.filenames_) == 2
-    assert fe.filenames_[0] == '0_0.txt'
-    assert fe._load_features().shape[0] == 2
+    assert len(fe.filenames_) == 6
+    assert fe.filenames_[0] == '000000000_0.txt'
+    X = fe._load_features()
+    assert X.shape[0] == 6
     assert fe.db_.data.shape[0] == len(fe.filenames_)
 
+    fe2 = FeatureVectorizer(cache_dir=cache_dir)
+    fe2.setup()
+    fe2.ingest(data_dir=str(data_dir))
 
-
+    X2 = fe2._load_features()
+    assert X.shape == X2.shape
+    assert_array_equal(X.indices, X2.indices)
+    assert_array_equal(X.data, X2.data)

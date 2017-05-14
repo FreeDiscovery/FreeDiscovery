@@ -30,9 +30,9 @@ def _touch(filename):
 
 def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     """ Extract features on a chunk of files """
-    import os.path
     from sklearn.feature_extraction.text import HashingVectorizer
     from sklearn.externals import joblib
+    import os.path
 
     filenames = pars['filenames_abs']
     chunk_size = pars['chunk_size']
@@ -120,7 +120,8 @@ class FeatureVectorizer(object):
             # Load parameters from disk
             dsid = self.dsid
             if self.cache_dir is None:
-                raise InitException('cache_dir is None: cannot load from cache!')
+                raise InitException('cache_dir is None: '
+                                    'cannot load from cache!')
             dsid_dir = self.cache_dir / dsid
             if not dsid_dir.exists():
                 raise DatasetNotFound('dsid {} not found!'.format(dsid))
@@ -134,8 +135,9 @@ class FeatureVectorizer(object):
             mid = self.dsid
             mid_dir = self.cache_dir / mid
             if not mid_dir.exists():
-                raise ValueError('Vectorizer model id {} ({}) not found in the cache {}!'.format(
-                                 mid, mid_dir))
+                raise ValueError(('Vectorizer model id {} ({}) '
+                                  'not found in the cache {}!')
+                                 .format(mid, mid_dir))
             fname = mid_dir / 'vectorizer'
             if self.pars_['use_hashing']:
                 self._vect = joblib.load(str(fname))
@@ -173,16 +175,16 @@ class FeatureVectorizer(object):
         ----------
         analyzer : string, {'word', 'char'} or callable
             Whether the feature should be made of word or character n-grams.
-            If a callable is passed it is used to extract the sequence of features
-            out of the raw, unprocessed input.
+            If a callable is passed it is used to extract the sequence of
+            features out of the raw, unprocessed input.
         ngram_range : tuple (min_n, max_n)
             The lower and upper boundary of the range of n-values for different
-            n-grams to be extracted. All values of n such that min_n <= n <= max_n
-            will be used.
+            n-grams to be extracted. All values of n such that
+            min_n <= n <= max_n will be used.
         stop_words : string {'english'}, list, or None (default)
-            If a string, it is passed to _check_stop_list and the appropriate stop
-            list is returned. 'english' is currently the only supported string
-            value.
+            If a string, it is passed to _check_stop_list and the appropriate
+            stop list is returned. 'english' is currently the only supported
+            string value.
             If None, no stop words will be used. max_df can be set to a value
             in the range [0.7, 1.0) to automatically detect and filter stop
             words based on intra corpus document frequency of terms.
@@ -190,15 +192,15 @@ class FeatureVectorizer(object):
             When building the vocabulary ignore terms that have a document
             frequency strictly higher than the given threshold (corpus-specific
             stop words).
-            If float, the parameter represents a proportion of documents, integer
-            absolute counts.
+            If float, the parameter represents a proportion of documents,
+            integer absolute counts.
             This parameter is ignored if vocabulary is not None.
         min_df : float in range [0.0, 1.0] or int, default=1
             When building the vocabulary ignore terms that have a document
-            frequency strictly lower than the given threshold. This value is also
-            called cut-off in the literature.
-            If float, the parameter represents a proportion of documents, integer
-            absolute counts.
+            frequency strictly lower than the given threshold. This value is
+            also called cut-off in the literature.
+            If float, the parameter represents a proportion of documents,
+            integer absolute counts.
             This parameter is ignored if vocabulary is not None.
         max_features : int or None, default=None or 100001
             If not None, build a vocabulary that only consider the top
@@ -224,7 +226,8 @@ class FeatureVectorizer(object):
                                  .format(ngram_range))
 
         if not len(ngram_range) == 2:
-            raise WrongParameter('len(gram_range=={}!=2'.format(len(ngram_range)))
+            raise WrongParameter('len(gram_range=={}!=2'
+                                 .format(len(ngram_range)))
 
         if norm != 'l2':
             warnings.warn("the use of 'l2' norm is stronly advised;"
@@ -284,7 +287,8 @@ class FeatureVectorizer(object):
         """
         dsid_dir = self.cache_dir / self.dsid
         if (dsid_dir / 'db').exists():
-            raise ValueError('Dataset already vectorized!')
+            raise ValueError('Dataset {} already vectorized!'
+                             .format(self.dsid))
         db_list = list(sorted(dsid_dir.glob('db*')))
         if len(db_list) == 0:
             internal_id_offset = -1
@@ -305,22 +309,11 @@ class FeatureVectorizer(object):
 
             batch_suffix = '.{:09}'.format(db.data.internal_id.iloc[-1])
 
-            if len(db_list) >= 1:
-                partial_ingest = True
-            else:
-                partial_ingest = False
-
             self._filenames = db.data.file_path.values.tolist()
             del db.data['file_path']
 
             pars = self.pars_
-            pars['data_dir'] = data_dir
-            pars['n_samples'] = len(self._filenames)
 
-            if not partial_ingest:
-                # overwrite pars on disk
-                with (dsid_dir / 'pars').open('wb') as fh:
-                    pickle.dump(self._pars, fh)
             if 'file_path' in db.data.columns:
                 del db.data['file_path']
             db.data.to_pickle(str(dsid_dir / ('db' + batch_suffix)))
@@ -333,36 +326,57 @@ class FeatureVectorizer(object):
             filenames_list = list(sorted(dsid_dir.glob('filenames*')))
             if len(db_list) == 0:
                 raise ValueError('No ingested files found!')
-            elif len(db_list) == 1:
-                db_list[0].rename(dsid_dir / 'db')
-                filenames_list[0].rename(dsid_dir / 'filenames')
+
+            if len(db_list) == 1:
+                with filenames_list[0].open('rb') as fh:
+                    filenames_concat = pickle.load(fh)
             elif len(db_list) >= 2:
                 # accumulate different batches into a single file
-                # Filenames
+                # filename file
                 filenames_concat = []
                 for fname in filenames_list:
                     with fname.open('rb') as fh:
                         filenames_concat += pickle.load(fh)
-                with (dsid_dir / 'filenames').open('wb') as fh:
-                    pickle.dump(filenames_concat, fh)
-                for fname in filenames_list:
-                    fname.unlink()
-                self._filenames = filenames_concat
 
-                # databases
+            if self.pars_['data_dir'] is None:
+                data_dir = DocumentIndex._detect_data_dir(filenames_concat)
+                self._pars['data_dir'] = data_dir
+            else:
+                data_dir = self._pars['data_dir']
+
+            self._filenames = [os.path.relpath(el, data_dir)
+                               for el in filenames_concat]
+
+            with (dsid_dir / 'filenames').open('wb') as fh:
+                pickle.dump(self._filenames, fh)
+
+            for fname in filenames_list:
+                fname.unlink()
+
+            # save databases
+            if len(db_list) == 1:
+                db_list[0].rename(dsid_dir / 'db')
+                self.db_.filenames_ = self._filenames
+                self.db_.data['file_path'] = self._filenames
+            elif len(db_list) >= 2:
+
                 db_concat = []
                 for fname in db_list:
                     db_concat.append(pd.read_pickle(str(fname)))
                 db_new = pd.concat(db_concat, axis=0)
+                db_new.filenames_ = self._filenames
                 db_new.set_index('internal_id', drop=False, inplace=True)
+                self._db = DocumentIndex(data_dir, db_new)
+                if 'file_path' in db_new.columns:
+                    del db_new['file_path']
                 db_new.to_pickle(str(dsid_dir / 'db'))
-                for fname in db_list:
-                    fname.unlink()
-                self._db = DocumentIndex(self.pars_['data_dir'], db_new)
 
-                self._pars['n_samples'] = len(self._filenames)
-                with (dsid_dir / 'pars').open('wb') as fh:
-                    pickle.dump(self._pars, fh)
+            # save parameters
+            self._pars['n_samples'] = len(self._filenames)
+            self._pars['data_dir'] = data_dir
+
+            with (dsid_dir / 'pars').open('wb') as fh:
+                pickle.dump(self._pars, fh)
 
             self.transform()
 
@@ -534,6 +548,8 @@ class FeatureVectorizer(object):
 
         # write down the new database file
         db = pd.concat((db_old, db_new))
+        if 'file_path' in db.columns:
+            del db['file_path']
         db.to_pickle(str(dsid_dir / 'db'))
         self._db = DocumentIndex(self.pars_['data_dir'], db)
 
@@ -579,8 +595,10 @@ class FeatureVectorizer(object):
         db = db_old.iloc[internal_id_mask].copy()
         # create a new contiguous internal_id
         db['internal_id'] = np.arange(db.shape[0], dtype='int')
-        db.to_pickle(str(dsid_dir / 'db'))
         self._db = DocumentIndex(self.pars_['data_dir'], db)
+        if 'file_path' in db.columns:
+            del db['file_path']
+        db.to_pickle(str(dsid_dir / 'db'))
 
         # write down the new pars file
         self._pars = self.pars_

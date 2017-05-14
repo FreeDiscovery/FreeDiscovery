@@ -26,6 +26,7 @@ fnames_in_abs = [os.path.join(data_dir, el) for el in fnames_in]
 
 def test_ingestion_base_dir():
     dbi = DocumentIndex.from_folder(data_dir)
+    dbi._make_relative_paths()
     data_dir_res, filenames, db = dbi.data_dir, dbi.filenames_, dbi.data
     assert data_dir_res == os.path.normpath(data_dir)
     assert_array_equal(db.columns.values, ['file_path', 'internal_id', 'document_id'])
@@ -38,6 +39,7 @@ def test_ingestion_base_dir():
 
 def test_search_2fields():
     dbi = DocumentIndex.from_folder(data_dir)
+    dbi._make_relative_paths()
 
     query = pd.DataFrame([{'internal_id': 3},
                           {'internal_id': 1},
@@ -65,6 +67,7 @@ def test_search_2fields():
 
     query = pd.DataFrame([{'file_path': "0.7.6.28637.txt"},
                           {'file_path': "0.7.47.117435.txt"}])
+    del dbi.data['file_path']
     sres = dbi.search(query)
     query_res = [dbi.data.file_path.values.tolist().index(el)
                  for el in query.file_path.values]
@@ -139,6 +142,7 @@ def test_search_document_id():
         el['internal_id'] = idx
 
     dbi = DocumentIndex.from_list(md)
+    dbi._make_relative_paths()
     query = pd.DataFrame([{'internal_id': 1},
                           {'internal_id': 2},
                           {'internal_id': 1}])
@@ -173,6 +177,8 @@ def test_search_document_rendition_id():
 
     # can always index with internal_id
     dbi = DocumentIndex.from_list(md)
+    dbi._make_relative_paths()
+
     query = pd.DataFrame([{'internal_id': 1},
                           {'internal_id': 2},
                           {'internal_id': 1}])
