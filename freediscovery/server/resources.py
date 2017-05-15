@@ -431,6 +431,7 @@ class ModelsApiPredict(Resource):
                'subset': wfields.Str(missing='test',
                                      validate=_is_in_range(['all', 'train',
                                                             'test'])),
+               'subset_document_id': wfields.List(wfields.Int()),
                'batch_id': wfields.Int(missing=0),
                'batch_size': wfields.Int(missing=10000),
                })
@@ -443,6 +444,7 @@ class ModelsApiPredict(Resource):
         min_score = args.pop("min_score")
         max_results = args.pop("max_results", 0)
         subset = args.pop("subset")
+        subset_document_id = args.pop('subset_document_id', None)
         batch_size = args.pop("batch_size")
         batch_id = args.pop("batch_id")
 
@@ -452,27 +454,30 @@ class ModelsApiPredict(Resource):
 
         labels = cat.le.classes_
         Y_pred = y_res
-       
+
         if max_result_categories <= 0:
-            raise ValueError('the max_result_categories={} must be strictly positive'.format(max_result_categories))
+            raise ValueError(('the max_result_categories={} '
+                              'must be strictly positive')
+                             .format(max_result_categories))
 
         id_mapping = cat.fe.db_.data
-        # have to cast to object as otherwise we get serializing np.int64 issues...
-        base_keys = [key for key in id_mapping.columns if key in ['internal_id',
-                                                                  'document_id',
-                                                                  'rendition_id']]
+        # have to cast to object as otherwise
+        # we get serializing np.int64 issues...
+        base_keys = [key for key in id_mapping.columns
+                     if key in ['internal_id', 'document_id', 'rendition_id']]
         id_mapping = id_mapping[base_keys].set_index('internal_id', drop=True).astype('object')
         # create dataframe out of results
         Y_pred = id_mapping.copy()
         for idx, el in enumerate(labels):
-            Y_pred[el] = y_res[:,idx]
+            Y_pred[el] = y_res[:, idx]
         if nn_res is not None:
             nn_range = np.arange(nn_res.shape[0])
             NN_map = []
             for idx, el in enumerate(labels):
                 NN_map_el = pd.DataFrame({'internal_id': nn_res[:, idx]},
                                          index=nn_range)
-                NN_map_el = NN_map_el.join(id_mapping, on='internal_id', how='left')
+                NN_map_el = NN_map_el.join(id_mapping, on='internal_id',
+                                           how='left')
                 NN_map.append(NN_map_el)
         else:
             NN_map = None
@@ -491,17 +496,24 @@ class ModelsApiPredict(Resource):
             if sort_by == 'score':
                 Y_pred_max = Y_pred_max.sort_values(ascending=sort_ascending)
             else:
-                raise ValueError('sort_by={} not in {}'.format(sort_by, valid_sort))
+                raise ValueError('sort_by={} not in {}'
+                                 .format(sort_by, valid_sort))
 
         # filter out low scores
         if min_score is not None:
             Y_pred_max = Y_pred_max[Y_pred_max > min_score]
-        
+
         Y_pred = Y_pred.loc[Y_pred_max.index.values, :]
 
         # return only first N results
         if max_results > 0:
             Y_pred = Y_pred.iloc[:max_results]
+
+        if subset_document_id is not None:
+            Y_pred = Y_pred.reset_index().set_index('document_id', drop=False)
+            subset_document_id = np.array(subset_document_id)
+            subset_mask = np.in1d(Y_pred.index, subset_document_id)
+            Y_pred = Y_pred.iloc[subset_mask].set_index('internal_id')
 
         Y_pred, pagination = _paginate(Y_pred, batch_id, batch_size)
 
@@ -509,7 +521,7 @@ class ModelsApiPredict(Resource):
         if NN_map is not None:
             for idx, NN_map_el in enumerate(NN_map):
                 NN_map[idx] = NN_map_el.loc[Y_pred.index, :].to_dict(orient='records')
-        
+
         res = Y_pred.to_dict(orient='records')
 
         # convert scores to a more usable format
