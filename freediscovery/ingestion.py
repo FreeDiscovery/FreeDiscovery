@@ -177,7 +177,6 @@ class DocumentIndex(object):
         out : dict
 
         """
-        from time import time
         if res is not None:
             res = res.set_index('internal_id', drop=False)
         db = self.data.set_index('internal_id', drop=False)
@@ -199,7 +198,6 @@ class DocumentIndex(object):
         db = db[base_keys]
 
         if res is not None:
-            t0 = time()
             db_dict = res[res_keys].join(db, how='left')
             out = db_dict.to_dict(orient='records')
         else:

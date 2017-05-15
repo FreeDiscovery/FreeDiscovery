@@ -416,6 +416,7 @@ class ModelsApiPredict(Resource):
              - `metric` : The similarity returned by nearest neighbor classifier in ['cosine', 'jaccard', 'cosine-positive'].
              - `min_score` : filter out results below a similarity threashold
              - `subset`: apply prediction to a document subset. Must be one of ['all', 'train', 'test']. Default: 'test'.
+             - `subset_document_id`: apply prediction to a subset of document_id. 
              - `batch_id`: retrieve a given subset of scores (-1 to retrieve all). Default: 0
              - `batch_size`: the number of document scores retrieved per batch. Default: 10000
             """))
@@ -483,7 +484,12 @@ class ModelsApiPredict(Resource):
             NN_map = None
 
         # optionally filter out test or training set
-        if subset in ['train', 'test']:
+        if subset_document_id is not None:
+            Y_pred = Y_pred.reset_index().set_index('document_id', drop=False)
+            subset_document_id = np.array(subset_document_id)
+            subset_mask = np.in1d(Y_pred.index, subset_document_id)
+            Y_pred = Y_pred.iloc[subset_mask].set_index('internal_id')
+        elif subset in ['train', 'test']:
             _mask = np.in1d(Y_pred.index.values, train_indices)
             if subset == 'test':
                 _mask = ~_mask
@@ -509,11 +515,6 @@ class ModelsApiPredict(Resource):
         if max_results > 0:
             Y_pred = Y_pred.iloc[:max_results]
 
-        if subset_document_id is not None:
-            Y_pred = Y_pred.reset_index().set_index('document_id', drop=False)
-            subset_document_id = np.array(subset_document_id)
-            subset_mask = np.in1d(Y_pred.index, subset_document_id)
-            Y_pred = Y_pred.iloc[subset_mask].set_index('internal_id')
 
         Y_pred, pagination = _paginate(Y_pred, batch_id, batch_size)
 
@@ -1105,6 +1106,7 @@ class SearchApi(Resource):
             - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
             - `batch_id`: retrieve a given subset of scores (-1 to retrieve all). Default: 0
             - `batch_size`: the number of document scores retrieved per batch. Default: 10000
+             - `subset_document_id`: apply prediction to a subset of document_id. 
             """))
     @use_args({"parent_id": wfields.Str(required=True),
                "query": wfields.Str(),
@@ -1118,10 +1120,12 @@ class SearchApi(Resource):
                                                                 'ascending'])),
                'batch_id': wfields.Int(missing=0),
                'batch_size': wfields.Int(missing=10000),
+               'subset_document_id': wfields.List(wfields.Int()),
                })
     @marshal_with(SearchResponseSchema())
     def post(self, **args):
         parent_id = args['parent_id']
+        subset_document_id = args.pop('subset_document_id', None)
         model = _SearchWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
 
         if 'query' in args and 'query_document_id' not in args:
@@ -1146,6 +1150,15 @@ class SearchApi(Resource):
         if 'query' not in args and 'query_document_id' in args:
             # remove the query document
             scores_pd = scores_pd[scores_pd.internal_id != res_q.internal_id.values[0]]
+
+        if subset_document_id is not None:
+            db = model.fe.db_.data[['document_id', 'internal_id']].set_index('internal_id')
+            scores_pd = scores_pd.set_index('internal_id', drop=False)
+            scores_pd = scores_pd.join(db, how='left')
+            scores_pd = scores_pd.set_index('document_id', drop=False)
+            subset_document_id = np.array(subset_document_id)
+            subset_mask = np.in1d(scores_pd.index, subset_document_id)
+            scores_pd = scores_pd.iloc[subset_mask].set_index('internal_id', drop=False)
 
         sort_by = args['sort_by']
         if sort_by:

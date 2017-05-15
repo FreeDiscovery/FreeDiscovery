@@ -56,7 +56,7 @@ def _run(args):
 
     app = fd_app(cache_dir)
     if args.hostname == '0.0.0.0':
-        print(' * Warning: running the server on hostname 0.0.0.0 '
+        print(' * WARNING: running the server on hostname 0.0.0.0 '
               '(accessible from any IP address). Please make sure '
               'that this server runs in a protected environement '
               '(e.g. is behind a firewall) or restrict '

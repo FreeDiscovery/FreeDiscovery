@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 import warnings
 
 import numpy as np
@@ -148,7 +147,8 @@ class _CategorizerWrapper(_BaseWrapper):
                 raise NotImplementedFD('CV not supported with MLPClassifier')
             from sklearn.neural_network import MLPClassifier
             cmod = MLPClassifier(solver='adam', hidden_layer_sizes=10,
-                                 max_iter=200, activation='identity', verbose=0)
+                                 max_iter=200, activation='identity',
+                                 verbose=0)
         else:
             raise WrongParameter('Method {} not implemented!'.format(method))
         return cmod

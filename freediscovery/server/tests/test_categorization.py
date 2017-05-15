@@ -244,17 +244,14 @@ def test_api_categorization_subset_document_id(app):
 
     method = V01 + "/categorization/{}/predict".format(mid)
 
-    data = app.get_check(method, json={'batch_id': -1})
-    data = data['data']
-    N_res0 = len(data)
-
     data = app.get_check(method, json={'batch_id': -1,
                                        'subset_document_id': [222784, 5184,
                                                               929296, 999999999]})
     data = data['data']
     assert len(data) == 3
+    # check that only 3 subset documents are returned (9999999 is not a valid id)
+    # and that they are in a correct order
     assert_array_equal([row['document_id'] for row in data], [5184, 222784, 929296])
 
     method = V01 + "/categorization/{}".format(mid)
-    res = app.delete_check(method)
-
+    app.delete_check(method)
