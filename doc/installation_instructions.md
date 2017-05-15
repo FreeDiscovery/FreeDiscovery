@@ -9,7 +9,7 @@ The latest development version of FreeDiscovery can be obtained from [Github](ht
 
 It is recommended to use the latest stable version with,
   
-    git checkout v1.0.0-rc1
+    git checkout v1.1.0
 
 Althernaitively, the latest stable version can be donwloaded from the [Github releases page](https://github.com/FreeDiscovery/FreeDiscovery/releases).
 

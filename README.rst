@@ -31,7 +31,7 @@ We would very much appreciate feedback on the existing functionality. Feel free 
 For more information see the documentation and API Reference,
 
  - development version [``master`` branch | documentation http://freediscovery.io/doc/dev/ ].
- - stable version 1.0 [``1.0.X`` branch | documentation http://freediscovery.io/doc/stable/ ].
+ - stable version 1.1 [``1.1.X`` branch | documentation http://freediscovery.io/doc/stable/ ].
 
 FreeDiscovery is released under the 3-clause BSD licence.
 
