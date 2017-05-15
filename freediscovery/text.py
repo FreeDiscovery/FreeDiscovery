@@ -5,7 +5,6 @@ import shutil
 import pickle
 import warnings
 import time
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -379,6 +378,9 @@ class FeatureVectorizer(object):
                 pickle.dump(self._pars, fh)
 
             self.transform()
+
+            if (dsid_dir / 'raw').exists():
+                shutil.rmtree(str(dsid_dir / 'raw'))
 
         if db is None and not vectorize:
             raise ValueError('At least one of data_dir, dataset_definition, '

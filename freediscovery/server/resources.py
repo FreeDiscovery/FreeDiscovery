@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-from glob import glob
 from textwrap import dedent
 
 from webargs import fields as wfields
@@ -172,7 +170,7 @@ class FeaturesApiElement(Resource):
 
          **Parameters**
           - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
-          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional. Either `data_dir` or `dataset_definition` must be provided.
+          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'content': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional, while either `file_path` or `content` field must be provided. 
           - `vectorize`: [optional] this option can be used to ingest the dataset_definition in batches (optionally with document content), then make one final call to vectorize all sent documents (bool, default: True)
          """))
     @use_args({"data_dir":  wfields.Str(),
@@ -236,7 +234,7 @@ class FeaturesApiAppend(Resource):
 
          **Parameters**
           - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
-          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional.
+          - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where  `rendition_id` are optional, while either `file_path` or `content` field must be provided. 
           """))
     @use_args({'data_dir': wfields.Str(),
                'dataset_definition': wfields.Nested(_DatasetDefinition, many=True,
@@ -514,7 +512,6 @@ class ModelsApiPredict(Resource):
         # return only first N results
         if max_results > 0:
             Y_pred = Y_pred.iloc[:max_results]
-
 
         Y_pred, pagination = _paginate(Y_pred, batch_id, batch_size)
 
