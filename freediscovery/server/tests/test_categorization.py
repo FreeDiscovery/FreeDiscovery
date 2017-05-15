@@ -1,22 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 import pytest
-import json
 import itertools
 from unittest import SkipTest
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_array_equal
 
-from ...utils import dict2type, sdict_keys
-from ...ingestion import DocumentIndex
+from ...utils import dict2type
 from ...exceptions import OptionalDependencyMissing
-from ...tests.run_suite import check_cache
 from .base import (parse_res, V01, app, app_notest, get_features, get_features_lsi,
                    get_features_lsi_cached, get_features_cached)
 
@@ -232,3 +224,34 @@ def test_api_categorization_3cat(app, subset):
 def test_api_categorization_cosine_positive(app):
     _api_categorization_wrapper(app, 'NearestNeighbor', '', 2, metric='cosine-positive')
 
+
+def test_api_categorization_subset_document_id(app):
+    n_categories = 1
+    dsid, lsi_id, _, ds_input = get_features_lsi_cached(app, n_categories=n_categories)
+    method = V01 + "/feature-extraction/{}".format(dsid)
+    data = app.get_check(method)
+
+    training_set = ds_input['training_set']
+
+    pars = {
+          'parent_id': lsi_id,
+          'data': training_set,
+          'method': 'NearestNeighbor'}
+
+    method = V01 + "/categorization/"
+    data = app.post_check(method, json=pars)
+    mid = data['id']
+
+    method = V01 + "/categorization/{}/predict".format(mid)
+
+    data = app.get_check(method, json={'batch_id': -1,
+                                       'subset_document_id': [222784, 5184,
+                                                              929296, 999999999]})
+    data = data['data']
+    assert len(data) == 3
+    # check that only 3 subset documents are returned (9999999 is not a valid id)
+    # and that they are in a correct order
+    assert_array_equal([row['document_id'] for row in data], [5184, 222784, 929296])
+
+    method = V01 + "/categorization/{}".format(mid)
+    app.delete_check(method)

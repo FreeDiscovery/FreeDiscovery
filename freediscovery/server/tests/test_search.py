@@ -138,13 +138,32 @@ def test_search_document_id(app):
     # assert data[0]['score'] >= 0.99
 
 
+def test_search_subset_document_id(app):
+    dsid, lsi_id, _, input_ds = get_features_lsi_cached(app, hashed=False)
+    parent_id = lsi_id
+
+    query_document_id = 3844
+
+    pars = dict(parent_id=parent_id,
+                sort=True,
+                query_document_id=query_document_id)
+
+    # last document id is invalid
+    pars['subset_document_id'] = [3705625, 1110916, 999999999]
+    data = app.post_check(V01 + "/search/", json=pars)
+    data = data['data']
+    # check that the response only includes documents from the subset,
+    # in the correct order
+    assert_array_equal([row['document_id'] for row in data],
+                       [1110916, 3705625])
+
 
 def test_search_consistency(app):
     """ A number of consistency checks"""
     import pickle
     from scipy.stats import pearsonr
     from sklearn.metrics.pairwise import cosine_similarity
-    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app)  # n_components=1000)
+    dataset_id, lsi_id, ds_pars, input_ds = get_features_lsi_cached(app)
     query_document_id = 1
 
     input_ds = pd.DataFrame(input_ds['dataset']).set_index('document_id')
