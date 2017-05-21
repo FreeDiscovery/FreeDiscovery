@@ -19,6 +19,9 @@ else:
 with open('README.rst', 'rt') as fh:
     LONG_DESCRIPTION = fh.read()
 
+with open('requirements.txt', 'rt') as fh:
+    REQUIREMENTS = fh.read().splitlines()
+
 setup(name='freediscovery',
       version=version,
       description='Open source software for E-Discovery '
@@ -51,5 +54,6 @@ setup(name='freediscovery',
 
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
           'Topic :: Text Processing :: General'],
+      extras_require={'all': REQUIREMENTS},
       keywords='information-retrieval machine-learning text-classification')
 
