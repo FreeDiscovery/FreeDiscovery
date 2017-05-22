@@ -26,10 +26,9 @@ def _parse_cache_dir(cache_dir):
 
 
 def _run(args):
-    df_config = vars(args)
-    del df_config['func']
-    del df_config['yes']
-
+    df_config = vars(args).copy()
+    df_config.pop('func', None)
+    df_config.pop('yes', None)
 
     cache_dir = _parse_cache_dir(args.cache_dir)
     cache_dir = os.path.normpath(os.path.abspath(cache_dir))
@@ -51,6 +50,7 @@ def _run(args):
     log_fname = os.path.normpath(os.path.abspath(log_fname))
 
     df_config['log_file'] = log_fname
+    df_config['n_workers'] = df_config.pop('n', None)
 
     # redirect stdout / stderr to a file
     sys.stdout = _TeeLogger(log_fname)

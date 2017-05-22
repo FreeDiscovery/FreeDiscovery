@@ -44,3 +44,11 @@ def test_openapi_specs(app):
     data = app.get_check('/openapi-specs.json')
     assert data['swagger'] == '2.0'
 
+
+def test_version(app):
+    data = app.get_check('/')
+    assert dict2type(data) == {'version': {'number': 'str'},
+                               'env': {'python_version': 'str'},
+                               'config': 'NoneType'}
+
+
