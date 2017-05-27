@@ -26,6 +26,10 @@ def _parse_cache_dir(cache_dir):
 
 
 def _run(args):
+    df_config = vars(args).copy()
+    df_config.pop('func', None)
+    df_config.pop('yes', None)
+
     cache_dir = _parse_cache_dir(args.cache_dir)
     cache_dir = os.path.normpath(os.path.abspath(cache_dir))
     if not os.path.exists(cache_dir):
@@ -40,8 +44,13 @@ def _run(args):
             return
     else:
         _cache_dir_exists = True
+
+    df_config['cache_dir'] = cache_dir
     log_fname = args.log_file.replace('${CACHE_DIR}', cache_dir)
     log_fname = os.path.normpath(os.path.abspath(log_fname))
+
+    df_config['log_file'] = log_fname
+    df_config['n_workers'] = df_config.pop('n', None)
 
     # redirect stdout / stderr to a file
     sys.stdout = _TeeLogger(log_fname)
@@ -54,7 +63,7 @@ def _run(args):
                                          'EXISTING' if _cache_dir_exists else 'NEW'))
     print(' * LOG_FILE: {}'.format(log_fname))
 
-    app = fd_app(cache_dir)
+    app = fd_app(cache_dir, df_config)
     if args.hostname == '0.0.0.0':
         print(' * WARNING: running the server on hostname 0.0.0.0 '
               '(accessible from any IP address). Please make sure '
@@ -78,6 +87,7 @@ def _run(args):
             parent_pid = os.getpid()
             print(' * Server: gunicorn with {} workers'.format(args.n))
             print(' * Running on http://{}/ (Press CTRL+C to quit)'.format(options['bind']))
+            df_config['server'] = 'gunicorn'
             GunicornApplication(app, options).run()
             return
         except SystemExit:
@@ -95,6 +105,7 @@ def _run(args):
     # run the built-in server
     print(' * Server: flask (Werkzeug) threaded')
 
+    df_config['server'] = 'werkzeug'
     app.run(debug=False, host=args.hostname,
             processes=1, threaded=True,
             port=args.port, use_reloader=False)

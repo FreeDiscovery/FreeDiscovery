@@ -19,7 +19,7 @@ dependencies:
   override:
     - source build_tools/circle/install.sh
     - source activate testenv && freediscovery run -y --cache-dir ../freediscovery_shared:
-       background: true
+        background: true
     - sleep 20
     # The pipefail is requested to propagate exit code
     - set -o pipefail && cd doc && source activate testenv && make html 2>&1 | tee ~/log.txt

@@ -22,8 +22,9 @@ from .resources import (FeaturesApi, FeaturesApiElement,
                         MetricsDupDetectionApiElement,
                         EmailThreadingApi, EmailThreadingApiElement,
                         SearchApi,
-                        CustomStopWordsApi, CustomStopWordsLoadApi
+                        CustomStopWordsApi, CustomStopWordsLoadApi,
                         )
+from .info import ServerInfoApi
 
 
 if os.environ.get('DOCKER', None) is not None:
@@ -51,7 +52,7 @@ class TestClient(FlaskClient):
         return super(TestClient, self).open(*args, **kwargs)
 
 
-def fd_app(cache_dir):
+def fd_app(cache_dir, config=None):
     """ API app for FreeDiscovery """
 
     if not os.path.exists(cache_dir):
@@ -73,9 +74,12 @@ def fd_app(cache_dir):
 
     #app.config['DEBUG'] = False
 
+    ServerInfoApi._fd_config = config
+    app.add_url_rule('/', view_func=ServerInfoApi.as_view('ServerInfoApi'))
+
     # Actually setup the Api resource routing here
     for resource_el, url in [
-         (ExampleDatasetApi               , "/example-dataset/<name>"),             
+         (ExampleDatasetApi               , "/example-dataset/<name>"),
          (FeaturesApi                     , "/feature-extraction")            ,
          (FeaturesApiElement              , '/feature-extraction/<dsid>')     ,
          (FeaturesApiElementMappingNested , '/feature-extraction/<dsid>/id-mapping'),
@@ -110,6 +114,7 @@ def fd_app(cache_dir):
         ressource_name = resource_el.__name__
         app.add_url_rule('/api/v0' + url,
                          view_func=resource_el.as_view(ressource_name))
+
         if ressource_name not in ["EmailThreadingApi"]:
             # the above two cases fail due to recursion limit
             docs.register(resource_el, endpoint=ressource_name)
