@@ -4,9 +4,13 @@ dist: trusty
 matrix:
     include:
     - python: "3.6"
-      env: SKLEARN="0.18.1"
+      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS=""
+    - python: "3.6"
+      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS="simhash-py gunicorn"
+    - python: "3.5"
+      env: REQUIREMENTS="build_tools/requirements_compat.txt" EXTRA_DEPS=""
     - python: "3.5" 
-      env: SKLEARN="0.18.1"
+      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS=""
 
 # setup adapted from https://github.com/soft-matter/trackpy/blob/master/.travis.yml
 before_install:
@@ -19,22 +23,15 @@ before_install:
 
 install: 
     - conda config --append channels conda-forge
-    - conda install --yes --file requirements.txt simhash-py python=${TRAVIS_PYTHON_VERSION}
-    # reinstall the tested version of SKLEARN
-    - | 
-        if [ "${SKLEARN}" != "0.18.1" ]; then
-            pip uninstall --yes scikit-learn &&  pip install scikit-learn==${SKLEARN}
-        fi
-
-    - python setup.py install
-    - pwd
+    - conda install --yes --file ${REQUIREMENTS} ${EXTRA_DEPS} python=${TRAVIS_PYTHON_VERSION}
+    - pip install .
 
 script:
     # run tests
     - pip install pytest-cov codecov
     - py.test -sv --cov=./
     # install matplotlib which we don't add as a core dependency but which is used in examples
-    - pip install matplotlib==1.5.3 gunicorn
+    - pip install matplotlib==1.5.3
     # now start the server and run the examples
     - | 
         freediscovery run -y --cache-dir ../freediscovery_shared &

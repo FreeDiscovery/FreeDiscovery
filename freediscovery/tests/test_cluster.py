@@ -135,8 +135,8 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
         branching_factor = 10
     elif dataset == 'birch_hierarchical':
         basename = os.path.dirname(__file__)
-        X = joblib.load(os.path.join(basename, '..', 'data',
-                        'ds_lsi_birch', 'data'))
+        X = np.load(os.path.join(basename, '..', 'data',
+                    'ds_lsi_birch', 'data.npy'))
         branching_factor = 2
 
     mod = Birch(n_clusters=None, threshold=0.1,

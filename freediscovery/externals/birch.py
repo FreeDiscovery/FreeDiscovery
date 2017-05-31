@@ -15,7 +15,6 @@ from sklearn.externals.six.moves import xrange
 from sklearn.utils import check_array
 from sklearn.utils.extmath import row_norms, safe_sparse_dot
 from sklearn.utils.validation import check_is_fitted
-from sklearn.exceptions import NotFittedError
 from sklearn.cluster.hierarchical import AgglomerativeClustering
 
 
@@ -526,7 +525,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
 
         # Should raise an error if one does not fit before predicting.
         if not (is_fitted or has_partial_fit):
-            raise NotFittedError("Fit training data before predicting")
+            raise ValueError("Fit training data before predicting")
 
         if is_fitted and X.shape[1] != self.subcluster_centers_.shape[1]:
             raise ValueError(
