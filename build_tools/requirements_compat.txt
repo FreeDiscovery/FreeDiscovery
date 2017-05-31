@@ -1,0 +1,11 @@
+numpy==1.9.3       # core  libraries
+scipy==0.16.0
+pandas==0.18.0
+scikit-learn==0.18.1
+nltk==3.2.1
+pytest==3.0.1
+flask==0.10.1         # web libraries
+requests==2.7.0
+marshmallow==2.12.2
+webargs==1.5.3
+flask-apispec==0.3.2
