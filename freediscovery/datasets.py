@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from .base import PipelineFinder
 from sklearn.externals import joblib
+import pickle
 
 VALID_MD5SUM = {'treclegal09_2k_subset' : '8090cc55ac18fe5c4d5d53d82fc767a2',
                 'treclegal09_20k_subset': '43a711897ce724e873bdbc47a374a57e',
@@ -180,11 +181,15 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
         internal_data_dir = Path(os.path.dirname(os.path.abspath(__file__)),
                                  'data')
         if name == '20newsgroups_3categories':
+            import lzma
             fname = name + '.pkl.xz'
+            opener = lzma.open
         else:
             fname = name + '.pkl'
+            opener = open
 
-        twenty_news = joblib.load(str(internal_data_dir / fname))
+        with opener(str(internal_data_dir / fname), 'rb') as fh:
+            twenty_news = pickle.load(fh)
 
     # Download the dataset if it doesn't exist
     if not (outdir).exists():

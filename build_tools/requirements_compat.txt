@@ -1,7 +1,7 @@
-numpy==1.9.3       # core  libraries
-scipy==0.16.0
+numpy==1.10.4      # core  libraries
+scipy==0.16.1
 pandas==0.18.0
-scikit-learn==0.18.1
+scikit-learn==0.17.0
 nltk==3.2.1
 pytest==3.0.1
 flask==0.10.1         # web libraries

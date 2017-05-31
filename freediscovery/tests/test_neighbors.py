@@ -3,24 +3,20 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
 
 import os.path
-from unittest import SkipTest
-import re
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal,
-                           assert_array_less, assert_array_equal)
+from numpy.testing import (assert_allclose, assert_equal)
 
 import pytest
-import itertools
-from sklearn.model_selection import train_test_split
+from freediscovery.sklearn_compat import train_test_split
 from sklearn.preprocessing import normalize
 from sklearn.externals import joblib
 
-from freediscovery.neighbors import ( NearestNeighborRanker, NearestCentroidRanker,
-                                        _chunk_kneighbors)
+from freediscovery.neighbors import (NearestNeighborRanker,
+                                     NearestCentroidRanker,
+                                     _chunk_kneighbors)
 from .run_suite import check_cache
 
 
@@ -28,6 +24,7 @@ basename = os.path.dirname(__file__)
 
 
 cache_dir = check_cache()
+
 
 @pytest.mark.parametrize('n_categories', [1, 2, 3, 4])
 def test_nearest_neighbor_ranker(n_categories):
