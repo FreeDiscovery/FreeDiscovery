@@ -9,8 +9,9 @@ import os
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 from freediscovery.categorization import binary_sensitivity_analysis
 from freediscovery.interpretation import explain_categorization, _make_cmap

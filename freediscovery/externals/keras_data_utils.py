@@ -183,7 +183,7 @@ def _get_file(fname,
     print(' ')
 
     if extract:
-        _extract_archive(str(fpath), base_dir, archive_format='tar')
+        _extract_archive(str(fpath), str(base_dir), archive_format='tar')
         return extract_fpath
 
     return fpath

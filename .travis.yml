@@ -42,7 +42,7 @@ script:
         for f in examples/*.py; do 
            python $f >> ~/log.txt
         done
-        cat log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
+        cat ../freediscovery_shared/freediscovery-backend.log && cat ~/log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
 
 after_success:
     codecov --token=${CODECOV_TOKEN}
