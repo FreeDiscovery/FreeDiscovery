@@ -52,6 +52,7 @@ test_script:
         Foreach-Object {
             python $_.FullName 2>&1 | Tee-Object -Append -FilePath "log.txt"
         }
+        type "..\\..\\freediscovery_shared\\freediscovery-backend.log"
         if (sls "Traceback \(most recent call last\):" log.txt -ca -quiet) {
             exit 1
         }

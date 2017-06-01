@@ -29,7 +29,7 @@ dependencies:
 test:
   # Grep error on the documentation
   override:
-    - cat ~/log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt; then false; else true; fi
+    - cat ../freediscovery_shared/freediscovery-backend.log && cat ~/log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt ../../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
 deployment:
  push:
    branch: /^master$|^[0-9]+\.[0-9]+\.X$/

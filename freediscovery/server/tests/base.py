@@ -86,7 +86,7 @@ memory = Memory(cachedir=os.path.join(CACHE_DIR, '_joblib_cache'), verbose=0)
 
 
 def get_features(app, hashed=False, metadata_fields='data_dir',
-                 n_categories=2, dataset='20newsgroups_3categories', **kwargs):
+                 n_categories=2, dataset='20_newsgroups_3categories', **kwargs):
 
     method = V01 + "/feature-extraction/"
     pars = {'use_hashing': hashed}
@@ -123,7 +123,7 @@ def get_features(app, hashed=False, metadata_fields='data_dir',
 
 @memory.cache(ignore=['app'])
 def get_features_cached(app, hashed=False, n_categories=2,
-                        dataset='20newsgroups_3categories', **kwargs):
+                        dataset='20_newsgroups_3categories', **kwargs):
     return get_features(app, hashed=hashed, n_categories=n_categories,
                         dataset=dataset, **kwargs)
 
@@ -143,7 +143,7 @@ def get_features_lsi(app, hashed=False, metadata_fields='data_dir', **kwargs):
 
 @memory.cache(ignore=['app'])
 def get_features_lsi_cached(app, hashed=False, n_categories=2, n_components=101,
-                            dataset="20newsgroups_3categories"):
+                            dataset="20_newsgroups_3categories"):
     dsid, pars, input_ds = get_features_cached(app, hashed=hashed,
                                                n_categories=n_categories)
     lsi_pars = dict(n_components=n_components, parent_id=dsid)
