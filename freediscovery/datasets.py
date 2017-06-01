@@ -144,9 +144,6 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
     outdir = cache_dir / name
     fname = outdir
 
-    if outdir.exists():
-        shutil.rmtree(str(outdir))
-
     db = IR_DATASETS[name]
 
     if '20_newsgroups_' in name:
