@@ -4,6 +4,7 @@ import time
 import argparse
 import shutil
 from subprocess import call
+from pathlib import Path
 
 from sklearn.externals import joblib
 
@@ -12,6 +13,7 @@ from .cli import (_query_yes_no, _TeeLogger,
                   _number_of_workers)
 from .text import FeatureVectorizer
 from .pipeline import PipelineFinder
+from .datasets import IR_DATASETS, load_dataset
 from ._version import __version__
 
 DEFAULT_CACHE_DIR = os.path.join('..', 'freediscovery_shared')
@@ -198,6 +200,16 @@ def _rm(args):
     else:
         print('Nothing to be done. Exiting.')
 
+def _download(args):
+    cache_dir = Path(args.output).resolve()
+
+    if not cache_dir.exists():
+        raise ValueError('Output directory {} does not exist!'
+                         .format(cache_dir))
+
+    load_dataset(args.name, cache_dir=cache_dir, verbose=True)
+    print('Downloaded {} sucessfully!'.format(args.name))
+
 
 # Allow to propagate formatter_class to subparsers
 # https://bugs.python.org/issue21633
@@ -228,6 +240,8 @@ def main(args=None, return_parser=False):
                                  'a trained model.')
     rm_parser = subparsers.add_parser("rm", 
                      description='Remove a trained model specified by its ID.')
+    download_parser = subparsers.add_parser("download", 
+                     description='Download a document dataset')
 
     for subparser in [run_parser, list_parser, show_parser,
                       rm_parser]:
@@ -286,6 +300,16 @@ def main(args=None, return_parser=False):
                            help='Remove all models.')
     rm_parser.add_argument('mid', nargs='?', help='Model id')
     rm_parser.set_defaults(func=_rm)
+
+    # download parser
+    download_parser.add_argument('-o', '--output',
+                             default='.',
+                             help='Folder where to save the output folder')
+    download_parser.add_argument('name',
+                             help='The dataset name',
+                             choices=IR_DATASETS.keys())
+    download_parser.set_defaults(func=_download)
+
     if return_parser:
         # used to generate sphinx docs
         return parser

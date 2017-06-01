@@ -9,27 +9,37 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from .base import PipelineFinder
 from sklearn.externals import joblib
 import pickle
 
-VALID_MD5SUM = {'treclegal09_2k_subset' : '8090cc55ac18fe5c4d5d53d82fc767a2',
-                'treclegal09_20k_subset': '43a711897ce724e873bdbc47a374a57e',
-                'treclegal09_37k_subset': '9fb6b7505871bbaee5a438de3b0f497c',
-                'legal09int': 'None',
-                'fedora_ml_3k_subset': '09dbb03d13b8e341bd615ce43f2d836b',
-                '20newsgroups_3categories': '7e59e10cbd824190f3f1fa82285c7865',
-                '20newsgroups_micro': 'f6ec5e8669ebde1efa11148096c7cc0c'
-                }
+from .base import PipelineFinder
+from .externals.keras_data_utils import _get_file
 
-DATASET_SIZE = {'treclegal09_2k_subset' : 2.8,
-                'treclegal09_20k_subset': 30,
-                'treclegal09_37k_subset': 55,
-                'legal09int': 1500,
-                'fedora_ml_3k_subset': 3,
-                '20newsgroups_3categories': 1,
-                '20newsgroups_micro': 0.03
-                }
+
+IR_DATASETS = {'treclegal09_2k_subset': {'md5': '8090cc55ac18fe5c4d5d53d82fc767a2',
+                                         'size': 2.8},
+               'treclegal09_20k_subset': {'md5': '43a711897ce724e873bdbc47a374a57e',
+                                          'size': 30},
+               'treclegal09_37k_subset': {'md5': '9fb6b7505871bbaee5a438de3b0f497c',
+                                          'size': 55},
+               'legal09int': {'md5': '929a675b981282c01c7212030323789f',
+                              'size': 1500,
+                              'url': "http://r0h.eu/d/legal09int.tar.gz"},
+               'fedora_ml_3k_subset': {'md5': '09dbb03d13b8e341bd615ce43f2d836b',
+                                       'size': 3},
+               '20_newsgroups_3categories': {'md5': '7e59e10cbd824190f3f1fa82285c7865',
+                                             'size': 3},
+               '20_newsgroups_micro': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
+                                       'size': 3},
+               '20_newsgroups': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
+                                 'size': 3,
+                                 'url': 'http://qwone.com/~jason/20Newsgroups/20news-19997.tar.gz'},
+               }
+
+for name, row in IR_DATASETS.items():
+    if 'url' not in row:
+        row['url'] = 'https://github.com/FreeDiscovery/FreeDiscovery/' + \
+                     'releases/download/v1.1.0/{name}.tar.gz'.format(name=name)
 
 
 def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
@@ -41,7 +51,7 @@ def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
 
     if verbose:
         print('\nWarning: downloading dataset {} ({} MB) !'
-              .format(name, DATASET_SIZE[name]))
+              .format(name, IR_DATASETS[name]['size']))
     response = requests.get(base_url, stream=False, allow_redirects=True)
     with open(fname, "wb") as fh:
         for idx, chunk in enumerate(response.iter_content(chunk_size=1024)):
@@ -61,7 +71,7 @@ def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
                     break
                 md5.update(data)
             hash_val = md5.hexdigest()
-        if hash_val != VALID_MD5SUM[name]:
+        if hash_val != IR_DATASETS[name]['md5']:
             raise IOError('Checksum failed for the dataset, this may be due'
                           'to a corrupted download. Try running this function'
                           'again with the `force=True` option.')
@@ -160,7 +170,7 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
     from .ingestion import DocumentIndex
     from .io import parse_ground_truth_file
 
-    if name not in VALID_MD5SUM:
+    if name not in IR_DATASETS:
         raise ValueError('Dataset name {} not known!'.format(name))
 
     valid_fields = ['document_id', 'internal_id', 'file_path', 'category']
