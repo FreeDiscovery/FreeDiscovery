@@ -2,7 +2,6 @@
 
 import os
 import shutil
-import hashlib
 import platform
 import random
 from pathlib import Path
@@ -13,7 +12,7 @@ from sklearn.externals import joblib
 import pickle
 
 from .base import PipelineFinder
-from .externals.keras_data_utils import _get_file
+from .externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
 
 
 IR_DATASETS = {'treclegal09_2k_subset': {'md5': '8090cc55ac18fe5c4d5d53d82fc767a2',
@@ -28,59 +27,23 @@ IR_DATASETS = {'treclegal09_2k_subset': {'md5': '8090cc55ac18fe5c4d5d53d82fc767a
                'fedora_ml_3k_subset': {'md5': '09dbb03d13b8e341bd615ce43f2d836b',
                                        'size': 3},
                '20_newsgroups_3categories': {'md5': '7e59e10cbd824190f3f1fa82285c7865',
-                                             'size': 3},
+                                             'size': 3,
+                                             'url': str(INTERNAL_DATA_DIR / '20_newsgroups_3categories.pkl.xz')
+                                             },
                '20_newsgroups_micro': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
-                                       'size': 3},
+                                       'size': 3,
+                                       'url': str(INTERNAL_DATA_DIR / '20_newsgroups_micro.pkl')
+                                       },
                '20_newsgroups': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
-                                 'size': 3,
-                                 'url': 'http://qwone.com/~jason/20Newsgroups/20news-19997.tar.gz'},
+                                     'size': 3,
+                                     'url': 'http://qwone.com/~jason/20Newsgroups/20news-19997.tar.gz'},
                }
+
 
 for name, row in IR_DATASETS.items():
     if 'url' not in row:
         row['url'] = 'https://github.com/FreeDiscovery/FreeDiscovery/' + \
                      'releases/download/v1.1.0/{name}.tar.gz'.format(name=name)
-
-
-def _download_dataset(cache_dir, fname, name, verify_checksum, verbose):
-    """ Internal helper function to download datasets"""
-    import tarfile
-    import requests
-
-    base_url = "http://r0h.eu/d/{}.tar.gz".format(name)
-
-    if verbose:
-        print('\nWarning: downloading dataset {} ({} MB) !'
-              .format(name, IR_DATASETS[name]['size']))
-    response = requests.get(base_url, stream=False, allow_redirects=True)
-    with open(fname, "wb") as fh:
-        for idx, chunk in enumerate(response.iter_content(chunk_size=1024)):
-            if chunk:
-                fh.write(chunk)
-        if verbose:
-            print('\nFile {} downloaded!'.format(fname))
-
-    if verify_checksum:
-        # compute the md5 hash by chunks
-        with open(fname, 'rb') as fh:
-            block_size = 2**20
-            md5 = hashlib.md5()
-            while True:
-                data = fh.read(block_size)
-                if not data:
-                    break
-                md5.update(data)
-            hash_val = md5.hexdigest()
-        if hash_val != IR_DATASETS[name]['md5']:
-            raise IOError('Checksum failed for the dataset, this may be due'
-                          'to a corrupted download. Try running this function'
-                          'again with the `force=True` option.')
-
-    # extract the .tar.gz
-    with tarfile.open(fname, "r:gz") as tar:
-        tar.extractall(path=cache_dir)
-        if verbose:
-            print('Archive extracted!'.format(fname))
 
 
 def _load_erdm_ground_truth(outdir):
@@ -108,8 +71,8 @@ def filter_dict(d, valid_keys):
     return [{key: row[key] for key in row if key in valid_keys} for row in d]
 
 
-def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
-                 force=False, verbose=False, verify_checksum=False,
+def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
+                 verbose=False, verify_checksum=False,
                  document_id_generation='squared', categories=None
                  ):
     """
@@ -130,7 +93,7 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
        - `fedora_ml_3k_subset`
 
     3. The 20 newsgoups dataset
-       - `20newsgroups_3categories`: only the ['comp.graphics', 'rec.sport.baseball', 'sci.space'] categories
+       - `20_newsgroups_3categories`: only the ['comp.graphics', 'rec.sport.baseball', 'sci.space'] categories
 
     If you encounter any issues for downloads with this function,
     you can also manually download and extract the required dataset to `cache_dir` (the
@@ -139,13 +102,10 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
 
     Parameters
     ----------
-    name : str, default='20newsgroups_3categories'
+    name : str, default='20_newsgroups_3categories'
        the name of the dataset file to load
     cache_dir : str, default='/tmp/'
        root directory where to save the download
-    force : bool, default=False
-       download again if the dataset already exists.
-       Warning: this will remove previously downloaded files!
     verbose : bool, default=False
        print download progress
     verify_checksum : bool, default=False
@@ -175,22 +135,22 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
 
     valid_fields = ['document_id', 'internal_id', 'file_path', 'category']
 
-    has_categories = '20newsgroups' in name or 'treclegal09' in name
+    has_categories = '20_newsgroups_' in name or 'treclegal09' in name
 
     # make sure we don't have "ediscovery_cache" in the path
     cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
     cache_dir = cache_dir.parent
 
     outdir = cache_dir / name
-    fname = outdir.with_suffix(".tar.gz")
+    fname = outdir
 
-    if outdir.exists() and force:
+    if outdir.exists():
         shutil.rmtree(str(outdir))
 
-    if '20newsgroups' in name:
-        internal_data_dir = Path(os.path.dirname(os.path.abspath(__file__)),
-                                 'data')
-        if name == '20newsgroups_3categories':
+    db = IR_DATASETS[name]
+
+    if '20_newsgroups_' in name:
+        if db['url'].endswith('.pkl.xz'):
             import lzma
             fname = name + '.pkl.xz'
             opener = lzma.open
@@ -198,19 +158,22 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
             fname = name + '.pkl'
             opener = open
 
-        with opener(str(internal_data_dir / fname), 'rb') as fh:
+        with opener(str(INTERNAL_DATA_DIR / fname), 'rb') as fh:
             twenty_news = pickle.load(fh)
 
     # Download the dataset if it doesn't exist
     if not (outdir).exists():
-        if '20newsgroups' in name:
+        if '20_newsgroups_' in name:
             outdir.mkdir()
             for idx, doc in enumerate(twenty_news.data):
                 with (outdir / '{:05}.txt'.format(idx)).open('wt') as fh:
                     fh.write(doc)
         else:
-            _download_dataset(str(cache_dir), str(fname), name,
-                              verify_checksum, verbose)
+            outdir = _get_file(str(fname),
+                               db['url'],
+                               extract=True,
+                               cache_dir=str(cache_dir))
+            print('Downloaded {} dataset to {}'.format(name, outdir))
 
     if 'treclegal09' in name or 'fedora_ml' in name:
         data_dir = (outdir / 'data')
@@ -236,7 +199,7 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
             di.data['is_train'] = False
             res = di.search(pd.DataFrame({'file_path': positive_files + negative_files}))
             di.data.loc[res.internal_id.values, 'is_train'] = True
-    elif '20newsgroups' in name:
+    elif '20_newsgroups_' in name:
         di.data['category'] = np.array(twenty_news.target_names)[twenty_news.target]
         di.data['is_train'] = ['-train' in el for el in twenty_news.filenames]
 
@@ -255,7 +218,7 @@ def load_dataset(name='20newsgroups_3categories', cache_dir='/tmp',
         mask = di.data['is_train']
         training_set = di.render_dict(di.data[mask], return_file_path=True)
         training_set = filter_dict(training_set, valid_fields)
-        if name == '20newsgroups_3categories':
+        if name == '20_newsgroups_3categories':
             # make a smaller training set
             random.seed(999998)
             training_set = random.sample(training_set,

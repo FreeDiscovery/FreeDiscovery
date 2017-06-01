@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-INTERNAL_DATA_DIR = str((Path(__file__) / '..' / 'data').resolve(strict=False))
+INTERNAL_DATA_DIR = (Path(__file__).parent.parent / 'data').resolve()
 
 
 def _extract_archive(file_path, path='.', archive_format='auto'):
@@ -69,7 +69,6 @@ def _extract_archive(file_path, path='.', archive_format='auto'):
 
 def _get_file(fname,
               origin,
-              untar=False,
               md5_hash=None,
               file_hash=None,
               hash_algorithm='auto',
@@ -91,8 +90,6 @@ def _get_file(fname,
         fname: Name of the file. If an absolute path `/path/to/file.txt` is
             specified the file will be saved at that location.
         origin: Original URL of the file.
-        untar: Deprecated in favor of 'extract'.
-            boolean, whether the file should be decompressed
         md5_hash: Deprecated in favor of 'file_hash'.
             md5 hash of the file for verification
         file_hash: The expected hash string of the file after download.
@@ -103,7 +100,7 @@ def _get_file(fname,
         extract: True tries extracting the file as an Archive, like tar or zip.
         archive_format: Archive format to try for extracting the file.
             Options are 'auto', 'tar', 'zip', and None.
-            'tar' includes tar, tar.gz, and tar.bz files.
+            'tar' includes tar, tar.gz, tar.bz and tar.xz files.
             The default 'auto' is ['tar', 'zip'].
             None or an empty list will return no matches found.
         cache_dir: Location to store cached files, when None it
@@ -113,27 +110,32 @@ def _get_file(fname,
         Path to the downloaded file
     """
     if cache_dir is None:
-        cache_dir = os.path.abspath('./')
+        cache_dir = Path('.').resolve()
+    elif isinstance(cache_dir, str):
+        cache_dir = Path(cache_dir).resolve()
+
     if md5_hash is not None and file_hash is None:
         file_hash = md5_hash
         hash_algorithm = 'md5'
-    datadir = cache_dir
-    if not os.path.exists(datadir):
-        os.makedirs(datadir)
 
-    if untar:
-        untar_fpath = os.path.join(datadir, fname)
-        fpath = untar_fpath + '.tar.gz'
+    if not cache_dir.exists():
+        raise ValueError('cache_dir {} does not exist!'.format(cache_dir))
+
+
+    if extract:
+        extract_fpath = fname
+        fpath = extract_fpath + '.tar.gz'
     else:
-        fpath = os.path.join(datadir, fname)
+        extract_fpath = None
+        fpath = fname
 
     download = False
-    for fpath in [os.path.join(base_dir, fname)
-                  for base_dir in [cache_dir, INTERNAL_DATA_DIR]]:
-        if os.path.exists(fpath):
+    for base_dir in [cache_dir, INTERNAL_DATA_DIR]:
+        fpath = base_dir / fpath
+        if fpath.exists():
             # File found; verify integrity if a hash was provided.
             if file_hash is not None:
-                if not _validate_file(fpath, file_hash, algorithm=hash_algorithm):
+                if not _validate_file(str(fpath), file_hash, algorithm=hash_algorithm):
                     print('A local file was found, but it seems to be '
                           'incomplete or outdated because the ' +
                           hash_algorithm +
@@ -142,6 +144,7 @@ def _get_file(fname,
                     download = True
             break
     else:
+        base_dir = cache_dir
         download = True
 
     if download:
@@ -163,24 +166,25 @@ def _get_file(fname,
         error_msg = 'URL fetch failure on {}: {} -- {}'
         try:
             try:
-                urlretrieve(origin, fpath, dl_progress)
+                urlretrieve(origin, str(fpath), dl_progress)
             except URLError as e:
                 raise Exception(error_msg.format(origin, e.errno, e.reason))
             except HTTPError as e:
                 raise Exception(error_msg.format(origin, e.code, e.msg))
         except (Exception, KeyboardInterrupt) as e:
-            if os.path.exists(fpath):
-                os.remove(fpath)
+            if fpath.exists():
+                fpath.unlink()
             raise
         ProgressTracker.progbar = None
 
-    if untar:
-        if not os.path.exists(untar_fpath):
-            _extract_archive(fpath, datadir, archive_format='tar')
-        return untar_fpath
+    if extract_fpath is not None:
+        extract_fpath = base_dir / extract_fpath
+
+    print(' ')
 
     if extract:
-        _extract_archive(fpath, datadir, archive_format)
+        _extract_archive(str(fpath), base_dir, archive_format='tar')
+        return extract_fpath
 
     return fpath
 

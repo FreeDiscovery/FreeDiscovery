@@ -6,20 +6,20 @@ import pandas as pd
 from .run_suite import check_cache
 from ..utils import dict2type
 
-from freediscovery.datasets import load_dataset
+from freediscovery.datasets import load_dataset, IR_DATASETS
 
 cache_dir = check_cache()
 
 
-@pytest.mark.parametrize('name', ['20newsgroups_micro'])
+@pytest.mark.parametrize('name', ['20_newsgroups_micro'])
 def test_load_20newsgoups_dataset(name):
-    md, training_set, dataset = load_dataset(name, force=True,
+    md, training_set, dataset = load_dataset(name,
                                              cache_dir=cache_dir)
 
     response_ref = {"document_id": 'int',
                     "file_path": "str",
                     "internal_id": "int"}
-    if '20newsgroups' in name or 'treclegal09' in name:
+    if '20_newsgroups_' in name or 'treclegal09' in name:
         response_ref["category"] = "str"
 
     assert dict2type(md) == {'data_dir': 'str', 'name': 'str'}
@@ -55,9 +55,19 @@ def test_load_20newsgoups_dataset(name):
             elif categories_sel == categories:
                 assert dataset.shape[0] == 2465
                 assert (training_set.category == 'positive').sum() == 5
-        elif name == '20newsgroups_micro':
+        elif name == '20_newsgroups_micro':
             if categories_sel == ['comp.graphics']:
                 assert dataset.shape[0] == 3
             elif categories_sel == categories:
                 assert dataset.shape[0] == 7
                 assert training_set.shape[0] == 4
+
+# # Uncomment the following section to test the dataset downloading
+# #
+#
+# test_datasets = list(IR_DATASETS.keys())
+# test_datasets.remove('legal09int')
+#
+# @pytest.mark.parametrize('name', test_datasets)
+# def test_dataset_downloads(name):
+#     load_dataset(name, cache_dir=cache_dir)

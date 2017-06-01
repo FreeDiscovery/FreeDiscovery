@@ -69,7 +69,7 @@ class ExampleDatasetApi(Resource):
         n_categories = max(1, n_categories)
 
         categories = None
-        if "20newsgroups" in name:
+        if "20_newsgroups_" in name:
             if n_categories == 3:
                 categories = ['comp.graphics', 'rec.sport.baseball',
                               'sci.space']

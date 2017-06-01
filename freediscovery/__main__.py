@@ -208,7 +208,6 @@ def _download(args):
                          .format(cache_dir))
 
     load_dataset(args.name, cache_dir=cache_dir, verbose=True)
-    print('Downloaded {} sucessfully!'.format(args.name))
 
 
 # Allow to propagate formatter_class to subparsers
