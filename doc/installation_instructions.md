@@ -12,7 +12,7 @@ git clone https://github.com/FreeDiscovery/FreeDiscovery.git
 It is recommended to use the latest stable version with,
   
 ```bash
-git checkout v1.1.0
+git checkout v1.1.2
 ```
 
 Althernaitively, the latest stable version can be donwloaded from the [Github releases page](https://github.com/FreeDiscovery/FreeDiscovery/releases).
