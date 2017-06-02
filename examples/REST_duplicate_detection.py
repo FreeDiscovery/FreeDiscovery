@@ -134,44 +134,42 @@ print('Found {} duplicates / {}'
               len(input_ds['dataset'])))
 
 
-if platform.system() == 'Windows':
-    print('Simhash-py is currently not implemented for Windows.')
-    sys.exit()
-
-if 'CI' in os.environ:
-    # don't run this example in CI if simhash is not installed
-    try:
-        import simhash
-    except ImportError:
-        sys.exit()
+# don't run the end of this example if simhash is not installed
+# (e.g. on Windows)
+try:
+    import simhash
+    skip_example = False
+except:
+    skip_example = True
 
 
-print("\n3. Duplicate detection by Simhash")
+if not skip_example:
+    print("\n3. Duplicate detection by Simhash")
 
-url = BASE_URL + '/duplicate-detection/'
-print(" POST", url)
-t0 = time()
-res = requests.post(url, json={'parent_id': dsid,
-                               'method': 'simhash'})
+    url = BASE_URL + '/duplicate-detection/'
+    print(" POST", url)
+    t0 = time()
+    res = requests.post(url, json={'parent_id': dsid,
+                                   'method': 'simhash'})
 
-data = res.json()
-mid = data['id']
-print("     => model id = {}".format(mid))
+    data = res.json()
+    mid = data['id']
+    print("     => model id = {}".format(mid))
 
-print('    .. computed in {:.1f}s'.format(time() - t0))
+    print('    .. computed in {:.1f}s'.format(time() - t0))
 
-url = BASE_URL + '/duplicate-detection/{}'.format(mid)
-print(" GET", url)
-t0 = time()
-res = requests.get(url, json={'distance': 1})
-data = res.json()
-print('    .. computed in {:.1f}s'.format(time() - t0))
+    url = BASE_URL + '/duplicate-detection/{}'.format(mid)
+    print(" GET", url)
+    t0 = time()
+    res = requests.get(url, json={'distance': 1})
+    data = res.json()
+    print('    .. computed in {:.1f}s'.format(time() - t0))
 
-data = data['data']
+    data = data['data']
 
-print('Found {} duplicates / {}'
-      .format(sum([len(row['documents']) for row in data]),
-              len(input_ds['dataset'])))
+    print('Found {} duplicates / {}'
+          .format(sum([len(row['documents']) for row in data]),
+                  len(input_ds['dataset'])))
 
 # 4. Cleaning
 print("\n4.a Delete the extracted features")

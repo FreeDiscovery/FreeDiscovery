@@ -73,7 +73,7 @@ def _run(args):
               '(e.g. is behind a firewall) or restrict '
               'connections to localhost with --hostname 127.0.0.1 .')
 
-    if args.server in ['auto', 'gunicorn']:
+    if args.server in ['gunicorn']:
         try:
             from .server.gunicorn import GunicornApplication
             options = {
@@ -89,7 +89,6 @@ def _run(args):
             parent_pid = os.getpid()
             print(' * Server: gunicorn with {} workers'.format(args.n))
             print(' * Running on http://{}/ (Press CTRL+C to quit)'.format(options['bind']))
-            df_config['server'] = 'gunicorn'
             GunicornApplication(app, options).run()
             return
         except SystemExit:
@@ -265,14 +264,11 @@ def main(args=None, return_parser=False):
                             help='Server hostname.')
     run_parser.add_argument('-p', '--port', default=5001, type=int,
                             help='Server port.')
-    run_parser.add_argument('-s', '--server', default='auto',
-                            choices=['auto', 'flask', 'gunicorn'],
+    run_parser.add_argument('-s', '--server', default='flask',
+                            choices=['flask', 'gunicorn'],
                             help='The server used to run freediscovery. '
                                  '"flask" is the server built-in in flask '
-                                 'suitable for developpement. '
-                                 'When server="auto", gunicorn is used '
-                                 'if installed otherwise the "flask" '
-                                 'server is used as a fallback.')
+                                 'suitable for developpement. ')
     run_parser.add_argument('--log-file',
                             default='${CACHE_DIR}/freediscovery-backend.log',
                             help='Path to the log file.')
