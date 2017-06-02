@@ -113,7 +113,7 @@ Predictions for the other documents in the dataset can then be retrieved with,
 .. code:: bash
 
     curl -X GET -H 'Content-Type: application/json' -d "{
-       \"max_results\": 10, \"max_result_categories\": 2
+       \"max_results\": 10, \"max_result_categories\": 2, \"sort_by\": \"sci.space\"
      }"  http://localhost:5001/api/v0/categorization/${FD_CAT_ID}/predict
 
 The correspondence of these results with ground truth categories can be checked in ``fd_id_mapping.txt``.

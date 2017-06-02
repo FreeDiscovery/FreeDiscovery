@@ -439,6 +439,8 @@ class ModelsApiPredict(Resource):
     @marshal_with(CategorizationPredictSchema())
     def get(self, mid, **args):
 
+        valid_sort = ['score']
+
         sort_by = args.pop('sort_by')
         sort_ascending = args.pop('sort_order') == 'ascending'
         max_result_categories = args.pop('max_result_categories')
@@ -453,13 +455,17 @@ class ModelsApiPredict(Resource):
         y_res, nn_res = cat.predict(**args)
         train_indices = cat._pars['index']
 
-        labels = cat.le.classes_
+        labels = list(cat.le.classes_)
         Y_pred = y_res
 
         if max_result_categories <= 0:
-            raise ValueError(('the max_result_categories={} '
-                              'must be strictly positive')
-                             .format(max_result_categories))
+            raise WrongParameter(('the max_result_categories={} '
+                                  'must be strictly positive')
+                                 .format(max_result_categories))
+        if sort_by not in valid_sort + labels:
+            raise WrongParameter(("sort_by={} not value. Must be "
+                                  "one of {}")
+                                 .format(sort_by, valid_sort + labels))
 
         id_mapping = cat.fe.db_.data
         # have to cast to object as otherwise
@@ -496,14 +502,13 @@ class ModelsApiPredict(Resource):
             Y_pred = Y_pred.loc[_mask, :]
 
         # sort output
+        if sort_by in labels:
+            Y_pred = Y_pred.sort_values(sort_by, ascending=sort_ascending)
+
         Y_pred_max = Y_pred[labels].max(axis=1)
-        if sort_by:
-            valid_sort = ['score']
+        if sort_by in valid_sort:
             if sort_by == 'score':
                 Y_pred_max = Y_pred_max.sort_values(ascending=sort_ascending)
-            else:
-                raise ValueError('sort_by={} not in {}'
-                                 .format(sort_by, valid_sort))
 
         # filter out low scores
         if min_score is not None:
