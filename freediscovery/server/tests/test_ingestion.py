@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_array_equal
 
 from freediscovery.utils import dict2type, sdict_keys
 from .base import (parse_res, V01, app, get_features, data_dir,
@@ -221,3 +221,30 @@ def test_batch_ingest(app, ingestion_method):
     data = app.get_check(method)
     assert len(data['filenames']) == 6*3
     assert data['n_samples'] == 6*3
+
+
+@pytest.mark.parametrize('document_id_generator',
+                         [None, 'indexed_file_path', 'infer_file_path'])
+def test_document_id_generation(app, document_id_generator):
+    method = V01 + "/feature-extraction/"
+    data = app.post_check(method)
+    dsid = data['id']
+    method += dsid
+    pars = {'data_dir': data_dir}
+    if document_id_generator:
+        pars['document_id_generator'] = document_id_generator
+    app.post_check(method, json=pars)
+
+    data = app.get_check(method)
+
+    # check that the file_path is correctly returned by the id-mapping
+    data = app.post_check(method + '/id-mapping')
+
+    df = pd.DataFrame(data['data'])
+
+    if document_id_generator in [None, 'indexed_file_path']:
+        assert_array_equal(df.document_id.values, df.internal_id.values)
+    else:
+        assert_array_equal(df.document_id.values,
+                           [747101442, 747117435, 7628635,
+                            7628636, 7628637, 7628638])

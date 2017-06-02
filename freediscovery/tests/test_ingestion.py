@@ -6,7 +6,7 @@ from pandas.util.testing import assert_frame_equal
 import pytest
 import pandas as pd
 
-from freediscovery.ingestion import DocumentIndex
+from freediscovery.ingestion import DocumentIndex, _infer_document_id_from_path
 from .run_suite import check_cache
 from freediscovery.exceptions import (NotFound)
 
@@ -257,3 +257,20 @@ def test_ingestion_metadata(n_fields):
                         for el in filenames],
                        [os.path.join(data_dir_res, el)
                         for el in db.file_path.values])
+
+
+def test_infer_document_id_from_path():
+    file_path = ['test/file1.txt', 'test3/file2.txt', 'test4/file4.txt']
+
+    document_id = _infer_document_id_from_path(file_path)
+    assert_array_equal(document_id, [1, 2, 4])
+
+    file_path = ['test/file.txt', 'test3/file2.txt', 'test4/file4.txt']
+
+    document_id = _infer_document_id_from_path(file_path)
+    assert document_id is None
+
+    file_path = ['test/file1.txt', 'test3/file1.txt', 'test4/file4.txt']
+
+    document_id = _infer_document_id_from_path(file_path)
+    assert document_id is None

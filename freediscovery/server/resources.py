@@ -172,10 +172,12 @@ class FeaturesApiElement(Resource):
           - `data_dir`: [optional] relative path to the directory with the input files. Either `data_dir` or `dataset_definition` must be provided.
           - `dataset_definition`: [optional] a list of dictionaries `[{'file_path': <str>, 'content': <str>, 'document_id': <int>, 'rendition_id': <int>}, ...]` where `document_id` and `rendition_id` are optional, while either `file_path` or `content` field must be provided. 
           - `vectorize`: [optional] this option can be used to ingest the dataset_definition in batches (optionally with document content), then make one final call to vectorize all sent documents (bool, default: True)
+          - `document_id_generator`: [optional] if the `document_id` is not provided, this specifies how it is generated. If `indexed_file_path` the `document_id` is given by the index of the sorted `file_path`, otherwise if `infer_file_path` the `document_id` is inferred from the `file_path` strings, removing all non digit characters. In this second case, the `file_path` must contain a unique numeric ID (default: `indexed_file_path`)
          """))
     @use_args({"data_dir":  wfields.Str(),
                "dataset_definition": wfields.Nested(_DatasetDefinition, many=True),
-               "vectorize": wfields.Bool(missing=True)})
+               "vectorize": wfields.Bool(missing=True),
+               "document_id_generator": wfields.Str(missing="indexed_file_path")})
     @marshal_with(IDSchema())
     def post(self, dsid, **args):
         fe = FeatureVectorizer(self._cache_dir, dsid=dsid)

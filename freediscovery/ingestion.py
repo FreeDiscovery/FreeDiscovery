@@ -2,6 +2,8 @@
 
 import os
 import warnings
+import re
+from collections import Counter
 
 import numpy as np
 import pandas as pd
@@ -23,6 +25,45 @@ def _list_filenames(data_dir, dir_pattern=None, file_pattern=None):
 
     # make sure that sorting order is deterministic
     return sorted(filenames)
+
+
+def _infer_document_id_from_path(file_path):
+    basename = os.path.basename
+    document_id = [re.sub('\D', '', basename(el)) for el in file_path]
+    non_digits = [el for el in document_id if not el.isdigit()]
+    failed_msg = ('Warning: Could not infer document_id from file_path ({}), '
+                  'falling back '
+                  'to `document_id_generator="indexed_file_path"`.')
+    if non_digits:
+        print(failed_msg.format('{} file_path do not contain any digits'
+                                .format(len(non_digits))))
+        return None
+    document_id_counts = [item
+                          for item, count in Counter(document_id).items()
+                          if count > 1]
+    if document_id_counts:
+        print(failed_msg.format('{} document_id inferred from file_path '
+                                'are non uniques'
+                                .format(document_id_counts)))
+        return None
+
+    return np.array(document_id, dtype=int)
+
+
+def _generate_document_id(db, document_id_generator):
+    if 'document_id' not in db:
+        if document_id_generator == 'infer_file_path':
+            document_id = _infer_document_id_from_path(db.file_path)
+            if document_id is None:
+                # infering failed
+                document_id_generator = 'indexed_file_path'
+            else:
+                db['document_id'] = document_id
+
+        if document_id_generator == 'indexed_file_path':
+            db['document_id'] = db.internal_id
+
+
 
 
 def _check_mutual_index(keys1, keys2):
@@ -259,7 +300,7 @@ class DocumentIndex(object):
 
     @classmethod
     def from_list(cls, metadata, data_dir=None, internal_id_offset=0,
-                  dsid_dir=None):
+                  dsid_dir=None, document_id_generator='indexed_file_path'):
         """ Create a DocumentIndex from a list of dictionaries, for instance
 
         .. code:: javascript
@@ -330,8 +371,7 @@ class DocumentIndex(object):
         filenames = [el['file_path'] for el in metadata]
         db = pd.DataFrame(metadata)
 
-        if 'document_id' not in db:
-            db['document_id'] = db.internal_id
+        _generate_document_id(db, document_id_generator)
 
         res = cls(data_dir, db)
         res.filenames_ = filenames
@@ -351,7 +391,7 @@ class DocumentIndex(object):
 
     @classmethod
     def from_folder(cls, data_dir, file_pattern=None, dir_pattern=None,
-                    internal_id_offset=0):
+                    internal_id_offset=0, document_id_generator='indexed_file_path'):
         """ Create a DocumentIndex from files in data_dir
 
         Parmaters
@@ -371,14 +411,19 @@ class DocumentIndex(object):
         if not os.path.exists(data_dir):
             raise NotFound('data_dir={} does not exist'.format(data_dir))
 
+        if document_id_generator not in ['indexed_file_path', 'infer_file_path']:
+            raise WrongParameter(("document_id_generator={} not supported. It must be "
+                                  "one of ['indexed_file_path', 'infer_file_path']")
+                                 .format(document_id_generator))
+
         filenames = _list_filenames(data_dir, dir_pattern, file_pattern)
+
         db = [{'file_path': file_path, 'internal_id': idx + internal_id_offset}
               for idx, file_path in enumerate(filenames)]
 
         db = pd.DataFrame(db)
 
-        if 'document_id' not in db:
-            db['document_id'] = db.internal_id
+        _generate_document_id(db, document_id_generator)
 
         res = cls(data_dir, db)
         res.filenames_ = filenames

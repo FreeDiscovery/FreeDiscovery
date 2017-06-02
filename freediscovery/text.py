@@ -270,7 +270,8 @@ class FeatureVectorizer(object):
         return dsid
 
     def ingest(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
-               dataset_definition=None, vectorize=True):
+               dataset_definition=None, vectorize=True,
+               document_id_generator='indexed_file_path'):
         """Perform data ingestion
 
         Parameters
@@ -296,10 +297,12 @@ class FeatureVectorizer(object):
 
         if dataset_definition is not None:
             db = DocumentIndex.from_list(dataset_definition, data_dir,
-                                         internal_id_offset + 1, dsid_dir)
+                                         internal_id_offset + 1, dsid_dir,
+                                         document_id_generator=document_id_generator)
         elif data_dir is not None:
             db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern,
-                                           internal_id_offset + 1)
+                                           internal_id_offset + 1,
+                                           document_id_generator=document_id_generator)
         else:
             db = None
 
