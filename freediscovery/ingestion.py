@@ -38,7 +38,7 @@ def _infer_document_id_from_path(file_path):
         print(failed_msg.format('{} file_path do not contain any digits'
                                 .format(len(non_digits))))
         return None
-    document_id_counts = [item
+    document_id_counts = [(item, count)
                           for item, count in Counter(document_id).items()
                           if count > 1]
     if document_id_counts:
@@ -406,7 +406,7 @@ class DocumentIndex(object):
             a DocumentIndex object
         """
 
-        data_dir = os.path.normpath(data_dir)
+        data_dir = os.path.abspath(os.path.normpath(data_dir))
 
         if not os.path.exists(data_dir):
             raise NotFound('data_dir={} does not exist'.format(data_dir))

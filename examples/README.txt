@@ -2,7 +2,8 @@ Examples
 --------
 
 These Python scripts illustrate the use of the FreeDiscovery REST and Python
-APIs on a subset of the TREC 2009 legal collection. 
+APIs on a subset of the TREC 2009 legal collection. See the README for the
+quick start instructions that use `curl`. 
 
 These examples can be run with the following steps,
 
