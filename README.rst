@@ -157,10 +157,7 @@ Licence
 
 FreeDiscovery is released under the 3-clause BSD licence.
 
-|logo1|    |logo2|
+.. image:: https://freediscovery.github.io/static/freediscovery-full-logo-v2.png
 
-.. |logo1| image:: https://freediscovery.github.io/static/freediscovery-full-logo-v2.png
-    :scale: 80 %
-
-.. |logo2| image:: https://freediscovery.github.io/static/grossmanlabs-old-logo-small.gif
+.. image:: https://freediscovery.github.io/static/grossmanlabs-old-logo-small.gif
     :target: http://www.grossmanlabs.com/
