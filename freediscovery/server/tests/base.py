@@ -26,16 +26,6 @@ def parse_res(res):
     return json.loads(res.data.decode('utf-8'))
 
 
-def _internal2document_id(value):
-    """A custom internal_id to document_id mapping used in tests"""
-    return 2*value + 1
-
-
-def _document2internal_id(value):
-    """A custom internal_id to document_id mapping used in tests"""
-    return (value - 1)//2
-
-
 def app_call_wrapper(func):
     """Wrapp the POST, GET, DELETE methods of flask.testing.FlaskClient
     in order to make the response_code checks and convert the
@@ -105,12 +95,11 @@ def get_features(app, hashed=False, metadata_fields='data_dir',
         data_dir = input_ds['metadata']['data_dir']
         pars['dataset_definition'] = [{'document_id': row['document_id'],
                                        'file_path': os.path.join(data_dir,
-                                                                 row['file_path'])} 
+                                                                 row['file_path'])}
                                       for row in input_ds['dataset']]
     else:
         pars['data_dir'] = email_data_dir
         input_ds = None
-
 
     method = V01 + "/feature-extraction/{}".format(dsid)
     res = app.post_check(method, json=pars)
@@ -131,7 +120,7 @@ def get_features_cached(app, hashed=False, n_categories=2,
 def get_features_lsi(app, hashed=False, metadata_fields='data_dir', **kwargs):
     dsid, pars = get_features(app, hashed=hashed,
                               metadata_fields=metadata_fields, **kwargs)
-    lsi_pars = dict(n_components=101, parent_id=dsid)
+    lsi_pars = dict(n_components=201, parent_id=dsid)
     method = V01 + "/lsi/"
     res = app.post(method, json=lsi_pars)
     assert res.status_code == 200
@@ -142,7 +131,7 @@ def get_features_lsi(app, hashed=False, metadata_fields='data_dir', **kwargs):
 
 
 @memory.cache(ignore=['app'])
-def get_features_lsi_cached(app, hashed=False, n_categories=2, n_components=101,
+def get_features_lsi_cached(app, hashed=False, n_categories=2, n_components=201,
                             dataset="20_newsgroups_3categories"):
     dsid, pars, input_ds = get_features_cached(app, hashed=hashed,
                                                n_categories=n_categories)

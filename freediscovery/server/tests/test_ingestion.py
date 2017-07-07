@@ -10,8 +10,9 @@ from numpy.testing import assert_equal, assert_array_equal
 
 from freediscovery.utils import dict2type, sdict_keys
 from .base import (parse_res, V01, app, get_features, data_dir,
-                   get_features_cached)
+                   get_features_cached, CACHE_DIR)
 from freediscovery.exceptions import (NotFound)
+from sklearn.externals import joblib
 
 
 # ============================================================================#
@@ -50,8 +51,11 @@ def test_get_feature_extraction_all(app):
                      'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool'})
 
 
-@pytest.mark.parametrize('hashed', [True])
-def test_get_feature_extraction(app, hashed):
+@pytest.mark.parametrize('hashed, use_idf', [(True, False),
+                                             (False, True),
+                                             (False, False),
+                                             (True, True)])
+def test_get_feature_extraction(app, hashed, use_idf):
     dsid, _, _ = get_features_cached(app, hashed=hashed)
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)
@@ -63,6 +67,17 @@ def test_get_feature_extraction(app, hashed):
                      'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int'}
+
+    assert data['use_hashing'] == hashed
+    assert data['sublinear_tf'] == True
+    assert data['use_idf'] == False
+    vect = joblib.load(os.path.join(CACHE_DIR, 'ediscovery_cache', dsid, 'vectorizer'))
+    pars = vect.get_params()
+    print(vect)
+    print(pars)
+    assert (data['use_hashing'] == True) == ('hashing' in type(vect).__name__.lower())
+    assert data['sublinear_tf'] == pars['sublinear_tf']
+    #assert data['use_idf'] is par[''
 
 @pytest.mark.parametrize('hashed', [True])
 def test_stop_words_integration(app, hashed):

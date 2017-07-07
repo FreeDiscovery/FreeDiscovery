@@ -123,6 +123,12 @@ class Search(object):
                              'using the search method!')
         q_vect = self.vectorizer.transform([text])
 
+        inv_vocab = {val: key for key, val in self.vectorizer.vocabulary_.items()}
+        print('..')
+        print(list(sorted([inv_vocab[idx] for idx in q_vect.indices])))
+        print(self.vectorizer.get_params())
+        print(q_vect.data)
+
         if self.lsi is not None:
             # this is a hack need to be rewritten
             if isinstance(self.lsi, _TruncatedSVD_LSI):

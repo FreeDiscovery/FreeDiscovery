@@ -4,9 +4,11 @@ import os
 import pytest
 import pandas as pd
 import numpy as np
+import itertools
 from numpy.testing import (assert_array_equal, assert_array_less,
                            assert_allclose)
 from sklearn.externals import joblib
+from freediscovery.externals.sklearn_backport.metrics import dcg_score
 
 from ...utils import dict2type
 
@@ -15,12 +17,9 @@ from .base import (parse_res, V01, app, get_features_cached,
 
 
 @pytest.mark.parametrize("method, min_score, max_results",
-                         [('regular', -1, None),
-                          ('semantic', -1, None),
-                          ('semantic', 0.2, None),
-                          ('semantic', -1, 1000000),
-                          ('semantic', -1, 3),
-                          ('semantic', -1, 0)])
+                         itertools.product(['regular', 'semantic'],
+                                           [-1, 0.2],
+                                           [None, 1000000, 3, 0]))
 def test_search(app, method, min_score, max_results):
 
     dsid, lsi_id, _, input_ds = get_features_lsi_cached(app)
@@ -34,7 +33,7 @@ def test_search(app, method, min_score, max_results):
     mailing address is 1430 Broadway, NY NY 10018.  It helps if you have the
     complete name and number.
     """
-    query_file_path = "02256.txt"
+    query_file_document_id = 2256
 
     pars = dict(parent_id=parent_id,
                 min_score=min_score,
@@ -48,20 +47,32 @@ def test_search(app, method, min_score, max_results):
     for row in data:
         assert dict2type(row) == {'score': 'float',
                                   'document_id': 'int'}
-    scores = np.array([row['score'] for row in data])
-    assert (np.diff(scores) <= 0).all()
-    assert_array_less(min_score, scores)
+    df = pd.DataFrame(data)
+    assert (np.diff(df.score.values) <= 0).all()
+    assert_array_less(min_score, df.score.values)
     if max_results:
-        assert len(data) == min(max_results, len(input_ds['dataset']))
+        assert len(df) <= min(max_results, len(input_ds['dataset']))
     elif min_score > -1:
         pass
     else:
-        assert len(data) == 1967
+        assert len(df) == 1967
 
-    data = app.post_check(V01 + "/feature-extraction/{}/id-mapping"
-                          .format(dsid),
-                          json={'data': [data[0]]})
+    id_mapping = app.post_check(V01 + "/feature-extraction/{}/id-mapping"
+                                .format(dsid))
+    id_mapping = pd.DataFrame(id_mapping['data']).set_index('document_id')
 
+    # check that relevant documents get returned first
+    res = df.set_index('document_id').merge(id_mapping, left_index=True, right_index=True)
+    res['document_id_new'] = res.file_path.str.extract('(\d+)', expand=True).astype('int')
+    res['rank_position'] = np.arange(len(res))
+    res = res.set_index('document_id_new')
+    res['ground_truth'] = np.in1d(res.index.values, [1190, 2256]).astype('int')
+    assert dcg_score(res.ground_truth.values, res.score.values) == 1.0
+    assert res.loc[query_file_document_id].rank_position == 0
+
+    # compare with pre-computed cosine similarity
+    if method == 'regular':
+        assert_allclose(res.loc[[2256, 2378, 1975], 'score'].values, [0.5242, 0.1664, 0.0902])
 
 def test_search_retrieve_batch(app):
     dsid, lsi_id, _, input_ds = get_features_lsi_cached(app)
@@ -242,7 +253,8 @@ def test_search_eq_categorization(app):
     df_c = pd.DataFrame([{'document_id': row['document_id'],
                           'score': row['scores'][0]['score']}
                          for row in data['data']]).set_index('document_id')
-    # The results do not appear to be exactly matching (probably due to tie-breaking)
+
+    # The order do not appear to be exactly matching (probably due to tie-breaking)
     assert (df_c.index == df_s.index).sum() / df_s.shape[0] > 0.995
     assert_allclose(df_c.score.values, df_s.score.values)
 
