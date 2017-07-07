@@ -56,7 +56,7 @@ def test_get_feature_extraction(app, hashed):
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)
     assert dict2type(data, collapse_lists=True) == {'analyzer': 'str',
-                     'ngram_range': ['int'], 'stop_words': 'NoneType',
+                     'ngram_range': ['int'], 'stop_words': 'str',
                      'n_jobs': 'int', 'chunk_size': 'int', 'norm': 'str',
                      'data_dir': 'str', 'n_samples': 'int',
                      'n_features': 'int', 'use_idf': 'bool',
