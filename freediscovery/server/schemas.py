@@ -69,7 +69,7 @@ class FeaturesParsSchema(Schema):
     data_dir = fields.Str()
     n_features = fields.Int(missing=100001)
     analyzer = fields.Str(missing='word')
-    stop_words = fields.Str()
+    stop_words = fields.Str(missing='english')
     n_jobs = fields.Int(missing=1)
     chunk_size = fields.Int()
     ngram_range = fields.List(fields.Int(), missing=[1, 1])

@@ -59,11 +59,8 @@ def test_search(app, method, min_score, max_results):
         assert len(data) == 1967
 
     data = app.post_check(V01 + "/feature-extraction/{}/id-mapping"
-                          .format(dsid), 
+                          .format(dsid),
                           json={'data': [data[0]]})
-
-    if not max_results:
-        assert data['data'][0]['file_path'] == query_file_path
 
 
 def test_search_retrieve_batch(app):
