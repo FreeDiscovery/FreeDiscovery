@@ -8,10 +8,11 @@ from flask_apispec import (marshal_with, use_kwargs as use_args,
 from flask_apispec.annotations import doc
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (precision_score, recall_score, f1_score,
-                             roc_auc_score, adjusted_rand_score,
+from sklearn.metrics import (adjusted_rand_score,
                              adjusted_mutual_info_score,
-                             v_measure_score, average_precision_score)
+                             precision_score, recall_score, f1_score,
+                             v_measure_score)
+from freediscovery.externals.sklearn_backport.metrics import (roc_auc_score, average_precision_score)
 import warnings
 from sklearn.metrics.base import UndefinedMetricWarning
 
