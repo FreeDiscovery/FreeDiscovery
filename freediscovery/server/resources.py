@@ -298,9 +298,11 @@ class LsiApi(Resource):
            **Parameters**
              - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features.
              - `parent_id`: parent dataset identified by `dataset_id`
+             - `alpha`: floor on the number of components used with small datasets
           """))
     @use_args({'parent_id': wfields.Str(required=True),
-               'n_components': wfields.Int(missing=150)})
+               'n_components': wfields.Int(missing=150),
+               'alpha': wfields.Number(missing=0.33)})
     @marshal_with(LsiPostSchema())
     def post(self, **args):
         parent_id = args['parent_id']

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import warnings
 
 import numpy as np
 import scipy.sparse as sp
@@ -16,6 +17,35 @@ from .utils import setup_model
 
 def _touch(filename):
     open(filename, 'ab').close()
+
+
+def _compute_lsi_dimensionality(n_components, n_samples, n_features,
+                                alpha=0.33):
+    """ Reduce the number of LSI components for small datasets """
+    n_components_samples = min(n_components, alpha*n_samples)
+    msg = []
+    if n_components_samples < n_components:
+        msg.append(('The ingested dataset has only {} documents while {} LSI '
+                    'components were requested; '
+                    'decreasing the number of LSI components: ')
+                   .format(n_samples, n_components))
+
+    n_components_feature = int(min(n_components, alpha*n_features))
+    if n_components_feature < n_components:
+        msg.append(('The vocabulary in the ingested dataset has '
+                    'only {} words (or n-grams) while {} LSI '
+                    'components were requested; '
+                    'decreasing the number of LSI components: ')
+                   .format(n_features, n_components))
+    n_components_opt = int(min(n_components_samples, n_components_feature))
+    n_components_opt = max(5, n_components_opt)
+    if n_components_opt < n_components:
+        msg.append('Decreasing n_components from {} to {}'
+                   .format(n_components, n_components_opt))
+    if msg:
+        msg = '\n'.join(msg)
+        warnings.warn(msg)
+    return n_components_opt
 
 
 class _LSIWrapper(_BaseWrapper):
@@ -45,7 +75,7 @@ class _LSIWrapper(_BaseWrapper):
         mid_dir = self.fe.dsid_dir / self._wrapper_type / self.mid
         return joblib.load(str(mid_dir / 'data'))
 
-    def fit_transform(self, n_components=150, n_iter=5):
+    def fit_transform(self, n_components=150, n_iter=5, alpha=0.33):
         """
         Perform the SVD decomposition
 
@@ -81,7 +111,9 @@ class _LSIWrapper(_BaseWrapper):
         mid, mid_dir = setup_model(mid_dir_base)
 
         ds = self.pipeline.data
-        svd = _TruncatedSVD_LSI(n_components=n_components,
+        n_components_opt = _compute_lsi_dimensionality(n_components, *ds.shape,
+                                                       alpha=alpha)
+        svd = _TruncatedSVD_LSI(n_components=n_components_opt,
                                 n_iter=n_iter)
         lsi = svd
         lsi.fit(ds)
