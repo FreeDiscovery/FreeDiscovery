@@ -8,7 +8,9 @@ from numpy.testing import assert_allclose, assert_equal
 from sklearn.preprocessing import normalize
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.lsi import _LSIWrapper, _TruncatedSVD_LSI
+from freediscovery.lsi import (_LSIWrapper, _TruncatedSVD_LSI,
+                               _compute_lsi_dimensionality)
+                               
 from freediscovery.ingestion import DocumentIndex
 from .run_suite import check_cache
 
@@ -19,15 +21,16 @@ data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 def test_lsi():
 
     cache_dir = check_cache()
-    n_components = 5
+    n_components = 2
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
     uuid = fe.setup()
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
-    lsi_res, exp_var = lsi.fit_transform(n_components=n_components)
-    assert lsi_res.components_.shape == (n_components, fe.n_features_)
+    lsi_res, exp_var = lsi.fit_transform(n_components=n_components, alpha=1.0)
+    assert lsi_res.components_.shape[0] == 5
+    assert lsi_res.components_.shape[1] == fe.n_features_
     assert lsi._load_pars() is not None
     lsi._load_model()
     X_lsi = lsi._load_features()
@@ -36,6 +39,15 @@ def test_lsi():
 
     lsi.list_models()
     lsi.delete()
+
+
+def test_compute_lsi_dimensionality():
+    n_components = 200
+    n_components_res = _compute_lsi_dimensionality(n_components, 10000, 100000)
+    assert n_components_res == n_components
+    n_components_res = _compute_lsi_dimensionality(n_components, 500, 100000)
+    assert n_components_res < n_components
+
 
 
 def test_lsi_helper_class():
@@ -59,7 +71,7 @@ def test_lsi_append_documents():
     fe.ingest(data_dir)
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
-    lsi_res, exp_var = lsi.fit_transform(n_components=2)
+    lsi_res, exp_var = lsi.fit_transform(n_components=2, alpha=1.0)
     X_lsi = lsi._load_features()
     n_samples = fe.n_samples_
 
@@ -83,7 +95,7 @@ def test_lsi_remove_documents():
     fe.ingest(data_dir)
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
-    lsi_res, exp_var = lsi.fit_transform(n_components=2)
+    lsi_res, exp_var = lsi.fit_transform(n_components=2, alpha=1.0)
     X_lsi = lsi._load_features()
 
     docs = DocumentIndex.from_folder(data_dir).data
