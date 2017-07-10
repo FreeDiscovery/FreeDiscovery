@@ -18,7 +18,7 @@ from .base import (parse_res, V01, app, get_features_cached,
 
 @pytest.mark.parametrize("method, min_score, max_results",
                          itertools.product(['regular', 'semantic'],
-                                           [-1, 0.2],
+                                           [-1, 0.1],
                                            [None, 1000000, 3, 0]))
 def test_search(app, method, min_score, max_results):
 
@@ -72,7 +72,9 @@ def test_search(app, method, min_score, max_results):
 
     # compare with pre-computed cosine similarity
     if method == 'regular':
-        assert_allclose(res.loc[[2256, 2378, 1975], 'score'].values, [0.5242, 0.1664, 0.0902])
+        assert_allclose(res.loc[[2256, 2378, 1975], 'score'].values,
+                        [0.5660, 0.1589, 0.1140],
+                        rtol=1e-3)
 
 def test_search_retrieve_batch(app):
     dsid, lsi_id, _, input_ds = get_features_lsi_cached(app)
@@ -255,7 +257,7 @@ def test_search_eq_categorization(app):
                          for row in data['data']]).set_index('document_id')
 
     # The order do not appear to be exactly matching (probably due to tie-breaking)
-    assert (df_c.index == df_s.index).sum() / df_s.shape[0] > 0.995
+    assert (df_c.index == df_s.index).sum() / df_s.shape[0] > 0.994
     assert_allclose(df_c.score.values, df_s.score.values)
 
 

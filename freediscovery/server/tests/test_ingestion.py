@@ -69,15 +69,13 @@ def test_get_feature_extraction(app, hashed, use_idf):
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int'}
 
     assert data['use_hashing'] == hashed
-    assert data['sublinear_tf'] == True
+    assert data['sublinear_tf'] == False
     assert data['use_idf'] == False
     vect = joblib.load(os.path.join(CACHE_DIR, 'ediscovery_cache', dsid, 'vectorizer'))
     pars = vect.get_params()
-    print(vect)
-    print(pars)
     assert (data['use_hashing'] == True) == ('hashing' in type(vect).__name__.lower())
-    assert data['sublinear_tf'] == pars['sublinear_tf']
-    #assert data['use_idf'] is par[''
+    if not hashed:
+        assert data['sublinear_tf'] == pars['sublinear_tf']
 
 @pytest.mark.parametrize('hashed', [True])
 def test_stop_words_integration(app, hashed):

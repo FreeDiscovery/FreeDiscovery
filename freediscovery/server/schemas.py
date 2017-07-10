@@ -74,7 +74,7 @@ class FeaturesParsSchema(Schema):
     chunk_size = fields.Int()
     ngram_range = fields.List(fields.Int(), missing=[1, 1])
     use_idf = fields.Boolean(missing=False)
-    sublinear_tf = fields.Boolean(missing=True)
+    sublinear_tf = fields.Boolean(missing=False)
     binary = fields.Boolean(missing=False)
     use_hashing = fields.Boolean(missing=False)
     norm = fields.Str(missing='l2')

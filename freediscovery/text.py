@@ -161,7 +161,7 @@ class FeatureVectorizer(object):
 
     def setup(self, n_features=None, chunk_size=5000, analyzer='word',
               ngram_range=(1, 1), stop_words=None, n_jobs=1,
-              use_idf=False, sublinear_tf=True,
+              use_idf=False, sublinear_tf=False,
               binary=False, use_hashing=False,
               norm='l2', min_df=0.0, max_df=1.0,
               parse_email_headers=False):
@@ -471,6 +471,7 @@ class FeatureVectorizer(object):
                 opts_tfidf = {key: val for key, val in pars.items()
                               if key in ['stop_words', 'use_idf',
                                          'ngram_range', 'analyzer',
+                                         'sublinear_tf',
                                          'min_df', 'max_df']}
 
                 tfidf = TfidfVectorizer(input='filename',
