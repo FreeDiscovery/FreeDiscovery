@@ -150,7 +150,7 @@ Documentation
 For more information see the documentation and API Reference,
 
 - development version [``master`` branch | documentation http://freediscovery.io/doc/dev/ ].
-- stable version 1.1.2 [``1.1.X`` branch | documentation http://freediscovery.io/doc/stable/ ].
+- stable version 1.2 [``1.2.X`` branch | documentation http://freediscovery.io/doc/stable/ ].
 
 Licence
 -------

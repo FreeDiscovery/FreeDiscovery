@@ -1,9 +1,46 @@
 # Release history
 
+## Version 1.2.0
+
+**Jul 10, 2017**
+
+### New features
+
+ * Automatic scaling of the LSA dimensionality for small dataset ([#159](https://github.com/FreeDiscovery/FreeDiscovery/pull/159))
+
+### Enhancements
+
+ * Backported ranking metrics from sklearn 0.19 under `freediscovery.externals` ([#156](https://github.com/FreeDiscovery/FreeDiscovery/pull/156))
+ * More extensive validation of the semantic search ([#158](https://github.com/FreeDiscovery/FreeDiscovery/pull/158))
+ * Fix a bug in data ingestion that did not correctly use the provided `sublinear_tf` parameter. The default value was set to `sublinear_tf=False` ([#158](https://github.com/FreeDiscovery/FreeDiscovery/pull/158))
+
+### API Changes
+ * Using English stop words by default ([#155](https://github.com/FreeDiscovery/FreeDiscovery/pull/155))
+
+## Version 1.1.2
+
+**Jun 2, 2017**
+
+### New features
+
+ * Possibility to ingest documents via HTTP and to chunk document ingestion ([#143](https://github.com/FreeDiscovery/FreeDiscovery/pull/143))
+ * Truncating the hierarchical BIRCH clustering tree
+ * Dowloading the document collections from CLI ([#149](https://github.com/FreeDiscovery/FreeDiscovery/pull/149))
+
+### Enhancements / Bug fixes
+
+ * Add `subset_document_id` parameter for categrization and semantic search ([#145](https://github.com/FreeDiscovery/FreeDiscovery/pull/145))
+ * Larger number of supported dependencies ([#148](https://github.com/FreeDiscovery/FreeDiscovery/pull/148))
+ * Documentation improvement ([#151](https://github.com/FreeDiscovery/FreeDiscovery/pull/151))
+ * Capacity to infer the `document_id` from the file name ([#150](https://github.com/FreeDiscovery/FreeDiscovery/pull/150))
+
+### API Changes
+ * Designed an unified interface for data ingestion ([#143](https://github.com/FreeDiscovery/FreeDiscovery/pull/143))
+ * Added URL endpoint with server info ([#147](https://github.com/FreeDiscovery/FreeDiscovery/pull/147))
 
 ## Version 1.0
 
-**In developpement**
+**May 2, 2017**
 
 ### New features  
 
