@@ -83,6 +83,7 @@ class FeaturesParsSchema(Schema):
     min_df = fields.Number(required=False)
     max_df = fields.Number(required=False)
     parse_email_headers = fields.Boolean(missing=False)
+    preprocess = fields.List(fields.Str(), missing=[])
 
 
 class FeaturesSchema(FeaturesParsSchema):

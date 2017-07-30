@@ -19,6 +19,7 @@ from ._version import __version__
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
 from .ingestion import DocumentIndex
+from .preprocessing import processing_filters
 from .stop_words import _StopWordsWrapper
 from .exceptions import (DatasetNotFound, InitException, WrongParameter)
 
@@ -31,6 +32,19 @@ def _read_file(file_path):
     with open(file_path, 'rb') as fh:
         doc = fh.read()
     doc = doc.decode('utf-8', 'ignore')
+    return doc
+
+
+def _preprocess_stream(doc, steps=None):
+    """ Apply pre-processing steps """
+
+    if steps:
+        doc = doc.splitlines()
+        for key in steps:
+            func = processing_filters[key]
+            doc = [func(line) for line in doc]
+        doc = '\n'.join(doc)
+
     return doc
 
 
@@ -171,7 +185,8 @@ class FeatureVectorizer(object):
               use_idf=False, sublinear_tf=False,
               binary=False, use_hashing=False,
               norm='l2', min_df=0.0, max_df=1.0,
-              parse_email_headers=False):
+              parse_email_headers=False,
+              preprocess=[]):
         """Initalize the features extraction.
 
         See sklearn.feature_extraction.text for a detailed description
@@ -219,7 +234,8 @@ class FeatureVectorizer(object):
             Norm used to normalize term vectors. None for no normalization.
         use_idf : boolean, default=True
             Enable inverse-document-frequency reweighting.
-
+        preprocess : list of strings, default: []
+            A list of pre-processing steps, including 'emails_ingore_header'
         """
 
         if analyzer not in ['word', 'char', 'char_wb']:
@@ -240,6 +256,11 @@ class FeatureVectorizer(object):
                           "distance calculations"
                           " may not be correct with other normalizations."
                           " Currently norm={}".format(norm))
+        for key in preprocess:
+            if key not in processing_filters:
+                raise WrongParameter(('Unknown preprocessing step {} '
+                                      ' must of be of {}')
+                                      .format(key, ', '.join(list(processing_filters.keys()))))
 
         if stop_words in [None, 'english', 'english_alphanumeric']:
             pass
@@ -270,6 +291,7 @@ class FeatureVectorizer(object):
                 'norm': norm, 'min_df': min_df, 'max_df': max_df,
                 'parse_email_headers': parse_email_headers,
                 'type': type(self).__name__,
+                'preprocess': preprocess,
                 'freediscovery_version': __version__}
         self._pars = pars
         with (dsid_dir / 'pars').open('wb') as fh:
@@ -411,13 +433,12 @@ class FeatureVectorizer(object):
         from .externals.jwzthreading import Message
         features = []
         for idx, fname in enumerate(self.filenames_abs_):
-            with open(fname, 'rt') as fh:
-                txt = fh.read()
-                message = Parser().parsestr(txt, headersonly=True)
+            txt = _read_file(fname)
+            message = Parser().parsestr(txt, headersonly=True)
 
-                msg_obj = Message(message, message_idx=idx)
+            msg_obj = Message(message, message_idx=idx)
 
-                features.append(msg_obj)
+            features.append(msg_obj)
         joblib.dump(features, str(self.dsid_dir / 'email_metadata'))
         return features
 
@@ -485,7 +506,9 @@ class FeatureVectorizer(object):
                                         max_features=pars['n_features'],
                                         norm=pars['norm'],
                                         **opts_tfidf)
-                res = tfidf.fit_transform(_read_file(fname) for fname in pars['filenames_abs'])
+                text_gen = (_preprocess_stream(_read_file(fname), pars['preprocess'])
+                            for fname in pars['filenames_abs'])
+                res = tfidf.fit_transform(text_gen)
                 self._vect = tfidf
             fname = dsid_dir / 'vectorizer'
             if self._pars['use_hashing']:
