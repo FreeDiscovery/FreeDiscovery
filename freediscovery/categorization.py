@@ -79,7 +79,7 @@ class _CategorizerWrapper(_BaseWrapper):
     _wrapper_type = "categorizer"
 
     def __init__(self, cache_dir='/tmp/',  parent_id=None, mid=None,
-                 cv_scoring='roc_auc', cv_n_folds=3):
+                 cv_scoring='roc_auc', cv_n_folds=3, random_state=None):
 
         super(_CategorizerWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id,
@@ -89,9 +89,10 @@ class _CategorizerWrapper(_BaseWrapper):
             self.le = joblib.load(str(self.model_dir / mid / 'label_encoder'))
         self.cv_scoring = cv_scoring
         self.cv_n_folds = cv_n_folds
+        self.random_state = random_state
 
     @staticmethod
-    def _build_estimator(Y_train, method, cv, cv_scoring, cv_n_folds, **options):
+    def _build_estimator(Y_train, method, cv, cv_scoring, cv_n_folds, random_state=None, **options):
         if cv:
             #from sklearn.cross_validation import StratifiedKFold
             #cv_obj = StratifiedKFold(n_splits=cv_n_folds, shuffle=False)
@@ -104,7 +105,7 @@ class _CategorizerWrapper(_BaseWrapper):
         if method == 'LinearSVC':
             from sklearn.svm import LinearSVC
             if cv is None:
-                cmod = LinearSVC(**options)
+                cmod = LinearSVC(random_state=random_state, **options)
             else:
                 try:
                     from freediscovery_extra import make_linearsvc_cv_model
@@ -114,7 +115,7 @@ class _CategorizerWrapper(_BaseWrapper):
         elif method == 'LogisticRegression':
             from sklearn.linear_model import LogisticRegression
             if cv is None:
-                cmod = LogisticRegression(**options)
+                cmod = LogisticRegression(random_state=random_state, **options)
             else:
                 try:
                     from freediscovery_extra import make_logregr_cv_model
@@ -148,7 +149,8 @@ class _CategorizerWrapper(_BaseWrapper):
             from sklearn.neural_network import MLPClassifier
             cmod = MLPClassifier(solver='adam', hidden_layer_sizes=10,
                                  max_iter=200, activation='identity',
-                                 verbose=0)
+                                 verbose=0,
+                                 random_state=random_state)
         else:
             raise WrongParameter('Method {} not implemented!'.format(method))
         return cmod

@@ -108,6 +108,7 @@ def fd_app(cache_dir, config=None):
                              ]:
         # monkeypatching, not great
         resource_el._cache_dir = cache_dir
+        resource_el._random_seed = os.environ.get('FREEDISCOVERY_RANDOM_SEED', 42)
         resource_el.methods = ['GET', 'POST', 'DELETE']
         #api.add_resource(resource_el, '/api/v0' + url, strict_slashes=False)
 
