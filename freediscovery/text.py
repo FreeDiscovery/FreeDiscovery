@@ -27,6 +27,13 @@ def _touch(filename):
     filename.open('ab').close()
 
 
+def _read_file(file_path):
+    with open(file_path, 'rb') as fh:
+        doc = fh.read()
+    doc = doc.decode('utf-8', 'ignore')
+    return doc
+
+
 def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     """ Extract features on a chunk of files """
     from sklearn.feature_extraction.text import HashingVectorizer
@@ -45,11 +52,11 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     hash_opts = {key: vals for key, vals in pars.items()
                  if key in ['stop_words', 'n_features',
                             'binary', 'analyser', 'ngram_range']}
-    fe = HashingVectorizer(input='filename', norm=None, decode_error='ignore',
+    fe = HashingVectorizer(input='content', norm=None,
                            non_negative=True, **hash_opts)
     if pretend:
         return fe
-    fset_new = fe.transform(filenames[mslice])
+    fset_new = fe.transform(_read_file(fname) for fname in filenames[mslice])
 
     fset_new.eliminate_zeros()
 
@@ -474,11 +481,11 @@ class FeatureVectorizer(object):
                                          'sublinear_tf',
                                          'min_df', 'max_df']}
 
-                tfidf = TfidfVectorizer(input='filename',
+                tfidf = TfidfVectorizer(input='content',
                                         max_features=pars['n_features'],
                                         norm=pars['norm'],
-                                        decode_error='ignore', **opts_tfidf)
-                res = tfidf.fit_transform(pars['filenames_abs'])
+                                        **opts_tfidf)
+                res = tfidf.fit_transform(_read_file(fname) for fname in pars['filenames_abs'])
                 self._vect = tfidf
             fname = dsid_dir / 'vectorizer'
             if self._pars['use_hashing']:
