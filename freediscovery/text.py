@@ -39,11 +39,11 @@ def _preprocess_stream(doc, steps=None):
     """ Apply pre-processing steps """
 
     if steps:
-        doc = doc.splitlines()
+        #doc = doc.splitlines()
         for key in steps:
             func = processing_filters[key]
-            doc = [func(line) for line in doc]
-        doc = '\n'.join(doc)
+            doc = func(doc) #[func(line) for line in doc]
+        #doc = '\n'.join(doc)
 
     return doc
 
