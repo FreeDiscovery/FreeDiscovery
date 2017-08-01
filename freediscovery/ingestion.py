@@ -379,8 +379,13 @@ class DocumentIndex(object):
 
     @staticmethod
     def _detect_data_dir(filenames):
-        data_dir = os.path.commonprefix(filenames)
-        data_dir = os.path.normpath(data_dir)
+        if len(filenames) > 1:
+            data_dir = os.path.commonprefix(filenames)
+            data_dir = os.path.normpath(data_dir)
+        elif len(filenames) == 1:
+            data_dir = os.path.dirname(filenames[0])
+        else:
+            raise ValueError('Provided list of filenames is empty!')
 
         if os.path.exists(data_dir):
             return data_dir

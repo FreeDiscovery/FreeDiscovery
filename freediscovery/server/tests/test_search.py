@@ -194,8 +194,9 @@ def test_search_consistency(app):
     X_tmp = []
     comp_document_id = 2365444
     for document_id in [query_document_id, comp_document_id]:
-        X_tmp.append(os.path.join(ds_pars['data_dir'],
-                                  input_ds.loc[document_id].file_path))
+        with open(os.path.join(ds_pars['data_dir'],
+            input_ds.loc[document_id].file_path), 'rb') as fh:
+            X_tmp.append(fh.read().decode('utf-8'))
     X_tmp = vect.transform(X_tmp)
     X_tmp = lsi_est.transform_lsi_norm(X_tmp)
     assert_allclose(cosine_similarity(X_tmp[[0]], X_tmp[[1]]),

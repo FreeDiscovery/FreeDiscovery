@@ -66,10 +66,11 @@ class _LSIWrapper(_BaseWrapper):
     _wrapper_type = "lsi"
 
     def __init__(self, cache_dir='/tmp/', parent_id=None,
-                 mid=None, verbose=False):
+                 mid=None, verbose=False, random_state=None):
 
         super(_LSIWrapper, self).__init__(cache_dir=cache_dir,
                                           parent_id=parent_id, mid=mid)
+        self.random_state = random_state
 
     def _load_features(self):
         mid_dir = self.fe.dsid_dir / self._wrapper_type / self.mid
@@ -114,7 +115,7 @@ class _LSIWrapper(_BaseWrapper):
         n_components_opt = _compute_lsi_dimensionality(n_components, *ds.shape,
                                                        alpha=alpha)
         svd = _TruncatedSVD_LSI(n_components=n_components_opt,
-                                n_iter=n_iter)
+                                n_iter=n_iter, random_state=self.random_state)
         lsi = svd
         lsi.fit(ds)
 

@@ -124,6 +124,7 @@ class FeaturesApi(Resource):
              - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
              - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
+             - `preprocess`: a list of pre-processing steps to apply before vectorization. A subset of ['emails_ignore_header'], default: [].
             """))
     @use_args(FeaturesParsSchema(strict=True, exclude=('norm', 'data_dir')))
     @marshal_with(IDSchema())
@@ -284,7 +285,8 @@ class LsiApi(Resource):
     @marshal_with(LsiParsSchema(many=True))
     def get(self, **args):
         parent_id = args['parent_id']
-        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id,
+                          random_state=self._random_seed)
         return lsi.list_models()
 
     @doc(description=dedent("""
@@ -307,7 +309,8 @@ class LsiApi(Resource):
     def post(self, **args):
         parent_id = args['parent_id']
         del args['parent_id']
-        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id)
+        lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id,
+                          random_state=self._random_seed)
         _, explained_variance = lsi.fit_transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
 
@@ -363,7 +366,8 @@ class ModelsApi(Resource):
     def post(self, **args):
         training_scores = args['training_scores']
         parent_id = args['parent_id']
-        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id)
+        cat = _CategorizerWrapper(self._cache_dir, parent_id=parent_id,
+                                  random_state=self._random_seed)
 
         query = pd.DataFrame(args['data'])
         res_q = cat.fe.db_.search(query, drop=False)

@@ -66,7 +66,8 @@ def test_get_feature_extraction(app, hashed, use_idf):
                      'n_features': 'int', 'use_idf': 'bool',
                      'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
-                     'parse_email_headers': 'bool', 'n_samples_processed': 'int'}
+                     'parse_email_headers': 'bool', 'n_samples_processed': 'int',
+                     'preprocess': []}
 
     assert data['use_hashing'] == hashed
     assert data['sublinear_tf'] == False
