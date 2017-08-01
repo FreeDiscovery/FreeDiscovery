@@ -6,6 +6,7 @@ import itertools
 from unittest import SkipTest
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
+import pandas as pd
 
 from ...utils import dict2type
 from ...sklearn_compat import sklearn_version
@@ -162,11 +163,8 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
         assert dict2type(row) == response_ref
 
     if solver == 'NearestNeighbor':
-        #print(json.dumps(data, indent=4))
         training_document_id = np.array([row['document_id'] for row in training_set])
         training_document_id_res = np.array([row['scores'][0]['document_id'] for row in data])
-        #print(np.unique(sorted(training_document_id)))
-        #print(np.unique(sorted(training_document_id_res)))
         assert_equal(np.in1d(training_document_id_res, training_document_id), True)
 
     method = V01 + "/metrics/categorization"
@@ -264,3 +262,41 @@ def test_api_categorization_subset_document_id(app):
 
     method = V01 + "/categorization/{}".format(mid)
     app.delete_check(method)
+
+
+@pytest.mark.parametrize('sort_by', ['comp.graphics', 'rec.sport.baseball'])
+def test_api_categorization_sort(app, sort_by):
+    n_categories = 2
+    dsid, lsi_id, _, ds_input = get_features_lsi_cached(app, n_categories=n_categories)
+    method = V01 + "/feature-extraction/{}".format(dsid)
+    data = app.get_check(method)
+
+    training_set = ds_input['training_set']
+
+    pars = {
+          'parent_id': lsi_id,
+          'data': training_set,
+          'method': 'NearestNeighbor'}
+
+    method = V01 + "/categorization/"
+    data = app.post_check(method, json=pars)
+    mid = data['id']
+
+    method = V01 + "/categorization/{}/predict".format(mid)
+
+    data = app.get_check(method, json={'batch_id': -1, "sort_by": sort_by})
+
+    res = []
+    for row in data['data']:
+        res_el = {'document_id': row['document_id']}
+        for scores in row['scores']:
+            res_el[scores['category']] = scores['score']
+        res.append(res_el)
+
+    df = pd.DataFrame(res)
+    df = df.set_index('document_id')
+
+    if sort_by in df.columns:
+        mask = pd.notnull(df[sort_by])
+        assert_array_equal(df[mask].index.values,
+                           df[mask].sort_values(sort_by, ascending=False).index.values)

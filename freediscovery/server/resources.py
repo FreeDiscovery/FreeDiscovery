@@ -416,7 +416,7 @@ class ModelsApiPredict(Resource):
 
             **Parameters**
              - `max_result_categories` : the maximum number of categories in the results
-             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score']
+             - `sort_by` : if provided and not None, the field used for sorting results. Valid values are [None, 'score'] or any of the ingested category names.
              - `sort_order`: the sort order (if applicable), one of ['ascending', 'descending']
              - `max_results` : return only the first `max_results` documents. If `max_results <= 0` all documents are returned.
              - `ml_output` : type of the output in ['decision_function', 'probability'], only affects ML methods.
