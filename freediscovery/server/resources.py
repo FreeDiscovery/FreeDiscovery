@@ -124,6 +124,7 @@ class FeaturesApi(Resource):
              - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
              - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
+             - `preprocess`: a list of pre-processing steps to apply before vectorization. A subset of ['emails_ignore_header'], default: [].
             """))
     @use_args(FeaturesParsSchema(strict=True, exclude=('norm', 'data_dir')))
     @marshal_with(IDSchema())
