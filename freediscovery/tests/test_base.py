@@ -1,19 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-
 import os.path
 import warnings
 
-from numpy.testing import (assert_allclose, assert_equal,
-                           assert_array_less)
-
 import pytest
-from freediscovery.metrics import categorization_score
 from freediscovery.pipeline import _split_path, PipelineFinder
 from .run_suite import check_cache
 
@@ -51,4 +41,4 @@ def test_suite_cleanup():
         print('\nSucessfully removed cache_dir={}'.format(cache_dir))
     except Exeption as e:
         warnings.warn('Failed to remove cache_dir={}, \n{}'.format(
-	                       cache_dir, traceback.print_tb(e.__traceback__)))
+                      cache_dir, traceback.print_tb(e.__traceback__)))

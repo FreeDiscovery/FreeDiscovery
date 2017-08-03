@@ -137,7 +137,7 @@ class Search(object):
 
         return scores
 
-    def search_id(self, internal_id, metric='jaccard_norm'):
+    def search_id(self, internal_id, metric='cosine'):
         """
         Perform the search operation
 
