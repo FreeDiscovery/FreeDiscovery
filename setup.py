@@ -46,7 +46,7 @@ setup(name='freediscovery',
           'Intended Audience :: Information Technology',
           'Intended Audience :: Legal Industry',
 
-           'License :: OSI Approved :: BSD License',
+          'License :: OSI Approved :: BSD License',
 
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.5',
@@ -59,4 +59,3 @@ setup(name='freediscovery',
       extras_require={'all': REQUIREMENTS,
                       'core': REQUIREMENTS_CORE},
       keywords='information-retrieval machine-learning text-classification')
-

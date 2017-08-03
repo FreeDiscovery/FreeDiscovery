@@ -12,6 +12,17 @@ Datasets
     freediscovery.datasets.load_dataset
     freediscovery.ingestion.DocumentIndex
 
+
+Feature extraction
+------------------
+
+.. autosummary::
+    :toctree: ./generated/
+
+    
+    freediscovery.feature_weighting.smart_feature_weighting
+
+
 Document categorization
 -----------------------
 
