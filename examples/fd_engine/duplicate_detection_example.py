@@ -1,6 +1,6 @@
 """
-Duplicate Detection Example [REST API]
---------------------------------------
+Duplicate Detection Example
+---------------------------
 
 Find near-duplicates in a text collection
 """

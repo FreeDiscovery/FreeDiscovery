@@ -38,6 +38,6 @@ newsgroup_data/
 .cache/
 *.coverage*
 doc/modules/
-doc/examples/
-doc/generated/
+doc/*/examples/
+doc/*/generated/
 treclegal09*.tar.gz

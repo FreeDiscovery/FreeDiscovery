@@ -50,7 +50,8 @@ help:
 
 clean:
 	rm -rf $(BUILDDIR)/*
-	rm -rf examples/
+	rm -rf engine/examples/
+	rm -rf python/examples/
 	rm -rf modules/generated/*
 	rm -rf generated/*
 

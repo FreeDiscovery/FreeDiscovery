@@ -59,11 +59,10 @@ def smart_feature_weighting(tf, scheme, idf=None):
       the SMART notation for document, term weighting and normalization.
       In the form [nlabL][ntp][ncb] , see
       https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
-      Currently only the subset [nlab][nt][ac] is implemented.
 
     idf : sparse csr array (optional)
       precomputed inverse document frequency matrix (n_documents, n_features).
-      If not provided, and scheme='*t*', it will be recomputed.
+      If not provided, it will be recomputed if necessary.
 
     Returns
     -------

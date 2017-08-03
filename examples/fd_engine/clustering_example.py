@@ -1,6 +1,6 @@
 """
-Clustering Example [REST API]
------------------------------
+Clustering Example
+------------------
 
 Cluster documents into clusters
 """

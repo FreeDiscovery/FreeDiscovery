@@ -1,6 +1,6 @@
 """
-Data Ingestion Example [REST API]
----------------------------------
+Data Ingestion Example
+----------------------
 
 An example illustrating the data ingestion in FreeDiscovery
 """

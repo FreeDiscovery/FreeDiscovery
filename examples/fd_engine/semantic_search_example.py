@@ -1,6 +1,6 @@
 """
-Semantic Search Example [REST API]
-----------------------------------
+Semantic Search Example
+-----------------------
 
 An example of Semantic Search
 """

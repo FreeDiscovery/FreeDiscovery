@@ -1,7 +1,7 @@
 Document similarity
 -------------------
 
-A number of algorithms in FreeDiscovery require computing similarity between documents, including Nearest Neighbors categorization, search and clustering. Four metrics (``cosine``, ``jaccard``, ``cosine_norm``, ``jaccard_norm``) are supported to compute the document similarity scores, specified by the `nn_metric` or `metric` input parameters. To illustrate the difference between these metrics on a more practical example, we can consider two documents,
+A number of algorithms in FreeDiscovery require computing similarity between documents, including Nearest Neighbors categorization, search and clustering. FreeDiscovery supports the two following metrics (``cosine``, ``jaccard``) to compute the document similarity scores, specified by the `metric` input parameters. To illustrate the difference between these metrics on a more practical example, we can consider two documents,
 
 - document ``A`` consisting of words ``"legal documents prodedure case"``
 - document ``B`` consisting of words ``"legal documents"``
@@ -19,6 +19,3 @@ A more detailed description of different metrics can be found below,
 
   For positive vectors, the results are in the ``[0, 1]`` range, or in general in the ``[-1/3, 1]`` range. ``jaccard_similarity(A, B) = 0.54``.
   **Note:** the exact jaccard similarity in this case is ``0.5``. 
-
-- ``cosine-positive`` is the equal to 
-  .. math:: max(S_cosine, 0)

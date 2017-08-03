@@ -1,6 +1,6 @@
 """
-Categorization Example [REST API]
----------------------------------
+Categorization Example
+----------------------
 
 An example to illustrate binary categorizaiton with FreeDiscovery
 """

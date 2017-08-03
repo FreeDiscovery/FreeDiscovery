@@ -1,10 +1,13 @@
-Python API Reference
-====================
+API Reference
+=============
+
+This is the API reference for the FreeDiscovery Python package
 
 .. currentmodule:: freediscovery
 
 Datasets
 --------
+
 
 .. autosummary::
     :toctree: ./generated/
@@ -25,7 +28,6 @@ Feature extraction
 
 Document categorization
 -----------------------
-
 .. autosummary::
     :toctree: ./generated/
 
@@ -63,7 +65,7 @@ IO
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.io_smart_tokens
+    freediscovery.io.parse_smart_tokens
 
 Metrics
 -------

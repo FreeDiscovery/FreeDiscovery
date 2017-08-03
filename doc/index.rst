@@ -13,11 +13,8 @@ Contents
    :maxdepth: 2
 
 
-   installation_instructions
-   rest_api
-   python_api
-   cli
-   examples/index
+   engine/index
+   python/index
    user_manual/index
    contributing
    whats_new

@@ -1,6 +1,6 @@
 """
-Categorization Interpretation Example [Python API]
--------------------------------------------------
+Categorization Interpretation Example
+-------------------------------------
 
 A visual interpretation for the binary categorization outcome for a single document
 by looking at the relative contribution of individual words
