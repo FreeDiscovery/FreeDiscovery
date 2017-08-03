@@ -30,11 +30,15 @@ A two level test suite is implemented in FreeDiscovery, that validates both the 
 
 The tests are located under `freediscovery/tests/` and can be run with,
 
-    py.test -s FreeDiscovery/freediscovery/
+```bash
+py.test -s FreeDiscovery/freediscovery/
+```
 
 or alternatively from Python with,
 
-    import freediscovery.tests as ft; ft.run()
+```py
+import freediscovery.tests as ft; ft.run()
+```
 
 It is automatically run as part of the installation procedure locally. The Continuous Integration also runs this test suite on Linux and Windows for all commits and pull requests on GitHub.  
 
@@ -45,9 +49,11 @@ It is automatically run as part of the installation procedure locally. The Conti
 
 The html documentation can be built from sources with,
      
-    # starting the FreeDiscovery server at localhost
-    cd FreeDiscovery/doc/
-    make html
+```bash
+# starting the FreeDiscovery server at localhost
+cd FreeDiscovery/doc/
+make html
+```
 
 which requires to install dependencies in `build_tools/requirements_extra_pip.txt`. This would also run and include examples using `sphinx-gallery`.
 
@@ -57,8 +63,10 @@ Alternatively  `make latexpdf` generates documentation in .pdf format (requires 
 
 The rest API documentation can be generated with,
 
-    sudo npm install -g bootprint 
-    sudo npm install -g bootprint-openapi
-    bootprint openapi http://0.0.0.0:5001/openapi-specs.json openapi_docs
+```bash
+sudo npm install -g bootprint 
+sudo npm install -g bootprint-openapi
+bootprint openapi http://0.0.0.0:5001/openapi-specs.json openapi_docs
 
-    cp -r openapi_docs/ _build/html/
+cp -r openapi_docs/ _build/html/
+```

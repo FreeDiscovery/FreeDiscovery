@@ -88,10 +88,9 @@ master_doc = 'index'
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs' : '../examples',
+    'examples_dirs' : ['../examples/fd_engine/', '../examples/python/'],
     # path where to save gallery generated examples
-    'gallery_dirs'  : 'examples',
-    'filename_pattern'  : '/.*example.*.py'
+    'gallery_dirs'  : ['engine/examples', 'python/examples']
 }
 
 # General information about the project.
