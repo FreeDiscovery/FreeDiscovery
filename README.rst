@@ -15,16 +15,15 @@ FreeDiscovery
 
 
 
-FreeDiscovery is an open source e-Discovery and information retrieval engine. It is based on the Python machine learning ecosystem, and in particular scikit-learn. FreeDiscovery has two main components,
-  * **FreeDiscovery Engine** provides a REST API for information retrieval applications. It aims to benefit existing e-Discovery and information retrieval platforms with a focus on text categorization, semantic search, document clustering, duplicates detection and e-mail threading.
-    See http://freediscovery.io/doc/dev/engine/ for additional details.
-  * **FreeDiscovery Core** is a Python package that extends scikit-learn with additional information retrieval functionality.
-    See http://freediscovery.io/doc/dev/python/ for additional details.
+FreeDiscovery is an open source e-Discovery and information retrieval engine. FreeDiscovery is based on the  scikit-learn library and has two main components,
 
+* **FreeDiscovery Engine** provides a REST API for information retrieval applications. It aims to benefit existing e-Discovery and information retrieval platforms with a focus on text categorization, semantic search, document clustering, duplicates detection and e-mail threading.
+  
+  See `freediscovery.io/doc/dev/engine <http://freediscovery.io/doc/dev/engine/>`_
+* **FreeDiscovery Core** is a Python package that extends scikit-learn with additional information retrieval functionality.
+  
+  See `freediscovery.io/doc/dev/python <http://freediscovery.io/doc/dev/python/>`_
 
-
-Licence
--------
 
 FreeDiscovery is released under the 3-clause BSD licence.
 
