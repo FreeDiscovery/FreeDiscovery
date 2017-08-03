@@ -15,7 +15,7 @@ documents = ["Shipment of gold damaged in aa fire.",
 
 
 @pytest.mark.parametrize('scheme', ("".join(el)
-                                    for el in product('nlabL', 'nt', 'nc')))
+                                    for el in product('nlabL', 'ntp', 'nc')))
 def test_smart_feature_weighting(scheme):
     tf = CountVectorizer().fit_transform(documents)
 

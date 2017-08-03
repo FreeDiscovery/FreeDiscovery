@@ -1,3 +1,5 @@
+import warnings
+
 import scipy.sparse as sp
 import numpy as np
 
@@ -30,11 +32,6 @@ def _validate_smart_notation(scheme):
         raise ValueError(('Document frequency weighting {}'
                           'not supported, must be one of ntp')
                          .format(scheme_d))
-    if scheme_d not in 'nt':
-        raise NotImplementedError(
-                   ('Document frequency weighting {}'
-                    'is not yet implemented, must be one of nt')
-                   .format(scheme_d))
     if scheme_n not in 'ncbu':
         raise ValueError(('Document normalization {}'
                           'not supported, must be one of ncbu')
@@ -117,10 +114,17 @@ def smart_feature_weighting(tf, scheme, idf=None):
 
     if scheme_d == 'n':
         pass
-    elif scheme_d == 't':
+    elif scheme_d in 'tp':
         if idf is None:
             df = _document_frequency(tf)
+        if scheme_d == 't':
             idf = np.log(float(n_samples) / df) + 1.0
+        elif scheme_d == 'p':
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
+                                        message="divide by zero encountered in log",
+                                        category=RuntimeWarning)
+                idf = np.fmax(0, np.log((float(n_samples) - df)/df))
         _idf_diag = sp.spdiags(idf, diags=0, m=n_features,
                                n=n_features, format='csr')
         X = X * _idf_diag
