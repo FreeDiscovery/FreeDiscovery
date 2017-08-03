@@ -19,14 +19,13 @@ def parse_smart_tokens(text):
     """
     Parse a dataset stored in the SMART tokenized format, used
     in particular for the RCV1-v2 dataset,
-       http://www.jmlr.org/papers/volume5/lewis04a/lyrl2004_rcv1v2_README.htm
+    http://www.jmlr.org/papers/volume5/lewis04a/lyrl2004_rcv1v2_README.htm
     (cf. Appendix B.12.i.)
 
     Parameters
     ----------
     text : str
        the full text of the dataset
-
 
     Returns
     -------

@@ -1,7 +1,7 @@
 # Deployment options
 
 
-![FreeDiscovery deployment](_static/FreeDiscovery_infra.png)
+![FreeDiscovery deployment](../_static/FreeDiscovery_infra.png)
 
 
 ## 1. Development server

@@ -54,7 +54,7 @@ by looking at the relative contribution of individual words
     ax.set_title('Relative word weights', fontsize=12)
 
     # visualize the html results in sphinx gallery
-    tmp_dir = os.path.join('..', 'doc', 'examples')
+    tmp_dir = os.path.join('..', 'doc', 'examples', 'python')
     if os.path.exists(tmp_dir):
         with open(os.path.join(tmp_dir, 'out.html'), 'wt') as fh:
             fh.write(html)
