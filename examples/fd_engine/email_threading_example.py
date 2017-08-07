@@ -1,6 +1,6 @@
 """
-Email threading Example [REST API]
---------------------------------------
+Email threading Example
+-----------------------
 
 Thread a email collection
 """

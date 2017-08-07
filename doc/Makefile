@@ -53,7 +53,8 @@ clean:
 	rm -rf engine/examples/
 	rm -rf python/examples/
 	rm -rf modules/generated/*
-	rm -rf generated/*
+	rm -rf engine/generated/*
+	rm -rf python/generated/*
 
 
 html:
