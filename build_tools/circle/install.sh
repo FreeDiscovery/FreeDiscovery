@@ -42,7 +42,7 @@ create_new_conda_env() {
 
     # Configure the conda environment and put it in the path using the
     # provided versions
-    conda create -n testenv --quiet --yes --file requirements.txt simhash-py python=3.6
+    conda create -n testenv --quiet --yes --file requirements.txt simhash-py graphviz python-graphviz python=3.6
     source activate testenv
 
 }
