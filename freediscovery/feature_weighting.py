@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.utils.validation import check_array
 from sklearn.preprocessing import normalize
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils.validation import check_is_fitted
 
 
 def _document_frequency(X):
@@ -16,6 +17,7 @@ def _document_frequency(X):
         return np.bincount(X.indices, minlength=X.shape[1])
     else:
         return np.diff(sp.csc_matrix(X, copy=False).indptr)
+
 
 def _document_length(X):
     return X.sum(axis=1)
@@ -47,22 +49,59 @@ def _validate_smart_notation(scheme):
                    .format(scheme_n))
     return scheme_t, scheme_d, scheme_n
 
-class SmartFeatureWeightingTransformer(BaseEstimator, TransformerMixin):
+class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, weighting='nnc'):
+        """Apply document term weighting and normalization on the extracted
+        text features
+
+        weighting : str
+          the SMART notation for document, term weighting and normalization.
+          In the form [nlabL][ntp][ncb] , see
+          https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
+        """
         _validate_smart_notation(weighting)
         self.weighting = weighting
         self._df = None
         self._dl = None
 
     def fit(self, X, y=None):
+        """Learn the document lenght and document frequency vector
+        (if necessary).
+
+        Parameters
+        ----------
+        X : sparse matrix, [n_samples, n_features]
+            a matrix of term/token counts
+        """
+        X = check_array(X, ['csr', 'csc', 'coo'])
         self._dl = _document_length(X)
-        scheme_t, scheme_d, scheme_n = 
+        scheme_t, scheme_d, scheme_n = _validate_smart_notation(self.weighting)
+        if scheme_d in 'tp':
+            self._df = _document_frequency(X)
+        self._n_features = X.shape[1]
+        return self
+
+    def transform(self, X, y=None):
+        """Apply document term weighting and normalization on text features
+
+        Parameters
+        ----------
+        X : sparse matrix, [n_samples, n_features]
+            a matrix of term/token counts
+        copy : boolean, default True
+            Whether to copy X and operate on the copy or perform in-place
+            operations.
+        """
+        X = check_array(X, ['csr', 'csc', 'coo'])
+        check_is_fitted(self, '_dl', 'vector is not fitted')
+        if X.shape[1] != self._n_features:
+            raise ValueError(('Model fitted with n_features={} '
+                              'but X.shape={}').format(self._n_features, X.shape))
+
+        return feature_weighting(X, self.weighting, self._df)
 
 
-
-
-
-def smart_feature_weighting(tf, scheme, idf=None):
+def feature_weighting(tf, weighting, df=None):
     """
     Weight a vector space model following the SMART notation.
 
@@ -73,13 +112,13 @@ def smart_feature_weighting(tf, scheme, idf=None):
     df : sparse csr array
       the term frequency matrix (n_documents, n_features)
 
-    scheme : str
+    weighting : str
       the SMART notation for document, term weighting and normalization.
       In the form [nlabL][ntp][ncb] , see
       https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
 
-    idf : sparse csr array (optional)
-      precomputed inverse document frequency matrix (n_documents, n_features).
+    df : dense ndarray (optional)
+      precomputed inverse document frequency matrix (n_samples,).
       If not provided, it will be recomputed if necessary.
 
     Returns
@@ -97,12 +136,12 @@ def smart_feature_weighting(tf, scheme, idf=None):
     """
 
     tf = check_array(tf, ['csr', 'csc', 'coo'])
-    if idf is not None:
-        idf = check_array(idf, ['csr', 'csc', 'coo'], ensure_2d=False)
+    if df is not None:
+        df = check_array(df, ensure_2d=False)
 
     n_samples, n_features = tf.shape
 
-    scheme_t, scheme_d, scheme_n = _validate_smart_notation(scheme)
+    scheme_t, scheme_d, scheme_n = _validate_smart_notation(weighting)
 
     X = tf
 
@@ -132,7 +171,7 @@ def smart_feature_weighting(tf, scheme, idf=None):
     if scheme_d == 'n':
         pass
     elif scheme_d in 'tp':
-        if idf is None:
+        if df is None:
             df = _document_frequency(tf)
         if scheme_d == 't':
             idf = np.log(float(n_samples) / df) + 1.0

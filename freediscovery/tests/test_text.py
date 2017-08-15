@@ -57,23 +57,17 @@ def test_feature_extraction_storage():
     assert 'file_path' not in db.columns
 
 
-@pytest.mark.parametrize("sublinear_tf, use_idf, binary, use_hashing",
-                         list(itertools.product(['TF', 'sublinear TF'],
-                                                ['', 'IDF'],
-                                                ['binary', ''],
+@pytest.mark.parametrize("weighting, use_hashing",
+                         list(itertools.product(("".join(el) for el in itertools.product('nlb', 'nt', 'c')),
                                                 ['hashed', ''])))
-def test_feature_extraction_weighting(use_idf, sublinear_tf, binary,
+def test_feature_extraction_weighting(weighting,
                                       use_hashing):
     cache_dir = check_cache()
 
-    use_idf = (use_idf == 'IDF')
-    sublinear_tf = (sublinear_tf == 'sublinear TF')
-    binary = (binary == 'binary')
     use_hashing = (use_hashing == 'hashed')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.setup(use_idf=use_idf, binary=binary,
-                    use_hashing=use_hashing, sublinear_tf=sublinear_tf)
+    uuid = fe.setup(weighting=weighting, use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
     res2 = fe._load_features(uuid)
@@ -86,19 +80,17 @@ def test_feature_extraction_weighting(use_idf, sublinear_tf, binary,
     fe.delete()
 
 
-@pytest.mark.parametrize("n_features, use_idf, use_hashing",
+@pytest.mark.parametrize("n_features, weighting, use_hashing",
                          list(itertools.product([None, 4, 1000],
-                                                ['', 'IDF'],
+                                                ['nnc', 'ntc'],
                                                 ['hashed', ''])))
-def test_feature_extraction_nfeatures(n_features, use_idf, use_hashing):
+def test_feature_extraction_nfeatures(n_features, weighting, use_hashing):
     cache_dir = check_cache()
 
     use_hashing = (use_hashing == 'hashed')
-    use_idf = (use_idf == 'IDF')
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
-    uuid = fe.setup(n_features=n_features,
-                    use_idf=use_idf, use_hashing=use_hashing)
+    uuid = fe.setup(n_features=n_features, weighting=weighting, use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
     res2 = fe._load_features(uuid)
@@ -241,7 +233,7 @@ def test_remove_documents():
 def test_sampling_filenames():
     cache_dir = check_cache()
 
-    fe_pars = {'binary': True, 'norm': None, 'sublinear_tf': False}
+    fe_pars = {'weighting': 'bnn'}
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
     with pytest.warns(UserWarning):

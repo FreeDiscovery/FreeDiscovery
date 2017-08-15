@@ -18,7 +18,7 @@ from sklearn.pipeline import make_pipeline
 from ._version import __version__
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
-from .feature_weighting import SmartFeatureWeightingTransformer
+from .feature_weighting import FeatureWeightingTransformer, _validate_smart_notation
 from .ingestion import DocumentIndex
 from .preprocessing import processing_filters
 from .stop_words import _StopWordsWrapper
@@ -90,9 +90,9 @@ class FeatureVectorizer(object):
     """
 
     _PARS_SHORT = ['data_dir', 'n_samples', 'n_features',
-                   'n_jobs', 'chunk_size', 'norm',
+                   'n_jobs', 'chunk_size',
                    'analyzer', 'ngram_range', 'stop_words',
-                   'use_idf', 'sublinear_tf', 'binary', 'use_hashing',
+                   'weightings', 'use_hashing',
                    'creation_date']
 
     _wrapper_type = "vectorizer"
@@ -180,9 +180,8 @@ class FeatureVectorizer(object):
 
     def setup(self, n_features=None, chunk_size=5000, analyzer='word',
               ngram_range=(1, 1), stop_words=None, n_jobs=1,
-              use_idf=False, sublinear_tf=False,
-              binary=False, use_hashing=False,
-              norm='l2', min_df=0.0, max_df=1.0,
+              use_hashing=False,
+              weighting='nnc', min_df=0.0, max_df=1.0,
               parse_email_headers=False,
               preprocess=[]):
         """Initalize the features extraction.
@@ -224,14 +223,8 @@ class FeatureVectorizer(object):
         max_features : int or None, default=None or 100001
             If not None, build a vocabulary that only consider the top
             max_features ordered by term frequency across the corpus.
-        binary : boolean, default=False
-            If True, all non-zero term counts are set to 1. This does not mean
-            outputs will have only 0/1 values, only that the tf term in tf-idf
-            is binary. (Set idf and normalization to False to get 0/1 outputs.)
-        norm : 'l1', 'l2' or None, optional
-            Norm used to normalize term vectors. None for no normalization.
-        use_idf : boolean, default=True
-            Enable inverse-document-frequency reweighting.
+        weighting : str
+            SMART weighting type
         preprocess : list of strings, default: []
             A list of pre-processing steps, including 'emails_ingore_header'
         """
@@ -249,16 +242,17 @@ class FeatureVectorizer(object):
             raise WrongParameter('len(gram_range=={}!=2'
                                  .format(len(ngram_range)))
 
-        if norm != 'l2':
-            warnings.warn("the use of 'l2' norm is stronly advised;"
-                          "distance calculations"
-                          " may not be correct with other normalizations."
-                          " Currently norm={}".format(norm))
+        _, _, weighting_n = _validate_smart_notation(weighting)
+        if weighting_n == 'n':
+            warnings.warn('You should use either cosine or pivoted normalization '
+                          'i.e. weighting should be "**[cp]"',
+                          UserWarning)
+
         for key in preprocess:
             if key not in processing_filters:
                 raise WrongParameter(('Unknown preprocessing step {} '
                                       ' must of be of {}')
-                                      .format(key, ', '.join(list(processing_filters.keys()))))
+                                     .format(key, ', '.join(list(processing_filters.keys()))))
 
         if stop_words in [None, 'english', 'english_alphanumeric']:
             pass
@@ -283,10 +277,8 @@ class FeatureVectorizer(object):
                 'n_samples': None, "n_features": n_features,
                 'chunk_size': chunk_size, 'stop_words': stop_words,
                 'analyzer': analyzer, 'ngram_range': ngram_range,
-                'n_jobs': n_jobs, 'use_idf': use_idf,
-                'sublinear_tf': sublinear_tf,
-                'binary': binary, 'use_hashing': use_hashing,
-                'norm': norm, 'min_df': min_df, 'max_df': max_df,
+                'n_jobs': n_jobs, 'use_hashing': use_hashing,
+                'weighting': weighting, 'min_df': min_df, 'max_df': max_df,
                 'parse_email_headers': parse_email_headers,
                 'type': type(self).__name__,
                 'preprocess': preprocess,
@@ -490,13 +482,13 @@ class FeatureVectorizer(object):
                 self._vect = vect
             else:
                 opts_tfidf = {key: val for key, val in pars.items()
-                              if key in ['stop_words', 
+                              if key in ['stop_words',
                                          'ngram_range', 'analyzer',
                                          'min_df', 'max_df']}
 
                 vect = CountVectorizer(input='content',
-                                        max_features=pars['n_features'],
-                                        **opts_tfidf)
+                                       max_features=pars['n_features'],
+                                       **opts_tfidf)
                 text_gen = (_preprocess_stream(_read_file(fname), pars['preprocess'])
                             for fname in pars['filenames_abs'])
                 res = vect.fit_transform(text_gen)
@@ -508,8 +500,9 @@ class FeatureVectorizer(object):
                 # faster for pure python objects
                 with fname.open('wb') as fh:
                     pickle.dump(self._vect, fh)
-
-                res = normalize(res, norm=pars['norm'], copy=False)
+            fname = dsid_dir / 'weighting_transformer'
+            wt = FeatureWeightingTransformer(pars['weighting'])
+            res = wt.fit_transform(res)
 
             del self.pars_['filenames_abs']
 
