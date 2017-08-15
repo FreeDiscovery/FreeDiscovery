@@ -5,6 +5,7 @@ import numpy as np
 
 from sklearn.utils.validation import check_array
 from sklearn.preprocessing import normalize
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 def _document_frequency(X):
@@ -15,6 +16,9 @@ def _document_frequency(X):
         return np.bincount(X.indices, minlength=X.shape[1])
     else:
         return np.diff(sp.csc_matrix(X, copy=False).indptr)
+
+def _document_length(X):
+    return X.sum(axis=1)
 
 
 def _validate_smart_notation(scheme):
@@ -42,6 +46,20 @@ def _validate_smart_notation(scheme):
                     'is not yet implemented, must be one of nt')
                    .format(scheme_n))
     return scheme_t, scheme_d, scheme_n
+
+class SmartFeatureWeightingTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, weighting='nnc'):
+        _validate_smart_notation(weighting)
+        self.weighting = weighting
+        self._df = None
+        self._dl = None
+
+    def fit(self, X, y=None):
+        self._dl = _document_length(X)
+        scheme_t, scheme_d, scheme_n = 
+
+
+
 
 
 def smart_feature_weighting(tf, scheme, idf=None):

@@ -11,13 +11,14 @@ import pandas as pd
 import scipy.sparse
 from sklearn.externals import joblib
 from sklearn.externals.joblib import Parallel, delayed
-from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
 from sklearn.pipeline import make_pipeline
 
 from ._version import __version__
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
+from .feature_weighting import SmartFeatureWeightingTransformer
 from .ingestion import DocumentIndex
 from .preprocessing import processing_filters
 from .stop_words import _StopWordsWrapper
@@ -60,12 +61,9 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
 
     mslice = slice(k*chunk_size, min((k+1)*chunk_size, n_samples))
 
-    if pars['use_idf']:
-        pars['binary'] = False  # need to apply TFIDF weights first
-
     hash_opts = {key: vals for key, vals in pars.items()
                  if key in ['stop_words', 'n_features',
-                            'binary', 'analyser', 'ngram_range']}
+                            'analyser', 'ngram_range']}
     fe = HashingVectorizer(input='content', norm=None,
                            non_negative=True, **hash_opts)
     if pretend:
@@ -489,27 +487,20 @@ class FeatureVectorizer(object):
 
                 res = self._aggregate_features()
 
-                if pars['use_idf']:
-                    tfidf = TfidfTransformer(norm=pars['norm'], use_idf=True,
-                                             sublinear_tf=pars['sublinear_tf'])
-                    res = tfidf.fit_transform(res)
-                    vect = make_pipeline(vect, tfidf)
                 self._vect = vect
             else:
                 opts_tfidf = {key: val for key, val in pars.items()
-                              if key in ['stop_words', 'use_idf',
+                              if key in ['stop_words', 
                                          'ngram_range', 'analyzer',
-                                         'sublinear_tf',
                                          'min_df', 'max_df']}
 
-                tfidf = TfidfVectorizer(input='content',
+                vect = CountVectorizer(input='content',
                                         max_features=pars['n_features'],
-                                        norm=pars['norm'],
                                         **opts_tfidf)
                 text_gen = (_preprocess_stream(_read_file(fname), pars['preprocess'])
                             for fname in pars['filenames_abs'])
-                res = tfidf.fit_transform(text_gen)
-                self._vect = tfidf
+                res = vect.fit_transform(text_gen)
+                self._vect = vect
             fname = dsid_dir / 'vectorizer'
             if self._pars['use_hashing']:
                 joblib.dump(self._vect, str(fname))
@@ -518,13 +509,7 @@ class FeatureVectorizer(object):
                 with fname.open('wb') as fh:
                     pickle.dump(self._vect, fh)
 
-            if pars['norm'] is not None:
                 res = normalize(res, norm=pars['norm'], copy=False)
-            else:
-                # scale feature to [0, 1]
-                # this is necessary e.g. for SVM
-                # and does not hurt anyway
-                res /= res.max()
 
             del self.pars_['filenames_abs']
 
