@@ -55,7 +55,7 @@ def _validate_smart_notation(scheme):
     return scheme_t, scheme_d, scheme_n
 
 class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, weighting='nnc'):
+    def __init__(self, weighting='nnc', alpha=0.75, compute_df=False):
         """Apply document term weighting and normalization on the extracted
         text features
 
@@ -63,11 +63,16 @@ class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
           the SMART notation for document, term weighting and normalization.
           In the form [nlabL][ntp][ncb] , see
           https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
+        alpha : float
+          if weighting_n == 'p': the alpha parameter in the pivoted cosine normalization
+          if weighting_n == 'u': the alpha parameter in the pivoted unique normalization
         """
         _validate_smart_notation(weighting)
         self.weighting = weighting
-        self._df = None
-        self._dl = None
+        self.alpha = alpha
+        self.df_ = None
+        self.dl_ = None
+        self.du_ = None
 
     def fit(self, X, y=None):
         """Learn the document lenght and document frequency vector
@@ -79,10 +84,10 @@ class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
             a matrix of term/token counts
         """
         X = check_array(X, ['csr', 'csc', 'coo'])
-        self._dl = _document_length(X)
         scheme_t, scheme_d, scheme_n = _validate_smart_notation(self.weighting)
-        if scheme_d in 'tp':
-            self._df = _document_frequency(X)
+        self.dl_ = _document_length(X)
+        self.df_ = _document_frequency(X)
+        self.du_ = np.diff(X.indptr)
         self._n_features = X.shape[1]
         return self
 
@@ -98,12 +103,12 @@ class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
             operations.
         """
         X = check_array(X, ['csr', 'csc', 'coo'])
-        check_is_fitted(self, '_dl', 'vector is not fitted')
+        check_is_fitted(self, 'dl_', 'vector is not fitted')
         if X.shape[1] != self._n_features:
             raise ValueError(('Model fitted with n_features={} '
                               'but X.shape={}').format(self._n_features, X.shape))
 
-        return feature_weighting(X, self.weighting, self._df)
+        return feature_weighting(X, self.weighting, self.df_)
 
 
 def feature_weighting(tf, weighting, df=None, alpha=0.75):

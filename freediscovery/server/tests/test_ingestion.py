@@ -46,7 +46,7 @@ def test_get_feature_extraction_all(app):
                      'ngram_range': ['int'], 'stop_words': 'NoneType',
                      'n_jobs': 'int', 'chunk_size': 'int',
                      'data_dir': 'str', 'id': 'str', 'n_samples': 'int',
-                     'n_features': 'int', 'weighting': 'str',
+                     'n_features': 'int', 'weighting': 'str', 'pivot_alpha': 'float',
                      'use_hashing': 'bool'})
 
 
@@ -62,7 +62,8 @@ def test_get_feature_extraction(app, hashed, weighting):
                      'ngram_range': ['int'], 'stop_words': 'str',
                      'n_jobs': 'int', 'chunk_size': 'int',
                      'data_dir': 'str', 'n_samples': 'int',
-                     'n_features': 'int', 'weighting': 'str', 'use_hashing': 'bool',
+                     'n_features': 'int', 'weighting': 'str',
+                     'pivot_alpha': 'float', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int',
                      'preprocess': []}

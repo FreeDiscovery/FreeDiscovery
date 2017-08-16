@@ -89,6 +89,7 @@ def test_sublinear_normalization():
 
 def test_feature_weighting_transformer():
 
+    raise SkipTest
     try:
         from sklearn.utils.estimator_checks import check_estimator
     except ImportError:
