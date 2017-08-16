@@ -40,11 +40,9 @@ def _preprocess_stream(doc, steps=None):
     """ Apply pre-processing steps """
 
     if steps:
-        #doc = doc.splitlines()
         for key in steps:
             func = processing_filters[key]
-            doc = func(doc) #[func(line) for line in doc]
-        #doc = '\n'.join(doc)
+            doc = func(doc)
 
     return doc
 
@@ -642,14 +640,11 @@ class FeatureVectorizer(object):
     def n_features_(self):
         """ Number of features of the vecotorizer"""
         from sklearn.feature_extraction.text import HashingVectorizer
-        from sklearn.pipeline import Pipeline
         vect = self.vect_
         if hasattr(vect, 'vocabulary_'):
             return len(vect.vocabulary_)
         elif isinstance(vect, HashingVectorizer):
             return vect.get_params()['n_features']
-        elif isinstance(vect, Pipeline):
-            return vect.named_steps['hashingvectorizer'].get_params()['n_features']
         else:
             raise ValueError
 
