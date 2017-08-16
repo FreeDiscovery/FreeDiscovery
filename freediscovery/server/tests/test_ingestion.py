@@ -42,7 +42,6 @@ def test_get_feature_extraction_all(app):
     method = V01 + "/feature-extraction/"
     data = app.get_check(method)
     for row in data:
-        del row['norm']
         assert sdict_keys(row) == sdict_keys({'analyzer': 'str',
                      'ngram_range': ['int'], 'stop_words': 'NoneType',
                      'n_jobs': 'int', 'chunk_size': 'int',
@@ -63,8 +62,7 @@ def test_get_feature_extraction(app, hashed, weighting):
                      'ngram_range': ['int'], 'stop_words': 'str',
                      'n_jobs': 'int', 'chunk_size': 'int',
                      'data_dir': 'str', 'n_samples': 'int',
-                     'n_features': 'int',
-                     'weighting': 'str', 'use_hashing': 'bool',
+                     'n_features': 'int', 'weighting': 'str', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int',
                      'preprocess': []}
@@ -74,6 +72,7 @@ def test_get_feature_extraction(app, hashed, weighting):
 
     vect = joblib.load(os.path.join(CACHE_DIR, 'ediscovery_cache', dsid, 'vectorizer'))
     assert (data['use_hashing'] is True) == ('hashing' in type(vect).__name__.lower())
+
 
 @pytest.mark.parametrize('hashed', [True])
 def test_stop_words_integration(app, hashed):

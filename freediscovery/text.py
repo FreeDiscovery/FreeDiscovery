@@ -90,7 +90,7 @@ class FeatureVectorizer(object):
     _PARS_SHORT = ['data_dir', 'n_samples', 'n_features',
                    'n_jobs', 'chunk_size',
                    'analyzer', 'ngram_range', 'stop_words',
-                   'weightings', 'use_hashing',
+                   'weighting', 'use_hashing',
                    'creation_date']
 
     _wrapper_type = "vectorizer"
