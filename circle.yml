@@ -5,6 +5,9 @@ machine:
 # adapted from https://github.com/scikit-learn/scikit-learn/blob/master/circle.yml
 # conda setup inspired by https://github.com/nilearn/nilearn/pull/1037
 dependencies:
+  cache:
+    - "~/.cache/pip/"
+    - "~/scikit_learn_data"
 
   pre:
     # Get rid of existing virtualenvs on circle ci as they conflict with conda.
