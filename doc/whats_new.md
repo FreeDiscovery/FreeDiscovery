@@ -1,5 +1,18 @@
 # Release history
 
+## Version 1.3.0
+
+**In developpement**
+
+### New features
+
+
+### Enhancements
+
+
+### API Changes
+ * In `POST /api/v0/feature-extraction` parameters `binary`, `use_idf` and  `sublinear_tf` are replaced by a single parameters `weighting` that defines term document weighting and normalization using the [SMART notation](https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System)  ([#164](https://github.com/FreeDiscovery/FreeDiscovery/pull/164/files))
+
 ## Version 1.2.0
 
 **Jul 10, 2017**

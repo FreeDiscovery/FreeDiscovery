@@ -42,41 +42,37 @@ def test_get_feature_extraction_all(app):
     method = V01 + "/feature-extraction/"
     data = app.get_check(method)
     for row in data:
-        del row['norm']
         assert sdict_keys(row) == sdict_keys({'analyzer': 'str',
                      'ngram_range': ['int'], 'stop_words': 'NoneType',
                      'n_jobs': 'int', 'chunk_size': 'int',
                      'data_dir': 'str', 'id': 'str', 'n_samples': 'int',
-                     'n_features': 'int', 'use_idf': 'bool',
-                     'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool'})
+                     'n_features': 'int', 'weighting': 'str',
+                     'use_hashing': 'bool'})
 
 
-@pytest.mark.parametrize('hashed, use_idf', [(True, False),
-                                             (False, True),
-                                             (False, False),
-                                             (True, True)])
-def test_get_feature_extraction(app, hashed, use_idf):
-    dsid, _, _ = get_features_cached(app, hashed=hashed)
+@pytest.mark.parametrize('hashed, weighting', [(True, 'nnc'),
+                                             (False, 'ntc'),
+                                             (False, 'nnc'),
+                                             (True, 'ntc')])
+def test_get_feature_extraction(app, hashed, weighting):
+    dsid, _, _ = get_features_cached(app, hashed=hashed, weighting=weighting)
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)
     assert dict2type(data, collapse_lists=True) == {'analyzer': 'str',
                      'ngram_range': ['int'], 'stop_words': 'str',
-                     'n_jobs': 'int', 'chunk_size': 'int', 'norm': 'str',
+                     'n_jobs': 'int', 'chunk_size': 'int',
                      'data_dir': 'str', 'n_samples': 'int',
-                     'n_features': 'int', 'use_idf': 'bool',
-                     'binary': 'bool', 'sublinear_tf': 'bool', 'use_hashing': 'bool',
+                     'n_features': 'int', 'weighting': 'str', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int',
                      'preprocess': []}
 
     assert data['use_hashing'] == hashed
-    assert data['sublinear_tf'] == False
-    assert data['use_idf'] == False
+    assert data['weighting'] == weighting
+
     vect = joblib.load(os.path.join(CACHE_DIR, 'ediscovery_cache', dsid, 'vectorizer'))
-    pars = vect.get_params()
-    assert (data['use_hashing'] == True) == ('hashing' in type(vect).__name__.lower())
-    if not hashed:
-        assert data['sublinear_tf'] == pars['sublinear_tf']
+    assert (data['use_hashing'] is True) == ('hashing' in type(vect).__name__.lower())
+
 
 @pytest.mark.parametrize('hashed', [True])
 def test_stop_words_integration(app, hashed):

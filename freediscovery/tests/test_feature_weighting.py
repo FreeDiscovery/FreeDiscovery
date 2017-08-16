@@ -1,12 +1,13 @@
 
 from itertools import product
+from unittest import SkipTest
 
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
-from freediscovery.feature_weighting import smart_feature_weighting
+from freediscovery.feature_weighting import feature_weighting, FeatureWeightingTransformer
 
 documents = ["Shipment of gold damaged in aa fire.",
              "Delivery of silver arrived in aa silver truck.",
@@ -19,7 +20,7 @@ documents = ["Shipment of gold damaged in aa fire.",
 def test_smart_feature_weighting(scheme):
     tf = CountVectorizer().fit_transform(documents)
 
-    X = smart_feature_weighting(tf, scheme)
+    X = feature_weighting(tf, scheme)
 
     X_ref = None
     if scheme == 'nnn':
@@ -37,3 +38,12 @@ def test_smart_feature_weighting(scheme):
 
     if X_ref is not None:
         assert_allclose(X.A, X_ref.A)
+
+
+def test_feature_weighting_transformer():
+
+    try:
+        from sklearn.utils.estimator_checks import check_estimator
+    except ImportError:
+        raise SkipTest
+    check_estimator(FeatureWeightingTransformer)

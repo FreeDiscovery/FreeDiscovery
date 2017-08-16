@@ -35,7 +35,7 @@ data_dir = input_ds['metadata']['data_dir']
 print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-fe_opts = {'use_idf': 1,  # this is required to compute cluster labels (for now)
+fe_opts = {'weighting': 'ntc',  # this is required to compute cluster labels (for now)
            'n_features': 30001,
            'min_df': 4, 'max_df': 0.75
            }

@@ -117,19 +117,17 @@ class FeaturesApi(Resource):
              - `stop_words`: "english" or "None" Remove stop words from the resulting tokens. Only applies for the "word" analyzer.  If "english", a built-in stop word list for English is used. ( default: "english")
              - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
              - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
-             - `binary`: If set to 1, all non zero counts are set to 1. (default: False)
-             - `use_idf`: Enable inverse-document-frequency reweighting (default: False).
-             - `sublinear_tf`: Apply sublinear tf scaling, i.e. replace tf with 1 + log(tf) (default: False).
+             - `weighting`: the SMART notation for document term weighting and normalization.  In the form [nlabL][ntp][ncb] , see https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
+
              - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True)
              - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
              - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
              - `preprocess`: a list of pre-processing steps to apply before vectorization. A subset of ['emails_ignore_header'], default: [].
             """))
-    @use_args(FeaturesParsSchema(strict=True, exclude=('norm', 'data_dir')))
+    @use_args(FeaturesParsSchema(strict=True, exclude=('data_dir')))
     @marshal_with(IDSchema())
     def post(self, **args):
-        args['use_idf'] = args['use_idf'] > 0
         if args['use_hashing']:
             for key in ['min_df', 'max_df']:
                 if key in args:
@@ -349,7 +347,7 @@ class ModelsApi(Resource):
     @doc(description=dedent("""
            Build the categorization ML model
 
-           The option `use_hashing=True` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=True` must be set for the feature extraction. Recommended options also include, `weighting="ntc"`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -566,7 +564,7 @@ class KmeanClusteringApi(Resource):
     @doc(description=dedent("""
            Compute K-mean clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for feature extraction include, `use_idf=0, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for feature extraction include, `weighting="ntc"`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -595,7 +593,7 @@ class BirchClusteringApi(Resource):
     @doc(description=dedent("""
            Compute birch clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `use_idf=0, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `ntc`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -642,7 +640,7 @@ class DBSCANClusteringApi(Resource):
     @doc(description=dedent("""
            Compute clustering (DBSCAN)
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for the data ingestion also include, `use_idf=0, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for the data ingestion also include, `weighting="ntc"`.
 
            **Parameters**
              - `parent_id`: `dataset_id` or `lsi_id`

@@ -33,7 +33,7 @@ print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
 fe_opts = {'max_df': 0.6,  # filter out (too)/(un)frequent words
-           'use_idf': True,
+           'weighting': "ntc",
            }
 res = requests.post(url, json=fe_opts).json()
 
