@@ -53,9 +53,13 @@ def test_get_feature_extraction_all(app):
 @pytest.mark.parametrize('hashed, weighting', [(True, 'nnc'),
                                              (False, 'ntc'),
                                              (False, 'nnc'),
-                                             (True, 'ntc')])
+                                             (True, 'ntc'),
+                                             (False, 'lnp'),
+                                             (False, 'lnu')])
 def test_get_feature_extraction(app, hashed, weighting):
-    dsid, _, _ = get_features_cached(app, hashed=hashed, weighting=weighting)
+    pivot_alpha = 0.5
+    dsid, _, _ = get_features_cached(app, hashed=hashed, weighting=weighting,
+                                     pivot_alpha=0.5)
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)
     assert dict2type(data, collapse_lists=True) == {'analyzer': 'str',
@@ -70,6 +74,7 @@ def test_get_feature_extraction(app, hashed, weighting):
 
     assert data['use_hashing'] == hashed
     assert data['weighting'] == weighting
+    assert data['pivot_alpha'] == pivot_alpha
 
     vect = joblib.load(os.path.join(CACHE_DIR, 'ediscovery_cache', dsid, 'vectorizer'))
     assert (data['use_hashing'] is True) == ('hashing' in type(vect).__name__.lower())
