@@ -46,29 +46,35 @@ def test_get_feature_extraction_all(app):
                      'ngram_range': ['int'], 'stop_words': 'NoneType',
                      'n_jobs': 'int', 'chunk_size': 'int',
                      'data_dir': 'str', 'id': 'str', 'n_samples': 'int',
-                     'n_features': 'int', 'weighting': 'str',
+                     'n_features': 'int', 'weighting': 'str', 'pivot_alpha': 'float',
                      'use_hashing': 'bool'})
 
 
 @pytest.mark.parametrize('hashed, weighting', [(True, 'nnc'),
                                              (False, 'ntc'),
                                              (False, 'nnc'),
-                                             (True, 'ntc')])
+                                             (True, 'ntc'),
+                                             (False, 'lnp'),
+                                             (False, 'lnu')])
 def test_get_feature_extraction(app, hashed, weighting):
-    dsid, _, _ = get_features_cached(app, hashed=hashed, weighting=weighting)
+    pivot_alpha = 0.5
+    dsid, _, _ = get_features_cached(app, hashed=hashed, weighting=weighting,
+                                     pivot_alpha=0.5)
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)
     assert dict2type(data, collapse_lists=True) == {'analyzer': 'str',
                      'ngram_range': ['int'], 'stop_words': 'str',
                      'n_jobs': 'int', 'chunk_size': 'int',
                      'data_dir': 'str', 'n_samples': 'int',
-                     'n_features': 'int', 'weighting': 'str', 'use_hashing': 'bool',
+                     'n_features': 'int', 'weighting': 'str',
+                     'pivot_alpha': 'float', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int',
                      'preprocess': []}
 
     assert data['use_hashing'] == hashed
     assert data['weighting'] == weighting
+    assert data['pivot_alpha'] == pivot_alpha
 
     vect = joblib.load(os.path.join(CACHE_DIR, 'ediscovery_cache', dsid, 'vectorizer'))
     assert (data['use_hashing'] is True) == ('hashing' in type(vect).__name__.lower())

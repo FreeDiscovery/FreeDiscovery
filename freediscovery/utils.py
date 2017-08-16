@@ -152,6 +152,15 @@ def sdict_keys(x):
     return list(sorted(x.keys()))
 
 
+def _mean_csr_nonzero_axis1(X):
+    """ Compute the mean of non zero elements a csr array along axis=1
+    """
+
+    sums = X.sum(axis=1).A1
+    counts = np.diff(X.indptr)
+    return sums / counts
+
+
 def _paginate(df, batch_id, batch_size):
     """ Given a dataframe df, return a batch of rows
     specified by `batch_id` and `batch_size`
