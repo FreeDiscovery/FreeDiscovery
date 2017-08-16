@@ -7,6 +7,9 @@ from sklearn.utils.validation import check_array
 from sklearn.preprocessing import normalize
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.sparsefuncs_fast import csr_row_norms
+from sklearn.exceptions import DataConversionWarning
+from sklearn.utils.testing import ignore_warnings
 
 
 def _document_frequency(X):
@@ -38,11 +41,11 @@ def _validate_smart_notation(scheme):
         raise ValueError(('Document frequency weighting {}'
                           'not supported, must be one of ntp')
                          .format(scheme_d))
-    if scheme_n not in 'ncbu':
+    if scheme_n not in 'ncbpu':
         raise ValueError(('Document normalization {}'
-                          'not supported, must be one of ncbu')
+                          'not supported, must be one of ncbpu')
                          .format(scheme_n))
-    if scheme_n not in 'nc':
+    if scheme_n not in 'ncpu':
         raise NotImplementedError(
                    ('Document normalization {}'
                     'is not yet implemented, must be one of nt')
@@ -101,7 +104,7 @@ class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
         return feature_weighting(X, self.weighting, self._df)
 
 
-def feature_weighting(tf, weighting, df=None):
+def feature_weighting(tf, weighting, df=None, alpha=0.75):
     """
     Weight a vector space model following the SMART notation.
 
@@ -121,6 +124,10 @@ def feature_weighting(tf, weighting, df=None):
       precomputed inverse document frequency matrix (n_samples,).
       If not provided, it will be recomputed if necessary.
 
+    alpha : float
+      if weighting_n == 'p': the alpha parameter in the pivoted cosine normalization
+      if weighting_n == 'u': the alpha parameter in the pivoted unique normalization
+
     Returns
     -------
 
@@ -133,11 +140,16 @@ def feature_weighting(tf, weighting, df=None):
     1. Manning, Christopher D.; Raghavan, Prabhakar; Schütze, Hinrich (2008),
        `"Document and query weighting schemes"
        <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_
+    2. Singhal, Amit, Chris Buckley, and Manclar Mitra. "Pivoted document length normalization."
+       ACM Press, 1996
     """
 
     tf = check_array(tf, ['csr', 'csc', 'coo'])
     if df is not None:
         df = check_array(df, ensure_2d=False)
+
+    if not 0 <= alpha <= 1:
+        raise ValueError('alpha={} not in [0, 1]'.format(alpha))
 
     n_samples, n_features = tf.shape
 
@@ -190,7 +202,22 @@ def feature_weighting(tf, weighting, df=None):
     if scheme_n == 'n':
         pass
     elif scheme_n == 'c':
-        X = normalize(X, norm="l2", copy=False)
+        with ignore_warnings(category=DataConversionWarning):
+            X = normalize(X, norm="l2", copy=False)
+    elif scheme_n in 'pu':
+        if scheme_n == 'p':
+            X_norm = np.sqrt(csr_row_norms(X))
+        elif scheme_n == 'u':
+            X_norm = np.squeeze(np.asarray(X.astype('bool').sum(axis=1)))
+        print(' ')
+        #print(X.A)
+        print(X_norm)
+
+        X_norm_mean = X_norm.mean()
+        pivoted_norm = X_norm*(1 - alpha)*X_norm_mean + alpha*X_norm
+        _diag_pivoted_norm = sp.spdiags(1./pivoted_norm, diags=0, m=n_samples,
+                                        n=n_samples, format='csr')
+        X = _diag_pivoted_norm.dot(X)
     else:
         raise ValueError
     return X
