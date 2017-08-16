@@ -2,12 +2,14 @@
 from itertools import product
 from unittest import SkipTest
 
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_less
-import pytest
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.utils.sparsefuncs_fast import csr_row_norms
 
 from freediscovery.feature_weighting import feature_weighting, FeatureWeightingTransformer
+from freediscovery.feature_weighting import _validate_smart_notation
 
 documents = ["Shipment of gold damaged in aa fire.",
              "Delivery of silver arrived in aa silver truck.",
@@ -28,13 +30,19 @@ def test_smart_feature_weighting(scheme, array_type):
         raise SkipTest
     else:
         raise ValueError
-    print(' ')
-    print(np.squeeze(np.asarray(tf.sum(axis=1))))
     X = feature_weighting(tf, scheme)
-    print(np.squeeze(np.asarray(X.sum(axis=1))))
 
-    #assert_array_less(np., X.A)
-    assert (X.A >= 0).all()
+
+    _, scheme_d, _ = _validate_smart_notation(scheme)
+
+    if scheme_d != 'p':
+        # the resulting document term matrix should be positive
+        # (unless we use probabilistic idf weighting)
+        assert (X.A >= 0).all()
+
+    # norm cannot be zero
+    X_norm = csr_row_norms(X)
+    assert (X_norm > 0).all()
 
     X_ref = None
     if scheme == 'nnn':

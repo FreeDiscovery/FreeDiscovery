@@ -11,6 +11,8 @@ from sklearn.utils.sparsefuncs_fast import csr_row_norms
 from sklearn.exceptions import DataConversionWarning
 from sklearn.utils.testing import ignore_warnings
 
+from .utils import _mean_csr_nonzero_axis1
+
 
 def _document_frequency(X):
     """Count the number of non-zero values for each feature in sparse X.
@@ -144,7 +146,7 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
        ACM Press, 1996
     """
 
-    tf = check_array(tf, ['csr', 'csc', 'coo'])
+    tf = check_array(tf, ['csr'])
     if df is not None:
         df = check_array(df, ensure_2d=False)
 
@@ -171,8 +173,9 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
     elif scheme_t == 'b':
         X.data = tf.data.astype('bool').astype('int')
     elif scheme_t == 'L':
-        mean_tf = 1. / (1 + np.log(np.squeeze(tf.mean(axis=1).A)))
-        _mean_tf_diag = sp.spdiags(mean_tf, diags=0, m=n_samples,
+        mean_tf = _mean_csr_nonzero_axis1(tf)
+        mean_tf = (1 + np.log(mean_tf))
+        _mean_tf_diag = sp.spdiags(1./mean_tf, diags=0, m=n_samples,
                                    n=n_samples, format='csr')
 
         X.data = (1 + np.log(tf.data))
@@ -192,10 +195,10 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
                 warnings.filterwarnings("ignore",
                                         message="divide by zero encountered in log",
                                         category=RuntimeWarning)
-                idf = np.fmax(0, np.log((float(n_samples) - df)/df))
+                idf = np.log((float(n_samples) - df)/df)
         _idf_diag = sp.spdiags(idf, diags=0, m=n_features,
                                n=n_features, format='csr')
-        X = X * _idf_diag
+        X = X.dot(_idf_diag)
     else:
         raise ValueError
 
@@ -208,10 +211,7 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
         if scheme_n == 'p':
             X_norm = np.sqrt(csr_row_norms(X))
         elif scheme_n == 'u':
-            X_norm = np.squeeze(np.asarray(X.astype('bool').sum(axis=1)))
-        print(' ')
-        #print(X.A)
-        print(X_norm)
+            X_norm = np.diff(X.indptr)
 
         X_norm_mean = X_norm.mean()
         pivoted_norm = X_norm*(1 - alpha)*X_norm_mean + alpha*X_norm
