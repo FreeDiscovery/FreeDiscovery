@@ -113,7 +113,7 @@ def feature_weighting(tf, weighting, df=None):
       the term frequency matrix (n_documents, n_features)
 
     weighting : str
-      the SMART notation for document, term weighting and normalization.
+      the SMART notation for document term weighting and normalization.
       In the form [nlabL][ntp][ncb] , see
       https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
 
