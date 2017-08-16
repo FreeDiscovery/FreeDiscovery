@@ -347,7 +347,7 @@ class ModelsApi(Resource):
     @doc(description=dedent("""
            Build the categorization ML model
 
-           The option `use_hashing=True` must be set for the feature extraction. Recommended options also include, `use_idf=1, sublinear_tf=0, binary=0`.
+           The option `use_hashing=True` must be set for the feature extraction. Recommended options also include, `weighting="ntc"`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -564,7 +564,7 @@ class KmeanClusteringApi(Resource):
     @doc(description=dedent("""
            Compute K-mean clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for feature extraction include, `use_idf=0, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for feature extraction include, `weighting="ntc"`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -593,7 +593,7 @@ class BirchClusteringApi(Resource):
     @doc(description=dedent("""
            Compute birch clustering
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `use_idf=0, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for data ingestion also include, `ntc`.
 
            **Parameters**
             - `parent_id`: `dataset_id` or `lsi_id`
@@ -640,7 +640,7 @@ class DBSCANClusteringApi(Resource):
     @doc(description=dedent("""
            Compute clustering (DBSCAN)
 
-           The option `use_hashing=False` must be set for the feature extraction. Recommended options for the data ingestion also include, `use_idf=0, sublinear_tf=0, binary=0`.
+           The option `use_hashing=False` must be set for the feature extraction. Recommended options for the data ingestion also include, `weighting="ntc"`.
 
            **Parameters**
              - `parent_id`: `dataset_id` or `lsi_id`
