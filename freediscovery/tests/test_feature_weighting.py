@@ -19,8 +19,10 @@ documents = ["Shipment of gold damaged in aa fire.",
 
 
 @pytest.mark.parametrize('scheme, array_type', product(("".join(el)
-                                    for el in product('nlabL', 'ntp', 'ncpu')),
-                                    ['sparse']))
+                            for el in product('nlabL', 'ntsp',
+                                              ['n', 'c', 'l', 'u',
+                                               'cp', 'lp', 'up'])),
+                        ['sparse']))
 def test_smart_feature_weighting(scheme, array_type):
     tf = CountVectorizer().fit_transform(documents)
     if array_type == 'sparse':
@@ -62,14 +64,29 @@ def test_smart_feature_weighting(scheme, array_type):
         assert_allclose(X.A, X_ref.A)
 
 
-@pytest.mark.parametrize('weighting', ['nnp', 'nnu'])
+# all division by zeros should be explicitly handled
+@pytest.mark.parametrize('scheme, array_type', product(("".join(el)
+                         for el in product('nlabL', 'ntsp',
+                                          ['n', 'c', 'l', 'u',
+                                           'cp', 'lp', 'up'])),
+                        ['sparse']))
+@pytest.mark.filterwarnings('error')
+def test_feature_weighting_empty_document(scheme, array_type):
+    documents_new = documents + ['']
+    tf = CountVectorizer().fit_transform(documents_new)
+    # check that all weightings preserve zeros rows (with no tokens)
+    X = feature_weighting(tf, scheme)
+    assert_allclose(X.A[-1], np.zeros(tf.shape[1]))
+
+
+@pytest.mark.parametrize('weighting', ['nncp', 'nnup'])
 def test_pivoted_normalization(weighting):
     tf = CountVectorizer().fit_transform(documents)
     X_ref = feature_weighting(tf, 'nnc')
-    if weighting == 'nnp':
+    if weighting == 'nncp':
         # pivoted cosine normalization == cosine normalization
         # when alpha == 1.0
-        X = feature_weighting(tf, 'nnp', alpha=1.0)
+        X = feature_weighting(tf, 'nncp', alpha=1.0)
         assert_allclose(X.A, X_ref.A)
     X = feature_weighting(tf, weighting, alpha=0.75)
     # shorter documents (last one) gets normalized by a larger value
