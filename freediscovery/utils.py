@@ -158,6 +158,8 @@ def _mean_csr_nonzero_axis1(X):
 
     sums = X.sum(axis=1).A1
     counts = np.diff(X.indptr)
+    # prevent 0 / 0 division (which should yield 0 here)
+    counts[counts == 0] = 1
     return sums / counts
 
 

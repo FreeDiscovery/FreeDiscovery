@@ -54,8 +54,8 @@ def test_get_feature_extraction_all(app):
                                              (False, 'ntc'),
                                              (False, 'nnc'),
                                              (True, 'ntc'),
-                                             (False, 'lnp'),
-                                             (False, 'lnu')])
+                                             (False, 'lncp'),
+                                             (False, 'lnup')])
 def test_get_feature_extraction(app, hashed, weighting):
     pivot_alpha = 0.5
     dsid, _, _ = get_features_cached(app, hashed=hashed, weighting=weighting,

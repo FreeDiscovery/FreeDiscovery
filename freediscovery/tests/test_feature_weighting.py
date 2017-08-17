@@ -64,6 +64,21 @@ def test_smart_feature_weighting(scheme, array_type):
         assert_allclose(X.A, X_ref.A)
 
 
+# all division by zeros should be explicitly handled
+@pytest.mark.parametrize('scheme, array_type', product(("".join(el)
+                         for el in product('nlabL', 'ntsp',
+                                          ['n', 'c', 'l', 'u',
+                                           'cp', 'lp', 'up'])),
+                        ['sparse']))
+@pytest.mark.filterwarnings('error')
+def test_feature_weighting_empty_document(scheme, array_type):
+    documents_new = documents + ['']
+    tf = CountVectorizer().fit_transform(documents_new)
+    # check that all weightings preserve zeros rows (with no tokens)
+    X = feature_weighting(tf, scheme)
+    assert_allclose(X.A[-1], np.zeros(tf.shape[1]))
+
+
 @pytest.mark.parametrize('weighting', ['nncp', 'nnup'])
 def test_pivoted_normalization(weighting):
     tf = CountVectorizer().fit_transform(documents)

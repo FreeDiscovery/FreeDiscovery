@@ -174,8 +174,11 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
     elif scheme_t == 'l':
         X.data = 1 + np.log(tf.data)
     elif scheme_t == 'a':
-        max_tf = 1. / np.squeeze(tf.max(axis=1).A)
-        _max_tf_diag = sp.spdiags(max_tf, diags=0, m=n_samples,
+        max_tf = np.squeeze(tf.max(axis=1).A)
+        # if max_tf is zero, the tf are going to be all zero anyway
+        # so we set it to 1 in order to prevent overflows
+        max_tf[max_tf == 0] = 1
+        _max_tf_diag = sp.spdiags(1. / max_tf, diags=0, m=n_samples,
                                   n=n_samples, format='csr')
         X = 0.5 * _max_tf_diag.dot(tf)
         X.data += 0.5
@@ -184,6 +187,9 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
         X.data = tf.data.astype('bool').astype('int')
     elif scheme_t == 'L':
         mean_tf = _mean_csr_nonzero_axis1(tf)
+        # if mean_tf is zero, the tf are going to be all zero anyway
+        # so we set it to 1 in order to prevent overflows
+        mean_tf[mean_tf == 0] = 1.0
         mean_tf = (1 + np.log(mean_tf))
         _mean_tf_diag = sp.spdiags(1./mean_tf, diags=0, m=n_samples,
                                    n=n_samples, format='csr')
@@ -224,6 +230,8 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
             X = normalize(X, norm="l1", copy=False)
     elif scheme_n == 'u':
         X_norm = np.diff(X.indptr)
+        X_norm[X_norm == 0] = 1.
+        # empty documents (with a zero norm) don't need to be normalized
         _diag_norm = sp.spdiags(1./X_norm, diags=0, m=n_samples,
                                 n=n_samples, format='csr')
         X = _diag_norm.dot(X)
@@ -239,6 +247,10 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
             X_norm = np.diff(X.indptr)
 
         X_norm_mean = X_norm.mean()
+
+        # empty documents (with a zero norm) don't need to be normalized
+        X_norm[X_norm == 0] = 1.
+
         pivoted_norm = X_norm*(1 - alpha)*X_norm_mean + alpha*X_norm
         _diag_pivoted_norm = sp.spdiags(1./pivoted_norm, diags=0, m=n_samples,
                                         n=n_samples, format='csr')

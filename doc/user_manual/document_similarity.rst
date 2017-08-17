@@ -6,7 +6,7 @@ A number of algorithms in FreeDiscovery require computing similarity between doc
 
 1. TF-IDF weighting schemes
 ---------------------------
-FreeDiscovery supports a large range of TF-IDF weighting schemes via the `weighting="xxx"` parameter, that follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
+FreeDiscovery supports a large range of TF-IDF weighting schemes via the `weighting="xxxx"` parameter, that follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
 
   .. image:: ../_static/tf_idf_weighting.svg 
 
@@ -46,14 +46,3 @@ To illustrate the difference between these metrics on a more practical example, 
 - document ``B`` consisting of words ``"legal documents"``
 
 
-A more detailed description of different metrics can be found below,
-
-- ``cosine`` metric computes to the `cosine similarity score <https://en.wikipedia.org/wiki/Cosine_similarity>`_. This metric is always internally used by FreeDiscovery. For vectorized documents with positive term frequencies the cosine similarity is in the ``[0, 1]`` range, however in general (in the LSI space and with hashed feature extraction) the domain of definition is ``[-1, 1]``. ``cosine_similarity(A, B) = 0.71``.
-
-  .. math:: S_jaccard = \frac{S_{cosine]}{2 - S_{cosine}}
-   
-
-  .. image:: ../_static/cosine_similarity_scaling.svg
-
-  For positive vectors, the results are in the ``[0, 1]`` range, or in general in the ``[-1/3, 1]`` range. ``jaccard_similarity(A, B) = 0.54``.
-  **Note:** the exact jaccard similarity in this case is ``0.5``. 
