@@ -30,27 +30,32 @@ def _document_length(X):
 
 def _validate_smart_notation(scheme):
 
-    if not isinstance(scheme, str) or len(scheme) != 3:
-        raise ValueError('Expected a 3 character long string for scheme, '
+    if not isinstance(scheme, str) or len(scheme) not in [3, 4]:
+        raise ValueError('Expected a 3 or 4 character long string for scheme, '
                          'got {}'.format(scheme))
 
-    scheme_t, scheme_d, scheme_n = scheme
+    if len(scheme) == 3:
+        scheme_t, scheme_d, scheme_n = scheme
+    elif len(scheme) == 4:
+        scheme_t, scheme_d, scheme_n1, scheme_n2 = scheme
+        scheme_n = ''.join([scheme_n1, scheme_n2])
+
     if scheme_t not in 'nlabL':
         raise ValueError(('Term frequency weighting {}'
                           'not supported, must be one of nlabL')
                          .format(scheme_t))
-    if scheme_d not in 'ntp':
+    if scheme_d not in 'ntsp':
         raise ValueError(('Document frequency weighting {}'
                           'not supported, must be one of ntp')
                          .format(scheme_d))
-    if scheme_n not in 'ncbpu':
-        raise ValueError(('Document normalization {}'
-                          'not supported, must be one of ncbpu')
+    if scheme_n not in ['n', 'c', 'l', 'u', 'cp', 'lp', 'up', 'b']:
+        raise ValueError(('Document normalization {} '
+                          'not supported, must be of the form [nclub][p]?')
                          .format(scheme_n))
-    if scheme_n not in 'ncpu':
+    if scheme_n not in ['n', 'c', 'l', 'u', 'cp', 'lp', 'up', ]:
         raise NotImplementedError(
                    ('Document normalization {}'
-                    'is not yet implemented, must be one of nt')
+                    'is not yet implemented, must be of the form [nclu][p]?')
                    .format(scheme_n))
     return scheme_t, scheme_d, scheme_n
 
@@ -190,11 +195,13 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
 
     if scheme_d == 'n':
         pass
-    elif scheme_d in 'tp':
+    elif scheme_d in 'tps':
         if df is None:
             df = _document_frequency(tf)
         if scheme_d == 't':
             idf = np.log(float(n_samples) / df) + 1.0
+        elif scheme_d == 's':
+            idf = np.log(float(n_samples + 1) / (df + 1)) + 1.0
         elif scheme_d == 'p':
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore",
@@ -212,10 +219,23 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
     elif scheme_n == 'c':
         with ignore_warnings(category=DataConversionWarning):
             X = normalize(X, norm="l2", copy=False)
-    elif scheme_n in 'pu':
-        if scheme_n == 'p':
+    elif scheme_n == 'l':
+        with ignore_warnings(category=DataConversionWarning):
+            X = normalize(X, norm="l1", copy=False)
+    elif scheme_n == 'u':
+        X_norm = np.diff(X.indptr)
+        _diag_norm = sp.spdiags(1./X_norm, diags=0, m=n_samples,
+                                n=n_samples, format='csr')
+        X = _diag_norm.dot(X)
+    elif scheme_n in ['cp', 'lp', 'up']:
+        if scheme_n == 'cp':
             X_norm = np.sqrt(csr_row_norms(X))
-        elif scheme_n == 'u':
+        elif scheme_n == 'lp':
+            X_data = X.data.copy()
+            X.data = np.abs(X.data)
+            X_norm = np.squeeze(X.sum(axis=1).A)
+            X.data = X_data
+        elif scheme_n == 'up':
             X_norm = np.diff(X.indptr)
 
         X_norm_mean = X_norm.mean()
