@@ -4,11 +4,11 @@ from unittest import SkipTest
 
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_less
+from numpy.testing import assert_allclose
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.utils.sparsefuncs_fast import csr_row_norms
 
-from freediscovery.feature_weighting import feature_weighting, FeatureWeightingTransformer
+from freediscovery.feature_weighting import _smart_tfidf, SmartTfidfTransformer
 from freediscovery.feature_weighting import _validate_smart_notation
 
 documents = ["Shipment of gold damaged in aa fire.",
@@ -18,25 +18,59 @@ documents = ["Shipment of gold damaged in aa fire.",
              ]
 
 
+# all division by zeros should be explicitly handled
 @pytest.mark.parametrize('scheme, array_type', product(("".join(el)
-                            for el in product('nlabL', 'ntsp',
-                                              ['n', 'c', 'l', 'u',
-                                               'cp', 'lp', 'up'])),
+                         for el in product('nlabL', 'ntsp',
+                                          ['n', 'c', 'l', 'u',
+                                           'cp', 'lp', 'up'])),
                         ['sparse']))
-def test_smart_feature_weighting(scheme, array_type):
+@pytest.mark.filterwarnings('error')
+def test_feature_weighting_empty_document(scheme, array_type):
+    documents_new = documents + ['']
+    tf = CountVectorizer().fit_transform(documents_new)
+    # check that all weightings preserve zeros rows (with no tokens)
+    # and that no overflow warnings are raised
+    X = _smart_tfidf(tf, scheme)
+    assert_allclose(X.A[-1], np.zeros(tf.shape[1]))
+
+
+@pytest.mark.parametrize('weighting', ['nncp', 'nnlp', 'nnup'])
+def test_pivoted_normalization(weighting):
     tf = CountVectorizer().fit_transform(documents)
-    if array_type == 'sparse':
-        pass
-    elif array_type == 'dense':
-        tf = tf.A
+    X_ref = _smart_tfidf(tf, 'nnc')
+    if weighting == 'nncp':
+        # pivoted cosine normalization == cosine normalization
+        # when alpha == 1.0
+        X = _smart_tfidf(tf, 'nncp', norm_alpha=1.0)
+        assert_allclose(X.A, X_ref.A)
+    X = _smart_tfidf(tf, weighting, norm_alpha=0.75)
+    # shorter documents (last one) gets normalized by a larger value
+    assert (X[-1].data < X_ref[-1].data).all()
+
+
+def test_smart_tfidf_transformer_compatibility():
+
+    try:
+        from sklearn.utils.estimator_checks import check_estimator
+    except ImportError:
         raise SkipTest
-    else:
-        raise ValueError
-    X = feature_weighting(tf, scheme)
+    check_estimator(SmartTfidfTransformer)
 
 
-    _, scheme_d, _ = _validate_smart_notation(scheme)
+# all division by zeros should be explicitly handled
+@pytest.mark.parametrize('scheme', ("".join(el)
+                                    for el in product('nlabL', 'ntsp',
+                                                      ['n', 'c', 'l', 'u',
+                                                       'cp', 'lp', 'up']))
+                         )
+def test_smart_tfidf_transformer(scheme):
+    tf = CountVectorizer().fit_transform(documents)
 
+    estimator = SmartTfidfTransformer(weighting=scheme)
+
+    X = estimator.fit_transform(tf.copy())
+
+    scheme_t, scheme_d, scheme_n = _validate_smart_notation(scheme)
     if scheme_d != 'p':
         # the resulting document term matrix should be positive
         # (unless we use probabilistic idf weighting)
@@ -59,56 +93,24 @@ def test_smart_feature_weighting(scheme, array_type):
     elif scheme == 'ltc':
         X_ref = TfidfVectorizer(use_idf=True, sublinear_tf=True,
                                 smooth_idf=False).fit_transform(documents)
+    elif scheme == 'ltl':
+        X_ref = TfidfVectorizer(use_idf=True, sublinear_tf=True,
+                                smooth_idf=False, norm='l1').fit_transform(documents)
 
     if X_ref is not None:
-        assert_allclose(X.A, X_ref.A)
+        assert_allclose(X.A, X_ref.A, rtol=1e-5, atol=1e-6)
 
+    assert len(estimator.dl_) == tf.shape[0]
+    assert len(estimator.du_) == tf.shape[0]
+    if scheme_d in ['tsp']:
+        assert len(estimator.df_) == tf.shape[1]
 
-# all division by zeros should be explicitly handled
-@pytest.mark.parametrize('scheme, array_type', product(("".join(el)
-                         for el in product('nlabL', 'ntsp',
-                                          ['n', 'c', 'l', 'u',
-                                           'cp', 'lp', 'up'])),
-                        ['sparse']))
-@pytest.mark.filterwarnings('error')
-def test_feature_weighting_empty_document(scheme, array_type):
-    documents_new = documents + ['']
-    tf = CountVectorizer().fit_transform(documents_new)
-    # check that all weightings preserve zeros rows (with no tokens)
-    X = feature_weighting(tf, scheme)
-    assert_allclose(X.A[-1], np.zeros(tf.shape[1]))
+    X_2 = SmartTfidfTransformer(weighting=scheme).fit(tf.copy()).transform(tf.copy())
+    assert_allclose(X.A, X_2.A, rtol=1e-6, atol=1e-6)
 
+    if scheme_d in 'stp':
+        assert estimator.df_ is not None
 
-@pytest.mark.parametrize('weighting', ['nncp', 'nnup'])
-def test_pivoted_normalization(weighting):
-    tf = CountVectorizer().fit_transform(documents)
-    X_ref = feature_weighting(tf, 'nnc')
-    if weighting == 'nncp':
-        # pivoted cosine normalization == cosine normalization
-        # when alpha == 1.0
-        X = feature_weighting(tf, 'nncp', alpha=1.0)
-        assert_allclose(X.A, X_ref.A)
-    X = feature_weighting(tf, weighting, alpha=0.75)
-    # shorter documents (last one) gets normalized by a larger value
-    assert (X[-1].data < X_ref[-1].data).all()
-
-
-def test_sublinear_normalization():
-    from scipy.sparse import csr_matrix
-
-    tf = csr_matrix([[0, 1, 1, 2],
-                     [1, 1, 1, 0]])
-    tfl = feature_weighting(tf, 'lnn')
-    tfl = feature_weighting(tf, 'ltn')
-
-
-
-
-def test_feature_weighting_transformer():
-
-    raise SkipTest
-    try:
-        from sklearn.utils.estimator_checks import check_estimator
-    except ImportError:
-        raise SkipTest
-    check_estimator(FeatureWeightingTransformer)
+    sl = slice(2)
+    tf_w_sl = estimator.transform(tf[sl].copy())
+    assert_allclose(X[sl].A, tf_w_sl.A)

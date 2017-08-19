@@ -118,7 +118,7 @@ class FeaturesApi(Resource):
              - `n_jobs`: The maximum number of concurrently running jobs (default: 1)
              - `chuck_size`: The number of documents simultaneously processed by a running job (default: 5000)
              - `weighting`: the SMART notation for document term weighting and normalization.  In the form [nlabL][ntp][ncb] , see https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
-             - `pivot_alpha`: the alpha value used for pivoted normalization
+             - `norm_alpha`: the alpha value used for pivoted normalization
 
              - `use_hashing`: Enable hashing. This option must be set to True for classification and set to False for clustering. (default: True)
              - `min_df`: When building the vocabulary ignore terms that have a document frequency strictly lower than the given threshold. This value is ignored when hashing is used.

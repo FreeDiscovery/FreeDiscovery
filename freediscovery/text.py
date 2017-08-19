@@ -12,13 +12,12 @@ import scipy.sparse
 from sklearn.externals import joblib
 from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.preprocessing import normalize
 from sklearn.pipeline import make_pipeline
 
 from ._version import __version__
 from .pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
-from .feature_weighting import FeatureWeightingTransformer, _validate_smart_notation
+from .feature_weighting import SmartTfidfTransformer, _validate_smart_notation
 from .ingestion import DocumentIndex
 from .preprocessing import processing_filters
 from .stop_words import _StopWordsWrapper
@@ -90,7 +89,7 @@ class FeatureVectorizer(object):
     _PARS_SHORT = ['data_dir', 'n_samples', 'n_features',
                    'n_jobs', 'chunk_size',
                    'analyzer', 'ngram_range', 'stop_words',
-                   'weighting', 'pivot_alpha', 'use_hashing',
+                   'weighting', 'norm_alpha', 'use_hashing',
                    'creation_date']
 
     _wrapper_type = "vectorizer"
@@ -179,7 +178,7 @@ class FeatureVectorizer(object):
     def setup(self, n_features=None, chunk_size=5000, analyzer='word',
               ngram_range=(1, 1), stop_words=None, n_jobs=1,
               use_hashing=False,
-              weighting='nnc', pivot_alpha=0.75, min_df=0.0, max_df=1.0,
+              weighting='nnc', norm_alpha=0.75, min_df=0.0, max_df=1.0,
               parse_email_headers=False,
               preprocess=[]):
         """Initalize the features extraction.
@@ -240,9 +239,9 @@ class FeatureVectorizer(object):
             raise WrongParameter('len(gram_range=={}!=2'
                                  .format(len(ngram_range)))
 
-        if not 0 <= pivot_alpha <= 1:
-            raise WrongParameter('pivot_alpha={} not in [0, 1]'
-                                 .format(pivot_alpha))
+        if not 0 <= norm_alpha <= 1:
+            raise WrongParameter('norm_alpha={} not in [0, 1]'
+                                 .format(norm_alpha))
 
         _, _, weighting_n = _validate_smart_notation(weighting)
         if weighting_n == 'n':
@@ -280,7 +279,7 @@ class FeatureVectorizer(object):
                 'chunk_size': chunk_size, 'stop_words': stop_words,
                 'analyzer': analyzer, 'ngram_range': ngram_range,
                 'n_jobs': n_jobs, 'use_hashing': use_hashing,
-                'weighting': weighting, 'pivot_alpha': pivot_alpha,
+                'weighting': weighting, 'norm_alpha': norm_alpha,
                 'min_df': min_df, 'max_df': max_df,
                 'parse_email_headers': parse_email_headers,
                 'type': type(self).__name__,
@@ -504,8 +503,8 @@ class FeatureVectorizer(object):
                 with fname.open('wb') as fh:
                     pickle.dump(self._vect, fh)
             fname = dsid_dir / 'weighting_transformer'
-            wt = FeatureWeightingTransformer(pars['weighting'],
-                                             alpha=pars['pivot_alpha'])
+            wt = SmartTfidfTransformer(pars['weighting'],
+                                       norm_alpha=pars['norm_alpha'])
             res = wt.fit_transform(res)
 
             del self.pars_['filenames_abs']
