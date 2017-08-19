@@ -20,7 +20,7 @@ documents = ["Shipment of gold damaged in aa fire.",
 
 # all division by zeros should be explicitly handled
 @pytest.mark.parametrize('scheme, array_type', product(("".join(el)
-                         for el in product('nlabL', 'ntsp',
+                         for el in product('nlabLd', 'ntsp',
                                           ['n', 'c', 'l', 'u',
                                            'cp', 'lp', 'up'])),
                         ['sparse']))
@@ -57,9 +57,8 @@ def test_smart_tfidf_transformer_compatibility():
     check_estimator(SmartTfidfTransformer)
 
 
-# all division by zeros should be explicitly handled
 @pytest.mark.parametrize('scheme', ("".join(el)
-                                    for el in product('nlabL', 'ntsp',
+                                    for el in product('nlabLd', 'ntsp',
                                                       ['n', 'c', 'l', 'u',
                                                        'cp', 'lp', 'up']))
                          )

@@ -40,7 +40,7 @@ def _validate_smart_notation(scheme):
         scheme_t, scheme_d, scheme_n1, scheme_n2 = scheme
         scheme_n = ''.join([scheme_n1, scheme_n2])
 
-    if scheme_t not in 'nlabL':
+    if scheme_t not in 'nlabLd':
         raise ValueError(('Term frequency weighting {}'
                           'not supported, must be one of nlabL')
                          .format(scheme_t))
@@ -223,7 +223,7 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
 
     weighting : str, default='nnc'
       the SMART notation for document term weighting and normalization.
-      In the form [nlabL][ntp][ncb] , see
+      In the form [nlabL][ntp][nclu][p] , see
       https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
 
     df : array, shape=[n_features], optional
@@ -293,6 +293,8 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
         pass
     elif scheme_t == 'l':
         X.data = 1 + np.log(tf.data)
+    elif scheme_t == 'd':
+        X.data = 1 + np.log(1 + np.log(tf.data))
     elif scheme_t == 'a':
         max_tf = np.squeeze(tf.max(axis=1).A)
         # if max_tf is zero, the tf are going to be all zero anyway
