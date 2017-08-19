@@ -23,7 +23,7 @@ Feature extraction
     :toctree: ./generated/
 
     
-    freediscovery.feature_weighting.smart_feature_weighting
+    freediscovery.feature_weighting.SmartTfidfTransformer
 
 
 Document categorization

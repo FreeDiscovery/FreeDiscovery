@@ -98,7 +98,7 @@ def test_smart_tfidf_transformer(scheme):
                                 smooth_idf=False, norm='l1').fit_transform(documents)
 
     if X_ref is not None:
-        assert_allclose(X.A, X_ref.A, rtol=1e-5, atol=1e-6)
+        assert_allclose(X.A, X_ref.A, rtol=1e-7, atol=1e-6)
 
     assert len(estimator.dl_) == tf.shape[0]
     assert len(estimator.du_) == tf.shape[0]

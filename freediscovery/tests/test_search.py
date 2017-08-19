@@ -11,7 +11,8 @@ from numpy.testing import (assert_array_less, )
 
 import pytest
 
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
+from freediscovery.feature_weighting import SmartTfidfTransformer
 
 from ..text import FeatureVectorizer
 from ..lsi import _TruncatedSVD_LSI, _LSIWrapper
@@ -42,8 +43,10 @@ def test_search(kind):
               "Must give us pause: there’s the respect",
               "That makes calamity of so long life;"]
 
-    vect = TfidfVectorizer()
-    X_vect = vect.fit_transform(corpus)
+    vect = CountVectorizer()
+    X_tf = vect.fit_transform(corpus)
+    idf = SmartTfidfTransformer('nnc')
+    X_vect = idf.fit_transform(X_tf)
 
     if kind == 'semantic':
         lsi = _TruncatedSVD_LSI(n_components=20)
@@ -53,7 +56,7 @@ def test_search(kind):
         lsi = None
         X = X_vect
 
-    s = Search(vect, lsi)
+    s = Search(vect, idf, lsi)
     s.fit(X)
 
     for query, best_id in [(corpus[2], 2),

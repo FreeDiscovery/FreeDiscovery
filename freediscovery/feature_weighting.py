@@ -292,7 +292,7 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
     if scheme_t == 'n':
         pass
     elif scheme_t == 'l':
-        X.data[:] = 1 + np.log(tf.data)
+        X.data = 1 + np.log(tf.data)
     elif scheme_t == 'a':
         max_tf = np.squeeze(tf.max(axis=1).A)
         # if max_tf is zero, the tf are going to be all zero anyway

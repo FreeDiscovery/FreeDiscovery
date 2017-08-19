@@ -99,6 +99,7 @@ class FeatureVectorizer(object):
 
         self._filenames = None
         self._vect = None
+        self._tfidf = None
         self._db = None
         self._pars = None
 
@@ -162,6 +163,19 @@ class FeatureVectorizer(object):
                 with fname.open('rb') as fh:
                     self._vect = pickle.load(fh)
         return self._vect
+
+    @property
+    def tfidf_(self):
+        if not hasattr(self, '_tfidf') or self._tfidf is None:
+            mid = self.dsid
+            mid_dir = self.cache_dir / mid
+            if not mid_dir.exists():
+                raise ValueError(('Vectorizer model id {} ({}) '
+                                  'not found in the cache {}!')
+                                 .format(mid, mid_dir))
+            fname = mid_dir / 'tfidf_transformer'
+            self._tfidf = joblib.load(str(fname))
+        return self._tfidf
 
     def _load_features(self, dsid=None):
         """ Load a computed features from disk"""
@@ -502,10 +516,12 @@ class FeatureVectorizer(object):
                 # faster for pure python objects
                 with fname.open('wb') as fh:
                     pickle.dump(self._vect, fh)
-            fname = dsid_dir / 'weighting_transformer'
+            fname = dsid_dir / 'tfidf_transformer'
             wt = SmartTfidfTransformer(pars['weighting'],
                                        norm_alpha=pars['norm_alpha'])
+            self._idf = wt
             res = wt.fit_transform(res)
+            joblib.dump(self._idf, str(fname))
 
             del self.pars_['filenames_abs']
 

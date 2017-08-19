@@ -53,9 +53,11 @@ class _SearchWrapper(_BaseWrapper):
                               ' Please add an LSI processing'
                               ' step (i.e. use `parent_id=lsi_id`)')
             vect = None
+            tfidf = None
         else:
             vect = self.fe.vect_
             vect.set_params(input='content')
+            tfidf = self.fe.tfidf_
 
         X = self.pipeline.data
 
@@ -66,7 +68,7 @@ class _SearchWrapper(_BaseWrapper):
         else:
             lsi = None
 
-        s = Search(vect, lsi)
+        s = Search(vect, tfidf, lsi)
         s.fit(X)
 
         if internal_id is not None:
@@ -88,8 +90,9 @@ class Search(object):
       (optional) an LSI model fitted on the vectorised document-term matrix
       If provided this corresponds to a semantic search, default=None
     """
-    def __init__(self, vectorizer, lsi=None):
+    def __init__(self, vectorizer, tfidf, lsi=None):
         self.vectorizer = vectorizer
+        self.tfidf = tfidf
         self.lsi = lsi
         self._fit_X = None
 
@@ -122,6 +125,7 @@ class Search(object):
             raise ValueError('Estomator must be fitted before '
                              'using the search method!')
         q_vect = self.vectorizer.transform([text])
+        q_vect = self.tfidf.transform(q_vect)
 
         if self.lsi is not None:
             # this is a hack need to be rewritten
