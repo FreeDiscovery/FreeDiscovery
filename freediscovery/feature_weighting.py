@@ -40,7 +40,7 @@ def _validate_smart_notation(scheme):
         scheme_t, scheme_d, scheme_n1, scheme_n2 = scheme
         scheme_n = ''.join([scheme_n1, scheme_n2])
 
-    if scheme_t not in 'nlabL':
+    if scheme_t not in 'nlabLd':
         raise ValueError(('Term frequency weighting {}'
                           'not supported, must be one of nlabL')
                          .format(scheme_t))
@@ -59,22 +59,50 @@ def _validate_smart_notation(scheme):
                    .format(scheme_n))
     return scheme_t, scheme_d, scheme_n
 
-class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, weighting='nnc', alpha=0.75, compute_df=False):
-        """Apply document term weighting and normalization on the extracted
-        text features
 
-        weighting : str
+class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, weighting='nnc', norm_alpha=0.75, norm_pivot=None,
+                 compute_df=False):
+        """ Apply TF-IDF feature weighting using the SMART notation with a scikit-learn
+        compatible transformer.
+
+        Parameters
+        ----------
+        weighting : str, default='nnc'
           the SMART notation for document, term weighting and normalization.
           In the form [nlabL][ntp][ncb] , see
           https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
-        alpha : float
-          if weighting_n == 'p': the alpha parameter in the pivoted cosine normalization
-          if weighting_n == 'u': the alpha parameter in the pivoted unique normalization
+        norm_alpha : float, default=0.75
+          the alpha parameter in the pivoted normalization
+        norm_pivot : float, default=None
+          the pivot value used for the normalization. If not provided, and
+          weighting='???p', it is computed as the mean of the norm(tf*idf).
+        compute_df : bool, default=False
+          compute the document frequenc (`df_` attribute) even when it's not
+          explicitly required by the weighting scheme.
+
+        Attributes
+        ----------
+        df_ : array , shape = [n_features]
+          the document frequency array
+        dl_ : array , shape = [n_samples]
+          sum of tokens in each document (~document lenght)
+        du_ : array , shape = [n_samples]
+          number of unique tokens in each documents
+
+        References
+        ----------
+        .. [Manning2008] `Manning, Christopher D.; Raghavan, Prabhakar; Schütze, Hinrich (2008),
+           `"Document and query weighting schemes"`
+           <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_
+        .. [Singhal1996] `Singhal, Amit, Chris Buckley, and Manclar Mitra. "Pivoted document length normalization."
+           ACM Press, 1996`
         """
         _validate_smart_notation(weighting)
         self.weighting = weighting
-        self.alpha = alpha
+        self.norm_alpha = norm_alpha
+        self.norm_pivot = norm_pivot
+        self.compute_df = compute_df
         self.df_ = None
         self.dl_ = None
         self.du_ = None
@@ -88,13 +116,70 @@ class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
         X : sparse matrix, [n_samples, n_features]
             a matrix of term/token counts
         """
-        X = check_array(X, ['csr', 'csc', 'coo'])
+        X = check_array(X, ['csr'])
         scheme_t, scheme_d, scheme_n = _validate_smart_notation(self.weighting)
         self.dl_ = _document_length(X)
-        self.df_ = _document_frequency(X)
-        self.du_ = np.diff(X.indptr)
+        if scheme_d in 'stp' or self.compute_df:
+            self.df_ = _document_frequency(X)
+        if sp.isspmatrix_csr(X):
+            self.du_ = np.diff(X.indptr)
+        else:
+            self.du_ = X.shape[-1] - (X == 0).sum(axis=1)
         self._n_features = X.shape[1]
+
+        if self.df_ is not None:
+            df_n_samples = len(self.dl_)
+        else:
+            df_n_samples = None
+
+        if scheme_n.endswith('p') and self.norm_pivot is None:
+            # Need to compute the pivot if it's not provided
+            _, self.norm_pivot = _smart_tfidf(X, self.weighting, self.df_,
+                                              df_n_samples,
+                                              norm_alpha=self.norm_alpha,
+                                              norm_pivot=self.norm_pivot,
+                                              return_pivot=True)
+
         return self
+    def fit_transform(self, X, y=None):
+        """Apply document term weighting and normalization on text features
+
+        Parameters
+        ----------
+        X : sparse matrix, [n_samples, n_features]
+            a matrix of term/token counts
+        copy : boolean, default True
+            Whether to copy X and operate on the copy or perform in-place
+            operations.
+        """
+        X = check_array(X, ['csr'])
+
+        scheme_t, scheme_d, scheme_n = _validate_smart_notation(self.weighting)
+        self.dl_ = _document_length(X)
+        if scheme_d in 'stp' or self.compute_df:
+            self.df_ = _document_frequency(X)
+        if sp.isspmatrix_csr(X):
+            self.du_ = np.diff(X.indptr)
+        else:
+            self.du_ = X.shape[-1] - (X == 0).sum(axis=1)
+        self._n_features = X.shape[1]
+
+        if self.df_ is not None:
+            df_n_samples = len(self.dl_)
+        else:
+            df_n_samples = None
+
+        if self.df_ is not None:
+            df_n_samples = len(self.dl_)
+        else:
+            df_n_samples = None
+
+        X, self.norm_pivot = _smart_tfidf(X, self.weighting, self.df_,
+                                          df_n_samples,
+                                          norm_alpha=self.norm_alpha,
+                                          norm_pivot=self.norm_pivot,
+                                          return_pivot=True)
+        return X
 
     def transform(self, X, y=None):
         """Apply document term weighting and normalization on text features
@@ -107,38 +192,60 @@ class FeatureWeightingTransformer(BaseEstimator, TransformerMixin):
             Whether to copy X and operate on the copy or perform in-place
             operations.
         """
-        X = check_array(X, ['csr', 'csc', 'coo'])
+        X = check_array(X, ['csr'])
         check_is_fitted(self, 'dl_', 'vector is not fitted')
         if X.shape[1] != self._n_features:
             raise ValueError(('Model fitted with n_features={} '
-                              'but X.shape={}').format(self._n_features, X.shape))
+                              'but X.shape={}')
+                             .format(self._n_features, X.shape))
 
-        return feature_weighting(X, self.weighting, self.df_)
+        if self.df_ is not None:
+            df_n_samples = len(self.dl_)
+        else:
+            df_n_samples = None
+
+        return _smart_tfidf(X, self.weighting, self.df_,
+                            df_n_samples,
+                            norm_alpha=self.norm_alpha,
+                            norm_pivot=self.norm_pivot)
 
 
-def feature_weighting(tf, weighting, df=None, alpha=0.75):
+def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
+                 norm_pivot=None, return_pivot=False):
     """
-    Weight a vector space model following the SMART notation.
+    Apply TF-IDF feature weighting using the SMART notation.
 
 
     Parameters
     ----------
-
     df : sparse csr array
       the term frequency matrix (n_documents, n_features)
 
-    weighting : str
+    weighting : str, default='nnc'
       the SMART notation for document term weighting and normalization.
-      In the form [nlabL][ntp][ncb] , see
+      In the form [nlabL][ntp][nclu][p] , see
       https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
 
-    df : dense ndarray (optional)
-      precomputed inverse document frequency matrix (n_samples,).
-      If not provided, it will be recomputed if necessary.
+    df : array, shape=[n_features], optional
+      precomputed inverse document frequency matrix (n_features,).
+      If not provided, it will be recomputed if necessary. Both df and
+      df_n must be provided at the same time.
 
-    alpha : float
-      if weighting_n == 'p': the alpha parameter in the pivoted cosine normalization
-      if weighting_n == 'u': the alpha parameter in the pivoted unique normalization
+    df_n_samples : float, default=None
+      when using a inverse document frequency matrix, the number of
+      documents that were used to compute the df. Both df and df_n
+      must be provided at the same time.
+
+    norm_alpha : float, default=0.75
+      the alpha parameter in the pivoted normalization. Only used when
+      weighting='???p'.
+
+    norm_pivot : float, default=None
+      the pivot value used for the normalization. If not provided, and
+      weighting='???p', it is computed as the mean of the norm(tf*idf).
+
+    return_pivot : bool, default=False
+      return the computed norm_pivot
 
     Returns
     -------
@@ -146,33 +253,48 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
     X : sparse csr array
       the weighted term frequency matrix
 
+    norm_pivot : flot
+      return the norm pivot (only when return_pivot=True)
+
     References
     ----------
-
-    1. Manning, Christopher D.; Raghavan, Prabhakar; Schütze, Hinrich (2008),
-       `"Document and query weighting schemes"
+    .. [Manning2008] `Manning, Christopher D.; Raghavan, Prabhakar; Schütze, Hinrich (2008),
+                     "Document and query weighting schemes"`
        <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_
-    2. Singhal, Amit, Chris Buckley, and Manclar Mitra. "Pivoted document length normalization."
-       ACM Press, 1996
+    .. [Singhal1996] `Singhal, Amit, Chris Buckley, and Manclar Mitra. "Pivoted document length normalization."
+                     ACM Press, 1996`
     """
 
     tf = check_array(tf, ['csr'])
+    if (df is None) != (df_n_samples is None):
+        raise ValueError(('df={} and df_n_samples={}, while both should be '
+                          'either provided or not provided')
+                         .format(df is None, df_n_samples))
     if df is not None:
         df = check_array(df, ensure_2d=False)
+        if df.shape[0] != tf.shape[-1]:
+            raise ValueError(('df array provided with n_features={} ,'
+                              'while in the tf array n_features={}')
+                             .format(df.shape[0], tf.shape[1]))
 
-    if not 0 <= alpha <= 1:
-        raise ValueError('alpha={} not in [0, 1]'.format(alpha))
+    if not 0 <= norm_alpha <= 1:
+        raise ValueError('norm_alpha={} not in [0, 1]'.format(norm_alpha))
 
     n_samples, n_features = tf.shape
+    if df_n_samples is None:
+        df_n_samples = n_samples
 
     scheme_t, scheme_d, scheme_n = _validate_smart_notation(weighting)
 
     X = tf
 
+    # term weighting
     if scheme_t == 'n':
         pass
     elif scheme_t == 'l':
         X.data = 1 + np.log(tf.data)
+    elif scheme_t == 'd':
+        X.data = 1 + np.log(1 + np.log(tf.data))
     elif scheme_t == 'a':
         max_tf = np.squeeze(tf.max(axis=1).A)
         # if max_tf is zero, the tf are going to be all zero anyway
@@ -199,27 +321,29 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
     else:
         raise ValueError
 
+    # document weighting
     if scheme_d == 'n':
         pass
     elif scheme_d in 'tps':
         if df is None:
             df = _document_frequency(tf)
         if scheme_d == 't':
-            idf = np.log(float(n_samples) / df) + 1.0
+            idf = np.log(float(df_n_samples) / df) + 1.0
         elif scheme_d == 's':
-            idf = np.log(float(n_samples + 1) / (df + 1)) + 1.0
+            idf = np.log(float(df_n_samples + 1) / (df + 1)) + 1.0
         elif scheme_d == 'p':
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore",
                                         message="divide by zero encountered in log",
                                         category=RuntimeWarning)
-                idf = np.log((float(n_samples) - df)/df)
+                idf = np.log((float(df_n_samples) - df)/df)
         _idf_diag = sp.spdiags(idf, diags=0, m=n_features,
                                n=n_features, format='csr')
         X = X.dot(_idf_diag)
     else:
         raise ValueError
 
+    # normalization
     if scheme_n == 'n':
         pass
     elif scheme_n == 'c':
@@ -246,15 +370,19 @@ def feature_weighting(tf, weighting, df=None, alpha=0.75):
         elif scheme_n == 'up':
             X_norm = np.diff(X.indptr)
 
-        X_norm_mean = X_norm.mean()
+        if norm_pivot is None:
+            norm_pivot = X_norm.mean()
 
         # empty documents (with a zero norm) don't need to be normalized
         X_norm[X_norm == 0] = 1.
 
-        pivoted_norm = X_norm*(1 - alpha)*X_norm_mean + alpha*X_norm
+        pivoted_norm = (1 - norm_alpha)*norm_pivot + norm_alpha*X_norm
         _diag_pivoted_norm = sp.spdiags(1./pivoted_norm, diags=0, m=n_samples,
                                         n=n_samples, format='csr')
         X = _diag_pivoted_norm.dot(X)
     else:
         raise ValueError
-    return X
+    if return_pivot:
+        return X, norm_pivot
+    else:
+        return X

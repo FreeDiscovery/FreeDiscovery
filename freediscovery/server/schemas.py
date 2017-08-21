@@ -74,7 +74,7 @@ class FeaturesParsSchema(Schema):
     chunk_size = fields.Int()
     ngram_range = fields.List(fields.Int(), missing=[1, 1])
     weighting = fields.Str(missing='nnc')
-    pivot_alpha = fields.Number(missing=0.75)
+    norm_alpha = fields.Number(missing=0.75)
     use_hashing = fields.Boolean(missing=False)
     n_samples = fields.Int(dump_only=True)
     n_samples_processed = fields.Int(dump_only=True)

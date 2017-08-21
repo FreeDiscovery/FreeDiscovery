@@ -82,7 +82,7 @@ def test_feature_extraction_weighting(weighting,
 
 @pytest.mark.parametrize("n_features, weighting, use_hashing",
                          list(itertools.product([None, 4, 1000],
-                                                ['nnc', 'ntc'],
+                                                ['nnc', 'nsc'],
                                                 ['hashed', ''])))
 def test_feature_extraction_nfeatures(n_features, weighting, use_hashing):
     cache_dir = check_cache()
