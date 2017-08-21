@@ -81,14 +81,6 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
           compute the document frequenc (`df_` attribute) even when it's not
           explicitly required by the weighting scheme.
 
-        Attributes
-        ----------
-        df_ : array , shape = [n_features]
-          the document frequency array
-        dl_ : array , shape = [n_samples]
-          sum of tokens in each document (~document lenght)
-        du_ : array , shape = [n_samples]
-          number of unique tokens in each documents
 
         References
         ----------
@@ -103,6 +95,9 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         self.norm_alpha = norm_alpha
         self.norm_pivot = norm_pivot
         self.compute_df = compute_df
+        self.dl_ = None
+        self.df_ = None
+        self.du_ = None
 
     def fit(self, X, y=None):
         """Learn the document lenght and document frequency vector
