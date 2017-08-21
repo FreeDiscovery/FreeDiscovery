@@ -103,9 +103,6 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         self.norm_alpha = norm_alpha
         self.norm_pivot = norm_pivot
         self.compute_df = compute_df
-        self.df_ = None
-        self.dl_ = None
-        self.du_ = None
 
     def fit(self, X, y=None):
         """Learn the document lenght and document frequency vector
@@ -121,6 +118,8 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         self.dl_ = _document_length(X)
         if scheme_d in 'stp' or self.compute_df:
             self.df_ = _document_frequency(X)
+        else:
+            self.df_ = None
         if sp.isspmatrix_csr(X):
             self.du_ = np.diff(X.indptr)
         else:
@@ -141,6 +140,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
                                               return_pivot=True)
 
         return self
+
     def fit_transform(self, X, y=None):
         """Apply document term weighting and normalization on text features
 
@@ -158,6 +158,8 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         self.dl_ = _document_length(X)
         if scheme_d in 'stp' or self.compute_df:
             self.df_ = _document_frequency(X)
+        else:
+            self.df_ = None
         if sp.isspmatrix_csr(X):
             self.du_ = np.diff(X.indptr)
         else:

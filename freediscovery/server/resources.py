@@ -14,7 +14,7 @@ from sklearn.metrics import (adjusted_rand_score,
                              v_measure_score)
 from freediscovery.externals.sklearn_backport.metrics import (roc_auc_score, average_precision_score)
 import warnings
-from sklearn.metrics.base import UndefinedMetricWarning
+from sklearn.exceptions import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
 from ..ingestion import _check_mutual_index

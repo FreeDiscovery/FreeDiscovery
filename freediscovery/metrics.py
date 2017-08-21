@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import numpy as np
 from .cluster.utils import _dbscan_unique2noisy
 
-from sklearn.metrics.base import UndefinedMetricWarning
+from sklearn.exceptions import UndefinedMetricWarning
 
 # Information retrieval specific metrics
 # See scikit learn metrics for more general ones
 
 
-## Categorization Metrics
-
+# Categorization Metrics
 def recall_at_k_score(y_true, y_pred, k):
     """
     Recall after retrieving k documents from the collections
@@ -51,8 +45,8 @@ def recall_at_k_score(y_true, y_pred, k):
     recall_curve = np.hstack((np.zeros(1), recall_curve))
     return recall_curve[k]
 
-## Clustering Metrics
 
+# Clustering Metrics
 def ratio_duplicates_score(x, y):
     """
     Given cluster labels x and y, compute the relative error
@@ -74,7 +68,6 @@ def f1_same_duplicates_score(x, y):
     """
     import warnings
     from sklearn.metrics import f1_score
-    from sklearn.metrics.base import UndefinedMetricWarning
 
     if x.shape != y.shape:
         raise ValueError
@@ -101,7 +94,7 @@ def mean_duplicates_count_score(x, y):
     from .utils import _count_duplicates
     x_count = _count_duplicates(x)
     y_count = _count_duplicates(y)
-    mask = (x_count > 1) | (y_count > 1) # select only duplicates
+    mask = (x_count > 1) | (y_count > 1)  # select only duplicates
     x_count = x_count[mask]
     y_count = y_count[mask]
 
@@ -136,6 +129,7 @@ def cosine2jaccard_similarity(s_cos):
     """
     return s_cos / (2 - s_cos)
 
+
 def jaccard2cosine_similarity(s_jac):
     """ Given a cosine similarity on L2 normalized data,
     compute the jaccard similarity
@@ -151,6 +145,7 @@ def jaccard2cosine_similarity(s_jac):
       the Jaccard similarity
     """
     return 2*s_jac / (1 + s_jac)
+
 
 def _normalize_similarity(x, metric='cosine', inverse=False):
     """Given a similarity score, normalize it to the
@@ -180,6 +175,7 @@ def _normalize_similarity(x, metric='cosine', inverse=False):
             return (4*x - 1)/3.
     else:
         raise ValueError
+
 
 def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     """ Given a cosine similarity on L2 normalized data,
