@@ -7,8 +7,10 @@ matrix:
       env: REQUIREMENTS="requirements.txt" EXTRA_DEPS=""
     - python: "3.6"
       env: REQUIREMENTS="requirements.txt" EXTRA_DEPS="simhash-py gunicorn"
-      #- python: "3.5"
-      #- env: REQUIREMENTS="build_tools/requirements_compat.txt" EXTRA_DEPS=""
+    - python: "3.6"
+      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS="scikit-learn==0.18.1"
+    - python: "3.5"
+      env: REQUIREMENTS="build_tools/requirements_compat.txt" EXTRA_DEPS=""
     - python: "3.5" 
       env: REQUIREMENTS="requirements.txt" EXTRA_DEPS=""
 
