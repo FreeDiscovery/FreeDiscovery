@@ -556,11 +556,13 @@ class FeatureVectorizer(object):
                                            internal_id_offset + 1, dsid_dir)
         db_new = db_extra.data
         vect = self.vect_
+        tfidf = self.tfidf_
 
         filenames_new = list(db_new.file_path.values)
 
         # write down the new features file
-        X_new = vect.transform(filenames_new)
+        X_new_raw = vect.transform(filenames_new)
+        X_new = tfidf.transform(X_new_raw)
         X_old = self._load_features()
         X = scipy.sparse.vstack((X_new, X_old))
         joblib.dump(X, str(dsid_dir / 'features'))

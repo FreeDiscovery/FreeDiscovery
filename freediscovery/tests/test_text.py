@@ -58,7 +58,7 @@ def test_feature_extraction_storage():
 
 
 @pytest.mark.parametrize("weighting, use_hashing",
-                         list(itertools.product(("".join(el) for el in itertools.product('nlb', 'nt', 'c')),
+                         list(itertools.product(("".join(el) for el in itertools.product('nlb', 'ns', 'c')),
                                                 ['hashed', ''])))
 def test_feature_extraction_weighting(weighting,
                                       use_hashing):

@@ -143,6 +143,7 @@ def test_get_search_filenames(app):
 
 @pytest.mark.parametrize('ingestion_method', ['file_path', 'content'])
 def test_append_documents(app, ingestion_method):
+
     method = V01 + "/feature-extraction/"
     data = app.post_check(method)
     dsid = data['id']
@@ -181,6 +182,7 @@ def test_append_documents(app, ingestion_method):
     db_old = pd.DataFrame(db_old)
     db_new = pd.DataFrame(data['data'])
     assert db_old.shape[0]*2 == db_new.shape[0]
+
 
 def test_remove_documents(app):
     method = V01 + "/feature-extraction/"
