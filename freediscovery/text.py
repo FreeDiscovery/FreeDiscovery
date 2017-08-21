@@ -50,7 +50,7 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     """ Extract features on a chunk of files """
     from sklearn.feature_extraction.text import HashingVectorizer
     from sklearn.externals import joblib
-    import os.path
+    from freediscovery.utils import parse_version, sklearn_version
 
     filenames = pars['filenames_abs']
     chunk_size = pars['chunk_size']
@@ -61,8 +61,11 @@ def _vectorize_chunk(dsid_dir, k, pars, pretend=False):
     hash_opts = {key: vals for key, vals in pars.items()
                  if key in ['stop_words', 'n_features',
                             'analyser', 'ngram_range']}
-    fe = HashingVectorizer(input='content', norm=None,
-                           non_negative=True, **hash_opts)
+    if sklearn_version >= parse_version('0.19.0'):
+        hash_opts['alternate_sign'] = False
+    else:
+        hash_opts['non_negative'] = True
+    fe = HashingVectorizer(input='content', norm=None, **hash_opts)
     if pretend:
         return fe
     fset_new = fe.transform(_read_file(fname) for fname in filenames[mslice])

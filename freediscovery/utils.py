@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import os.path
 import shutil
 from contextlib import contextmanager
 import numpy as np
 import uuid
+from pkg_resources import parse_version
+import sklearn
 
 # this is wrong, and should be eventually replaced
 INT_NAN = -99999
+
+sklearn_version = parse_version(sklearn.__version__)
+
 
 
 @contextmanager

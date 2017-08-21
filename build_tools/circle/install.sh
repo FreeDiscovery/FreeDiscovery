@@ -11,16 +11,6 @@
 set -x
 set -e
 
-create_new_venv() {
-    # At the time of writing numpy 1.9.1 is included in the travis
-    # virtualenv but we want to be in control of the numpy version
-    # we are using for example through apt-get install
-    deactivate
-    virtualenv --system-site-packages testvenv
-    source testvenv/bin/activate
-    pip install nose
-}
-
 create_new_conda_env() {
     # Skip Travis related code on circle ci.
     if [ -z $CIRCLECI ]; then
@@ -31,10 +21,10 @@ create_new_conda_env() {
 
     # Use the miniconda installer for faster download / install of conda
     # itself
-    wget http://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh \
+    wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
         -O ~/miniconda.sh
     chmod +x ~/miniconda.sh && ~/miniconda.sh -b
-    export PATH=$HOME/miniconda2/bin:$PATH
+    export PATH=$HOME/miniconda3/bin:$PATH
     echo $PATH
     conda update --quiet --yes conda
 

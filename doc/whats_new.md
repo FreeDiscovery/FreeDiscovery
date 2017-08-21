@@ -9,6 +9,7 @@
 
 ### Enhancements
 
+ * Added compatibility with scikit-learn 0.19.0 ([#169](https://github.com/FreeDiscovery/FreeDiscovery/pull/169/files)) which fixed several issues found in 0.18.1.
 
 ### API Changes
  * In `POST /api/v0/feature-extraction` parameters `binary`, `use_idf` and  `sublinear_tf` are replaced by a single parameters `weighting` that defines term document weighting and normalization using the [SMART notation](https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System)  ([#164](https://github.com/FreeDiscovery/FreeDiscovery/pull/164/files))
