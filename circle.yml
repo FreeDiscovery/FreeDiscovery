@@ -25,7 +25,7 @@ dependencies:
         background: true
     - sleep 20
     # The pipefail is requested to propagate exit code
-    - set -o pipefail && cd doc && source activate testenv && make html 2>&1 | tee ~/log.txt
+    - set -o pipefail && cd doc && source ~/miniconda3/bin/activate testenv && make html 2>&1 | tee ~/log.txt
     - npm install -g bootprint && npm install -g bootprint-openapi
     - cd doc && bootprint openapi http://0.0.0.0:5001/openapi-specs.json openapi-docs && cp -r openapi-docs/ _build/html/
 
