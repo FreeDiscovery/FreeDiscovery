@@ -1,17 +1,16 @@
 Python package
 ==============
 
-Installation
-------------
+FreeDiscovery is a scikit-learn compatible Python package with a focus on information retrieval applications.
 
-FreeDiscovery Python package requires **Python 3.5+**, as well as,
+Installation requires **Python 3.5+**, as well as,
 
  * numpy >= 1.10.1
  * scipy >= 0.16.1
  * pandas >= 0.18.0
  * scikit-learn >= 0.18.0
 
-It can be installed with,
+it can be installed with,
 
 .. code:: bash
 
@@ -20,7 +19,6 @@ It can be installed with,
 
 .. toctree::
    :maxdepth: 1
-
 
    api
    examples/index

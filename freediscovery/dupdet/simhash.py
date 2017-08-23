@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-
 import numpy as np
-import six
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
 
 
 class SimhashDuplicates(BaseEstimator):
-    """
-    Find near duplicates using simhash-py
+    """Near duplicates detection using the simhash algorithm.
+
+    A classical near-duplicates detection involves comparing all pairs of
+    samples in the collection. For a collection of size ``N``, this is
+    typically an ``O(N^2)`` operation. Simhash algorithm allows to
+    retrieve near duplicates with a significantly better computational
+    scaling.
+
+    This class exposes a scikit-learn compatible API, and currently supports
+    only sparse CSR arrays (such as obtained after vectorizing text documents).
+
+    .. NOTE:: this estimator requires simhash-py Python package
+              to be installed.
 
     Parameters
     ----------
@@ -23,11 +27,19 @@ class SimhashDuplicates(BaseEstimator):
         Possibles values are "murmurhash3_int_u32" or a custom function.
     hash_func_nbytes : int, default=64
         expected size of the hash produced by hash_func
+
+    References
+    ----------
+    .. [Charikar2002]  `Charikar, M. S. (2002, May).
+                        Similarity estimation techniques from rounding
+                        algorithms.
+                        In Proceedings of the thiry-fourth annual ACM symposium
+                        on Theory of computing (pp. 380-388). ACM.`
     """
     def __init__(self, hash_func='murmurhash3_int_u32', hash_func_nbytes=32):
         self._fit_X = None
         self._fit_shash_dict = {}
-        if isinstance(hash_func, six.string_types):
+        if isinstance(hash_func, str):
             if hash_func == 'murmurhash3_int_u32':
                 from sklearn.utils.murmurhash import murmurhash3_int_u32
                 hash_func = murmurhash3_int_u32
@@ -39,16 +51,16 @@ class SimhashDuplicates(BaseEstimator):
 
         self.hash_func = hash_func
         if hash_func_nbytes not in [32, 64]:
-            raise ValueError('Hashing function other than 64bit or 32bit are not supported!')
+            raise ValueError('Hashing function other than 64bit '
+                             'or 32bit are not supported!')
 
         self.hash_func_nbytes = hash_func_nbytes
-
 
     def fit(self, X, y=None):
         """
         Parameters
         ----------
-        X : array_like or sparse (CSR) matrix, shape (n_samples, n_features)
+        X : {array, sparse matrix}, shape (n_samples, n_features)
             List of n_features-dimensional data points. Each row
             corresponds to a single data point.
         Returns
@@ -79,8 +91,8 @@ class SimhashDuplicates(BaseEstimator):
             shash.append(compute(mhash))
         _fit_shash = np.asarray(shash, dtype='uint64')
         self._fit_shash = _fit_shash
-        self._fit_shash_dict = {val: key for key, val in enumerate(self._fit_shash)}
-
+        self._fit_shash_dict = {val: key
+                                for key, val in enumerate(self._fit_shash)}
 
     def get_index_by_hash(self, shash):
         """ Get document index by hash
@@ -96,7 +108,6 @@ class SimhashDuplicates(BaseEstimator):
            a document index
         """
         return self._fit_shash_dict[shash]
-
 
     def query(self, distance=2, blocks='auto'):
         """ Find all the nearests neighbours for the dataset
@@ -123,8 +134,9 @@ class SimhashDuplicates(BaseEstimator):
         from simhash import find_all
 
         if distance >= 64:
-            raise ValueError('Wrong input parameter for distance = {}'.format(distance)
-                            +'Must be less than 64!')
+            raise ValueError(('Wrong input parameter for distance = {} '
+                              'Must be less than 64!')
+                             .format(distance))
 
         _, cluster_id = np.unique(self._fit_shash, return_inverse=True)
 
@@ -133,5 +145,3 @@ class SimhashDuplicates(BaseEstimator):
         matches = find_all(self._fit_shash, blocks, distance)
         matches = np.array(matches, dtype='uint64')
         return self._fit_shash, cluster_id, matches
-
-

@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-
 import numpy as np
 from sklearn.base import BaseEstimator
 from freediscovery.cluster.utils import _merge_clusters
 from sklearn.utils.validation import check_array
 
 
-
-
 class IMatchDuplicates(BaseEstimator):
     """
-    Find near duplicates using the randomized I-match backend
+    Near duplicates detection using the randomized I-Match algorithm.
 
-    This class aims to expose a scikit-learn compatible API.
+    A classical near-duplicates detection involves comparing all pairs of
+    samples in the collection. For a collection of size ``N``, this is
+    typically an ``O(N^2)`` operation. The I-Match algorithm allows to
+    retrieve near duplicates with a computational effort reduced to
+    ``O(N)`` (or ``O(N*log(N))`` in worse case scenario).
+
+    This class exposes a scikit-learn compatible API, and currently supports
+    only sparse CSR arrays (such as obtained after vectorizing text documents).
 
 
     Parameters
@@ -26,17 +25,20 @@ class IMatchDuplicates(BaseEstimator):
      - n_rand_lexicons : int, default=1
         number of random lexicons used for duplicate detection
         If equal to 1 no lexicon randomization is used which is equivalent
-        to the original I-Match implementation by Chowdhury & Grossman (2002)
+        to the original I-Match implementation by Chowdhury et al. (2002).
      - rand_lexicon_ratio : float, default=0.7
-        ratio of the vocabulary used in random lexicons
+        fraction of the vocabulary used in random lexicons.
 
     References
     ----------
-     - Kołcz & Chowdhury (2008) - Lexicon randomization for
-       near-duplicate detection with I-Match.
-     - Chowdhury et al. (2002) - Collection statistics for fast
-       duplicate document detection.
-
+    .. [Chowdhury2002]  `Chowdhury, A., Frieder, O., Grossman, D.,
+                        & McCabe, M. C. (2002). Collection statistics for fast
+                        duplicate document detection.
+                        ACM Transactions on Information Systems (TOIS),
+                        20(2), 171-191.`
+    .. [Kolcz2008] - `Kołcz, A., & Chowdhury, A. (2008). Lexicon randomization
+                      for near-duplicate detection with I-Match.
+                      The Journal of Supercomputing, 45(3), 255-276.`
     """
     def __init__(self, n_rand_lexicons=1, rand_lexicon_ratio=0.7):
         self._fit_X = None
@@ -44,9 +46,8 @@ class IMatchDuplicates(BaseEstimator):
         self.rand_lexicon_ratio = rand_lexicon_ratio
         if n_rand_lexicons < 1:
             raise ValueError
-        if not ( 0 < rand_lexicon_ratio < 1 ):
+        if not (0 < rand_lexicon_ratio < 1):
             raise ValueError
-
 
     def fit(self, X, y=None):
         """
@@ -65,14 +66,14 @@ class IMatchDuplicates(BaseEstimator):
 
         n_samples, n_features = X.shape
 
-        slice_list = [slice(None)] # no lexicon randomization
+        slice_list = [slice(None)]  # no lexicon randomization
 
-        if self.n_rand_lexicons > 1: # use lexicon randomization
+        if self.n_rand_lexicons > 1:  # use lexicon randomization
             for _ in range(self.n_rand_lexicons - 1):
                 # make a random choice of features that will be used
                 slice_list.append(np.random.choice(n_features,
-                                    int(self.rand_lexicon_ratio*n_features),
-                                    replace=False))
+                                  int(self.rand_lexicon_ratio*n_features),
+                                  replace=False))
 
         ihash_all = []
         for islice in slice_list:
@@ -90,12 +91,12 @@ class IMatchDuplicates(BaseEstimator):
         self.hash_ = np.array(ihash_all).T
 
         unique_gen = (np.unique(col, return_counts=True, return_inverse=True)
-                                                for col in self.hash_.T)
+                      for col in self.hash_.T)
         # this is an integer array (n_samples, n_lexicons) with the size
         # of the cluster for each element
         # subsequently (self.hash_is_dup_ > 1).sum(axis=1) yields the
         # numeber of lexicons that suggest each document is a duplicate
-        self.hash_is_dup_ =  np.array([
+        self.hash_is_dup_ = np.array([
                    counts[indices] for _, indices, counts in unique_gen]).T
 
         self.labels_ = _merge_clusters(self.hash_, rename=True)
