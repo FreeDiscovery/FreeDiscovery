@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import os
 from sklearn.externals import joblib
 import numpy as np
 
-from ..base import _BaseWrapper
-from ..utils import setup_model
-from ..exceptions import WrongParameter
-from ..cluster.base import _BaseClusteringWrapper
+from freediscovery.base import _BaseWrapper
+from freediscovery.utils import setup_model
+from freediscovery.exceptions import WrongParameter
+from freediscovery.cluster.base import _BaseClusteringWrapper
 
 
 class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
@@ -48,8 +47,8 @@ class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
         if method not in ['simhash', 'i-match']:
             raise WrongParameter('Dup. detection method {} not implemented!'.format(method))
         if method == 'simhash':
-            from .simhash import SimhashDuplicates
-            self.model = shash = SimhashDuplicates()
+            from freediscovery.near_duplicates import SimhashNearDuplicates
+            self.model = shash = SimhashNearDuplicates()
         else:
             self.model = None
         self._pars = pars
@@ -85,8 +84,8 @@ class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
         """
 
         if self._pars['method'] == 'simhash':
-            from ..cluster.utils import (_binary_linkage2clusters,
-                                         _merge_clusters)
+            from freediscovery.cluster.utils import (_binary_linkage2clusters,
+                                                     _merge_clusters)
 
             shash = self.model
 
@@ -111,10 +110,10 @@ class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):
                                      cluster_id_dnup[:, None]), axis=1),
                      rename=True)
         elif self._pars['method'] == 'i-match':
-            from .imatch import IMatchDuplicates
+            from freediscovery.near_duplicates import IMatchNearDuplicates
             if not hasattr(self, '_fit_X'):
                 self._fit_X = joblib.load(str(self.fe.dsid_dir / 'features'))
-            model = IMatchDuplicates(**args)
+            model = IMatchNearDuplicates(**args)
             model.fit(self._fit_X)
             cluster_id = model.labels_
 
