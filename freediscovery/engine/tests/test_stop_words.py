@@ -1,23 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import os.path
 import shutil
 import pytest
 
 
-from freediscovery.stop_words import (_StopWordsWrapper)
-from .run_suite import check_cache
+from freediscovery.engine.stop_words import _StopWordsWrapper
+from freediscovery.tests.run_suite import check_cache
 
 
-from freediscovery.stop_words import CUSTOM_STOP_WORDS as csw
-from freediscovery.stop_words import COMMON_FIRST_NAMES as cfns
-
-basename = os.path.dirname(__file__)
+from freediscovery.engine.stop_words import CUSTOM_STOP_WORDS as csw
+from freediscovery.engine.stop_words import COMMON_FIRST_NAMES as cfns
 
 cache_dir = check_cache()
 

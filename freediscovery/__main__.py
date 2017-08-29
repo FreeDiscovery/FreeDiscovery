@@ -9,10 +9,10 @@ from pathlib import Path
 from sklearn.externals import joblib
 
 from .server import fd_app
-from .cli import (_query_yes_no, _TeeLogger,
-                  _number_of_workers)
-from .text import FeatureVectorizer
-from .pipeline import PipelineFinder
+from freediscovery.engine.cli import (_query_yes_no, _TeeLogger,
+                                      _number_of_workers)
+from freediscovery.engine.vectorizer import FeatureVectorizer
+from freediscovery.engine.pipeline import PipelineFinder
 from .datasets import IR_DATASETS, load_dataset
 from ._version import __version__
 

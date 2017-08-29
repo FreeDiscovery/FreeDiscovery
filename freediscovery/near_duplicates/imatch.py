@@ -6,7 +6,7 @@ from freediscovery.cluster.utils import _merge_clusters
 from sklearn.utils.validation import check_array
 
 
-class IMatchDuplicates(BaseEstimator):
+class IMatchNearDuplicates(BaseEstimator):
     """
     Near duplicates detection using the randomized I-Match algorithm.
 

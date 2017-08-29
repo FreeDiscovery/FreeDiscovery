@@ -5,7 +5,7 @@ from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
 
 
-class SimhashDuplicates(BaseEstimator):
+class SimhashNearDuplicates(BaseEstimator):
     """Near duplicates detection using the simhash algorithm.
 
     A classical near-duplicates detection involves comparing all pairs of

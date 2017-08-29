@@ -2,13 +2,13 @@
 
 import os.path
 
-from freediscovery.text import FeatureVectorizer
-from freediscovery.email_threading import _EmailThreadingWrapper
-from .run_suite import check_cache
+from freediscovery.engine.vectorizer import FeatureVectorizer
+from freediscovery.engine.email_threading import _EmailThreadingWrapper
+from freediscovery.tests.run_suite import check_cache
 
 
 basename = os.path.dirname(__file__)
-data_dir = os.path.join(basename, "..", "data",
+data_dir = os.path.join(basename, "..", "..", "data",
                         "fedora-devel-list-2008-October")
 
 

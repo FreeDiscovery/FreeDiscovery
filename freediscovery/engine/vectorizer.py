@@ -14,14 +14,14 @@ from sklearn.externals.joblib import Parallel, delayed
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import make_pipeline
 
-from ._version import __version__
-from .pipeline import PipelineFinder
-from .utils import generate_uuid, _rename_main_thread
-from .feature_weighting import SmartTfidfTransformer, _validate_smart_notation
-from .ingestion import DocumentIndex
-from .preprocessing import processing_filters
-from .stop_words import _StopWordsWrapper
-from .exceptions import (DatasetNotFound, InitException, WrongParameter)
+from freediscovery._version import __version__
+from freediscovery.engine.pipeline import PipelineFinder
+from freediscovery.engine.stop_words import _StopWordsWrapper
+from freediscovery.engine.ingestion import DocumentIndex
+from freediscovery.utils import generate_uuid, _rename_main_thread
+from freediscovery.feature_weighting import SmartTfidfTransformer, _validate_smart_notation
+from freediscovery.preprocessing import processing_filters
+from freediscovery.exceptions import (DatasetNotFound, InitException, WrongParameter)
 
 
 def _touch(filename):
@@ -439,7 +439,7 @@ class FeatureVectorizer(object):
 
     def parse_email_headers(self):
         from email.parser import Parser
-        from .externals.jwzthreading import Message
+        from freediscovery.externals.jwzthreading import Message
         features = []
         for idx, fname in enumerate(self.filenames_abs_):
             txt = _read_file(fname)
@@ -548,7 +548,7 @@ class FeatureVectorizer(object):
         This is by no mean an efficient operation, processing all the files
         at once might be more suitable in most occastions.
         """
-        from .lsi import _LSIWrapper
+        from freediscovery.engine.lsi import _LSIWrapper
         dsid_dir = self.dsid_dir
         db_old = self.db_.data
         internal_id_offset = db_old.internal_id.max()
@@ -613,7 +613,7 @@ class FeatureVectorizer(object):
         This is by no mean an efficient operation, processing all the files
         at once might be more suitable in most occastions.
         """
-        from .lsi import _LSIWrapper
+        from freediscovery.engine.lsi import _LSIWrapper
         dsid_dir = self.dsid_dir
         db_old = self.db_.data
         query = pd.DataFrame(dataset_definition)
@@ -686,7 +686,7 @@ class FeatureVectorizer(object):
         remove_stop_words : bool
           remove stop words
         """
-        from .utils import _query_features
+        from freediscovery.utils import _query_features
 
         X = self._load_features()
         return _query_features(self.vect_, X, indices, n_top_words,

@@ -8,7 +8,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from .exceptions import (NotFound, WrongParameter)
+from freediscovery.exceptions import (NotFound, WrongParameter)
 
 
 def _list_filenames(data_dir, dir_pattern=None, file_pattern=None):
@@ -62,8 +62,6 @@ def _generate_document_id(db, document_id_generator):
 
         if document_id_generator == 'indexed_file_path':
             db['document_id'] = db.internal_id
-
-
 
 
 def _check_mutual_index(keys1, keys2):

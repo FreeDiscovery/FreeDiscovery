@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from .cluster.utils import _dbscan_unique2noisy
+from freediscovery.cluster.utils import _dbscan_unique2noisy
 
 from sklearn.exceptions import UndefinedMetricWarning
 
@@ -91,7 +91,7 @@ def f1_same_duplicates_score(x, y):
 def mean_duplicates_count_score(x, y):
     """ Score based on the number of duplicates for sample k,
     averaged over samples."""
-    from .utils import _count_duplicates
+    from freediscovery.utils import _count_duplicates
     x_count = _count_duplicates(x)
     y_count = _count_duplicates(y)
     mask = (x_count > 1) | (y_count > 1)  # select only duplicates
@@ -281,4 +281,3 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
             "f1": m_f1_score, 'roc_auc': m_roc_auc,
             'average_precision': m_average_precision,
             'recall_at_20p': m_recall_at_20p}
-
