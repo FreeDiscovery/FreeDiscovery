@@ -23,7 +23,7 @@ from ..categorization import _CategorizerWrapper
 from ..utils import _docstring_description, _paginate
 from ..cluster import (_ClusteringWrapper, centroid_similarity,
                        compute_optimal_sampling)
-from ..search import _SearchWrapper
+from freediscovery.engine.search import _SearchWrapper
 from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
                        mean_duplicates_count_score, _scale_cosine_similarity)

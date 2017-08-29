@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os.path
 from numpy.testing import assert_array_less
 
 import pytest
@@ -8,16 +7,8 @@ import pytest
 from sklearn.feature_extraction.text import CountVectorizer
 from freediscovery.feature_weighting import SmartTfidfTransformer
 
-from ..text import FeatureVectorizer
 from freediscovery.lsi import _TruncatedSVD_LSI
-from freediscovery.engine.lsi import _LSIWrapper
-from ..search import Search, _SearchWrapper
-
-from .run_suite import check_cache
-
-basename = os.path.dirname(__file__)
-cache_dir = check_cache()
-data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
+from freediscovery.search import Search
 
 
 @pytest.mark.parametrize('kind,', ['regular', 'semantic'])
@@ -62,27 +53,3 @@ def test_search(kind):
         # 2 - cosine distance should be in [0, 2]
         assert_array_less(dist, 1.001)
         assert_array_less(-1 - 1e-9, dist)
-
-
-@pytest.mark.parametrize('kind,', ['regular', 'semantic'])
-def test_search_wrapper(kind):
-    # check for syntax errors etc in the wrapper
-
-    fe = FeatureVectorizer(cache_dir=cache_dir)
-    vect_uuid = fe.setup()
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
-
-    if kind == 'semantic':
-        lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
-        lsi.fit_transform(n_components=20)
-        parent_id = lsi.mid
-    else:
-        parent_id = vect_uuid
-
-    sw = _SearchWrapper(cache_dir=cache_dir, parent_id=parent_id)
-    dist = sw.search("so that I can reserve a room")
-    assert dist.shape == (fe.n_samples_,)
-    # document 1 found by
-    # grep -rn "so that I can reserve a room"
-    # freediscovery/data/ds_001/raw/
-    assert dist.argmax() == 1
