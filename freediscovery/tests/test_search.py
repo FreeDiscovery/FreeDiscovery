@@ -1,13 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-
 import os.path
-from numpy.testing import (assert_array_less, )
+from numpy.testing import assert_array_less
 
 import pytest
 
@@ -15,7 +9,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from freediscovery.feature_weighting import SmartTfidfTransformer
 
 from ..text import FeatureVectorizer
-from ..lsi import _TruncatedSVD_LSI, _LSIWrapper
+from freediscovery.lsi import _TruncatedSVD_LSI
+from freediscovery.engine.lsi import _LSIWrapper
 from ..search import Search, _SearchWrapper
 
 from .run_suite import check_cache

@@ -18,7 +18,7 @@ from sklearn.exceptions import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
 from ..ingestion import _check_mutual_index
-from ..lsi import _LSIWrapper
+from ..engine.lsi import _LSIWrapper
 from ..categorization import _CategorizerWrapper
 from ..utils import _docstring_description, _paginate
 from ..cluster import (_ClusteringWrapper, centroid_similarity,

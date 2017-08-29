@@ -13,8 +13,8 @@ import itertools
 
 from freediscovery.base import PipelineFinder
 from freediscovery.text import FeatureVectorizer
-from freediscovery.lsi import _LSIWrapper
 from freediscovery.categorization import _CategorizerWrapper
+from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.metrics import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing, WrongParameter

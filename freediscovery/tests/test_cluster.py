@@ -11,7 +11,7 @@ from freediscovery.text import FeatureVectorizer
 from freediscovery.cluster import _ClusteringWrapper, select_top_words
 from freediscovery.cluster.birch import _check_birch_tree_consistency
 from freediscovery.cluster.optimal_sampling import compute_optimal_sampling
-from freediscovery.lsi import _LSIWrapper
+from freediscovery.engine.lsi import _LSIWrapper
 from .run_suite import check_cache
 
 

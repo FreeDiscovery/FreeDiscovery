@@ -548,7 +548,7 @@ class FeatureVectorizer(object):
         This is by no mean an efficient operation, processing all the files
         at once might be more suitable in most occastions.
         """
-        from .lsi import _LSIWrapper
+        from .engine.lsi import _LSIWrapper
         dsid_dir = self.dsid_dir
         db_old = self.db_.data
         internal_id_offset = db_old.internal_id.max()
@@ -613,7 +613,7 @@ class FeatureVectorizer(object):
         This is by no mean an efficient operation, processing all the files
         at once might be more suitable in most occastions.
         """
-        from .lsi import _LSIWrapper
+        from .engine.lsi import _LSIWrapper
         dsid_dir = self.dsid_dir
         db_old = self.db_.data
         query = pd.DataFrame(dataset_definition)

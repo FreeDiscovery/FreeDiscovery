@@ -13,7 +13,7 @@ from freediscovery.text import FeatureVectorizer
 from freediscovery.categorization import _CategorizerWrapper
 from freediscovery.dupdet import _DuplicateDetectionWrapper
 from freediscovery.cluster import _ClusteringWrapper
-from freediscovery.lsi import _LSIWrapper
+from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.metrics import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
