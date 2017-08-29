@@ -15,7 +15,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import make_pipeline
 
 from ._version import __version__
-from .pipeline import PipelineFinder
+from freediscovery.engine.pipeline import PipelineFinder
 from .utils import generate_uuid, _rename_main_thread
 from .feature_weighting import SmartTfidfTransformer, _validate_smart_notation
 from .ingestion import DocumentIndex

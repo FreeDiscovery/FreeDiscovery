@@ -4,7 +4,7 @@ import os.path
 import warnings
 
 import pytest
-from freediscovery.pipeline import _split_path, PipelineFinder
+from freediscovery.engine.pipeline import _split_path, PipelineFinder
 from .run_suite import check_cache
 
 

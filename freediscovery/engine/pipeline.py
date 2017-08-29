@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 from collections import OrderedDict
 from pathlib import Path
-from .exceptions import (DatasetNotFound, InitException, ModelNotFound, WrongParameter)
+from freediscovery.exceptions import ModelNotFound
 
 from sklearn.externals import joblib
 

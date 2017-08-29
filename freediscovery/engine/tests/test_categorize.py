@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 import itertools
 
-from freediscovery.base import PipelineFinder
+from freediscovery.engine.pipeline import PipelineFinder
 from freediscovery.text import FeatureVectorizer
 from freediscovery.engine.categorization import _CategorizerWrapper
 from freediscovery.engine.lsi import _LSIWrapper

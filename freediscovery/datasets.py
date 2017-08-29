@@ -9,7 +9,7 @@ import pandas as pd
 from sklearn.externals import joblib
 import pickle
 
-from .base import PipelineFinder
+from freediscovery.engine.pipeline import PipelineFinder
 from .externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
 
 
