@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import numpy as np
 
 from sklearn.base import BaseEstimator
 from sklearn.neighbors import NearestNeighbors, NearestCentroid
 from sklearn.utils.validation import check_array
-from .base import RankerMixin
-from .metrics import seuclidean_dist2cosine_sim
+from freediscovery.base import RankerMixin
 
 # a subclass of the NearestCentroid from scikit-learn that also
 # includes the distance to the nearest centroid
+
 
 class NearestCentroidRanker(NearestCentroid):
 
@@ -37,6 +32,7 @@ class NearestCentroidRanker(NearestCentroid):
         X = check_array(X, accept_sparse='csr')
 
         return pairwise_distances(X, self.centroids_, metric=self.metric).min(axis=1)
+
 
 def _chunk_kneighbors(func, X, batch_size=5000, **args):
     """ Chunk kneighbors computations to reduce RAM requirements
@@ -67,7 +63,6 @@ def _chunk_kneighbors(func, X, batch_size=5000, **args):
         ind_arr.append(ind_k)
         dist_arr.append(dist_k)
     return (np.concatenate(dist_arr, axis=0), np.concatenate(ind_arr, axis=0))
-
 
 
 class NearestNeighborRanker(BaseEstimator, RankerMixin):
@@ -139,11 +134,11 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
         # define nearest neighbors search objects for each category
         self._mod = [NearestNeighbors(n_neighbors=1,
-                                       leaf_size=self.leaf_size,
-                                       algorithm=self.algorithm,
-                                       n_jobs=self.n_jobs,
-                                       metric='cosine',  # euclidean metric by default
-                                       ) for el in range(len(y_unique))]
+                                      leaf_size=self.leaf_size,
+                                      algorithm=self.algorithm,
+                                      n_jobs=self.n_jobs,
+                                      metric='cosine',  # euclidean metric by default
+                                      ) for el in range(len(y_unique))]
 
         index_mapping = []
         for imod, y_val in enumerate(y_unique):
@@ -178,7 +173,7 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         # cos
         S_res = np.zeros((X.shape[0], n_classes), dtype='float')
         nn_idx_res = np.zeros((X.shape[0], n_classes), dtype='int')
-        
+
         for imod in range(n_classes):
             D_i, nn_idx_i_loc = _chunk_kneighbors(self._mod[imod].kneighbors, X,
                                                batch_size=batch_size)

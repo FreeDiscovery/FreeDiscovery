@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-import shutil
 import platform
 import random
 from pathlib import Path
