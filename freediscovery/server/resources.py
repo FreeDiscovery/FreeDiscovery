@@ -18,8 +18,8 @@ from sklearn.exceptions import UndefinedMetricWarning
 
 from ..text import FeatureVectorizer
 from ..ingestion import _check_mutual_index
-from ..engine.lsi import _LSIWrapper
-from ..categorization import _CategorizerWrapper
+from freediscovery.engine.lsi import _LSIWrapper
+from freediscovery.engine.categorization import _CategorizerWrapper
 from ..utils import _docstring_description, _paginate
 from ..cluster import (_ClusteringWrapper, centroid_similarity,
                        compute_optimal_sampling)

@@ -10,7 +10,7 @@ import pytest
 import itertools
 
 from freediscovery.text import FeatureVectorizer
-from freediscovery.categorization import _CategorizerWrapper
+from freediscovery.engine.categorization import _CategorizerWrapper
 from freediscovery.dupdet import _DuplicateDetectionWrapper
 from freediscovery.cluster import _ClusteringWrapper
 from freediscovery.engine.lsi import _LSIWrapper
