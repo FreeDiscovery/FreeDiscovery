@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from freediscovery.text import FeatureVectorizer
+from freediscovery.engine.vectorizer import FeatureVectorizer
 from freediscovery.engine.cluster import _ClusteringWrapper
 from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.tests.run_suite import check_cache

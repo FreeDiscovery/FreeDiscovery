@@ -3,7 +3,7 @@
 from sklearn.externals import joblib
 import numpy as np
 
-from freediscovery.base import _BaseWrapper
+from freediscovery.engine.base import _BaseWrapper
 from freediscovery.utils import setup_model
 from freediscovery.exceptions import WrongParameter
 from freediscovery.engine.cluster import _BaseClusteringWrapper

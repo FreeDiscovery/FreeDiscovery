@@ -5,7 +5,7 @@ from sklearn.externals import joblib
 import scipy.sparse
 import pandas as pd
 
-from freediscovery.base import _BaseWrapper
+from freediscovery.engine.base import _BaseWrapper
 from freediscovery.utils import setup_model
 from freediscovery.cluster.utils import _dbscan_noisy2unique
 from freediscovery.cluster.birch import _BirchHierarchy

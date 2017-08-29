@@ -6,12 +6,12 @@ from pandas.util.testing import assert_frame_equal
 import pytest
 import pandas as pd
 
-from freediscovery.ingestion import DocumentIndex, _infer_document_id_from_path
-from .run_suite import check_cache
+from freediscovery.engine.ingestion import DocumentIndex, _infer_document_id_from_path
+from freediscovery.tests.run_suite import check_cache
 from freediscovery.exceptions import (NotFound)
 
 basename = os.path.dirname(__file__)
-data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
+data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
 cache_dir = check_cache()
 
 

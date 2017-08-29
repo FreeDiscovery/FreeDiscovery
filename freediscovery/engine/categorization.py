@@ -5,7 +5,7 @@ from scipy.special import logit, expit
 from sklearn.externals import joblib
 from sklearn.preprocessing import LabelEncoder
 
-from freediscovery.base import _BaseWrapper
+from freediscovery.engine.base import _BaseWrapper
 from freediscovery.utils import setup_model, _rename_main_thread
 from freediscovery.neighbors import NearestCentroidRanker, NearestNeighborRanker
 from freediscovery.metrics import _scale_cosine_similarity

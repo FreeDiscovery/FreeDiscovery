@@ -16,21 +16,21 @@ from freediscovery.externals.sklearn_backport.metrics import (roc_auc_score, ave
 import warnings
 from sklearn.exceptions import UndefinedMetricWarning
 
-from ..text import FeatureVectorizer
-from ..ingestion import _check_mutual_index
+from freediscovery.engine.vectorizer import FeatureVectorizer
+from freediscovery.engine.ingestion import _check_mutual_index
 from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.engine.categorization import _CategorizerWrapper
-from ..utils import _docstring_description, _paginate
+from freediscovery.utils import _docstring_description, _paginate
 from freediscovery.cluster import centroid_similarity, compute_optimal_sampling
 from freediscovery.engine.cluster import _ClusteringWrapper
 from freediscovery.engine.search import _SearchWrapper
-from ..metrics import (categorization_score,
+from freediscovery.metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
                        mean_duplicates_count_score, _scale_cosine_similarity)
 from freediscovery.engine.near_duplicates import _DuplicateDetectionWrapper
 from freediscovery.engine.email_threading import _EmailThreadingWrapper
-from ..datasets import load_dataset
-from ..exceptions import WrongParameter
+from freediscovery.datasets import load_dataset
+from freediscovery.exceptions import WrongParameter
 from freediscovery.engine.stop_words import _StopWordsWrapper
 from .validators import _is_in_range
 

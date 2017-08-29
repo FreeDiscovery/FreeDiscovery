@@ -11,15 +11,15 @@ import itertools
 import pytest
 from sklearn.preprocessing import normalize
 
-from freediscovery.text import (FeatureVectorizer,
-                                _FeatureVectorizerSampled)
-from freediscovery.ingestion import DocumentIndex
+from freediscovery.engine.vectorizer import (FeatureVectorizer,
+                                             _FeatureVectorizerSampled)
+from freediscovery.engine.ingestion import DocumentIndex
 
 from freediscovery.tests.run_suite import check_cache
 from freediscovery.exceptions import (NotFound)
 
 basename = os.path.dirname(__file__)
-data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
+data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
 n_features = 1100000
 
 
@@ -307,7 +307,7 @@ def test_sampling_filenames():
 
 @pytest.mark.parametrize("use_hashing", ['hashed', 'non-hashed'])
 def test_feature_extraction_cyrillic(use_hashing):
-    data_dir = os.path.join(basename, "..", "data", "ds_002", "raw")
+    data_dir = os.path.join(basename, "..", "..", "data", "ds_002", "raw")
     cache_dir = check_cache()
     use_hashing = (use_hashing == 'hashed')
 
@@ -330,7 +330,7 @@ def test_feature_extraction_cyrillic(use_hashing):
 
 
 def test_email_parsing():
-    data_dir = os.path.join(basename, "..", "data",
+    data_dir = os.path.join(basename, "..", "..", "data",
                             "fedora-devel-list-2008-October")
     cache_dir = check_cache()
 
@@ -345,7 +345,7 @@ def test_email_parsing():
 
 
 def test_ingestion_batches():
-    data_dir = os.path.join(basename, "..", "data", "ds_002", "raw")
+    data_dir = os.path.join(basename, "..", "..", "data", "ds_002", "raw")
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir)
@@ -368,7 +368,7 @@ def test_ingestion_batches():
 
 
 def test_ingestion_content():
-    data_dir = Path(basename, "..", "data", "ds_002", "raw")
+    data_dir = Path(basename, "..", "..", "data", "ds_002", "raw")
 
     dd = []
     for idx, fname in enumerate(sorted(data_dir.glob('*txt'))):

@@ -4,7 +4,7 @@ import os.path
 
 import pytest
 
-from freediscovery.text import FeatureVectorizer
+from freediscovery.engine.vectorizer import FeatureVectorizer
 from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.engine.search import _SearchWrapper
 

@@ -3,9 +3,9 @@
 import numpy as np
 from sklearn.externals import joblib
 
-from ..lsi import _compute_lsi_dimensionality, _TruncatedSVD_LSI
-from ..base import _BaseWrapper
-from ..utils import setup_model
+from freediscovery.engine.base import _BaseWrapper
+from freediscovery.lsi import _compute_lsi_dimensionality, _TruncatedSVD_LSI
+from freediscovery.utils import setup_model
 
 
 class _LSIWrapper(_BaseWrapper):

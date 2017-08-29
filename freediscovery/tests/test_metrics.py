@@ -103,6 +103,3 @@ def test_recall_at_k_score():
     assert score == 0.5
     score = recall_at_k_score(y_true, y_pred, k=1.0)
     assert score == 1.0
-
-
-

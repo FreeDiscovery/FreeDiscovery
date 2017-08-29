@@ -6,9 +6,9 @@ from numpy.testing import assert_allclose, assert_equal
 
 from sklearn.preprocessing import normalize
 
-from freediscovery.text import FeatureVectorizer
+from freediscovery.engine.vectorizer import FeatureVectorizer
 from freediscovery.engine.lsi import _LSIWrapper
-from freediscovery.ingestion import DocumentIndex
+from freediscovery.engine.ingestion import DocumentIndex
 from freediscovery.tests.run_suite import check_cache
 
 basename = os.path.dirname(__file__)

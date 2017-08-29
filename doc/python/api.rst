@@ -13,7 +13,6 @@ Datasets
     :toctree: ./generated/
 
     freediscovery.datasets.load_dataset
-    freediscovery.ingestion.DocumentIndex
 
 
 Feature extraction
@@ -47,8 +46,8 @@ Duplicates detection
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.dupdet.SimhashDuplicates
-    freediscovery.dupdet.IMatchDuplicates
+    freediscovery.near_duplicates.SimhashNearDuplicates
+    freediscovery.near_duplicates.IMatchNearDuplicates
 
     
 Semantic search
@@ -76,5 +75,3 @@ This module aims to extend `sklearn.metrics <http://scikit-learn.org/stable/modu
     :toctree: ./generated/
 
     freediscovery.metrics.recall_at_k_score
-    freediscovery.metrics.ratio_duplicates_score
-    freediscovery.metrics.f1_same_duplicates_score

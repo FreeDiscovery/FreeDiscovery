@@ -10,7 +10,7 @@ from sklearn.externals import joblib
 import pickle
 
 from freediscovery.engine.pipeline import PipelineFinder
-from .externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
+from freediscovery.externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
 
 
 IR_DATASETS = {'treclegal09_2k_subset': {'md5': '8090cc55ac18fe5c4d5d53d82fc767a2',
@@ -125,8 +125,8 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
     test_set : dict
        a list of dictionaries for the test set
     """
-    from .ingestion import DocumentIndex
-    from .io import parse_ground_truth_file
+    from freediscovery.engine.ingestion import DocumentIndex
+    from freediscovery.io import parse_ground_truth_file
 
     if name not in IR_DATASETS:
         raise ValueError('Dataset name {} not known!'.format(name))

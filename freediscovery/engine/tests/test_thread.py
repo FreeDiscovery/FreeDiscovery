@@ -2,7 +2,7 @@
 
 import os.path
 
-from freediscovery.text import FeatureVectorizer
+from freediscovery.engine.vectorizer import FeatureVectorizer
 from freediscovery.engine.email_threading import _EmailThreadingWrapper
 from freediscovery.tests.run_suite import check_cache
 

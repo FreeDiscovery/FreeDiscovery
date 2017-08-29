@@ -13,7 +13,7 @@ import pytest
 import itertools
 
 from freediscovery.engine.pipeline import PipelineFinder
-from freediscovery.text import FeatureVectorizer
+from freediscovery.engine.vectorizer import FeatureVectorizer
 from freediscovery.engine.categorization import _CategorizerWrapper
 from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.io import parse_ground_truth_file

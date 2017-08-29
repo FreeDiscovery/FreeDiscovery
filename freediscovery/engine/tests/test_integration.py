@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose
 import pytest
 import itertools
 
-from freediscovery.text import FeatureVectorizer
+from freediscovery.engine.vectorizer import FeatureVectorizer
 from freediscovery.engine.categorization import _CategorizerWrapper
 from freediscovery.engine.near_duplicates import _DuplicateDetectionWrapper
 from freediscovery.engine.cluster import _ClusteringWrapper

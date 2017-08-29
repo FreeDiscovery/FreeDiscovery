@@ -1,22 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-import os
 import pytest
-import json
 import itertools
-from unittest import SkipTest
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_almost_equal
 
 from .. import fd_app
-from ...utils import _silent, dict2type, sdict_keys
-from ...ingestion import DocumentIndex
-from ...exceptions import OptionalDependencyMissing
-from ...tests.run_suite import check_cache
 
 from .base import parse_res, V01, app, app_notest
 
@@ -84,4 +72,3 @@ def test_dupdetection_metrics(app, metrics):
         assert_almost_equal(data['f1_same_duplicates'], 0.667, decimal=3)
     if 'mean_duplicates_count' in metrics:
         assert_almost_equal(data['mean_duplicates_count'], 0.75)
-

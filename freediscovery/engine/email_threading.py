@@ -3,7 +3,7 @@
 import numpy as np
 from sklearn.externals import joblib
 
-from freediscovery.base import _BaseWrapper
+from freediscovery.engine.base import _BaseWrapper
 from freediscovery.utils import setup_model
 
 from freediscovery.externals import jwzthreading as jwzt
