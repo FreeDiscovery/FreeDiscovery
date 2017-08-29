@@ -9,8 +9,8 @@ from pathlib import Path
 from sklearn.externals import joblib
 
 from .server import fd_app
-from .cli import (_query_yes_no, _TeeLogger,
-                  _number_of_workers)
+from freediscovery.engine.cli import (_query_yes_no, _TeeLogger,
+                                      _number_of_workers)
 from .text import FeatureVectorizer
 from .pipeline import PipelineFinder
 from .datasets import IR_DATASETS, load_dataset
