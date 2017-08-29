@@ -6,7 +6,7 @@ import numpy as np
 from freediscovery.base import _BaseWrapper
 from freediscovery.utils import setup_model
 from freediscovery.exceptions import WrongParameter
-from freediscovery.cluster.base import _BaseClusteringWrapper
+from freediscovery.engine.cluster import _BaseClusteringWrapper
 
 
 class _DuplicateDetectionWrapper(_BaseWrapper, _BaseClusteringWrapper):

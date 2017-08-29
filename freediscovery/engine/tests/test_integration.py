@@ -12,16 +12,16 @@ import itertools
 from freediscovery.text import FeatureVectorizer
 from freediscovery.engine.categorization import _CategorizerWrapper
 from freediscovery.engine.near_duplicates import _DuplicateDetectionWrapper
-from freediscovery.cluster import _ClusteringWrapper
+from freediscovery.engine.cluster import _ClusteringWrapper
 from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.metrics import categorization_score
 from freediscovery.exceptions import OptionalDependencyMissing
-from .run_suite import check_cache
+from freediscovery.tests.run_suite import check_cache
 
 
 basename = os.path.dirname(__file__)
-data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
+data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
 
 
 @pytest.mark.parametrize('use_hashing, use_lsi, method',

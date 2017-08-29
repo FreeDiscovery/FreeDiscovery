@@ -21,8 +21,8 @@ from ..ingestion import _check_mutual_index
 from freediscovery.engine.lsi import _LSIWrapper
 from freediscovery.engine.categorization import _CategorizerWrapper
 from ..utils import _docstring_description, _paginate
-from ..cluster import (_ClusteringWrapper, centroid_similarity,
-                       compute_optimal_sampling)
+from freediscovery.cluster import centroid_similarity, compute_optimal_sampling
+from freediscovery.engine.cluster import _ClusteringWrapper
 from freediscovery.engine.search import _SearchWrapper
 from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
