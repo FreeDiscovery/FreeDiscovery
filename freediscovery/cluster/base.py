@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-
 import numpy as np
 from sklearn.externals import joblib
 import scipy.sparse
@@ -10,7 +7,7 @@ import pandas as pd
 
 from ..base import _BaseWrapper
 from ..utils import setup_model
-from ..stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
+from freediscovery.engine.stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
 from .utils import _dbscan_noisy2unique
 from .birch import _BirchHierarchy
 

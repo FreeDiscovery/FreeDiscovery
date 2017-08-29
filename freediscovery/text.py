@@ -20,7 +20,7 @@ from .utils import generate_uuid, _rename_main_thread
 from .feature_weighting import SmartTfidfTransformer, _validate_smart_notation
 from .ingestion import DocumentIndex
 from .preprocessing import processing_filters
-from .stop_words import _StopWordsWrapper
+from freediscovery.engine.stop_words import _StopWordsWrapper
 from .exceptions import (DatasetNotFound, InitException, WrongParameter)
 
 

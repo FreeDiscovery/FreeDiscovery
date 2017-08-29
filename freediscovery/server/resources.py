@@ -31,7 +31,7 @@ from ..dupdet import _DuplicateDetectionWrapper
 from freediscovery.engine.email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
 from ..exceptions import WrongParameter
-from ..stop_words import _StopWordsWrapper
+from freediscovery.engine.stop_words import _StopWordsWrapper
 from .validators import _is_in_range
 
 from .schemas import (IDSchema, FeaturesParsSchema,
