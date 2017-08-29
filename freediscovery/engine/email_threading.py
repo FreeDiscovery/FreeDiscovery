@@ -3,10 +3,10 @@
 import numpy as np
 from sklearn.externals import joblib
 
-from .base import _BaseWrapper
-from .utils import setup_model
+from freediscovery.base import _BaseWrapper
+from freediscovery.utils import setup_model
 
-from .externals import jwzthreading as jwzt
+from freediscovery.externals import jwzthreading as jwzt
 
 
 class _EmailThreadingWrapper(_BaseWrapper):

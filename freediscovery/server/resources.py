@@ -28,7 +28,7 @@ from ..metrics import (categorization_score,
                        ratio_duplicates_score, f1_same_duplicates_score,
                        mean_duplicates_count_score, _scale_cosine_similarity)
 from ..dupdet import _DuplicateDetectionWrapper
-from ..email_threading import _EmailThreadingWrapper
+from freediscovery.engine.email_threading import _EmailThreadingWrapper
 from ..datasets import load_dataset
 from ..exceptions import WrongParameter
 from ..stop_words import _StopWordsWrapper
