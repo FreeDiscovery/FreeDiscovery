@@ -27,7 +27,7 @@ Althernaitively, the latest stable version can be donwloaded from the [Github re
     ```bash
     cd FreeDiscovery
     conda config --append channels conda-forge
-    conda create -n freediscovery-env --file requirements.txt python=3.6
+    conda create -n freediscovery-env --file requirements_engine.txt python=3.6
 
     source activate freediscovery-env   # on Linux/Mac OS X
     # Note: on Windows the above command is "activate freediscovery-env"

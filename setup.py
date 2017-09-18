@@ -34,7 +34,6 @@ setup(name='freediscovery',
       packages=find_packages(),
       include_package_data=True,
       long_description=LONG_DESCRIPTION,
-      python_requires='>=3.5',
       entry_points={
           'console_scripts': [
               'freediscovery = freediscovery.__main__:main'
@@ -48,6 +47,8 @@ setup(name='freediscovery',
 
           'License :: OSI Approved :: BSD License',
 
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
