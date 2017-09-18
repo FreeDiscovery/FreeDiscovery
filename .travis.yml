@@ -20,30 +20,37 @@ env:
 
 install: 
     - git clone --depth 1 git://github.com/astropy/ci-helpers.git
-    - source ci-helpers/travis/setup_conda.sh
+    - source ci-helpers/travis/setup_conda.sh && rm -rf ci-helpers/
     - |
         source activate test
         conda install --file ${REQUIREMENTS}
-        conda install ${EXTRA_DEPS}
+        conda install ${EXTRA_DEPS} pytest-cov codecov
         pip install .
 
 script:
-    # run tests
-    - pip install pytest-cov codecov
-    - py.test -sv --cov=./
-    # install matplotlib which we don't add as a core dependency but which is used in examples
-    - conda install matplotlib
-    # now start the server and run the examples
+    - |
+        source activate test
+        if [[ ${REQUIREMENTS} == "requirements_engine.txt" ]]; then
+            py.test -sv --cov=./ ./freediscovery/*/tests/
+        else
+            py.test -sv --cov=./ ./freediscovery/tests/
+        fi
+
     - | 
-        freediscovery run -y --cache-dir ../freediscovery_shared &
-        FDSERVER_PID=$!
-        sleep 20  
-    - | 
-        set -o pipefail
-        for f in examples/*/*.py; do 
-           python $f >> ~/log.txt
-        done
-        cat ../freediscovery_shared/freediscovery-backend.log && cat ~/log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
+        if [[ ${REQUIREMENTS} == "requirements_engine.txt" ]]; then
+            source activate test
+            conda install matplotlib
+            freediscovery run -y --cache-dir ../freediscovery_shared &
+            FDSERVER_PID=$!
+            sleep 20  
+            set -o pipefail
+            for f in examples/*/*.py; do 
+               python $f >> ~/log.txt
+            done
+        fi
+        cat ../freediscovery_shared/freediscovery-backend.log 
+        cat ~/log.txt
+        if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
 
 after_success:
     codecov --token=${CODECOV_TOKEN}
