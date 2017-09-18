@@ -3,6 +3,7 @@
 import os.path
 
 import numpy as np
+from unittest import SkipTest
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 
@@ -154,6 +155,10 @@ def test_merge_clusters():
 
 
 def test_select_top_words():
+    try:
+        import nltk
+    except ImportError:
+        raise SkipTest
     words_list = ['apple', 'apples', 'test', 'go']
     n_words = 2
     res = select_top_words(words_list, n=n_words)

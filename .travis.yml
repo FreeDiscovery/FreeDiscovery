@@ -1,6 +1,14 @@
 language: python
-sudo: False
-dist: trusty
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.theano
+    - $HOME/download # Sufficient to add miniconda.sh to TRAVIS cache.
+    - $HOME/miniconda # Add the installation to TRAVIS cache.
+
+
 env:
     global:
     - CONDA_CHANNELS="defaults conda-forge"
@@ -39,7 +47,7 @@ script:
     - | 
         if [[ ${REQUIREMENTS} == "requirements_engine.txt" ]]; then
             source activate test
-            conda install matplotlib
+            conda install matplotlib python-graphviz
             freediscovery run -y --cache-dir ../freediscovery_shared &
             FDSERVER_PID=$!
             sleep 20  

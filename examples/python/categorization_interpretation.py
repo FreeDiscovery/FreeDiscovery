@@ -5,12 +5,15 @@ Categorization Interpretation Example
 A visual interpretation for the binary categorization outcome for a single document
 by looking at the relative contribution of individual words
 """
+from __future__ import print_function
+
 import os
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 import matplotlib as mpl
 mpl.use('Agg')
+
 import matplotlib.pyplot as plt
 
 from freediscovery.categorization import binary_sensitivity_analysis
@@ -20,7 +23,7 @@ from freediscovery.interpretation import explain_categorization, _make_cmap
 newsgroups = fetch_20newsgroups(subset='train', categories=['sci.space', 'comp.graphics'],
                                 remove=('headers', 'footers', 'quotes'))
 
-document_id = 312 # the document id we want to visualize
+document_id = 312  # the document id we want to visualize
 
 vectorizer = TfidfVectorizer(stop_words='english')
 X = vectorizer.fit_transform(newsgroups.data)
@@ -38,7 +41,7 @@ weights = binary_sensitivity_analysis(clf, vectorizer.vocabulary_, X[document_id
 cmap = _make_cmap(alpha=0.2, filter_ratio=0.15)
 html, norm = explain_categorization(weights, newsgroups.data[document_id], cmap)
 
-fig, ax = plt.subplots(1,1, figsize=(6, 1.2))
+fig, ax = plt.subplots(1, 1, figsize=(6, 1.2))
 plt.subplots_adjust(bottom=0.4, top=0.7)
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, orientation='horizontal')
 
