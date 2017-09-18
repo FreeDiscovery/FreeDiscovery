@@ -2,7 +2,6 @@
 
 import platform
 import random
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -10,6 +9,7 @@ from sklearn.externals import joblib
 import pickle
 
 from freediscovery.engine.pipeline import PipelineFinder
+from freediscovery.externals.pathlib2 import Path
 from freediscovery.externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
 
 

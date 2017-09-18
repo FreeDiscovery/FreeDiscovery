@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from pathlib import Path
-
 import numpy as np
 from numpy.testing import assert_allclose
 
+from freediscovery.externals.pathlib2 import Path
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.metrics import categorization_score
 from freediscovery.tests.run_suite import check_cache

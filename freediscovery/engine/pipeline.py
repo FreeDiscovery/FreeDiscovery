@@ -2,8 +2,9 @@
 
 import os
 from collections import OrderedDict
-from pathlib import Path
+
 from freediscovery.exceptions import ModelNotFound
+from freediscovery.externals.pathlib2 import Path
 
 from sklearn.externals import joblib
 

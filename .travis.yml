@@ -1,12 +1,6 @@
 language: python
 sudo: false
 
-cache:
-  directories:
-    - $HOME/.cache/pip
-    - $HOME/.theano
-    - $HOME/download # Sufficient to add miniconda.sh to TRAVIS cache.
-    - $HOME/miniconda # Add the installation to TRAVIS cache.
 
 
 env:
@@ -55,10 +49,14 @@ script:
             for f in examples/*/*.py; do 
                python $f >> ~/log.txt
             done
+            cat ../freediscovery_shared/freediscovery-backend.log 
+            cat ~/log.txt
+            if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
         fi
-        cat ../freediscovery_shared/freediscovery-backend.log 
-        cat ~/log.txt
-        if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
 
 after_success:
     codecov --token=${CODECOV_TOKEN}
+
+cache:
+  directories:
+     $HOME/download # Sufficient to add miniconda.sh to TRAVIS cache.
