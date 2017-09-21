@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import sys
+
 import pytest
 import pandas as pd
 
 from .run_suite import check_cache
 from ..utils import dict2type
+from unittest import SkipTest
 
 from freediscovery.datasets import load_dataset, IR_DATASETS
 
@@ -13,6 +16,8 @@ cache_dir = check_cache()
 
 @pytest.mark.parametrize('name', ['20_newsgroups_micro'])
 def test_load_20newsgoups_dataset(name):
+    if (sys.version_info < (3, 0)):
+        raise SkipTest
     md, training_set, dataset = load_dataset(name,
                                              cache_dir=cache_dir)
 
