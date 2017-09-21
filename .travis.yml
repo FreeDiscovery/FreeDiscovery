@@ -1,61 +1,62 @@
 language: python
-sudo: required # this is necessary to get gcc-4.8 for some reason (otherwise gcc-4.6 is used)
-dist: trusty
-matrix:
-    include:
-    - python: "3.6"
-      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS="" SKLEARN_OLD=false
-    - python: "3.6"
-      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS="simhash-py gunicorn" SKLEARN_OLD=false
-    - python: "3.6"
-      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS="" SKLEARN_OLD=true
+sudo: false
+
+
+
+env:
+    global:
+    - CONDA_CHANNELS="defaults conda-forge"
+    matrix:
+    - PYTHON_VERSION="3.6"
+      REQUIREMENTS="requirements_engine.txt" EXTRA_DEPS=""
+    - PYTHON_VERSION="3.6"
+      REQUIREMENTS="requirements_engine.txt" EXTRA_DEPS="simhash-py gunicorn"
     #- python: "3.5"
     #- env: REQUIREMENTS="build_tools/requirements_compat.txt" EXTRA_DEPS="" SKLEARN_OLD=false
-    - python: "3.5" 
-      env: REQUIREMENTS="requirements.txt" EXTRA_DEPS="" SKLEARN_OLD=false
-
-before_install:
-    - wget http://repo.continuum.io/miniconda/Miniconda${TRAVIS_PYTHON_VERSION:0:1}-latest-Linux-x86_64.sh -O miniconda.sh
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b
-    - export PATH=/home/travis/miniconda${TRAVIS_PYTHON_VERSION:0:1}/bin:$PATH
-    - conda update --yes conda
-    - conda info -a
+    - PYTHON_VERSION="3.5" 
+      REQUIREMENTS="requirements.txt" EXTRA_DEPS="pytest"
+    - PYTHON_VERSION="3.5" 
+      REQUIREMENTS="requirements.txt" EXTRA_DEPS="pytest scikit-learn=0.18.1"
+    - PYTHON_VERSION="2.7" 
+      REQUIREMENTS="requirements.txt" EXTRA_DEPS="pytest"
 
 install: 
+    - git clone --depth 1 git://github.com/astropy/ci-helpers.git
+    - source ci-helpers/travis/setup_conda.sh && rm -rf ci-helpers/
     - |
-       if [ "$REQUIREMENTS" = "requirements.txt" ] ; then 
-          # use default conda chanel by default
-          conda config --append channels conda-forge
-       else
-          # use conda-forge channel by default
-          # since the default channel has some issues with gfortran for those versions
-          conda config --add channels conda-forge
-       fi
-    - conda install --yes --file ${REQUIREMENTS} ${EXTRA_DEPS} python=${TRAVIS_PYTHON_VERSION}
-    - | 
-        if [ "$SKLEARN_OLD" = true ] ; then 
-           conda install -y scikit-learn==0.18.0
-        fi
-    - pip install .
+        source activate test
+        conda install --file ${REQUIREMENTS}
+        conda install ${EXTRA_DEPS} pytest-cov codecov
+        pip install .
 
 script:
-    # run tests
-    - pip install pytest-cov codecov
-    - py.test -sv --cov=./
-    # install matplotlib which we don't add as a core dependency but which is used in examples
-    - pip install matplotlib==1.5.3
-    # now start the server and run the examples
+    - |
+        source activate test
+        if [[ ${REQUIREMENTS} == "requirements_engine.txt" ]]; then
+            py.test -sv --cov=./ ./freediscovery/*/tests/
+        else
+            py.test -sv --cov=./ ./freediscovery/tests/
+        fi
+
     - | 
-        freediscovery run -y --cache-dir ../freediscovery_shared &
-        FDSERVER_PID=$!
-        sleep 20  
-    - | 
-        set -o pipefail
-        for f in examples/*/*.py; do 
-           python $f >> ~/log.txt
-        done
-        cat ../freediscovery_shared/freediscovery-backend.log && cat ~/log.txt && if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
+        if [[ ${REQUIREMENTS} == "requirements_engine.txt" ]]; then
+            source activate test
+            conda install matplotlib python-graphviz
+            freediscovery run -y --cache-dir ../freediscovery_shared &
+            FDSERVER_PID=$!
+            sleep 20  
+            set -o pipefail
+            for f in examples/*/*.py; do 
+               python $f >> ~/log.txt
+            done
+            cat ../freediscovery_shared/freediscovery-backend.log 
+            cat ~/log.txt
+            if grep -q "Traceback (most recent call last):" ~/log.txt ../freediscovery_shared/freediscovery-backend.log; then false; else true; fi
+        fi
 
 after_success:
     codecov --token=${CODECOV_TOKEN}
+
+cache:
+  directories:
+     $HOME/download # Sufficient to add miniconda.sh to TRAVIS cache.

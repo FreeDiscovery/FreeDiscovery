@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 
 import numpy as np
 from freediscovery.cluster.utils import _dbscan_unique2noisy
@@ -10,6 +11,8 @@ from sklearn.exceptions import UndefinedMetricWarning
 
 
 # Categorization Metrics
+
+
 def recall_at_k_score(y_true, y_pred, k):
     """
     Recall after retrieving k documents from the collections
@@ -34,10 +37,12 @@ def recall_at_k_score(y_true, y_pred, k):
     elif isinstance(k, int):
         pass
     else:
-        raise TypeError('Provided k with type {} must be int or float'.format(type(k)))
+        raise TypeError('Provided k with type {} must be int or float'
+                        .format(type(k)))
 
     if len(y_true) != len(y_pred):
-        raise ValueError('len(y_true)={} != len(y_pred)={}'.format(len(y_true) != len(y_pred)))
+        raise ValueError('len(y_true)={} != len(y_pred)={}'
+                         .format(len(y_true) != len(y_pred)))
 
     index_sorted = np.argsort(y_pred)[::-1]
     recall_curve = y_true[index_sorted].cumsum()/y_true.sum()
@@ -179,7 +184,7 @@ def _normalize_similarity(x, metric='cosine', inverse=False):
 
 def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     """ Given a cosine similarity on L2 normalized data,
-    optionally convert it to Jaccard similarity, and/or 
+    optionally convert it to Jaccard similarity, and/or
     normalize it to the [0, 1] interval
 
     Parameters
@@ -195,7 +200,8 @@ def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     valid_metrics = ['cosine', 'jaccard', 'cosine_norm', 'jaccard_norm',
                      'cosine-positive']
     if metric not in valid_metrics:
-        raise ValueError('metric {} not supported, must be in {}'.format(metric, valid_metrics))
+        raise ValueError('metric {} not supported, must be in {}'
+                         .format(metric, valid_metrics))
     if metric == 'cosine':
         return x
     elif metric == 'cosine-positive':
@@ -211,7 +217,8 @@ def _scale_cosine_similarity(x, metric='cosine', inverse=False):
             x = jaccard2cosine_similarity(x)
 
     if metric.endswith('norm'):
-        x = _normalize_similarity(x, metric=metric.split('_')[0], inverse=inverse)
+        x = _normalize_similarity(x, metric=metric.split('_')[0],
+                                  inverse=inverse)
 
     return x
 
@@ -237,7 +244,7 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
         return {"recall_score": -1, "precision_score": -1, 'f1': -1, 'auc_roc': -1,
                 'average_precision': -1}
 
-    # sort values by index 
+    # sort values by index
     order_ref = idx_ref.argsort()
     idx_ref = idx_ref[order_ref]
     Y_ref = Y_ref[order_ref]

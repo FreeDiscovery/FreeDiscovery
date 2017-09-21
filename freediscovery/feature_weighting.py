@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import warnings
 
 import scipy.sparse as sp
@@ -9,7 +10,6 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.sparsefuncs_fast import csr_row_norms
 from sklearn.exceptions import DataConversionWarning
-from sklearn.utils.testing import ignore_warnings
 
 from .utils import _mean_csr_nonzero_axis1
 
@@ -344,10 +344,14 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
     if scheme_n == 'n':
         pass
     elif scheme_n == 'c':
-        with ignore_warnings(category=DataConversionWarning):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=DataConversionWarning)
             X = normalize(X, norm="l2", copy=False)
     elif scheme_n == 'l':
-        with ignore_warnings(category=DataConversionWarning):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=DataConversionWarning)
             X = normalize(X, norm="l1", copy=False)
     elif scheme_n == 'u':
         X_norm = np.diff(X.indptr)
