@@ -4,6 +4,9 @@ FreeDiscovery
 .. image:: https://img.shields.io/pypi/v/freediscovery.svg
     :target: https://pypi.python.org/pypi/freediscovery
 
+.. image:: https://anaconda.org/conda-forge/freediscovery/badges/version.svg
+  :target: https://github.com/conda-forge/freediscovery-feedstock
+
 .. image:: https://travis-ci.org/FreeDiscovery/FreeDiscovery.svg?branch=master
     :target: https://travis-ci.org/FreeDiscovery/FreeDiscovery
 
@@ -12,7 +15,6 @@ FreeDiscovery
 
 .. image:: https://codecov.io/gh/FreeDiscovery/FreeDiscovery/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/FreeDiscovery/FreeDiscovery
-
 
 
 FreeDiscovery is an open source e-Discovery and information retrieval engine. FreeDiscovery is based on the  scikit-learn library and has two main components,
