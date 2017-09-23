@@ -1,5 +1,7 @@
-FreeDiscovery
-=============
+|logo1|
+
+.. |logo1| image:: https://freediscovery.github.io/static/freediscovery-full-logo-v2.png
+    :scale: 80 %
 
 .. image:: https://img.shields.io/pypi/v/freediscovery.svg
     :target: https://pypi.python.org/pypi/freediscovery
@@ -29,10 +31,11 @@ FreeDiscovery is an open source e-Discovery and information retrieval engine. Fr
 
 FreeDiscovery is released under the 3-clause BSD licence.
 
-|logo1|    |logo2|
+|logo2|     |logo3|
 
-.. |logo1| image:: https://freediscovery.github.io/static/freediscovery-full-logo-v2.png
-    :scale: 80 %
 
 .. |logo2| image:: https://freediscovery.github.io/static/grossmanlabs-old-logo-small.gif
     :target: http://www.grossmanlabs.com/
+
+.. |logo3| image:: https://freediscovery.github.io/static/1D_logo_stacked.png
+    :target: https://www.onediscovery.com/

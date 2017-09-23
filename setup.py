@@ -16,8 +16,8 @@ if mo:
 else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
-with open('README.rst', 'rt') as fh:
-    LONG_DESCRIPTION = fh.read()
+with open('README.rst', 'rb') as fh:
+    LONG_DESCRIPTION = fh.read().decode('utf-8')
 
 with open('requirements.txt', 'rt') as fh:
     REQUIREMENTS = fh.read().splitlines()
