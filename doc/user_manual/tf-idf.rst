@@ -1,16 +1,15 @@
-Document similarity
-===================
+Feature extraction
+==================
 
-
-A number of algorithms in FreeDiscovery require computing similarity between documents, including Nearest Neighbors categorization, search and clustering. 
 
 1. TF-IDF weighting schemes
 ---------------------------
-FreeDiscovery supports a large range of TF-IDF weighting schemes via the `weighting="xxxx"` parameter, that follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
+
+FreeDiscovery supports a large range of TF-IDF weighting schemes in :class:`~freediscovery.feature_weighting.SmartTfidfTransformer` via the ``weighting="xxxx"`` parameter, that follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
 
   .. image:: ../_static/tf_idf_weighting.svg 
 
-the different options are descibed in more detail below,
+The different options are descibed in more detail in the table below,
 
 +----------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
 | **Term frequency**                                                                                                                                       | **Document frequency**                                                            | **Normalization**                                                                                 |
@@ -28,7 +27,7 @@ the different options are descibed in more detail below,
 | **L** (log average): :math:`{\displaystyle {\tfrac {1+{\text{log}}({\text{tf}}_{t,d})}{1+{\text{log}}({\text{avg}}_{t\epsilon d}({\text{tf}}_{t,d}))}}}` |                                                                                   |                                                                                                   |
 +----------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
 
-when pivoted normalization is enabled i.e. ``weighting='???p'``, for each document it's norm :math:`V_{\textbf{d}}` is replaced by,
+When pivoted normalization is enabled i.e. ``weighting='???p'``, for each document it's norm :math:`V_{\textbf{d}}` is replaced by,
 
 .. math::
   
@@ -36,13 +35,10 @@ when pivoted normalization is enabled i.e. ``weighting='???p'``, for each docume
 
 where ``alpha`` is a user defined parameter, such as :math:`\alpha \in [0, 1]`.
 
+.. topic:: References:
 
-2. Example of term weighting
-----------------------------
+    *  C.D. Manning, P. Raghavan, H. Schütze.  `"Document and query weighting schemes"
+       <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_ , 2008.
 
-To illustrate the difference between these metrics on a more practical example, we can consider two documents,
-
-- document ``A`` consisting of words ``"legal documents prodedure case"``
-- document ``B`` consisting of words ``"legal documents"``
-
-
+    * A. Singhal, C. Buckley, and M. Mitra. `"Pivoted document length normalization."
+      <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ 1996

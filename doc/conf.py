@@ -57,7 +57,7 @@ source_parsers = {
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.coverage',
+#    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.autodoc',
@@ -354,7 +354,7 @@ napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
 
-autoclass_content = 'class' # don't document __init__
+autoclass_content = 'class'  # don't document __init__
 
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve('freediscovery',

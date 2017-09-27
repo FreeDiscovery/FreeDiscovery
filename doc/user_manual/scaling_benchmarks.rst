@@ -54,5 +54,3 @@ The `examples/duplicate_detection_example.py <./examples/duplicate_detection_exa
 +---------+---------------------------+-----------+---------------------------------+
 
 where `n_samples` is the number of documents in the dataset.
-
-Other benchmarks will be added shortly.

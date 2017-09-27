@@ -30,7 +30,7 @@ Document categorization
 .. autosummary::
     :toctree: ./generated/
 
-    freediscovery.categorization.NearestNeighborRanker
+    freediscovery.neighbors.NearestNeighborRanker
 
 Document clustering
 --------------------
