@@ -62,16 +62,17 @@ def _validate_smart_notation(scheme):
 
 class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, weighting='nnc', norm_alpha=0.75, norm_pivot=None,
-                 compute_df=False):
-        """ Apply TF-IDF feature weighting using the SMART notation with a scikit-learn
-        compatible transformer.
+                 compute_df=False, copy=True):
+        """TF-IDF feature weighting using the SMART notation
+
+        This is a tranformer class similar to TdfidfTransformer but supports
+        a larger number of TF-IDF weighting schemes.
 
         Parameters
         ----------
         weighting : str, default='nnc'
           the SMART notation for document, term weighting and normalization.
-          In the form [nlabL][ntp][ncb] , see
-          https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
+          In the form [nlabL][ntp][ncb] , see the TF-IDF user manual section.
         norm_alpha : float, default=0.75
           the alpha parameter in the pivoted normalization
         norm_pivot : float, default=None
@@ -80,21 +81,27 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         compute_df : bool, default=False
           compute the document frequenc (`df_` attribute) even when it's not
           explicitly required by the weighting scheme.
+        copy : boolean, default=True
+          Whether to copy the input array and operate on the copy or perform
+          in-place operations in fit and transform.
 
 
         References
         ----------
-        .. [Manning2008] `Manning, Christopher D.; Raghavan, Prabhakar; Schütze, Hinrich (2008),
-           `"Document and query weighting schemes"`
-           <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_
-        .. [Singhal1996] `Singhal, Amit, Chris Buckley, and Manclar Mitra. "Pivoted document length normalization."
-           ACM Press, 1996`
+        .. [Manning2008] C.D. Manning, P. Raghavan, H. Schütze,
+           `"Document and query weighting schemes"
+           <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_ ,
+           2008
+        .. [Singhal1996] A. Singhal, C. Buckley, and M. Mitra.
+           `"Pivoted document length normalization."
+           <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ , 1996
         """
         _validate_smart_notation(weighting)
         self.weighting = weighting
         self.norm_alpha = norm_alpha
         self.norm_pivot = norm_pivot
         self.compute_df = compute_df
+        self.copy = copy
         self.dl_ = None
         self.df_ = None
         self.du_ = None
@@ -108,7 +115,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         X : sparse matrix, [n_samples, n_features]
             a matrix of term/token counts
         """
-        X = check_array(X, ['csr'])
+        X = check_array(X, ['csr'], copy=self.copy)
         scheme_t, scheme_d, scheme_n = _validate_smart_notation(self.weighting)
         self.dl_ = _document_length(X)
         if scheme_d in 'stp' or self.compute_df:
@@ -143,11 +150,8 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         ----------
         X : sparse matrix, [n_samples, n_features]
             a matrix of term/token counts
-        copy : boolean, default True
-            Whether to copy X and operate on the copy or perform in-place
-            operations.
         """
-        X = check_array(X, ['csr'])
+        X = check_array(X, ['csr'], copy=self.copy)
 
         scheme_t, scheme_d, scheme_n = _validate_smart_notation(self.weighting)
         self.dl_ = _document_length(X)
@@ -189,7 +193,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
             Whether to copy X and operate on the copy or perform in-place
             operations.
         """
-        X = check_array(X, ['csr'])
+        X = check_array(X, ['csr'], copy=self.copy)
         check_is_fitted(self, 'dl_', 'vector is not fitted')
         if X.shape[1] != self._n_features:
             raise ValueError(('Model fitted with n_features={} '
@@ -255,11 +259,13 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
 
     References
     ----------
-    .. [Manning2008] `Manning, Christopher D.; Raghavan, Prabhakar; Schütze, Hinrich (2008),
-                     "Document and query weighting schemes"`
-       <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_
-    .. [Singhal1996] `Singhal, Amit, Chris Buckley, and Manclar Mitra. "Pivoted document length normalization."
-                     ACM Press, 1996`
+    .. [Manning2008] C.D. Manning, P. Raghavan, H. Schütze,
+       `"Document and query weighting schemes"
+       <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_ ,
+       2008
+    .. [Singhal1996] A. Singhal, C. Buckley, and M. Mitra.
+       `"Pivoted document length normalization."
+       <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ , 1996
     """
 
     tf = check_array(tf, ['csr'])
