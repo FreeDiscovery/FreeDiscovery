@@ -21,12 +21,10 @@ FreeDiscovery requires **Python 3.5+** and can be installed with `conda <https:/
 .. toctree::
    :maxdepth: 2
 
-
-   API <../openapi-docs/index.html#http://>
    installation_instructions
    quickstart
    examples/index
    cli
    data_ingestion
    deployment
-   docker
+   API <../openapi-docs/index.html#http://>
