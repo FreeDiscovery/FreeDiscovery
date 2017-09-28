@@ -1,5 +1,5 @@
-Python package
-==============
+FreeDiscovery Python package
+============================
 
 FreeDiscovery is a scikit-learn compatible Python package with a focus on information retrieval applications.
 
