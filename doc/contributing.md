@@ -13,12 +13,12 @@ Running the test suite (cf. below) may also help in diagnosing the source of the
 
 This section describes the workflow for creating Pull Requests (PR). For more complex contributions, it may also be useful to create an associated issue. 
 
- 1. Fork the main FreeDiscovery repository
- 2. Clone this fork on your computer and [install it](https://freediscovery.github.io/doc/dev/installation_instructions.html#a-python-install)
+ 1. Fork the FreeDiscovery repository
+ 2. Clone this fork on your computer and [install it](./engine/installation_instructions.html)
  3. Make the appropriate changes
  4. Make sure that the tests suite (cf. below) does not produce errors
  5. Commit and push the changes to GitHub
- 6. Create a Pull Request from your branch to the `master` branch of the FreeDiscovery repository so it can be reviewed and merged. 
+ 6. Create a Pull Request from your branch to the `master` branch
  7. If any of the continuous integration services (Travis CI, Appveyor CI, Circle CI) produce an error, review the corresponding output and fix the code if appropriate. 
  8. After the PR is merged, this branch can be safely deleted from your fork (and a new one may be created for subsequent contributions).
 
@@ -31,16 +31,8 @@ A two level test suite is implemented in FreeDiscovery, that validates both the 
 The tests are located under `freediscovery/tests/` and can be run with,
 
 ```bash
-py.test -s FreeDiscovery/freediscovery/
+py.test -s .
 ```
-
-or alternatively from Python with,
-
-```py
-import freediscovery.tests as ft; ft.run()
-```
-
-It is automatically run as part of the installation procedure locally. The Continuous Integration also runs this test suite on Linux and Windows for all commits and pull requests on GitHub.  
 
 
 ## Building Documentation
