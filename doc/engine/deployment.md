@@ -24,7 +24,7 @@ The easiest way of running FreeDiscovery as a background service on Linux / MacO
  3. Configure supervisor to launch FreeDiscovery by adding creating a new service definition file `/etc/supervisor/conf.d/freediscovery.conf`
     ```
     [program:freediscovery]
-    command=<freediscovery_excutable_path> run --cache-dir /srv/freediscovery_shared/ -y --hostname 0.0.0.0 -p 8888 --log-file /var/log/freediscovery/freediscovery.backend.log
+    command=<freediscovery_excutable_path> run --cache-dir /srv/freediscovery_shared/ -y --hostname 0.0.0.0 -p 5001 --log-file /var/log/freediscovery/freediscovery.backend.log
     directory=/
     autostart=true
     autorestart=true
