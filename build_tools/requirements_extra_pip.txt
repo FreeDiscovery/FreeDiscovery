@@ -5,7 +5,6 @@ recommonmark==0.4.0
 sphinxcontrib-napoleon==0.5.3
 sphinx_rtd_theme==0.1.10a0
 sphinx-gallery==0.1.12
-pillow==3.4.2
 mock
 sphinx-argparse
 CommonMark==0.5.5
