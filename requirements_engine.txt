@@ -4,7 +4,6 @@ pandas>=0.18.0,<0.21
 scikit-learn>=0.18.0
 nltk>=3.2.1
 pytest>=3.0.1
-nose
 flask>=0.12.0         # web libraries
 requests>=2.7.0
 marshmallow>=2.12.2

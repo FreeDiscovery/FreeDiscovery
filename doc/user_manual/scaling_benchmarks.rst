@@ -3,7 +3,7 @@ Scaling Benchmarks
 
 This page aims to summarize the performance and scaling of the algorithms used in FreeDiscovery.
 
-Benchmarks are computed running the `examples <./examples/index.html>`_ on the TREC 2009 corpus of 700 000 documents (1.5 GB or 7 GB uncompressed). The following benchmarks are given for Intel(R) Xeon(R) CPU E3-1225 V2 @ 3.20GHz (4 CPU cores) server with 16 GB of RAM. The time complexites are experimentally (approximately) estimated for the given parameters.
+Benchmarks are computed running the `examples <./engine/examples/index.html>`_ on the TREC 2009 corpus of 700 000 documents (1.5 GB or 7 GB uncompressed). The following benchmarks are given for Intel(R) Xeon(R) CPU E3-1225 V2 @ 3.20GHz (4 CPU cores) server with 16 GB of RAM. The time complexites are experimentally (approximately) estimated for the given parameters.
 
 Document ingestion
 ------------------

@@ -1,20 +1,9 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
+import sys
 
+from freediscovery._version import __version__
 from setuptools import setup, find_packages
-import re
 
-
-# a define the version sting inside the package
-# see https://stackoverflow.com/questions/458550/standard-way-to-embed-version-into-python-package
-VERSIONFILE = "freediscovery/_version.py"
-verstrline = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(VSRE, verstrline, re.M)
-if mo:
-    version = mo.group(1)
-else:
-    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 with open('README.rst', 'rb') as fh:
     LONG_DESCRIPTION = fh.read().decode('utf-8')
@@ -22,10 +11,15 @@ with open('README.rst', 'rb') as fh:
 with open('requirements.txt', 'rt') as fh:
     REQUIREMENTS = fh.read().splitlines()
 
-REQUIREMENTS_CORE = REQUIREMENTS[:5]
+if sys.version_info >= (3, 5):
+    REQUIREMENTS.pop()  # scandir is not needed
+
+with open('requirements_engine.txt', 'rt') as fh:
+    REQUIREMENTS_ENGINE = fh.read().splitlines()
+
 
 setup(name='freediscovery',
-      version=version,
+      version=__version__,
       description='Open source software for E-Discovery '
                   'and Information Retrieval',
       author='Grossman Labs',
@@ -57,6 +51,6 @@ setup(name='freediscovery',
 
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
           'Topic :: Text Processing :: General'],
-      extras_require={'all': REQUIREMENTS,
-                      'core': REQUIREMENTS_CORE},
+      extras_require={'engine': REQUIREMENTS_ENGINE,
+                      'core': REQUIREMENTS},
       keywords='information-retrieval machine-learning text-classification')

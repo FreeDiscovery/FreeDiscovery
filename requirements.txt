@@ -2,4 +2,4 @@ numpy>=1.10.1
 scipy>=0.16.1
 pandas>=0.18.0,<0.21
 scikit-learn>=0.18.0
-scandir
+scandir  # PY2.7 only
