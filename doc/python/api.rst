@@ -20,7 +20,7 @@ Feature extraction
 
 .. autosummary::
     :toctree: ./generated/
-
+    :template: autosummary/base.rst
     
     freediscovery.feature_weighting.SmartTfidfTransformer
 

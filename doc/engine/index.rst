@@ -25,11 +25,8 @@ The server can be started with
 to check that the server is successfully runnining, open ``http://localhost:5001/``.
 
 
-Contents
-^^^^^^^^
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    overview
    quickstart

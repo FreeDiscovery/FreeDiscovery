@@ -35,6 +35,8 @@ In addition to standard TF-IDF normalizations, above pivoted normalization was p
 
 where :math:`\alpha` (``norm_alpha``) is a user defined parameter, such as :math:`\alpha \in [0, 1]`. If ``norm_alpha=1`` the pivot cancels out and this case corresponds to regular TF-IDF normalization.
 
+See the example on `optimizing TF-IDF weighting scheme <../python/examples/optimize_tfidf_weighting.html>`_ for a more practical illustration.
+
 .. topic:: References:
 
     *  C.D. Manning, P. Raghavan, H. Schütze.  `"Document and query weighting schemes"

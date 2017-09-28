@@ -20,18 +20,20 @@ from freediscovery.feature_weighting import SmartTfidfTransformer
 
 rng = np.random.RandomState(34)
 
-"""
-We load and vectorize 2 classes from the 20 newsgroup dataset,
-"""
+###############################################################################
+#
+# We load and vectorize 2 classes from the 20 newsgroup dataset,
+
 newsgroups = fetch_20newsgroups(subset='train',
                                 categories=['sci.space', 'comp.graphics'])
 vectorizer = CountVectorizer(stop_words='english')
 X = vectorizer.fit_transform(newsgroups.data)
 
-"""
-then compute baseline categorization performance using Logistic Regression and
-the TF-IDF transfomer from scikit-learn
-"""
+###############################################################################
+#
+# then compute baseline categorization performance using Logistic Regression and
+# the TF-IDF transfomer from scikit-learn
+
 X_tfidf = TfidfTransformer().fit_transform(X)
 
 X_train, X_test, y_train, y_test = train_test_split(X, newsgroups.target,
@@ -43,10 +45,11 @@ pipe = Pipeline(steps=[('tfidf', TfidfTransformer()),
 pipe.fit(X_train, y_train)
 print('Baseline TF-IDF categorization accuracy: {:.3f}'
       .format(pipe.score(X_test, y_test)))
-"""
-Next, we search with cross-validation for the best TF-IDF weighting scheme
-among the 5x4x4=80 possibilities supported by the `SmartTfidfTransformer`,
-"""
+
+###############################################################################
+#
+# Next, we search with cross-validation for the best TF-IDF weighting scheme
+# among the 5x4x4=80 possibilities supported by the `SmartTfidfTransformer`,
 
 pipe = Pipeline(steps=[('tfidf', SmartTfidfTransformer()),
                        ('logisticregression', LogisticRegression())])
