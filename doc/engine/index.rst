@@ -2,19 +2,27 @@ FreeDiscovery Engine
 ====================
 
 
-FreeDiscovery requires **Python 3.5+** and can be installed with `conda <https://conda.io/>`_,
+FreeDiscovery requires **Python 3.5+** and can be installed with 
 
 .. code:: bash
 
-    conda config --append channels conda-forge
-    conda install freediscovery
+    pip install freediscovery[engine]
+
+
+or alternatively with `conda <https://conda.io/>`_,
+
+.. code:: bash
+
+    conda install -c conda-forge freediscovery
 
 
 The server can be started with
 
-* ``freediscovery run``
+.. code:: bash
 
-to check that the is successfully runnining, open ``http://localhost:5001/``.
+    freediscovery run
+
+to check that the server is successfully runnining, open ``http://localhost:5001/``.
 
 
 Contents

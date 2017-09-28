@@ -14,7 +14,7 @@ it can be installed with,
 
 .. code:: bash
 
-    pip install freediscovery
+    pip install freediscovery[core]
 
 
 .. toctree::
