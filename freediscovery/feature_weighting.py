@@ -73,6 +73,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         weighting : str, default='nnc'
           the SMART notation for document, term weighting and normalization.
           In the form [nlabL][ntspd][ncb] , see the TF-IDF user manual section.
+          In the form [nlabL][ntp][ncb] , see the TF-IDF user manual section.
         norm_alpha : float, default=0.75
           the alpha parameter in the pivoted normalization
         norm_pivot : float, default=None
