@@ -1,7 +1,6 @@
 FreeDiscovery Engine
 ====================
 
-**Installation**
 
 FreeDiscovery requires **Python 3.5+** and can be installed with `conda <https://conda.io/>`_,
 
@@ -11,21 +10,23 @@ FreeDiscovery requires **Python 3.5+** and can be installed with `conda <https:/
     conda install freediscovery
 
 
-**Running the server**
+The server can be started with
 
 * ``freediscovery run``
-* to check that the server started successfully, ``curl -X GET http://localhost:5001/``
+
+to check that the is successfully runnining, open ``http://localhost:5001/``.
 
 
+Contents
+^^^^^^^^
 
 .. toctree::
    :maxdepth: 2
 
    overview
-   installation_instructions
    quickstart
    examples/index
-   cli
    data_ingestion
+   cli
    deployment
    API <../openapi-docs/index.html#http://>
