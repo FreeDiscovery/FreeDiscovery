@@ -9,6 +9,7 @@ An example of optimizing TF-IDF weighting schemes using
 """
 from __future__ import print_function
 
+import os
 from itertools import product
 
 import numpy as np
@@ -81,7 +82,7 @@ param_grid = {'tfidf__weighting': ["".join(el) + 'p'
 pipe_cv = GridSearchCV(pipe,
                        param_grid=param_grid,
                        verbose=1,
-                       n_jobs=-1,
+                       n_jobs=(1 if os.name == 'nt' else -1),
                        cv=5)
 pipe_cv.fit(X_train, y_train)
 print('Best CV params: weighting={weighting}, norm_alpha={norm_alpha:.3f} '

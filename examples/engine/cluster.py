@@ -174,5 +174,5 @@ print(pd.DataFrame(data))
 #
 # 5. Delete the extracted features
 
-url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
+url = BASE_URL + '/feature-extraction/{}'.format(dsid)
 requests.delete(url)
