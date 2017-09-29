@@ -1,7 +1,7 @@
 Quick start
 ===========
 
-This section illustrates the use of FreeDiscovery REST API using `curl` from the command line. Other exampes using Python are available `here <./examples/index.html>`_.
+This section illustrates the use of FreeDiscovery REST API using ``curl`` from the command line. Other exampes using Python are available `here <./examples/index.html>`_.
 
 1. Install FreeDiscovery and start the server (see `prevous section <./index.html>`_
 2. Download the 20_newsgroup dataset: ``freediscovery download 20_newsgroups``

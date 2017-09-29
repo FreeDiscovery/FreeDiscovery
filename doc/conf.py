@@ -57,7 +57,6 @@ source_parsers = {
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-#    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.autodoc',
@@ -65,9 +64,11 @@ extensions = [
     'sphinxcontrib.napoleon',
     'sphinx_gallery.gen_gallery',
     'sphinx.ext.linkcode',
-    'sphinxcontrib.autoprogram'
+    'sphinxcontrib.autoprogram',
+    'sphinx.ext.intersphinx'
 ]
 
+intersphinx_mapping = {'sklearn': ('http://scikit-learn.org/stable/', None)}
 
 autosummary_generate = True
 
@@ -88,10 +89,14 @@ master_doc = 'index'
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs' : ['../examples/fd_engine/', '../examples/python/'],
+    'examples_dirs' : ['../examples/engine/', '../examples/python/'],
     # path where to save gallery generated examples
     'gallery_dirs'  : ['engine/examples', 'python/examples'],
-    'backreferences_dir': False,
+    # directory where function granular galleries are stored
+    'backreferences_dir'  : 'python/generated',
+
+    # Modules for which function level galleries are created.
+    'doc_module'          : ('freediscovery'),
     'filename_pattern': '.*\.py'
 }
 

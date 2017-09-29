@@ -1,5 +1,5 @@
-API Reference
-=============
+API
+===
 
 This is the API reference for the FreeDiscovery Python package
 
@@ -7,7 +7,6 @@ This is the API reference for the FreeDiscovery Python package
 
 Datasets
 --------
-
 
 .. autosummary::
     :toctree: ./generated/
@@ -20,7 +19,7 @@ Feature extraction
 
 .. autosummary::
     :toctree: ./generated/
-
+    :template: autosummary/base.rst
     
     freediscovery.feature_weighting.SmartTfidfTransformer
 
@@ -29,6 +28,7 @@ Document categorization
 -----------------------
 .. autosummary::
     :toctree: ./generated/
+    :template: autosummary/base.rst
 
     freediscovery.neighbors.NearestNeighborRanker
 
@@ -37,6 +37,7 @@ Document clustering
 
 .. autosummary::
     :toctree: ./generated/
+    :template: autosummary/base.rst
 
     freediscovery.cluster.ClusterLabels
 
@@ -45,6 +46,7 @@ Duplicates detection
 
 .. autosummary::
     :toctree: ./generated/
+    :template: autosummary/base.rst
 
     freediscovery.near_duplicates.SimhashNearDuplicates
     freediscovery.near_duplicates.IMatchNearDuplicates
@@ -54,6 +56,7 @@ Semantic search
 ---------------
 .. autosummary::
     :toctree: ./generated/
+    :template: autosummary/base.rst
 
     freediscovery.search.Search
 
@@ -63,6 +66,7 @@ IO
 
 .. autosummary::
     :toctree: ./generated/
+    :template: autosummary/base.rst
 
     freediscovery.io.parse_smart_tokens
 

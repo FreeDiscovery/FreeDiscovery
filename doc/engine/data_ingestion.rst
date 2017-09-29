@@ -24,6 +24,7 @@ Each document in the collection is given a unique numerical ``internal_id`` that
  * ``document_id`` together with a ``rendition_id``, where the latter is also provided in the ``POST /api/v0/feature-extraction/<dataset-id>`` processing step
 
 To use a field (or a group of fields) as a index, it must be unique, meaning that duplicates are not supported. The only field that is unique by construction is ``internal_id``, all the rest being user provided. Additional information regarding data ingestion and indexing can be found in the `REST_data_ingestion <../examples/REST_data_ingestion.html>`_ example. The mapping between different index fields is provided by
+
  * ``POST /api/v0/feature-extraction/<id>/id-mapping/nested``
 
 
@@ -42,5 +43,4 @@ A `few example datasets <../rest_api/dataset_get.html>`_ (subsets of the TREC Le
 
    GET /api/v0/dataset/<dataset-name>
 
-These datasets are in particular used in `the examples <../examples/index.html>` and contain the ground truth classification labels.
-
+These datasets are in particular used in `the examples <../examples/index.html>`_ and contain the ground truth classification labels.

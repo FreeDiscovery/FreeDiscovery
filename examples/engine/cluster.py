@@ -1,6 +1,6 @@
 """
-Clustering Example
-------------------
+Clustering
+==========
 
 Cluster documents into clusters
 """
@@ -17,7 +17,11 @@ dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
-print(" 0. Load the example dataset")
+###############################################################################
+#
+# 0. Load the example dataset
+# ---------------------------
+
 url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
 print(" GET", url)
 input_ds = requests.get(url).json()
@@ -28,35 +32,34 @@ dataset_definition = [{'document_id': row['document_id'],
                        'file_path': os.path.join(data_dir, row['file_path'])}
                       for row in input_ds['dataset']]
 
-# # 1. Feature extraction (non hashed)
+###############################################################################
+#
+# 1. Feature extraction (non hashed)
+# ----------------------------------
+# 1.a Load dataset and initalize feature extraction
 
-print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-fe_opts = {  # 'min_df': 4, 'max_df': 0.75  # filter out (too)/(un)frequent words
-           }
-res = requests.post(url, json=fe_opts).json()
+res = requests.post(url).json()
 
 dsid = res['id']
 print("   => received {}".format(list(res.keys())))
 print("   => dsid = {}".format(dsid))
 
 
-print("\n1.b Run feature extraction")
-# progress status is available for the hashed version only
+###############################################################################
+#
+# 1.b Run feature extraction
+
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
 print(" POST", url)
 res = requests.post(url, json={'dataset_definition': dataset_definition})
 
-print("\n1.d. check the parameters of the extracted features")
-url = BASE_URL + '/feature-extraction/{}'.format(dsid)
-print(' GET', url)
-res = requests.get(url).json()
 
-print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items()
-                 if "filenames" not in key]))
-
-print("\n2. Calculate LSI")
+###############################################################################
+#
+# 2. Calculate LSI
+# ----------------
 
 url = BASE_URL + '/lsi/'
 print("POST", url)
@@ -73,7 +76,10 @@ print(('  => SVD decomposition with {} dimensions '
        'explaining {:.2f} % variabilty of the data')
       .format(n_components, res['explained_variance']*100))
 
-# # 3. Document Clustering (LSI + K-Means)
+###############################################################################
+#
+# 3. Document Clustering (LSI + K-Means)
+# --------------------------------------
 
 print("\n3.a. Document clustering (LSI + K-means)")
 
@@ -88,7 +94,10 @@ res = requests.post(url,
 mid = res['id']
 print("     => model id = {}".format(mid))
 
-print("\n3.b. Computing cluster labels")
+###############################################################################
+#
+# 3.b. Computing cluster labels
+
 url = BASE_URL + '/clustering/k-mean/{}'.format(mid)
 print(" GET", url)
 res = requests.get(url,
@@ -105,7 +114,10 @@ print('    .. computed in {:.1f}s'.format(t1 - t0))
 print(pd.DataFrame(data))
 
 
-# # 4. Document Clustering (LSI + Birch Clustering)
+###############################################################################
+#
+# 4. Document Clustering (LSI + Birch Clustering)
+# -----------------------------------------------
 
 print("\n4.a. Document clustering (LSI + Birch clustering)")
 
@@ -123,7 +135,10 @@ res = requests.post(url,
 mid = res['id']
 print("     => model id = {}".format(mid))
 
-print("\n4.b. Computing cluster labels")
+###############################################################################
+#
+# 4.b. Computing cluster labels
+
 url = BASE_URL + '/clustering/birch/{}'.format(mid)
 print(" GET", url)
 res = requests.get(url,
@@ -138,10 +153,10 @@ for row in data:
 
 print(pd.DataFrame(data))
 
-# # 4. Optimal sampling (LSI + Birch Clustering)
-
-print("\n4.a. Optimal sampling (LSI + Birch clustering)")
-
+###############################################################################
+#
+# 5. Optimal sampling (LSI + Birch Clustering)
+# --------------------------------------------
 t0 = time()
 url = BASE_URL + '/clustering/birch/{}'.format(mid)
 print(" GET", url)
@@ -155,8 +170,9 @@ data = res['data']
 
 print(pd.DataFrame(data))
 
-# 4. Cleaning
-print("\n5. Delete the extracted features")
+###############################################################################
+#
+# 5. Delete the extracted features
+
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
-print(" DELETE", url)
 requests.delete(url)

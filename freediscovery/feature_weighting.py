@@ -41,11 +41,11 @@ def _validate_smart_notation(scheme):
         scheme_n = ''.join([scheme_n1, scheme_n2])
 
     if scheme_t not in 'nlabLd':
-        raise ValueError(('Term frequency weighting {}'
+        raise ValueError(('Term frequency weighting {} '
                           'not supported, must be one of nlabL')
                          .format(scheme_t))
-    if scheme_d not in 'ntsp':
-        raise ValueError(('Document frequency weighting {}'
+    if scheme_d not in 'ntspd':
+        raise ValueError(('Document frequency weighting {} '
                           'not supported, must be one of ntp')
                          .format(scheme_d))
     if scheme_n not in ['n', 'c', 'l', 'u', 'cp', 'lp', 'up', 'b']:
@@ -61,41 +61,47 @@ def _validate_smart_notation(scheme):
 
 
 class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
+    """TF-IDF feature weighting using the SMART IR notation
+
+    This class is similar to
+    :class:`~sklearn.feature_extraction.text.TfidfTransformer` but supports
+    a larger number of TF-IDF weighting schemes. It is expected to run this
+    transformer on the output of
+    :class:`~sklearn.feature_extraction.text.CountVectorizer`.
+
+
+    Parameters
+    ----------
+    weighting : str, default='nnc'
+      the SMART notation for document, term weighting and normalization.
+      In the form ``[nlabL][ntspd][ncb]``, see the :ref:`tfidf_section`
+      section.
+    norm_alpha : float, default=0.75
+      the α parameter in the pivoted normalization
+    norm_pivot : float, default=None
+      the pivot value used for the normalization. If not provided, and
+      ``weighting='???p'``, it is computed as the mean of the
+      ``norm(tf*idf)``.
+    compute_df : bool, default=False
+      compute the document frequenc (``df_`` attribute) even when it's not
+      explicitly required by the weighting scheme.
+    copy : boolean, default=True
+      Whether to copy the input array and operate on the copy or perform
+      in-place operations in fit and transform.
+
+
+    References
+    ----------
+    .. [Manning2008] C.D. Manning, P. Raghavan, H. Schütze,
+       `"Document and query weighting schemes"
+       <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_ ,
+       2008
+    .. [Singhal1996] A. Singhal, C. Buckley, and M. Mitra.
+       `"Pivoted document length normalization."
+       <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ , 1996
+    """
     def __init__(self, weighting='nnc', norm_alpha=0.75, norm_pivot=None,
                  compute_df=False, copy=True):
-        """TF-IDF feature weighting using the SMART notation
-
-        This is a tranformer class similar to TdfidfTransformer but supports
-        a larger number of TF-IDF weighting schemes.
-
-        Parameters
-        ----------
-        weighting : str, default='nnc'
-          the SMART notation for document, term weighting and normalization.
-          In the form [nlabL][ntp][ncb] , see the TF-IDF user manual section.
-        norm_alpha : float, default=0.75
-          the alpha parameter in the pivoted normalization
-        norm_pivot : float, default=None
-          the pivot value used for the normalization. If not provided, and
-          weighting='???p', it is computed as the mean of the norm(tf*idf).
-        compute_df : bool, default=False
-          compute the document frequenc (`df_` attribute) even when it's not
-          explicitly required by the weighting scheme.
-        copy : boolean, default=True
-          Whether to copy the input array and operate on the copy or perform
-          in-place operations in fit and transform.
-
-
-        References
-        ----------
-        .. [Manning2008] C.D. Manning, P. Raghavan, H. Schütze,
-           `"Document and query weighting schemes"
-           <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_ ,
-           2008
-        .. [Singhal1996] A. Singhal, C. Buckley, and M. Mitra.
-           `"Pivoted document length normalization."
-           <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ , 1996
-        """
         _validate_smart_notation(weighting)
         self.weighting = weighting
         self.norm_alpha = norm_alpha
@@ -155,7 +161,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
 
         scheme_t, scheme_d, scheme_n = _validate_smart_notation(self.weighting)
         self.dl_ = _document_length(X)
-        if scheme_d in 'stp' or self.compute_df:
+        if scheme_d in 'stpd' or self.compute_df:
             self.df_ = _document_frequency(X)
         else:
             self.df_ = None
@@ -224,7 +230,7 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
 
     weighting : str, default='nnc'
       the SMART notation for document term weighting and normalization.
-      In the form [nlabL][ntp][nclu][p] , see
+      In the form [nlabL][ntspd][nclu][p] , see
       https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System
 
     df : array, shape=[n_features], optional
@@ -327,7 +333,7 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
     # document weighting
     if scheme_d == 'n':
         pass
-    elif scheme_d in 'tps':
+    elif scheme_d in 'tpsd':
         if df is None:
             df = _document_frequency(tf)
         if scheme_d == 't':
@@ -340,6 +346,8 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
                                         message="divide by zero encountered in log",
                                         category=RuntimeWarning)
                 idf = np.log((float(df_n_samples) - df)/df)
+        elif scheme_d == 'd':
+            idf = np.log((float(df_n_samples) + 1 - df)/(df + 1))
         _idf_diag = sp.spdiags(idf, diags=0, m=n_features,
                                n=n_features, format='csr')
         X = X.dot(_idf_diag)

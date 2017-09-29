@@ -1,7 +1,7 @@
-Python package
-==============
+FreeDiscovery Core
+==================
 
-FreeDiscovery is a scikit-learn compatible Python package with a focus on information retrieval applications.
+FreeDiscovery Core is a Python package that aims to extend scikit-learn with information retrieval functionaility.
 
 Installation requires Python 2.7 or 3.5+, as well as,
 

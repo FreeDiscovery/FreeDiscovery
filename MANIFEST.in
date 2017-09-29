@@ -1,6 +1,7 @@
 include README.rst
 include LICENCE
 include requirements.txt
+include requirements_engine.txt
 recursive-include scripts *.py
 recursive-include freediscovery *.py
 prune freediscovery/tests/.hypothesis

@@ -1,6 +1,6 @@
 """
 Hierarchical Clustering Example
--------------------------------
+===============================
 
 Visualize hierarchical clusters
 """
@@ -16,7 +16,11 @@ dataset_name = "20_newsgroups_3categories"     # see list of available datasets
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
-print(" 0. Load the example dataset")
+###############################################################################
+#
+# 0. Load the example dataset
+# ---------------------------
+
 url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
 print(" GET", url)
 input_ds = requests.get(url).json()
@@ -27,9 +31,12 @@ dataset_definition = [{'document_id': row['document_id'],
                        'file_path': os.path.join(data_dir, row['file_path'])}
                       for row in input_ds['dataset']]
 
+###############################################################################
+#
 # # 1. Feature extraction (non hashed)
+# ------------------------------------
+# 1.a Load dataset and initalize feature extraction
 
-print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
 fe_opts = {'max_df': 0.6,  # filter out (too)/(un)frequent words
@@ -42,21 +49,18 @@ print("   => received {}".format(list(res.keys())))
 print("   => dsid = {}".format(dsid))
 
 
-print("\n1.b Run feature extraction")
-# progress status is available for the hashed version only
+###############################################################################
+#
+# 1.b Run feature extraction
+
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
 print(" POST", url)
 res = requests.post(url, json={'dataset_definition': dataset_definition})
 
-print("\n1.d. check the parameters of the extracted features")
-url = BASE_URL + '/feature-extraction/{}'.format(dsid)
-print(' GET', url)
-res = requests.get(url).json()
-
-print('\n'.join(['     - {}: {}'.format(key, val) for key, val in res.items()
-                 if "filenames" not in key]))
-
-print("\n2. Calculate LSI")
+###############################################################################
+#
+# 2. Calculate LSI
+# ----------------
 
 url = BASE_URL + '/lsi/'
 print("POST", url)
@@ -75,9 +79,11 @@ print(('  => SVD decomposition with {} dimensions '
 
 
 
-# # 3. Document Clustering (LSI + Birch Clustering)
-
-print("\n3.a. Document clustering (LSI + Birch clustering)")
+###############################################################################
+#
+# 3. Document Clustering (LSI + Birch Clustering)
+# -----------------------------------------------
+# 3.a. Document clustering (LSI + Birch clustering)
 
 url = BASE_URL + '/clustering/birch/'
 print(" POST", url)
@@ -105,13 +111,10 @@ data = res['data']
 
 print(pd.DataFrame(data))
 
-# 5. Cleaning
-print("\n5. Delete the extracted features")
-url = BASE_URL + '/feature-extraction/{}'.format(dsid)
-print(" DELETE", url)
-requests.delete(url)
 
-# 3. Hierarchical cluster visualization
+###############################################################################
+#
+# 3.b Hierarchical cluster visualization
 
 ch = Digraph('cluster_hierarchy',
              node_attr={'shape': 'record'},
@@ -146,3 +149,10 @@ else:
 
 ####################################
 # .. image:: cluster_hierarchy.png
+
+###############################################################################
+#
+# 4. Delete the extracted features
+
+url = BASE_URL + '/feature-extraction/{}'.format(dsid)
+requests.delete(url)

@@ -4,8 +4,6 @@ User Manual
 .. toctree::
    :maxdepth: 1
 
-   tf-idf
+   feature_weighing
    scaling_benchmarks
    
-
-
