@@ -64,9 +64,11 @@ extensions = [
     'sphinxcontrib.napoleon',
     'sphinx_gallery.gen_gallery',
     'sphinx.ext.linkcode',
-    'sphinxcontrib.autoprogram'
+    'sphinxcontrib.autoprogram',
+    'sphinx.ext.intersphinx'
 ]
 
+intersphinx_mapping = {'sklearn': ('http://scikit-learn.org/stable/', None)}
 
 autosummary_generate = True
 

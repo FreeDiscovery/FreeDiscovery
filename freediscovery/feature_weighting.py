@@ -61,10 +61,14 @@ def _validate_smart_notation(scheme):
 
 
 class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
-    """TF-IDF feature weighting using the SMART notation
+    """TF-IDF feature weighting using the SMART IR notation
 
-    This is a tranformer class similar to TdfidfTransformer but supports
-    a larger number of TF-IDF weighting schemes.
+    This class is similar to
+    :class:`~sklearn.feature_extraction.text.TfidfTransformer` but supports
+    a larger number of TF-IDF weighting schemes. It is expected to run this
+    transformer on the output of
+    :class:`~sklearn.feature_extraction.text.CountVectorizer`.
+
 
     Parameters
     ----------

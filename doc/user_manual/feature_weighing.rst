@@ -3,8 +3,8 @@ Feature extraction
 
 .. _tfidf_section:
 
-TF-IDF weighting schemes
-------------------------
+TF-IDF schemes
+--------------
 
 FreeDiscovery supports a large range of TF-IDF weighting schemes in :class:`~freediscovery.feature_weighting.SmartTfidfTransformer` via the ``weighting="xxxx"`` parameter, that follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
 
@@ -28,7 +28,7 @@ The different options are descibed in more detail in the table below,
 | **L** (log average): :math:`{\displaystyle {\tfrac {1+{\text{log}}({\text{tf}}_{t,d})}{1+{\text{log}}({\text{avg}}_{t\epsilon d}({\text{tf}}_{t,d}))}}}` | **d** (smoothed prob idf): :math:`{\displaystyle {\text{log}}{\tfrac {N+1-df_{t}}{df_{t} + 1}}}`  |                                                                                                   |
 +----------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
 
-In addition to standard TF-IDF normalizations, above pivoted normalization was proposed by Singal et al. as a way to avoid over-penalising long documents. It can be enabled with the ``weighting='???p'`` parameter. For each document the normalization term :math:`V_{\textbf{d}}` is replaced by,
+In addition to standard TF-IDF normalizations above, pivoted normalization was proposed by Singal et al. as a way to avoid over-penalising long documents. It can be enabled with the ``weighting='???p'`` parameter. For each document the normalization term :math:`V_{\textbf{d}}` is replaced by,
 
 .. math::
   
@@ -36,12 +36,11 @@ In addition to standard TF-IDF normalizations, above pivoted normalization was p
 
 where :math:`\alpha` (``norm_alpha``) is a user defined parameter, such as :math:`\alpha \in [0, 1]`. If ``norm_alpha=1`` the pivot cancels out and this case corresponds to regular TF-IDF normalization.
 
-See the example on `optimizing TF-IDF weighting scheme <../python/examples/optimize_tfidf_weighting.html>`_ for a more practical illustration.
+See the example on :ref:`optimize_tfidf_scheme_example` for a more practical illustration.
 
-.. topic:: References:
+.. admonition:: References
 
     *  C.D. Manning, P. Raghavan, H. Schütze.  `"Document and query weighting schemes"
        <https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html>`_ , 2008.
-
     * A. Singhal, C. Buckley, and M. Mitra. `"Pivoted document length normalization."
       <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ 1996

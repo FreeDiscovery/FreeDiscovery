@@ -1,6 +1,8 @@
 """
-Optimizing the TF-IDF weighting schemes
-=======================================
+.. _optimize_tfidf_scheme_example:
+
+Optimizing TF-IDF schemes
+=========================
 
 An example of optimizing TF-IDF weighting schemes using
 5 fold cross-validation
