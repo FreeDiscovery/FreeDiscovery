@@ -1,8 +1,9 @@
 FreeDiscovery Engine
 ====================
 
+FreeDiscovery Engine provides a REST API for information retrieval applications. It aims to benefit existing e-Discovery and information retrieval platforms with a focus on text categorization, semantic search, document clustering, duplicates detection and e-mail threading.
 
-FreeDiscovery requires **Python 3.5+** and can be installed with 
+The installation requires **Python 3.5+** and can be done with,
 
 .. code:: bash
 
@@ -22,7 +23,7 @@ The server can be started with
 
     freediscovery run
 
-to check that the server is successfully runnining, open ``http://localhost:5001/``.
+To check that the server is successfully runnining, open ``http://localhost:5001/``.
 
 
 .. toctree::

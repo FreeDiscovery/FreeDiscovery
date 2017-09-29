@@ -1,15 +1,12 @@
 """
-Duplicate Detection Example
----------------------------
+Duplicate Detection
+===================
 
 Find near-duplicates in a text collection
 """
 from __future__ import print_function
 
 from time import time
-import sys
-import platform
-import os
 
 import pandas as pd
 import requests
@@ -21,7 +18,11 @@ dataset_name = "treclegal09_2k_subset"     # see list of available datasets
 
 BASE_URL = "http://localhost:5001/api/v0"  # FreeDiscovery server URL
 
-print(" 0. Load the test dataset")
+###############################################################################
+#
+# 0. Load the test dataset
+# ------------------------
+
 url = BASE_URL + '/example-dataset/{}'.format(dataset_name)
 print(" GET", url)
 input_ds = requests.get(url).json()
@@ -30,12 +31,16 @@ input_ds = requests.get(url).json()
 # To use a custom dataset, simply specify the following variables
 data_dir = input_ds['metadata']['data_dir']
 
-# # 1. Feature extraction (non hashed)
+###############################################################################
+#
+# 1. Feature extraction (non hashed)
+# ----------------------------------
 
 print("\n1.a Load dataset and initalize feature extraction")
 url = BASE_URL + '/feature-extraction'
 print(" POST", url)
-fe_opts = {'weighting': 'ntc',  # this is required to compute cluster labels (for now)
+
+fe_opts = {'weighting': 'ntc',
            'n_features': 30001,
            'min_df': 4, 'max_df': 0.75
            }
@@ -46,8 +51,10 @@ print("   => received {}".format(list(res.json().keys())))
 print("   => dsid = {}".format(dsid))
 
 
-print("\n1.b Run feature extraction")
-# progress status is available for the hashed version only
+###############################################################################
+#
+# 1.b Run feature extraction
+
 url = BASE_URL+'/feature-extraction/{}'.format(dsid)
 print(" POST", url)
 res = requests.post(url, json={"data_dir": data_dir})
@@ -62,10 +69,11 @@ print('\n'.join(['     - {}: {}'.format(key, val)
       for key, val in data.items() if "filenames" not in key]))
 
 
-print("\n2. Near Duplicates detection by cosine similarity (DBSCAN)")
+###############################################################################
+#
+# 2. Compute LSI
+# --------------
 
-
-# compute LSI used for DBSCAN clustering
 url = BASE_URL + '/lsi/'
 print("POST", url)
 
@@ -77,14 +85,19 @@ res = requests.post(url,
 
 lsi_id = res['id']
 
+###############################################################################
+#
+# 3. Near Duplicates detection by cosine similarity (DBSCAN)
+# ----------------------------------------------------------
+
 url = BASE_URL + '/clustering/dbscan/'
 print(" POST", url)
 t0 = time()
 res = requests.post(url,
-        json={'parent_id': lsi_id,
-              'min_similarity': 0.90,            # 2*cosine distance for documents to be considered as duplicates
-              'n_max_samples': 2
-              }).json()
+                    json={'parent_id': lsi_id,
+                          'min_similarity': 0.90,
+                          'n_max_samples': 2
+                          }).json()
 
 mid = res['id']
 print("     => model id = {}".format(mid))
@@ -104,7 +117,10 @@ print('Found {} duplicates / {}'
               len(input_ds['dataset'])))
 
 
-print("\n3. Near Duplicates Detection using I-Match")
+###############################################################################
+#
+# 4. Near Duplicates Detection using I-Match
+# ------------------------------------------
 
 url = BASE_URL + '/duplicate-detection/'
 print(" POST", url)
@@ -134,18 +150,13 @@ print('Found {} duplicates / {}'
               len(input_ds['dataset'])))
 
 
-# don't run the end of this example if simhash is not installed
-# (e.g. on Windows)
+###############################################################################
+#
+# 3. Duplicate detection by Simhash
+# ---------------------------------
+
 try:
     import simhash
-    skip_example = False
-except:
-    skip_example = True
-
-
-if not skip_example:
-    print("\n3. Duplicate detection by Simhash")
-
     url = BASE_URL + '/duplicate-detection/'
     print(" POST", url)
     t0 = time()
@@ -170,9 +181,13 @@ if not skip_example:
     print('Found {} duplicates / {}'
           .format(sum([len(row['documents']) for row in data]),
                   len(input_ds['dataset'])))
+except ImportError:
+    print("simhash is not installed or not supported "
+          " (e.g. on Windows)")
 
-# 4. Cleaning
-print("\n4.a Delete the extracted features")
+###############################################################################
+#
+# 4 Delete the extracted features
+
 url = BASE_URL + '/feature-extraction/{}'.format(dsid)
-print(" DELETE", url)
 requests.delete(url)
