@@ -1,5 +1,5 @@
-API Reference
-=============
+API
+===
 
 This is the API reference for the FreeDiscovery Python package
 
@@ -7,7 +7,6 @@ This is the API reference for the FreeDiscovery Python package
 
 Datasets
 --------
-
 
 .. autosummary::
     :toctree: ./generated/

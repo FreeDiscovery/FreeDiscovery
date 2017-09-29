@@ -1,9 +1,10 @@
 Feature extraction
 ==================
 
+.. _tfidf_section:
 
-1. TF-IDF weighting schemes
----------------------------
+TF-IDF weighting schemes
+------------------------
 
 FreeDiscovery supports a large range of TF-IDF weighting schemes in :class:`~freediscovery.feature_weighting.SmartTfidfTransformer` via the ``weighting="xxxx"`` parameter, that follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
 

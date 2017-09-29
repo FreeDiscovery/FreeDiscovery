@@ -19,7 +19,7 @@
   :target: https://codecov.io/gh/FreeDiscovery/FreeDiscovery
 
 
-FreeDiscovery is an open source e-Discovery and information retrieval engine. FreeDiscovery is based on the  scikit-learn library and has two main components,
+FreeDiscovery is an open source e-Discovery and information retrieval engine. It is based on the scikit-learn library and has two main components,
 
 * **FreeDiscovery Engine** provides a REST API for information retrieval applications. It aims to benefit existing e-Discovery and information retrieval platforms with a focus on text categorization, semantic search, document clustering, duplicates detection and e-mail threading.
   
