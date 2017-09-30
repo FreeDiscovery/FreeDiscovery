@@ -349,7 +349,7 @@ class _CFSubcluster(object):
 
 
 class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
-    """Non online version of Birch clustering algorithm
+    """Non online version of the Birch clustering algorithm
 
     This is a patched version of :class:`sklearn.cluster.Birch`
     that allows to store indices of samples belonging to each subcluster
@@ -360,7 +360,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
       * allows to more easily explore the hierarchy of clusters
       * can scale better with high dimensional data
 
-    See :ref:`birch_fd_section`.
+    See :ref:`user manual <birch_section>`.
 
     For general information about the Birch algorithm,
     see the :class:`sklearn.cluster.Birch` documentation
@@ -371,7 +371,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
     args : other parameters
         See :class:`sklearn.cluster.Birch`
 
-    compute_samples_indices : bool, default False
+    compute_sample_indices : bool, default False
         Whether the indices of samples belonging to each hierarchical
         subcluster should be included in the ``_CFSubcluster.samples_id_``
         attribute. This option can have some memory overhead.
@@ -385,7 +385,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
     >>> brc.fit(X)
     ... # doctest: +NORMALIZE_WHITESPACE
     Birch(branching_factor=50, compute_labels=True,
-       compute_samples_indices=False, copy=True, n_clusters=None,
+       compute_sample_indices=False, copy=True, n_clusters=None,
        threshold=0.5)
     >>> brc.predict(X)
     array([0, 0, 0, 1, 1, 1])
@@ -394,13 +394,13 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
 
     def __init__(self, threshold=0.5, branching_factor=50, n_clusters=3,
                  compute_labels=True, copy=True,
-                 compute_samples_indices=False):
+                 compute_sample_indices=False):
         self.threshold = threshold
         self.branching_factor = branching_factor
         self.n_clusters = n_clusters
         self.compute_labels = compute_labels
         self.copy = copy
-        self.compute_samples_indices = compute_samples_indices
+        self.compute_sample_indices = compute_sample_indices
 
     def fit(self, X, y=None):
         """
@@ -422,12 +422,12 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
         self.n_samples_ = X.shape[0]
         threshold = self.threshold
         branching_factor = self.branching_factor
-        compute_samples_indices = self.compute_samples_indices
+        compute_sample_indices = self.compute_sample_indices
 
         if branching_factor <= 1:
             raise ValueError("Branching_factor should be greater than one.")
-        if self.compute_samples_indices and self.partial_fit_:
-            raise ValueError("The option compute_samples_indices=True is not "
+        if self.compute_sample_indices and self.partial_fit_:
+            raise ValueError("The option compute_sample_indices=True is not "
                              "compatible with out of core calculations. "
                              "Please either set it to False, or dont use the "
                              "partial_fit method.")
@@ -455,7 +455,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
             iter_func = _iterate_sparse_X
 
         for row_id, sample in enumerate(iter_func(X)):
-            if compute_samples_indices:
+            if compute_sample_indices:
                 samples_id = [row_id]
             else:
                 samples_id = None

@@ -257,7 +257,7 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         km = Birch(n_clusters=n_clusters, threshold=threshold,
                    branching_factor=branching_factor,
                    compute_labels=compute_labels,
-                   compute_samples_indices=True)
+                   compute_sample_indices=True)
 
         return self._cluster_func(n_clusters, km, pars)
 

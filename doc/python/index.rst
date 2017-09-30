@@ -1,7 +1,7 @@
 FreeDiscovery Core
 ==================
 
-FreeDiscovery Core is a Python package that aims to extend scikit-learn with information retrieval functionaility.
+FreeDiscovery Core is a Python package that aims to extend scikit-learn with information retrieval functionality.
 
 Installation requires Python 2.7 or 3.5+, as well as,
 
@@ -16,6 +16,7 @@ it can be installed with,
 
     pip install freediscovery[core]
 
+Please refer to the :ref:`user manual <user_manual_section>` for a description of the available functionality.
 
 .. toctree::
    :maxdepth: 1

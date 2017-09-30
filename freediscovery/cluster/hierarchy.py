@@ -35,7 +35,7 @@ def _check_birch_tree_consistency(node):
         if el.samples_id_ is None:
             raise ValueError('Birch was fitted without storing samples. '
                              'Please re-initalize Birch with '
-                             'compute_samples_indices=True !')
+                             'compute_sample_indices=True !')
         if el.n_samples_ != len(el.samples_id_):
             raise ValueError(('For subcluster ',
                              '{}, n_samples={} but len(id_)={}')

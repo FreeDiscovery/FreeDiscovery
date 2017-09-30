@@ -152,7 +152,7 @@ def test_threshold():
 def test_birch_hierarchy():
     X, y = make_blobs(random_state=40)
     brc = Birch(n_clusters=None, branching_factor=5,
-                compute_samples_indices=True)
+                compute_sample_indices=True)
     brc.fit(X)
 
     # make sure that leave nodes contain all the samples
