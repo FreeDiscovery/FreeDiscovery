@@ -7,8 +7,11 @@ from unittest import SkipTest
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 
-from freediscovery.cluster import select_top_words
-from freediscovery.cluster.birch import _check_birch_tree_consistency
+from sklearn.preprocessing import normalize
+
+from freediscovery.cluster import select_top_words, Birch
+from freediscovery.cluster.hierarchy import _check_birch_tree_consistency
+from freediscovery.cluster.hierarchy import _BirchHierarchy
 from freediscovery.cluster.optimal_sampling import compute_optimal_sampling
 
 
@@ -20,9 +23,6 @@ NCLUSTERS = 2
                           ('birch_hierarchical', False),
                           ('birch_hierarchical', True)])
 def test_birch_make_hierarchy(dataset, optimal_sampling):
-    from freediscovery.cluster.birch import _BirchHierarchy
-    from freediscovery.externals.birch import Birch
-    from sklearn.preprocessing import normalize
 
     if dataset == 'random':
         np.random.seed(9999)

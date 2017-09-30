@@ -7,8 +7,9 @@ import pandas as pd
 
 from freediscovery.engine.base import _BaseWrapper
 from freediscovery.utils import setup_model
+from freediscovery.cluster import Birch
 from freediscovery.cluster.utils import _dbscan_noisy2unique
-from freediscovery.cluster.birch import _BirchHierarchy
+from freediscovery.cluster.hierarchy import _BirchHierarchy
 from freediscovery.cluster.base import _BirchDummy, ClusterLabels
 
 
@@ -242,7 +243,6 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         max_tree_depth : {int, None}
             maximum depth of the hierarchical tree
         """
-        from freediscovery.externals.birch import Birch
         pars = {'threshold': threshold, 'is_hierarchical': n_clusters is None,
                 'max_tree_depth': max_tree_depth, "metric": self.metric}
         if 'lsi' not in self.pipeline:
