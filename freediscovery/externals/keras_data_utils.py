@@ -150,18 +150,18 @@ def _get_file(fname,
             defaults to the current dir.
 
     # Returns
-        Path to the downloaded file
+        path to the downloaded file
     """
     if cache_dir is None:
-        cache_dir = Path('.').resolve()
+        cache_dir = os.path.abspath('.')
     elif isinstance(cache_dir, str):
-        cache_dir = Path(cache_dir).resolve()
+        cache_dir = os.path.abspath(cache_dir)
 
     if md5_hash is not None and file_hash is None:
         file_hash = md5_hash
         hash_algorithm = 'md5'
 
-    if not cache_dir.exists():
+    if not os.path.exists(cache_dir):
         raise ValueError('cache_dir {} does not exist!'.format(cache_dir))
 
 

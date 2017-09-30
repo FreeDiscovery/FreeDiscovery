@@ -10,10 +10,10 @@ env:
       REQUIREMENTS="requirements_engine.txt" EXTRA_DEPS=""
     - PYTHON_VERSION="3.6"
       REQUIREMENTS="requirements_engine.txt" EXTRA_DEPS="simhash-py gunicorn"
-    - PYTHON_VERSION="3.5" 
+    - PYTHON_VERSION="3.6" 
       REQUIREMENTS="requirements.txt" EXTRA_DEPS="pytest"
-    - PYTHON_VERSION="3.5"
-      REQUIREMENTS="build_tools/requirements_compat.txt" EXTRA_DEPS="pytest"
+      #- PYTHON_VERSION="3.5"
+      #- REQUIREMENTS="build_tools/requirements_compat.txt" EXTRA_DEPS="pytest"
     - PYTHON_VERSION="2.7" 
       REQUIREMENTS="requirements.txt" EXTRA_DEPS="pytest"
 
