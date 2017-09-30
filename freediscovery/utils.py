@@ -206,3 +206,29 @@ def _paginate(df, batch_id, batch_size):
         pagination['batch_id_last'] = n_samples // batch_size
 
     return df_out, pagination
+
+def _split_path(path):
+    """ A helper function that splits the path into a list
+
+    Parameters
+    ----------
+    path : str
+      path to split
+    """
+    path = os.path.normpath(path)
+
+    head, tail = os.path.split(path)
+
+    if not head:
+        return [tail]
+    elif head == path:
+        if tail:
+            return [head, tail]
+        else:
+            return [head]
+    else:
+        if not tail:
+            return _split_path(head)
+        else:
+            return _split_path(head) + [tail]
+

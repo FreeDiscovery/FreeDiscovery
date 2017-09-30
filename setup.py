@@ -11,9 +11,6 @@ with open('README.rst', 'rb') as fh:
 with open('requirements.txt', 'rt') as fh:
     REQUIREMENTS = fh.read().splitlines()
 
-if sys.version_info >= (3, 5):
-    REQUIREMENTS.pop()  # scandir is not needed
-
 with open('requirements_engine.txt', 'rt') as fh:
     REQUIREMENTS_ENGINE = fh.read().splitlines()
 

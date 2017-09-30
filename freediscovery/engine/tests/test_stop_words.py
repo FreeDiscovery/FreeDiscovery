@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 import os
 import os.path
@@ -10,8 +9,8 @@ from freediscovery.engine.stop_words import _StopWordsWrapper
 from freediscovery.tests.run_suite import check_cache
 
 
-from freediscovery.engine.stop_words import CUSTOM_STOP_WORDS as csw
-from freediscovery.engine.stop_words import COMMON_FIRST_NAMES as cfns
+from freediscovery.stop_words import CUSTOM_STOP_WORDS as csw
+from freediscovery.stop_words import COMMON_FIRST_NAMES as cfns
 
 cache_dir = check_cache()
 

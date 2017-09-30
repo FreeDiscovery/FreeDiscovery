@@ -4,35 +4,10 @@ import os
 from collections import OrderedDict
 
 from freediscovery.exceptions import ModelNotFound
-from freediscovery.externals.pathlib2 import Path
+from freediscovery.utils import _split_path
+from pathlib import Path
 
 from sklearn.externals import joblib
-
-
-def _split_path(path):
-    """ A helper function that splits the path into a list
-
-    Parameters
-    ----------
-    path : str
-      path to split
-    """
-    path = os.path.normpath(path)
-
-    head, tail = os.path.split(path)
-
-    if not head:
-        return [tail]
-    elif head == path:
-        if tail:
-            return [head, tail]
-        else:
-            return [head]
-    else:
-        if not tail:
-            return _split_path(head)
-        else:
-            return _split_path(head) + [tail]
 
 
 class PipelineFinder(OrderedDict):

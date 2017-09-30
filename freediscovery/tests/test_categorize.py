@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 import numpy as np
 from numpy.testing import assert_allclose
 
-from freediscovery.externals.pathlib2 import Path
 from freediscovery.io import parse_ground_truth_file
 from freediscovery.metrics import categorization_score
 from freediscovery.tests.run_suite import check_cache
 
 
-basename = Path(__file__).parent
+basename = os.path.dirname(__file__)
 
 cache_dir = check_cache()
 
-data_dir = basename / ".." / "data" / "ds_001" / "raw"
+data_dir = os.path.join(basename, "..", "data", "ds_001", "raw")
 
 ground_truth = parse_ground_truth_file(
-                        str(data_dir / ".." / "ground_truth_file.txt"))
+                  os.path.join(data_dir, "..", "ground_truth_file.txt"))
 
 
 def test_unique_label():

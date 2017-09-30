@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # Authors: Roman Yurchak
 #
 # License: BSD 3 clause

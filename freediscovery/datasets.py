@@ -2,6 +2,7 @@
 #
 # License: BSD 3 clause
 
+import os
 import platform
 import random
 
@@ -9,9 +10,17 @@ import numpy as np
 import pandas as pd
 import pickle
 
-from freediscovery.engine.pipeline import PipelineFinder
 from freediscovery.externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
 
+
+def _normalize_cachedir(cache_dir):
+    """ Normalize the cachedir path. This ensures that the cache_dir
+    ends with "ediscovery_cache"
+    """
+    cache_dir = os.path.normpath(str(cache_dir))
+    if 'ediscovery_cache' not in cache_dir:  # not very pretty
+        cache_dir = os.path.join(cache_dir, "ediscovery_cache")
+    return cache_dir
 
 IR_DATASETS = {'treclegal09_2k_subset': {'md5': '8090cc55ac18fe5c4d5d53d82fc767a2',
                                          'size': 2.8},
@@ -26,11 +35,11 @@ IR_DATASETS = {'treclegal09_2k_subset': {'md5': '8090cc55ac18fe5c4d5d53d82fc767a
                                        'size': 3},
                '20_newsgroups_3categories': {'md5': '7e59e10cbd824190f3f1fa82285c7865',
                                              'size': 3,
-                                             'url': str(INTERNAL_DATA_DIR / '20_newsgroups_3categories.pkl.xz')
+                                             'url': os.path.join(INTERNAL_DATA_DIR, '20_newsgroups_3categories.pkl.xz')
                                              },
                '20_newsgroups_micro': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
                                        'size': 3,
-                                       'url': str(INTERNAL_DATA_DIR / '20_newsgroups_micro.pkl')
+                                       'url': os.path.join(INTERNAL_DATA_DIR, '20_newsgroups_micro.pkl')
                                        },
                '20_newsgroups': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
                                      'size': 3,
@@ -46,10 +55,10 @@ for name, row in IR_DATASETS.items():
 
 def _load_erdm_ground_truth(outdir):
     """A helper function to load Legal TREC 2009 data"""
-    with (outdir / 'seed_relevant.txt').open('rt') as fh:
+    with open(os.path.join(outdir, 'seed_relevant.txt'), 'rt') as fh:
         relevant_files = [el.strip() for el in fh.readlines()]
 
-    with (outdir / 'seed_non_relevant.txt').open('rt') as fh:
+    with open(os.path.join(outdir, 'seed_non_relevant.txt'), 'rt') as fh:
         non_relevant_files = [el.strip() for el in fh.readlines()]
 
     if platform.system() == 'Windows':
@@ -136,10 +145,10 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
     has_categories = '20_newsgroups_' in name or 'treclegal09' in name
 
     # make sure we don't have "ediscovery_cache" in the path
-    cache_dir = PipelineFinder._normalize_cachedir(cache_dir)
-    cache_dir = cache_dir.parent
+    cache_dir = _normalize_cachedir(cache_dir)
+    cache_dir = os.path.dirname(cache_dir)
 
-    outdir = cache_dir / name
+    outdir = os.path.join(cache_dir, name)
     fname = outdir
 
     db = IR_DATASETS[name]
@@ -153,15 +162,15 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
             fname = name + '.pkl'
             opener = open
 
-        with opener(str(INTERNAL_DATA_DIR / fname), 'rb') as fh:
+        with opener(os.path.join(INTERNAL_DATA_DIR, fname), 'rb') as fh:
             twenty_news = pickle.load(fh)
 
     # Download the dataset if it doesn't exist
-    if not (outdir).exists():
+    if not os.path.exists(outdir):
         if '20_newsgroups_' in name:
-            outdir.mkdir()
+            os.mkdir(outdir)
             for idx, doc in enumerate(twenty_news.data):
-                with (outdir / '{:05}.txt'.format(idx)).open('wt') as fh:
+                with open(os.path.join(outdir, '{:05}.txt'.format(idx)), 'wt') as fh:
                     fh.write(doc)
         else:
             outdir = _get_file(str(fname),
@@ -171,7 +180,7 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
             print('Downloaded {} dataset to {}'.format(name, outdir))
 
     if 'treclegal09' in name or 'fedora_ml' in name:
-        data_dir = (outdir / 'data')
+        data_dir = os.path.join(outdir, 'data')
     else:
         data_dir = outdir
     md = {'data_dir': str(data_dir), 'name': name}
@@ -184,7 +193,7 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
     if 'treclegal09' in name:
             negative_files, positive_files = _load_erdm_ground_truth(outdir)
 
-            ground_truth_file = outdir / "ground_truth_file.txt"
+            ground_truth_file = os.path.join(outdir, "ground_truth_file.txt")
             gt = parse_ground_truth_file(str(ground_truth_file))
 
             res = di.search(gt, drop=False)

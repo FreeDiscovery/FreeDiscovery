@@ -4,7 +4,8 @@ import os.path
 import warnings
 
 import pytest
-from freediscovery.engine.pipeline import _split_path, PipelineFinder
+from freediscovery.utils import _split_path
+from freediscovery.datasets import _normalize_cachedir
 from .run_suite import check_cache
 
 
@@ -22,8 +23,6 @@ def test_split_path():
 
 
 def test_normalize_cachedir():
-    _normalize_cachedir = PipelineFinder._normalize_cachedir
-
     assert str(_normalize_cachedir('/tmp/')) == os.path.normpath('/tmp/ediscovery_cache')
     assert str(_normalize_cachedir('/tmp/ediscovery_cache')) == os.path.normpath('/tmp/ediscovery_cache')
 
