@@ -1,7 +1,7 @@
 Feature extraction
 ==================
 
-For a general introduction see :ref:`text_feature_extraction` section of scikit-learn documentation.
+For a general introduction to feature extraction with textual documents see the :ref:`scikit-learn documentation <text_feature_extraction>`.
 
 .. _tfidf_section:
 

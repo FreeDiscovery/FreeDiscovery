@@ -103,7 +103,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
-    weighting : str, default='nnc'
+    weighting : str, default='nsc'
       the SMART notation for document, term weighting and normalization.
       In the form ``[nlabL][ntspd][ncb][p]``.
     norm_alpha : float, default=0.75
@@ -136,7 +136,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
        `"Pivoted document length normalization."
        <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ , 1996
     """
-    def __init__(self, weighting='nnc', norm_alpha=0.75, norm_pivot=None,
+    def __init__(self, weighting='nsc', norm_alpha=0.75, norm_pivot=None,
                  compute_df=False, copy=True):
         _validate_smart_notation(weighting)
         self.weighting = weighting
