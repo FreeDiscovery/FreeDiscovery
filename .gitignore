@@ -33,3 +33,4 @@ doc/modules/
 doc/*/examples/
 doc/*/generated/
 treclegal09*.tar.gz
+*.gv

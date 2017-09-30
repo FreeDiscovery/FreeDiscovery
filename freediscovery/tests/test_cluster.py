@@ -37,7 +37,8 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
         branching_factor = 2
 
     mod = Birch(n_clusters=None, threshold=0.1,
-                branching_factor=branching_factor, compute_labels=False)
+                branching_factor=branching_factor, compute_labels=False,
+                compute_samples_indices=True)
     mod.fit(X)
 
     _check_birch_tree_consistency(mod.root_)

@@ -30,7 +30,7 @@ script:
     - |
         source activate test
         if [[ ${REQUIREMENTS} == "requirements_engine.txt" ]]; then
-            py.test -sv --cov=./ ./freediscovery/*/tests/
+            py.test -sv --cov=./ .
         else
             py.test -sv --cov=./ ./freediscovery/tests/
         fi

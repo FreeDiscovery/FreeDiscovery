@@ -32,10 +32,14 @@ class _HCContainer(Container):
 def _check_birch_tree_consistency(node):
     """ Check that the _id we added is consistent """
     for el in node.subclusters_:
-        if el.n_samples_ != len(el.id_):
+        if el.samples_id_ is None:
+            raise ValueError('Birch was fitted without storing samples. '
+                             'Please re-initalize Birch with '
+                             'compute_samples_indices=True !')
+        if el.n_samples_ != len(el.samples_id_):
             raise ValueError(('For subcluster ',
                              '{}, n_samples={} but len(id_)={}')
-                             .format(el, el.n_samples_, el.id_))
+                             .format(el, el.n_samples_, el.samples_id_))
         if el.child_ is not None:
             _check_birch_tree_consistency(el.child_)
 
@@ -83,7 +87,7 @@ class _BirchHierarchy(object):
                          el.child_, depth=depth+1, cluster_id=cluster_id)
                 htree.add_child(subtree)
             else:
-                document_id_list += el.id_
+                document_id_list += el.samples_id_
         if depth == 0:
             # make sure we return the correct number of clusters
             cluster_id += 1

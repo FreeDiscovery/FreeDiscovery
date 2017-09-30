@@ -1,6 +1,10 @@
-# Authors: Manoj Kumar <manojkumarsivaraj334@gmail.com>
-#          Alexandre Gramfort <alexandre.gramfort@telecom-paristech.fr>
-#          Joel Nothman <joel.nothman@gmail.com>
+# This is a modified version of scikit-learn/cluster/birch.py for
+# FreeDiscovery, copied on Sept 2017, patched with,
+#   * scikit-learn/scikit-learn#8808
+#
+# (original) Authors: Manoj Kumar <manojkumarsivaraj334@gmail.com>
+#            Alexandre Gramfort <alexandre.gramfort@telecom-paristech.fr>
+#            Joel Nothman <joel.nothman@gmail.com>
 # License: BSD 3 clause
 from __future__ import division
 
@@ -8,6 +12,7 @@ import warnings
 import numpy as np
 from scipy import sparse
 from math import sqrt
+from collections import deque
 
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.base import TransformerMixin, ClusterMixin, BaseEstimator
@@ -15,6 +20,7 @@ from sklearn.externals.six.moves import xrange
 from sklearn.utils import check_array
 from sklearn.utils.extmath import row_norms, safe_sparse_dot
 from sklearn.utils.validation import check_is_fitted
+from sklearn.exceptions import NotFittedError
 from sklearn.cluster.hierarchical import AgglomerativeClustering
 
 
@@ -249,6 +255,9 @@ class _CFSubcluster(object):
     linear_sum : ndarray, shape (n_features,), optional
         Sample. This is kept optional to allow initialization of empty
         subclusters.
+    samples_id : list, optional
+        Row number of samples belonging to the subcluster.
+
 
     Attributes
     ----------
@@ -274,26 +283,35 @@ class _CFSubcluster(object):
         Squared norm of the subcluster. Used to prevent recomputing when
         pairwise minimum distances are computed.
 
-    id_ : lis
-        a list of subcluster ids
+    samples_id_ : {list, None}
+        Row number of samples belonging to the subcluster,
+        if the class initialized with a valid samples_id argument.
+        None otherwise.
     """
-    def __init__(self, linear_sum=None, id_=None):
+    def __init__(self, linear_sum=None, samples_id=None):
         if linear_sum is None:
             self.n_samples_ = 0
             self.squared_sum_ = 0.0
             self.linear_sum_ = 0
-            self.id_ = [] 
+            self.samples_id_ = deque()
         else:
             self.n_samples_ = 1
             self.centroid_ = self.linear_sum_ = linear_sum
             self.squared_sum_ = self.sq_norm_ = np.dot(
                 self.linear_sum_, self.linear_sum_)
-            self.id_ = [id_]
+            if samples_id is not None:
+                self.samples_id_ = deque(samples_id)
+            else:
+                self.samples_id_ = None
+
         self.child_ = None
 
     def update(self, subcluster):
         self.n_samples_ += subcluster.n_samples_
-        self.id_ += subcluster.id_
+        if self.samples_id_ is None or subcluster.samples_id_ is None:
+            self.samples_id_ = None
+        else:
+            self.samples_id_.extend(subcluster.samples_id_)
         self.linear_sum_ += subcluster.linear_sum_
         self.squared_sum_ += subcluster.squared_sum_
         self.centroid_ = self.linear_sum_ / self.n_samples_
@@ -311,10 +329,13 @@ class _CFSubcluster(object):
         dot_product = (-2 * new_n) * new_norm
         sq_radius = (new_ss + dot_product) / new_n + new_norm
         if sq_radius <= threshold ** 2:
-            new_id = self.id_ + nominee_cluster.id_
-            (self.n_samples_, self.id_, self.linear_sum_, self.squared_sum_,
-             self.centroid_, self.sq_norm_) = \
-                new_n, new_id, new_ls, new_ss, new_centroid, new_norm
+            (self.n_samples_, self.linear_sum_, self.squared_sum_,
+                self.centroid_, self.sq_norm_) = \
+                new_n, new_ls, new_ss, new_centroid, new_norm
+            if self.samples_id_ is None or nominee_cluster.samples_id_ is None:
+                self.samples_id_ = None
+            else:
+                self.samples_id_.extend(nominee_cluster.samples_id_)
             return True
         return False
 
@@ -328,95 +349,58 @@ class _CFSubcluster(object):
 
 
 class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
-    """Implements the Birch clustering algorithm.
+    """Non online version of Birch clustering algorithm
 
-    Every new sample is inserted into the root of the Clustering Feature
-    Tree. It is then clubbed together with the subcluster that has the
-    centroid closest to the new sample. This is done recursively till it
-    ends up at the subcluster of the leaf of the tree has the closest centroid.
+    This is a patched version of :class:`sklearn.cluster.Birch`
+    that allows to store indices of samples belonging to each subcluster
+    in the hierarchy (`scikit-learn/scikit-learn#8808
+    <https://github.com/scikit-learn/scikit-learn/pull/8808>`_).
+    As a result this version does not allow online learning, however it,
 
-    Read more in the :ref:`User Guide <birch>`.
+      * allows to more easily explore the hierarchy of clusters
+      * can scale better with high dimensional data
+
+    See :ref:`birch_fd_section`.
+
+    For general information about the Birch algorithm,
+    see the :class:`sklearn.cluster.Birch` documentation
+    and the :ref:`scikit-learn User Guide <birch>`.
 
     Parameters
     ----------
-    threshold : float, default 0.5
-        The radius of the subcluster obtained by merging a new sample and the
-        closest subcluster should be lesser than the threshold. Otherwise a new
-        subcluster is started.
+    args : other parameters
+        See :class:`sklearn.cluster.Birch`
 
-    branching_factor : int, default 50
-        Maximum number of CF subclusters in each node. If a new samples enters
-        such that the number of subclusters exceed the branching_factor then
-        the node has to be split. The corresponding parent also has to be
-        split and if the number of subclusters in the parent is greater than
-        the branching factor, then it has to be split recursively.
-
-    n_clusters : int, instance of sklearn.cluster model, default 3
-        Number of clusters after the final clustering step, which treats the
-        subclusters from the leaves as new samples. If None, this final
-        clustering step is not performed and the subclusters are returned
-        as they are. If a model is provided, the model is fit treating
-        the subclusters as new samples and the initial data is mapped to the
-        label of the closest subcluster. If an int is provided, the model
-        fit is AgglomerativeClustering with n_clusters set to the int.
-
-    compute_labels : bool, default True
-        Whether or not to compute labels for each fit.
-
-    copy : bool, default True
-        Whether or not to make a copy of the given data. If set to False,
-        the initial data will be overwritten.
-
-    Attributes
-    ----------
-    root_ : _CFNode
-        Root of the CFTree.
-
-    dummy_leaf_ : _CFNode
-        Start pointer to all the leaves.
-
-    subcluster_centers_ : ndarray,
-        Centroids of all subclusters read directly from the leaves.
-
-    subcluster_labels_ : ndarray,
-        Labels assigned to the centroids of the subclusters after
-        they are clustered globally.
-
-    labels_ : ndarray, shape (n_samples,)
-        Array of labels assigned to the input data.
-        if partial_fit is used instead of fit, they are assigned to the
-        last batch of data.
+    compute_samples_indices : bool, default False
+        Whether the indices of samples belonging to each hierarchical
+        subcluster should be included in the ``_CFSubcluster.samples_id_``
+        attribute. This option can have some memory overhead.
 
     Examples
     --------
-    >>> from sklearn.cluster import Birch
+    >>> from freediscovery.cluster import Birch
     >>> X = [[0, 1], [0.3, 1], [-0.3, 1], [0, -1], [0.3, -1], [-0.3, -1]]
     >>> brc = Birch(branching_factor=50, n_clusters=None, threshold=0.5,
     ... compute_labels=True)
     >>> brc.fit(X)
-    Birch(branching_factor=50, compute_labels=True, copy=True, n_clusters=None,
+    ... # doctest: +NORMALIZE_WHITESPACE
+    Birch(branching_factor=50, compute_labels=True,
+       compute_samples_indices=False, copy=True, n_clusters=None,
        threshold=0.5)
     >>> brc.predict(X)
     array([0, 0, 0, 1, 1, 1])
 
-    References
-    ----------
-    * Tian Zhang, Raghu Ramakrishnan, Maron Livny
-      BIRCH: An efficient data clustering method for large databases.
-      http://www.cs.sfu.ca/CourseCentral/459/han/papers/zhang96.pdf
-
-    * Roberto Perdisci
-      JBirch - Java implementation of BIRCH clustering algorithm
-      https://code.google.com/archive/p/jbirch
     """
 
     def __init__(self, threshold=0.5, branching_factor=50, n_clusters=3,
-                 compute_labels=True, copy=True):
+                 compute_labels=True, copy=True,
+                 compute_samples_indices=False):
         self.threshold = threshold
         self.branching_factor = branching_factor
         self.n_clusters = n_clusters
         self.compute_labels = compute_labels
         self.copy = copy
+        self.compute_samples_indices = compute_samples_indices
 
     def fit(self, X, y=None):
         """
@@ -426,18 +410,27 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
         ----------
         X : {array-like, sparse matrix}, shape (n_samples, n_features)
             Input data.
+
+        y : Ignored
+
         """
         self.fit_, self.partial_fit_ = True, False
-        self.n_samples_ = X.shape[0]
         return self._fit(X)
 
     def _fit(self, X):
         X = check_array(X, accept_sparse='csr', copy=self.copy)
+        self.n_samples_ = X.shape[0]
         threshold = self.threshold
         branching_factor = self.branching_factor
+        compute_samples_indices = self.compute_samples_indices
 
         if branching_factor <= 1:
             raise ValueError("Branching_factor should be greater than one.")
+        if self.compute_samples_indices and self.partial_fit_:
+            raise ValueError("The option compute_samples_indices=True is not "
+                             "compatible with out of core calculations. "
+                             "Please either set it to False, or dont use the "
+                             "partial_fit method.")
         n_samples, n_features = X.shape
 
         # If partial_fit is called for the first time or fit is called, we
@@ -462,7 +455,13 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
             iter_func = _iterate_sparse_X
 
         for row_id, sample in enumerate(iter_func(X)):
-            subcluster = _CFSubcluster(linear_sum=sample, id_=row_id)
+            if compute_samples_indices:
+                samples_id = [row_id]
+            else:
+                samples_id = None
+
+            subcluster = _CFSubcluster(linear_sum=sample,
+                                       samples_id=samples_id)
             split = self.root_.insert_cf_subcluster(subcluster)
 
             if split:
@@ -488,7 +487,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
 
         Returns
         -------
-        leaves: array-like
+        leaves : array-like
             List of the leaf nodes.
         """
         leaf_ptr = self.dummy_leaf_.next_leaf_
@@ -498,25 +497,6 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
             leaf_ptr = leaf_ptr.next_leaf_
         return leaves
 
-    def partial_fit(self, X=None, y=None):
-        """
-        Online learning. Prevents rebuilding of CFTree from scratch.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix}, shape (n_samples, n_features), None
-            Input data. If X is not provided, only the global clustering
-            step is done.
-        """
-        self.partial_fit_, self.fit_ = True, False
-        if X is None:
-            # Perform just the final global clustering step.
-            self._global_clustering()
-            return self
-        else:
-            self._check_fit(X)
-            return self._fit(X)
-
     def _check_fit(self, X):
         is_fitted = hasattr(self, 'subcluster_centers_')
 
@@ -525,7 +505,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
 
         # Should raise an error if one does not fit before predicting.
         if not (is_fitted or has_partial_fit):
-            raise ValueError("Fit training data before predicting")
+            raise NotFittedError("Fit training data before predicting")
 
         if is_fitted and X.shape[1] != self.subcluster_centers_.shape[1]:
             raise ValueError(
@@ -545,7 +525,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
 
         Returns
         -------
-        labels: ndarray, shape(n_samples)
+        labels : ndarray, shape(n_samples)
             Labelled data.
         """
         X = check_array(X, accept_sparse='csr')
@@ -555,7 +535,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
         reduced_distance += self._subcluster_norms
         return self.subcluster_labels_[np.argmin(reduced_distance, axis=1)]
 
-    def transform(self, X, y=None):
+    def transform(self, X):
         """
         Transform X into subcluster centroids dimension.
 
