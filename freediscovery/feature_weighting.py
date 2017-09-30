@@ -66,45 +66,64 @@ def _validate_smart_notation(scheme):
 
 
 class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
-    """TF-IDF feature weighting and normalization using the SMART IR notation
+    """TF-IDF weighting and normalization with the SMART IR notation
 
     This class is similar to
-    :class:`~sklearn.feature_extraction.text.TfidfTransformer` but supports
+    :class:`sklearn.feature_extraction.text.TfidfTransformer` but supports
     a larger number of TF-IDF weighting and normalization schemes.
-    It should be fitted on the document-term matrix computed by,
-    :class:`~sklearn.feature_extraction.text.CountVectorizer`.
+    It should be fitted on the document-term matrix computed by
+    :class:`sklearn.feature_extraction.text.CountVectorizer`.
+
+    The TF-IDF transform consists of three subsequent operations, determined
+    by the ``weighting`` parameter,
+
+    1. Term frequency weighing:
+
+       natural (``n``), log (``l``), augmented
+       (``a``),  boolean (``b``), log average (``L``)
+
+    2. Document frequency weighting:
+
+       none (``n``), idf (``t``), smoothed
+       idf (``s``),  probabilistic (``p``), smoothed probabilistic (``d``)
+
+    3. Document normalization:
+
+       none (``n``), cosine (``c``), length (``l``),
+       unique (``u``).
+
+    Following the SMART IR notation, the ``weighting`` parameter is written
+    as the concatenation of thee characters describing each processing step.
+    In addition the pivoted normalization can be enabled with a fourth
+    character ``p``.
+
+
+    See the :ref:`tfidf_section` documentation section for more details.
 
 
     Parameters
     ----------
     weighting : str, default='nnc'
       the SMART notation for document, term weighting and normalization.
-      In the form ``[nlabL][ntspd][ncb][p]``, see the :ref:`tfidf_section`
-      section.
+      In the form ``[nlabL][ntspd][ncb][p]``.
     norm_alpha : float, default=0.75
-      the α parameter in the pivoted normalization
+      the α parameter in the pivoted normalization. This parameter is only
+      used when ``weighting='???p'``.
     norm_pivot : float, default=None
-      the pivot value used for the normalization. If not provided, and
-      ``weighting='???p'``, it is computed as the mean of the
-      ``norm(tf*idf)``.
+      the pivot value used for the normalization. If not provided
+      it is computed as the mean of the ``norm(tf*idf)``. This parameter is
+      only used when ``weighting='???p'``.
     compute_df : bool, default=False
-      compute the document frequenc (``df_`` attribute) even when it's not
+      compute the document frequency (``df_`` attribute) even when it's not
       explicitly required by the weighting scheme.
     copy : boolean, default=True
       Whether to copy the input array and operate on the copy or perform
       in-place operations in fit and transform.
 
 
-    Attributes
-    ----------
-    dl_ : array, [n_samples]
-      document length (number of words per document) in the
-      fitted document term matrix
-    du_ : array, [n_samples]
-      number of unque words per document in the
-      fitted document term matrix
-    df_ : array, [n_features]
-      document frequency for each feature
+    See also
+    --------
+    :class:`sklearn.feature_extraction.text.TfidfTransformer`
 
 
     References
@@ -125,9 +144,6 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
         self.norm_pivot = norm_pivot
         self.compute_df = compute_df
         self.copy = copy
-        self.dl_ = None
-        self.df_ = None
-        self.du_ = None
 
     def fit(self, X, y=None):
         """Learn the document lenght and document frequency vector

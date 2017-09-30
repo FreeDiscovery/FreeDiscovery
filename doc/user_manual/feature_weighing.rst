@@ -1,12 +1,14 @@
 Feature extraction
 ==================
 
+For a general introduction see :ref:`text_feature_extraction` section of scikit-learn documentation.
+
 .. _tfidf_section:
 
 TF-IDF schemes
 --------------
 
-FreeDiscovery supports a large range of TF-IDF weighting schemes in :class:`~freediscovery.feature_weighting.SmartTfidfTransformer` via the ``weighting="xxxx"`` parameter, that follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
+FreeDiscovery extends :class:`sklearn.feature_extraction.text.TfidfTransformer` with a large number of TF-IDF weighting and normalization schemes in :class:`~freediscovery.feature_weighting.SmartTfidfTransformer`. It follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
 
   .. image:: ../_static/tf_idf_weighting.svg 
 
