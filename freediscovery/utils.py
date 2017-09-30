@@ -207,6 +207,7 @@ def _paginate(df, batch_id, batch_size):
 
     return df_out, pagination
 
+
 def _split_path(path):
     """ A helper function that splits the path into a list
 
@@ -231,4 +232,3 @@ def _split_path(path):
             return _split_path(head)
         else:
             return _split_path(head) + [tail]
-

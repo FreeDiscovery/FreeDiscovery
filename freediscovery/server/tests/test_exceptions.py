@@ -1,14 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-import os
 import pytest
-import json
-import itertools
 from unittest import SkipTest
 from numpy.testing import assert_equal, assert_almost_equal
 
@@ -30,7 +22,7 @@ def test_get_model_404(app_notest, method):
         res = app_notest.get(method)
 
     data = parse_res(res)
-    assert res.status_code in [500, 404] # depends on the url
+    assert res.status_code in [500, 404]  # depends on the url
     #assert '500' in data['message']
 
     assert sorted(data.keys()) == sorted(['messages'])
@@ -77,7 +69,3 @@ def test_exception_handling(app_notest):
     data = parse_res(res)
     assert res.status_code in [500, 422]
     assert sorted(data.keys()) == ['messages']
-    #assert 'ValueError' in data['message'] # check that the error message has the traceback
-
-
-

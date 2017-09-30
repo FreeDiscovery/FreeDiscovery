@@ -187,7 +187,7 @@ def _normalize_similarity(x, metric='cosine', inverse=False):
 
 def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     """ Given a cosine similarity on L2 normalized data,
-    optionally convert it to Jaccard similarity, and/or
+    appriximately convert it to Jaccard similarity, and/or
     normalize it to the [0, 1] interval
 
     Parameters
@@ -195,8 +195,7 @@ def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     x : {float, ndarray}
       the cosine similarity value
     metric : str
-      the conversion to apply one of ['cosine', 'jaccard', 'cosine_norm',
-                                      'jaccard_norm']
+      the conversion to apply one of ['cosine', 'jaccard']
     inverse : bool
       perform the inverse de-normalization operation
     """

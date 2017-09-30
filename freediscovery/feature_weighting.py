@@ -66,12 +66,12 @@ def _validate_smart_notation(scheme):
 
 
 class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
-    """TF-IDF feature weighting using the SMART IR notation
+    """TF-IDF feature weighting and normalization using the SMART IR notation
 
     This class is similar to
     :class:`~sklearn.feature_extraction.text.TfidfTransformer` but supports
-    a larger number of TF-IDF weighting schemes. It is expected to run this
-    transformer on the output of
+    a larger number of TF-IDF weighting and normalization schemes.
+    It should be fitted on the document-term matrix computed by,
     :class:`~sklearn.feature_extraction.text.CountVectorizer`.
 
 
@@ -79,7 +79,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
     ----------
     weighting : str, default='nnc'
       the SMART notation for document, term weighting and normalization.
-      In the form ``[nlabL][ntspd][ncb]``, see the :ref:`tfidf_section`
+      In the form ``[nlabL][ntspd][ncb][p]``, see the :ref:`tfidf_section`
       section.
     norm_alpha : float, default=0.75
       the α parameter in the pivoted normalization
@@ -93,6 +93,18 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
     copy : boolean, default=True
       Whether to copy the input array and operate on the copy or perform
       in-place operations in fit and transform.
+
+
+    Attributes
+    ----------
+    dl_ : array, [n_samples]
+      document length (number of words per document) in the
+      fitted document term matrix
+    du_ : array, [n_samples]
+      number of unque words per document in the
+      fitted document term matrix
+    df_ : array, [n_features]
+      document frequency for each feature
 
 
     References
