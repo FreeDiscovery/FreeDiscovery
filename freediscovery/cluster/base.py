@@ -2,7 +2,7 @@
 #
 # License: BSD 3 clause
 
-from freediscovery.engine.stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
+from freediscovery.stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
 
 
 # Clustering methods for FreeDiscovery

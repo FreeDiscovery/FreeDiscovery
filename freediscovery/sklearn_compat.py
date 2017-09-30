@@ -18,10 +18,3 @@ def _parse_version(version_string):
 
 
 sklearn_version = _parse_version(sklearn.__version__)
-
-if sklearn_version >= (0, 18):
-    from sklearn.model_selection import train_test_split
-
-else:
-    # sklearn 0.17
-    from sklearn.cross_validation import train_test_split

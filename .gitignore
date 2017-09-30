@@ -10,23 +10,15 @@
 .idea
 *dist/
 *bin/
-# ignore deployement keys
-gl-repo-key.pub
-gl-repo-key
 sandbox/
 *pdf
 *.pickle
 ediscovery_cache/
 obj/
-API/example_client_api_Csharp/packages
 *~
 *.vs/
 *.npy
 *.npz
-*exe
-*exe.mdb
-RestSharp*
-release_notes.md
 *log
 *.hypothesis/
 benchmark/tar-toolkit/out/

@@ -10,6 +10,7 @@ import sys
 import time
 import shutil
 import hashlib
+
 try:
     from urllib.error import URLError
     from urllib.error import HTTPError
@@ -55,11 +56,11 @@ if sys.version_info[0] == 2:
                 fd.write(chunk)
 else:
     from urllib.request import urlretrieve
-from .pathlib2 import Path
 
 import numpy as np
 
-INTERNAL_DATA_DIR = (Path(__file__).parent.parent / 'data').resolve()
+INTERNAL_DATA_DIR = os.path.dirname(os.path.dirname((__file__)))
+INTERNAL_DATA_DIR = os.path.abspath(os.path.join(INTERNAL_DATA_DIR, 'data'))
 
 
 def _extract_archive(file_path, path='.', archive_format='auto'):
@@ -149,18 +150,18 @@ def _get_file(fname,
             defaults to the current dir.
 
     # Returns
-        Path to the downloaded file
+        path to the downloaded file
     """
     if cache_dir is None:
-        cache_dir = Path('.').resolve()
+        cache_dir = os.path.abspath('.')
     elif isinstance(cache_dir, str):
-        cache_dir = Path(cache_dir).resolve()
+        cache_dir = os.path.abspath(cache_dir)
 
     if md5_hash is not None and file_hash is None:
         file_hash = md5_hash
         hash_algorithm = 'md5'
 
-    if not cache_dir.exists():
+    if not os.path.exists(cache_dir):
         raise ValueError('cache_dir {} does not exist!'.format(cache_dir))
 
 
@@ -173,8 +174,8 @@ def _get_file(fname,
 
     download = False
     for base_dir in [cache_dir, INTERNAL_DATA_DIR]:
-        fpath = base_dir / fpath
-        if fpath.exists():
+        fpath = os.path.join(base_dir, fpath)
+        if os.path.exists(fpath):
             # File found; verify integrity if a hash was provided.
             if file_hash is not None:
                 if not _validate_file(str(fpath), file_hash, algorithm=hash_algorithm):
@@ -220,7 +221,7 @@ def _get_file(fname,
         ProgressTracker.progbar = None
 
     if extract_fpath is not None:
-        extract_fpath = base_dir / extract_fpath
+        extract_fpath = os.path.join(base_dir, extract_fpath)
 
     print(' ')
 

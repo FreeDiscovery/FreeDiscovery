@@ -8,7 +8,7 @@ Installation requires Python 2.7 or 3.5+, as well as,
  * numpy >= 1.10.1
  * scipy >= 0.16.1
  * pandas >= 0.18.0
- * scikit-learn >= 0.18.0
+ * scikit-learn >= 0.19.0
 
 it can be installed with,
 
