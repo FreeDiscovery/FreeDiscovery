@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+#
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
+
 import warnings
 
 import scipy.sparse as sp

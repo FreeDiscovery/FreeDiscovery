@@ -1,3 +1,6 @@
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 def emails_ignore_header(doc):
     """ Skip irrelevant email header fields """

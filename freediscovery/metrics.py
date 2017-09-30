@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
+
 from __future__ import division
 
 import numpy as np
@@ -223,7 +226,6 @@ def _scale_cosine_similarity(x, metric='cosine', inverse=False):
     return x
 
 
-
 def categorization_score(idx_ref, Y_ref, idx, Y):
     """ Calculate the efficiency scores """
     # This function should be deprecated
@@ -241,8 +243,8 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
 
     idx_out = np.intersect1d(idx_ref, idx)
     if not len(idx_out):
-        return {"recall_score": -1, "precision_score": -1, 'f1': -1, 'auc_roc': -1,
-                'average_precision': -1}
+        return {"recall_score": -1, "precision_score": -1, 'f1': -1,
+                'auc_roc': -1, 'average_precision': -1}
 
     # sort values by index
     order_ref = idx_ref.argsort()

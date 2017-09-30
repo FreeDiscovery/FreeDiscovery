@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
-from sklearn.externals import joblib
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 from freediscovery.engine.stop_words import COMMON_FIRST_NAMES, CUSTOM_STOP_WORDS
-from .utils import _dbscan_noisy2unique
-from .birch import _BirchHierarchy
 
 
 # Clustering methods for FreeDiscovery
@@ -36,6 +34,7 @@ def select_top_words(word_list, n=10):
         if len(out) >= n:
             break
     return out
+
 
 class _BirchDummy(object):
     """ A dummy class for Birch """

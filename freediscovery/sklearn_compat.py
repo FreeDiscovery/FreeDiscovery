@@ -1,3 +1,7 @@
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
+
 import sklearn
 
 

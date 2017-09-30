@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 import platform
 import random
 
 import numpy as np
 import pandas as pd
-from sklearn.externals import joblib
 import pickle
 
 from freediscovery.engine.pipeline import PipelineFinder
-from freediscovery.externals.pathlib2 import Path
 from freediscovery.externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
 
 
@@ -73,8 +73,7 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
                  verbose=False, verify_checksum=False,
                  document_id_generation='squared', categories=None
                  ):
-    """
-    Download a benchmark dataset.
+    """Download a benchmark dataset.
 
     The currently supported datasets are listed below,
 
@@ -91,12 +90,13 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
        - `fedora_ml_3k_subset`
 
     3. The 20 newsgoups dataset
-       - `20_newsgroups_3categories`: only the ['comp.graphics', 'rec.sport.baseball', 'sci.space'] categories
+       - `20_newsgroups_3categories`: only the ['comp.graphics',
+       'rec.sport.baseball', 'sci.space'] categories
 
     If you encounter any issues for downloads with this function,
-    you can also manually download and extract the required dataset to `cache_dir` (the
-    download url is `http://r0h.eu/d/<name>.tar.gz`), then re-run this function to get
-    the required metadata.
+    you can also manually download and extract the required dataset to
+    ``cache_dir`` (the download url is ``http://r0h.eu/d/<name>.tar.gz``),
+    then re-run this function to get the required metadata.
 
     Parameters
     ----------
@@ -110,10 +110,10 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
        verify the checksum of the downloaded archive
     document_id_generation : str
        specifies how the document_id is computed from internal_id
-       must be one of ['identity', 'squared']
-       default="identity" (i.e. document_id = internal_id)
+       must be one of ``['identity', 'squared']``
+       ``default="identity"`` (i.e. ``document_id = internal_id``)
     categories : str
-       select a subsection of the dataset, default='all'
+       select a subsection of the dataset, ``default='all'``
 
     Returns
     -------
@@ -190,9 +190,10 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
             res = di.search(gt, drop=False)
             di.data['category'] = res.is_relevant
             di.data['category'] = di.data['category'].apply(
-                                      lambda x: 'positive' if x == 1 else 'negative')
+                            lambda x: 'positive' if x == 1 else 'negative')
             di.data['is_train'] = False
-            res = di.search(pd.DataFrame({'file_path': positive_files + negative_files}))
+            res = di.search(pd.DataFrame({'file_path':
+                                          positive_files + negative_files}))
             di.data.loc[res.internal_id.values, 'is_train'] = True
     elif '20_newsgroups_' in name:
         di.data['category'] = np.array(twenty_news.target_names)[twenty_news.target]
@@ -217,7 +218,8 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
             # make a smaller training set
             random.seed(999998)
             training_set = random.sample(training_set,
-                                         min(len(training_set), di.data.shape[0] // 5))
+                                         min(len(training_set),
+                                             di.data.shape[0] // 5))
 
     dataset = di.render_dict(return_file_path=True)
 

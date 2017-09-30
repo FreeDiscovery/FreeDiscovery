@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 import numpy as np
 from sklearn.base import BaseEstimator

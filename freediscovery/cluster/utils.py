@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 import numpy as np
 from sklearn.utils.validation import check_array
@@ -138,7 +140,7 @@ def _dbscan_unique2noisy(labels_):
     return labels_ndup_
 
 
-def centroid_similarity(X, internal_ids, nn_metric='jaccard_norm'):
+def centroid_similarity(X, internal_ids, nn_metric='cosine'):
     """ Given a list of documents in a cluster, compute the cluster centroid,
     intertia and individual distances
 

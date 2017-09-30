@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+# Authors: Denys Lazarenko
+#          Roman Yurchak
+#
+# License: BSD 3 clause
 
 from __future__ import absolute_import
 from __future__ import division

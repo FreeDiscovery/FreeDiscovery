@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 from sklearn.metrics import pairwise_distances
 

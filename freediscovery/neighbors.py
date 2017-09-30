@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 import numpy as np
 
@@ -31,7 +33,8 @@ class NearestCentroidRanker(NearestCentroid):
 
         X = check_array(X, accept_sparse='csr')
 
-        return pairwise_distances(X, self.centroids_, metric=self.metric).min(axis=1)
+        return pairwise_distances(X, self.centroids_,
+                                  metric=self.metric).min(axis=1)
 
 
 def _chunk_kneighbors(func, X, batch_size=5000, **args):
@@ -99,16 +102,15 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         If ``-1``, then the number of jobs is set to the number of CPU cores.
 
     method : str, def
-        If "unsupervised" only distances to the positive samples are used in the ranking
-        If "supervised" both the distance to the positive and negative documents are used
-        for ranking (i.e. if a document is slightly further away from a positive document
-        than from a negative one, it will be considered negative with a very low score)
+        If "unsupervised" only distances to the positive samples are used
+        in the ranking. If "supervised" both the distance to the positive
+        and negative documents are used for ranking (i.e. if a document
+        is slightly further away from a positive document than from a negative
+        one, it will be considered negative with a very low score)
 
     """
 
-    def __init__(self, radius=1.0,
-                 algorithm='brute', leaf_size=30, n_jobs=1,
-                ):
+    def __init__(self, radius=1.0, algorithm='brute', leaf_size=30, n_jobs=1):
 
         self.algorithm = algorithm
         self.radus = radius
@@ -130,14 +132,16 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
         index = np.arange(len(y), dtype='int')
 
         if len(y_unique) == 0:
-            raise ValueError('The training set must have at least one document category!')
+            raise ValueError('The training set must have at least '
+                             'one document category!')
 
         # define nearest neighbors search objects for each category
         self._mod = [NearestNeighbors(n_neighbors=1,
                                       leaf_size=self.leaf_size,
                                       algorithm=self.algorithm,
                                       n_jobs=self.n_jobs,
-                                      metric='cosine',  # euclidean metric by default
+                                      # euclidean metric by default
+                                      metric='cosine',
                                       ) for el in range(len(y_unique))]
 
         index_mapping = []
@@ -147,7 +151,6 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
             self._mod[imod].fit(X[mask])
 
         self.index_mapping = index_mapping
-
 
     def kneighbors(self, X=None, batch_size=5000):
         """Finds the K-neighbors of a point.
@@ -170,19 +173,20 @@ class NearestNeighborRanker(BaseEstimator, RankerMixin):
 
         n_classes = len(self._mod)
 
-        # cos
         S_res = np.zeros((X.shape[0], n_classes), dtype='float')
         nn_idx_res = np.zeros((X.shape[0], n_classes), dtype='int')
 
         for imod in range(n_classes):
-            D_i, nn_idx_i_loc = _chunk_kneighbors(self._mod[imod].kneighbors, X,
-                                               batch_size=batch_size)
+            D_i, nn_idx_i_loc = _chunk_kneighbors(self._mod[imod].kneighbors,
+                                                  X,
+                                                  batch_size=batch_size)
 
             # only NearestNeighbor-1 (only one column in the kneighbors output)
-            # convert from eucledian distance in L2 norm space to cosine similarity
-            #S_cos = seuclidean_dist2cosine_sim(D_i[:,0])
+            # convert from eucledian distance in L2 norm space to cosine
+            # similarity
+            # S_cos = seuclidean_dist2cosine_sim(D_i[:,0])
             S_res[:, imod] = 1 - D_i[:, 0]
             # map local index within index_mapping to global index
-            nn_idx_res[:, imod] = self.index_mapping[imod][nn_idx_i_loc[:,0]]
+            nn_idx_res[:, imod] = self.index_mapping[imod][nn_idx_i_loc[:, 0]]
 
         return S_res, nn_idx_res

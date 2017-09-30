@@ -1,3 +1,7 @@
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
+
 
 def _document_length_correction_full(doc_len, epsilon, alpha):
     """An additive correction for the document lenght to account for

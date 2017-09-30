@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
+
 
 class _BaseException(Exception):
     status_code = -1
@@ -11,7 +14,7 @@ class _BaseException(Exception):
 
     def to_dict(self):
         rv = {'message':  '{} {}: {}'.format(self.status_code,
-                        type(self).__name__, self.message)}
+              type(self).__name__, self.message)}
         return rv
 
 

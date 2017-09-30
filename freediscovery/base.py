@@ -1,11 +1,14 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 
 class RankerMixin(object):
     """Mixin class for all ranking estimators in FreeDiscovery.
     A ranker is a binary classifier without a decision threshold.
     """
-    _estimator_type = "ranker"  # so that thing would still work with scikit learn
+    # so that thing would still work with scikit learn
+    _estimator_type = "ranker"
 
     def score(self, X, y, sample_weight=None):
         """Returns the ROC score of the prediction.
@@ -26,4 +29,5 @@ class RankerMixin(object):
         """
 
         from .metrics import roc_auc_score
-        return roc_auc_score(y, self.decision_function(X), sample_weight=sample_weight,)
+        return roc_auc_score(y, self.decision_function(X),
+                             sample_weight=sample_weight,)

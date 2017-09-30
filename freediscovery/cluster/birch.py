@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
 
 from freediscovery.cluster.utils import centroid_similarity
 from freediscovery.externals.jwzthreading import Container

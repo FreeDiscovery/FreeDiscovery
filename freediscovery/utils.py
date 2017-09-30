@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+# Authors: Roman Yurchak
+#
+# License: BSD 3 clause
+
 import os
 import sys
 import shutil
@@ -12,7 +15,6 @@ import sklearn
 INT_NAN = -99999
 
 sklearn_version = parse_version(sklearn.__version__)
-
 
 
 @contextmanager
