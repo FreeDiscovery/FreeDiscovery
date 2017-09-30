@@ -232,7 +232,7 @@ def categorization_score(idx_ref, Y_ref, idx, Y):
     # more general freediscovery.metrics module
     import warnings
     from sklearn.metrics import precision_score, recall_score, f1_score
-    from freediscovery.externals.sklearn_backport.metrics import roc_auc_score, average_precision_score
+    from sklearn.metrics import roc_auc_score, average_precision_score
     threshold = 0.0
 
     idx = np.asarray(idx, dtype='int')

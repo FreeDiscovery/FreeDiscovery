@@ -10,7 +10,7 @@ import numpy as np
 from numpy.testing import (assert_allclose, assert_equal)
 
 import pytest
-from freediscovery.sklearn_compat import train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize
 from sklearn.externals import joblib
 
