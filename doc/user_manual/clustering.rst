@@ -87,8 +87,8 @@ After computing the BIRCH clustering,
 
    from freediscovery.cluster import Birch
 
-   cl = Birch(compute_sample_indices=True)
-   cl.fit(X)
+   cluster_model = Birch(compute_sample_indices=True)
+   cluster_model.fit(X)
 
 we can explore the hierarchical tree via the ``cl.root_`` attribute. However,
 this is not very practical since following the original BIRCH paper, each subcluster
@@ -96,8 +96,8 @@ is a combination of CFNode and CFSubcluster that are designed for efficiently
 clustering the dataset, but not so much for subsequent exploration of the resulting
 hierarchical tree. 
 
-In FreeDiscovery, we thus wrap each subcluster with a
-:ref:`~freediscovery.cluster.BirchSubcluster` class designed to simplify the
+In FreeDiscovery, we thus wrap each subcluster with 
+a :class:`~freediscovery.cluster.BirchSubcluster` class designed to simplify the
 exploration of the BIRCH hierarchical tree. This can be acchieved with,
 
 .. code:: python

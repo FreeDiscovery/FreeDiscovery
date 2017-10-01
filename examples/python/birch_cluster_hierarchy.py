@@ -84,7 +84,9 @@ htree_depth_1 = [sc for sc in htree.flatten() if sc.current_depth == 1]
 for sc in htree_depth_1:
     sc['centroid'] = X[sc['document_id_accumulated'], :].mean(axis=0)
 
-print('Centroid for the cluster_id=12:\n', htree.flatten()[12]['centroid'])
+print('Centroid for :\n', htree_depth_1[1])
+print(htree_depth_1[1]['centroid'])
+
 
 ###############################################################################
 #
