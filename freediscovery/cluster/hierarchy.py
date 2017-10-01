@@ -2,19 +2,38 @@
 #
 # License: BSD 3 clause
 
+from itertools import chain
+
 from freediscovery.externals.jwzthreading import Container
 
 
 class BirchSubcluster(Container):
     """A container class for BIRCH cluster hierarchy
 
-    This is a dict like container, that links to other subclusters in the
+    This is a dict like container, that is used to store the cluster
+    hierarchy computed by :class:`freediscovery.cluster.Birch`. A
+    given subcluster links to the parent / children subclusters in the
     hierarchy with the following attributes,
 
      * `parent` : :class:`BirchSubcluster`, the parent
        container
      * `children` : ``list`` of :class:`BirchSubcluster`,
        contains the children subclusters
+
+    Each subcluster stores the following dictionary keys,
+
+     * `document_id` : ``list``, a list of document / sample ids contained
+       in this subcluster (excluding its children).
+     * ``document_id_accumulated``:  a list of document / sample ids
+       contained in this subcluster and its children. Only available when
+
+       It can be re-computed with the ``document_id_accumulated`` class
+       property.
+
+
+
+    See :ref:`User Manual <exploring_hierarchical_tree_section>` for
+    more details.
 
     Note
     ----
@@ -24,9 +43,9 @@ class BirchSubcluster(Container):
     algorithm in
     `jwzthreading <https://github.com/FreeDiscovery/jwzthreading>`_,
     though it is general enough to represent other hierarchical
-    stuctures (here BIRCH clustering).
+    stuctures, such as BIRCH cluster hierarchy.
 
-    In FreeDiscovery this class is primarly used for documents. As a
+    In FreeDiscovery this class is primarily used for documents. As a
     result the variables/methods containing the term "document"
     have the same meaning as "sample" in the general scikit-learn context.
     """
@@ -34,14 +53,16 @@ class BirchSubcluster(Container):
     @property
     def document_count(self):
         """Count of all documents in the children subclusters"""
-        tmp_sum = sum([child.document_count for child in self.children])
-        return len(self.get('document_id', [])) + tmp_sum
+        partial_sum = sum([child.document_count for child in self.children])
+        return len(self.get('document_id', [])) + partial_sum
 
-    def _get_children_document_id(self):
-        res = list(self.get('document_id', []))
-        for el in self.children:
-            res += el._get_children_document_id()
-        return res
+    @property
+    def document_id_accumulated(self):
+        """Returns  list of document / sample ids contained
+        in this subcluster or any of its children."""
+        partial_sum = chain.from_iterable(el.document_id_accumulated
+                                          for el in self.children)
+        return list(self.get('document_id', [])) + list(partial_sum)
 
     def limit_depth(self, max_depth=None):
         """ Truncate the tree to the provided maximum depth
@@ -153,16 +174,17 @@ def birch_hierarchy_wrapper(birch, container=BirchSubcluster, validate=True,
     htree, n_subclusters = _birch_hierarchy_constructor(birch.root_,
                                                         container=container)
     if validate:
-        if len(htree._get_children_document_id()) != birch.n_samples_:
-            raise ValueError(("Building hierarchy failed: root node contains ",
+        if len(htree.document_id_accumulated) != birch.n_samples_:
+            print(htree.document_id_accumulated)
+            raise ValueError(("Building hierarchy failed: root node contains "
                               "{} documents, while the total document number "
                               "is {}")
-                             .format(len(htree._get_children_document_id()),
+                             .format(len(htree.document_id_accumulated),
                                      birch.n_samples_))
     if compute_document_id:
         for row in htree.flatten():
-            document_id_lst = row._get_children_document_id()
-            row['children_document_id'] = document_id_lst
+            document_id_lst = row.document_id_accumulated
+            row['document_id_accumulated'] = document_id_lst
             row['cluster_size'] = len(document_id_lst)
     return htree, n_subclusters
 

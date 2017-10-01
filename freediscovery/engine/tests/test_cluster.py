@@ -73,7 +73,7 @@ def test_clustering(method, use_lsi, args, cl_args):
         flat_tree = htree.flatten()
 
         terms = cat.compute_labels(n_top_words=n_top_words,
-                                   cluster_indices=[row['children_document_id']
+                                   cluster_indices=[row['document_id_accumulated']
                                                     for row in flat_tree])
         for label, row in zip(terms, flat_tree):
             row['cluster_label'] = label

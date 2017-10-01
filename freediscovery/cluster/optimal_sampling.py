@@ -52,7 +52,7 @@ def compute_optimal_sampling(htree, min_similarity, min_coverage):
 
         sampled_doc_idx = np.argmax(row['document_similarity'])
         row['document_similarity'] = [row['document_similarity'][sampled_doc_idx]]
-        row['children_document_id'] = [row['children_document_id'][sampled_doc_idx]]
+        row['document_id_accumulated'] = [row['document_id_accumulated'][sampled_doc_idx]]
 
         stree2.append(row)
         if cum_size > limit_size:

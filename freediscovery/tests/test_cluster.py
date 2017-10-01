@@ -46,7 +46,7 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
     # let's compute cluster similarity
     for row in htree.flatten():
         inertia, S_sim = centroid_similarity(X,
-                                             row['children_document_id'])
+                                             row['document_id_accumulated'])
         row['document_similarity'] = S_sim
         row['cluster_similarity'] = inertia
 
@@ -56,7 +56,7 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
     for el in htree.flatten():
         doc_count += len(el['document_id'])
         el.current_depth
-        el._get_children_document_id()
+        el.document_id_accumulated
     assert doc_count == X.shape[0]
     assert htree.document_count == X.shape[0]
     if optimal_sampling:
@@ -65,7 +65,7 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
 
         for row in s_samples_1:
             assert len(row['document_similarity']) == 1
-            assert len(row['children_document_id']) == 1
+            assert len(row['document_id_accumulated']) == 1
         s_samples_2 = compute_optimal_sampling(htree, min_similarity=0.85,
                                                min_coverage=0.2)
         s_samples_3 = compute_optimal_sampling(htree, min_similarity=0.9,

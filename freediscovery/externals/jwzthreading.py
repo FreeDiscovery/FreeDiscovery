@@ -72,7 +72,7 @@ class Container(dict):
 
     @property
     def is_dummy(self):
-        """Check if container has some contents."""
+        """Check if the container has some content."""
         return not len(self.keys())
 
     def add_child(self, child):
@@ -109,7 +109,7 @@ class Container(dict):
 
         Returns
         -------
-           True if `ctr` is a descendant of `self`, else False.
+        True if `ctr` is a descendant of `self`, else False.
         """
         # To avoid recursing indefinitely, we'll do a depth-first
         # search; 'seen' tracks the containers we've already seen,

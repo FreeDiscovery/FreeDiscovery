@@ -31,7 +31,7 @@ class _BirchHierarchy(object):
         """ Compute all the required parameters """
         for row in self.htree.flatten():
             inertia, S_sim = centroid_similarity(X,
-                                                 row['children_document_id'],
+                                                 row['document_id_accumulated'],
                                                  nn_metric=self.metric_)
             row['document_similarity'] = S_sim
             row['cluster_similarity'] = inertia

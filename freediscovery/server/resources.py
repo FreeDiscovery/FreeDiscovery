@@ -724,7 +724,7 @@ class ClusteringApiElement(Resource):
                 flat_tree = htree.flatten()
 
                 terms = cl.compute_labels(
-                            cluster_indices=[row['children_document_id']
+                            cluster_indices=[row['document_id_accumulated']
                                              for row in flat_tree],
                             **args)
                 for label, row in zip(terms, flat_tree):
@@ -745,7 +745,7 @@ class ClusteringApiElement(Resource):
                                         for el in row.children]
                     irow['cluster_depth'] = row.current_depth
 
-                db_sl = db.iloc[row['children_document_id']].copy()
+                db_sl = db.iloc[row['document_id_accumulated']].copy()
                 db_sl['similarity'] = row['document_similarity']
                 tmp = []
                 for index, row_tmp in db_sl.iterrows():
