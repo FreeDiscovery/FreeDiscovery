@@ -33,8 +33,8 @@ The different options are descibed in more detail in the table below,
 | **L** (log average): :math:`{\displaystyle {\tfrac {1+{\text{log}}({\text{tf}}_{t,d})}{1+{\text{log}}({\text{avg}}_{t\epsilon d}({\text{tf}}_{t,d}))}}}` | **d** (smoothed prob idf): :math:`{\displaystyle {\text{log}}{\tfrac {N+1-df_{t}}{df_{t} + 1}}}`  |                                                                                                   |
 +----------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
 
-Pivoted normalization
-^^^^^^^^^^^^^^^^^^^^^^
+Pivoted document length normalization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to standard TF-IDF normalizations above, pivoted normalization was proposed by Singal et al. as a way to avoid over-penalising long documents. It can be enabled with the ``weighting='???p'`` parameter. For each document the normalization term :math:`V_{\textbf{d}}` is replaced by,
 
