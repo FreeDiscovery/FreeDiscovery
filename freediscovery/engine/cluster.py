@@ -7,9 +7,9 @@ import pandas as pd
 
 from freediscovery.engine.base import _BaseWrapper
 from freediscovery.utils import setup_model
-from freediscovery.cluster import Birch
+from freediscovery.cluster import Birch, birch_hierarchy_wrapper
 from freediscovery.cluster.utils import _dbscan_noisy2unique
-from freediscovery.cluster.hierarchy import _BirchHierarchy
+from freediscovery.cluster.utils import centroid_similarity
 from freediscovery.cluster.base import _BirchDummy, ClusterLabels
 
 
@@ -17,6 +17,24 @@ from freediscovery.cluster.base import _BirchDummy, ClusterLabels
 # This is highly inspired from the scikit-learn text clustering example
 
 MAX_N_TOP_WORDS = 1000
+
+
+class _BirchHierarchy(object):
+    def __init__(self, model, metric='cosine'):
+        self.model = model
+        self.htree, _n_clusters = birch_hierarchy_wrapper(model,
+                                                          validate=True)
+        self._n_clusters = _n_clusters
+        self.metric_ = metric
+
+    def fit(self, X):
+        """ Compute all the required parameters """
+        for row in self.htree.flatten():
+            inertia, S_sim = centroid_similarity(X,
+                                                 row['children_document_id'],
+                                                 nn_metric=self.metric_)
+            row['document_similarity'] = S_sim
+            row['cluster_similarity'] = inertia
 
 
 class _BaseClusteringWrapper(object):
@@ -57,7 +75,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
 
     _wrapper_type = "cluster"
 
-    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None, metric='cosine'):
+    def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None,
+                 metric='cosine'):
 
         super(_ClusteringWrapper, self).__init__(cache_dir=cache_dir,
                                                  parent_id=parent_id,
@@ -102,7 +121,8 @@ class _ClusteringWrapper(_BaseWrapper, _BaseClusteringWrapper):
         self.mid = mid
         self.mid_dir = mid_dir
 
-        if type(km).__name__ in ['Birch', '_BirchDummy'] and n_clusters is None:
+        if type(km).__name__ in ['Birch', '_BirchDummy'] and\
+                n_clusters is None:
             # hierarcical clustering, centroids are computed at a later time..
             labels_ = None
 

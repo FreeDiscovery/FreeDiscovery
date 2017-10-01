@@ -1,22 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import os.path
+import os
 
 import numpy as np
 from unittest import SkipTest
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 
-from sklearn.preprocessing import normalize
-
-from freediscovery.cluster import select_top_words, Birch
+from freediscovery.cluster import select_top_words
 from freediscovery.cluster.hierarchy import _check_birch_tree_consistency
-from freediscovery.cluster.hierarchy import _BirchHierarchy
-from freediscovery.cluster.optimal_sampling import compute_optimal_sampling
+from freediscovery.cluster import compute_optimal_sampling, centroid_similarity
+from freediscovery.cluster import Birch, birch_hierarchy_wrapper
+from sklearn.preprocessing import normalize
 
 
 NCLUSTERS = 2
-
 
 @pytest.mark.parametrize('dataset, optimal_sampling',
                          [('random', False),
@@ -43,11 +41,16 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
 
     _check_birch_tree_consistency(mod.root_)
 
-    hmod = _BirchHierarchy(mod)
-    hmod.fit(X)
+    htree, n_subclusters = birch_hierarchy_wrapper(mod)
 
-    htree = hmod.htree
-    assert htree.size == hmod._n_clusters
+    # let's compute cluster similarity
+    for row in htree.flatten():
+        inertia, S_sim = centroid_similarity(X,
+                                             row['children_document_id'])
+        row['document_similarity'] = S_sim
+        row['cluster_similarity'] = inertia
+
+    assert htree.size == n_subclusters
 
     doc_count = 0
     for el in htree.flatten():

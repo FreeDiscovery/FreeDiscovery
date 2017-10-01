@@ -19,7 +19,8 @@ def fd_setup():
     basename = os.path.dirname(__file__)
     cache_dir = check_cache()
     np.random.seed(1)
-    data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
+    data_dir = os.path.join(basename, "..", "..",
+                            "data", "ds_001", "raw")
     n_features = 110000
     fe = FeatureVectorizer(cache_dir=cache_dir)
     dsid = fe.setup(n_features=n_features, use_hashing=False,

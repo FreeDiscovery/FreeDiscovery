@@ -41,6 +41,8 @@ Clustering
     :template: autosummary/base.rst
 
     freediscovery.cluster.Birch
+    freediscovery.cluster.BirchSubcluster
+    freediscovery.cluster.birch_hierarchy_wrapper
     freediscovery.cluster.ClusterLabels
 
 Near Duplicates detection

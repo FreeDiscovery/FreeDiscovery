@@ -6,15 +6,16 @@ from sklearn.metrics import pairwise_distances
 
 
 class Search(object):
-    """ Perform (semantic) search in a document collection
+    """ (Semantic) search in a document collection
 
     Parameters
     ----------
-    vectorizer : {TfidfVectorizer, HashingVectorizer}
-      the (fitted) vectorizer that was used on the document collection
-    tfidf : SmartTfidfTransfomer
+    vectorizer : {CountVectorizer, HashingVectorizer}
+      the (fitted) vectorizer that was used extract tokens from the
+      document collection
+    tfidf : {TfidfTransformer, SmartTfidfTransfomer}
       the (fitted) IDF transformer used to weight and normalize the
-      bag of word features
+      bag of word/n-gram features
     lsi : TruncatedSVD
       (optional) an LSI model fitted on the vectorised document-term matrix
       If provided this corresponds to a semantic search, default=None
