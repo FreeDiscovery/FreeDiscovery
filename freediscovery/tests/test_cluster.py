@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os.path
+import os
 
 import numpy as np
 from unittest import SkipTest
@@ -8,21 +8,20 @@ from numpy.testing import assert_allclose, assert_equal
 import pytest
 
 from freediscovery.cluster import select_top_words
-from freediscovery.cluster.birch import _check_birch_tree_consistency
-from freediscovery.cluster.optimal_sampling import compute_optimal_sampling
+from freediscovery.cluster.hierarchy import _check_birch_tree_consistency
+from freediscovery.cluster import compute_optimal_sampling, centroid_similarity
+from freediscovery.cluster import Birch, birch_hierarchy_wrapper
+from sklearn.preprocessing import normalize
+from sklearn.exceptions import NotFittedError
 
 
 NCLUSTERS = 2
-
 
 @pytest.mark.parametrize('dataset, optimal_sampling',
                          [('random', False),
                           ('birch_hierarchical', False),
                           ('birch_hierarchical', True)])
 def test_birch_make_hierarchy(dataset, optimal_sampling):
-    from freediscovery.cluster.birch import _BirchHierarchy
-    from freediscovery.externals.birch import Birch
-    from sklearn.preprocessing import normalize
 
     if dataset == 'random':
         np.random.seed(9999)
@@ -37,22 +36,26 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
         branching_factor = 2
 
     mod = Birch(n_clusters=None, threshold=0.1,
-                branching_factor=branching_factor, compute_labels=False)
+                branching_factor=branching_factor, compute_labels=False,
+                compute_sample_indices=True)
     mod.fit(X)
 
-    _check_birch_tree_consistency(mod.root_)
+    htree, n_subclusters = birch_hierarchy_wrapper(mod)
 
-    hmod = _BirchHierarchy(mod)
-    hmod.fit(X)
+    # let's compute cluster similarity
+    for row in htree.flatten():
+        inertia, S_sim = centroid_similarity(X,
+                                             row['document_id_accumulated'])
+        row['document_similarity'] = S_sim
+        row['cluster_similarity'] = inertia
 
-    htree = hmod.htree
-    assert htree.size == hmod._n_clusters
+    assert htree.tree_size == n_subclusters
 
     doc_count = 0
     for el in htree.flatten():
         doc_count += len(el['document_id'])
-        el.depth
-        el._get_children_document_id()
+        el.current_depth
+        el.document_id_accumulated
     assert doc_count == X.shape[0]
     assert htree.document_count == X.shape[0]
     if optimal_sampling:
@@ -61,7 +64,7 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
 
         for row in s_samples_1:
             assert len(row['document_similarity']) == 1
-            assert len(row['children_document_id']) == 1
+            assert len(row['document_id_accumulated']) == 1
         s_samples_2 = compute_optimal_sampling(htree, min_similarity=0.85,
                                                min_coverage=0.2)
         s_samples_3 = compute_optimal_sampling(htree, min_similarity=0.9,
@@ -69,6 +72,18 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
 
         assert len(s_samples_1) > len(s_samples_2)
         assert len(s_samples_1) < len(s_samples_3)
+
+
+def test_birch_hierarchy_fitted():
+    model = Birch()
+
+    with pytest.raises(NotFittedError):
+        birch_hierarchy_wrapper(model)
+
+
+def test_birch_hierarchy_validation():
+    with pytest.raises(ValueError):
+        birch_hierarchy_wrapper("some other object")
 
 
 def test_denrogram_children():

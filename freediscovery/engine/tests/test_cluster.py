@@ -19,7 +19,8 @@ def fd_setup():
     basename = os.path.dirname(__file__)
     cache_dir = check_cache()
     np.random.seed(1)
-    data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
+    data_dir = os.path.join(basename, "..", "..",
+                            "data", "ds_001", "raw")
     n_features = 110000
     fe = FeatureVectorizer(cache_dir=cache_dir)
     dsid = fe.setup(n_features=n_features, use_hashing=False,
@@ -72,7 +73,7 @@ def test_clustering(method, use_lsi, args, cl_args):
         flat_tree = htree.flatten()
 
         terms = cat.compute_labels(n_top_words=n_top_words,
-                                   cluster_indices=[row['children_document_id']
+                                   cluster_indices=[row['document_id_accumulated']
                                                     for row in flat_tree])
         for label, row in zip(terms, flat_tree):
             row['cluster_label'] = label

@@ -8,7 +8,10 @@ For a general introduction to feature extraction with textual documents see the 
 TF-IDF schemes
 --------------
 
-FreeDiscovery extends :class:`sklearn.feature_extraction.text.TfidfTransformer` with a large number of TF-IDF weighting and normalization schemes in :class:`~freediscovery.feature_weighting.SmartTfidfTransformer`. It follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
+SMART TF-IDF schemes
+^^^^^^^^^^^^^^^^^^^^
+
+FreeDiscovery extends :class:`sklearn.feature_extraction.text.TfidfTransformer` with a larger number of TF-IDF weighting and normalization schemes in :class:`~freediscovery.feature_weighting.SmartTfidfTransformer`. It follows the `SMART Information Retrieval System <https://en.wikipedia.org/wiki/SMART_Information_Retrieval_System>`_ notation,
 
   .. image:: ../_static/tf_idf_weighting.svg 
 
@@ -29,6 +32,9 @@ The different options are descibed in more detail in the table below,
 +----------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
 | **L** (log average): :math:`{\displaystyle {\tfrac {1+{\text{log}}({\text{tf}}_{t,d})}{1+{\text{log}}({\text{avg}}_{t\epsilon d}({\text{tf}}_{t,d}))}}}` | **d** (smoothed prob idf): :math:`{\displaystyle {\text{log}}{\tfrac {N+1-df_{t}}{df_{t} + 1}}}`  |                                                                                                   |
 +----------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
+
+Pivoted normalization
+^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to standard TF-IDF normalizations above, pivoted normalization was proposed by Singal et al. as a way to avoid over-penalising long documents. It can be enabled with the ``weighting='???p'`` parameter. For each document the normalization term :math:`V_{\textbf{d}}` is replaced by,
 

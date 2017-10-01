@@ -33,6 +33,7 @@ install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "activate test"
   - conda install --file %REQUIREMENTS_FILE%
+  - conda install nose
   - python setup.py develop 
 
 test_script:

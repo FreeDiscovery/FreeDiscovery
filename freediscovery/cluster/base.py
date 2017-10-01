@@ -44,7 +44,6 @@ class _BirchDummy(object):
 class ClusterLabels(object):
     """Calculate the cluster labels.
 
-    This is an internal class that is called by Clustering
 
     Parameters
     ----------

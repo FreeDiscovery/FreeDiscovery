@@ -33,7 +33,7 @@ def test_threading():
 
     assert [el.to_dict() for el in tree] == tree_ref
 
-    assert len(fe.filenames_) == sum([el.size for el in tree])
+    assert len(fe.filenames_) == sum([el.tree_size for el in tree])
     assert len(fe.filenames_) == 5
     assert len(tree[0].flatten()) == 5
 

@@ -24,25 +24,29 @@ Feature extraction
     freediscovery.feature_weighting.SmartTfidfTransformer
 
 
-Document categorization
------------------------
+Categorization
+--------------
+
 .. autosummary::
     :toctree: ./generated/
     :template: autosummary/base.rst
 
     freediscovery.neighbors.NearestNeighborRanker
 
-Document clustering
---------------------
+Clustering
+----------
 
 .. autosummary::
     :toctree: ./generated/
     :template: autosummary/base.rst
 
+    freediscovery.cluster.Birch
+    freediscovery.cluster.BirchSubcluster
+    freediscovery.cluster.birch_hierarchy_wrapper
     freediscovery.cluster.ClusterLabels
 
-Duplicates detection
---------------------
+Near Duplicates detection
+-------------------------
 
 .. autosummary::
     :toctree: ./generated/

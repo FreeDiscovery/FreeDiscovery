@@ -16,10 +16,8 @@ class SimhashNearDuplicates(BaseEstimator):
     retrieve near duplicates with a significantly better computational
     scaling.
 
-    This class exposes a scikit-learn compatible API, and currently supports
-    only sparse CSR arrays (such as obtained after vectorizing text documents).
-
-    .. NOTE:: this estimator requires simhash-py Python package
+    .. Note:: this estimator requires
+              the `simhash-py <https://github.com/seomoz/simhash-py>`_Python package
               to be installed.
 
     Parameters
