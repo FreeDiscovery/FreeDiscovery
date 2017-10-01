@@ -2,13 +2,18 @@
 
 ## Version 1.3.0
 
-**In developpement**
+**Oct 1, 2017**
 
 ### New features
 
+ * Additional TF-IDF weighting schemes and pivoted normalization ([#164](https://github.com/FreeDiscovery/FreeDiscovery/pull/164/files))
+ * Exposed the wrapper functions to visualize Birch hierarchical trees in the Python package ([#175](https://github.com/FreeDiscovery/FreeDiscovery/pull/175))
+ * Better separation between the FD engine (REST API) and the FD Python package.
+ * Support for both Python 2.7 and 3.5+ for the Python package. The FD engine remains Python 3.5+ only. 
 
 ### Enhancements
-
+ 
+ * Improved documentation and examples
  * Added compatibility with scikit-learn 0.19.0 ([#169](https://github.com/FreeDiscovery/FreeDiscovery/pull/169/files)) which fixed several issues found in 0.18.1.
 
 ### API Changes

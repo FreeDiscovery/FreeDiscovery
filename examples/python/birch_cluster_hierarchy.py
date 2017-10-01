@@ -26,6 +26,7 @@ rng = np.random.RandomState(42)
 
 X, y = make_blobs(n_samples=1000, n_features=10, random_state=rng)
 
+
 cluster_model = Birch(threshold=0.9, branching_factor=20,
                       compute_sample_indices=True)
 cluster_model.fit(X)
@@ -51,7 +52,7 @@ htree.display_tree()
 
 ###############################################################################
 #
-# We have a hierarchy 2 levels deep, with 197 sub-clusters and a total
+# We have a hierarchy 2 levels deep, with 78 sub-clusters and a total
 # of 1000 samples.
 #
 # For instance, let's consider the subcluster with  ``cluster_id=12``.
@@ -84,8 +85,7 @@ htree_depth_1 = [sc for sc in htree.flatten() if sc.current_depth == 1]
 for sc in htree_depth_1:
     sc['centroid'] = X[sc['document_id_accumulated'], :].mean(axis=0)
 
-print('Centroid for :\n', htree_depth_1[1])
-print(htree_depth_1[1]['centroid'])
+print('Centroid for cluster_id=12:\n', htree.flatten()[12])
 
 
 ###############################################################################

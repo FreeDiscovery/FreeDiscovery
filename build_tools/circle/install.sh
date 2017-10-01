@@ -48,5 +48,4 @@ pip install gunicorn
 # Build and install scikit-learn in dev mode
 python setup.py develop
 
-# start the FreeDiscovery server in the background
 mkdir -p ../freediscovery_shared

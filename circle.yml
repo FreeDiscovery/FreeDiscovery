@@ -21,7 +21,6 @@ dependencies:
   # run sphinx to build the doc.
   override:
     - source build_tools/circle/install.sh
-    - source activate testenv && py.test -sv .
     - source activate testenv && freediscovery run -y --cache-dir ../freediscovery_shared:
         background: true
     - sleep 20
