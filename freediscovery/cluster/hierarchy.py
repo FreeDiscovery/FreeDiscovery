@@ -51,7 +51,7 @@ class BirchSubcluster(Container):
         max_depth : int
           hierarchy depth to which truncate the tree
         """
-        if self.depth >= max_depth:
+        if self.current_depth >= max_depth:
             self.children = []
 
         for el in self.children:

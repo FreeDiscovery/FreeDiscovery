@@ -31,6 +31,7 @@ import sys
 
 __all__ = ['Message', 'thread']
 
+__version__ = "0.96"
 
 #
 # constants
@@ -61,23 +62,26 @@ class Container(dict):
     def __repr__(self):
         return '<%s %x: %r>' % (self.__class__.__name__, id(self),
                                 dict.__repr__(self))
+
     def __hash__(self):
         """ Make the container hashable. Care must be taken though not to change
-	the container contents after the initialization as otherwise the hash
+        the container contents after the initialization as otherwise the hash
         value will change
-	"""
+        """
         return hash(tuple(sorted(self.items())) + (self.parent,))
 
-
+    @property
     def is_dummy(self):
-        """Check if Container has some contents."""
+        """Check if container has some contents."""
         return not len(self.keys())
 
     def add_child(self, child):
-        """Add a child to `self`.
+        """Add a child to the container
 
-        Arguments:
-            child (Container): Child to add.
+        Parameters
+        ----------
+        child : Container
+           Child to add.
         """
         if child.parent:
             child.parent.remove_child(child)
@@ -85,22 +89,27 @@ class Container(dict):
         child.parent = self
 
     def remove_child(self, child):
-        """Remove a child from `self`.
+        """Remove a child from the container
 
-        Arguments:
-            child (Container): Child to remove.
+        Parameters
+        ----------
+        child : Container
+           Child to remove.
         """
         self.children.remove(child)
         child.parent = None
 
     def has_descendant(self, ctr):
-        """Check if `ctr` is a descendant of this.
+        """Check if `ctr` is a descendant of this container.
 
-        Arguments:
-            ctr (Container): possible descendant container.
+        Parameters
+        ----------
+        ctr : Container
+           possible descendant container.
 
-        Returns:
-            True if `ctr` is a descendant of `self`, else False.
+        Returns
+        -------
+           True if `ctr` is a descendant of `self`, else False.
         """
         # To avoid recursing indefinitely, we'll do a depth-first
         # search; 'seen' tracks the containers we've already seen,
@@ -122,26 +131,29 @@ class Container(dict):
         return False
 
     @property
-    def size(self):
-        """Count the number of objects included in the container,
-        including itself"""
+    def tree_size(self):
+        """Recursively count the number of children containers.
+        The current container is also included in the count.
+        """
 
-        return 1 + sum([child.size for child in self.children])
+        return 1 + sum([child.tree_size for child in self.children])
 
     @property
-    def depth(self):
-        """Compute the current container depth"""
+    def current_depth(self):
+        """Compute the depth in the hierarchy of the current container"""
 
         if self.parent is None:
             return 0
         else:
-            return 1 + self.parent.depth
+            return 1 + self.parent.current_depth
 
     def flatten(self):
-        """ Return a flatten version of the tree
+        """ Return a flatten version of the hierarchical tree
 
         Returns
-          list [Containers]: a list of messages
+        -------
+        list : Containers
+          a flat list of containers
         """
         from itertools import chain
 
@@ -151,11 +163,11 @@ class Container(dict):
 
     @property
     def root(self):
-        """
-        Get the root container
+        """ Get the root container
 
         Returns
-          Container: the top most level container
+        -------
+        Containe: the top most level container
         """
 
         if self.parent is None:
@@ -163,6 +175,8 @@ class Container(dict):
         else:
             return self.parent.root
 
+
+class JwzContainer(Container):
     def collapse_empty(self, inplace=True):
         """ Collapse empty top level containers.
 
@@ -173,7 +187,7 @@ class Container(dict):
         container to be used as the root node.
 
         This method removes this empty container and makes the first child
-        to be the root message. The other messages at depth == 1 then become 
+        to be the root message. The other messages at depth == 1 then become
         it's children.
 
         Parameters
@@ -186,9 +200,9 @@ class Container(dict):
         if not inplace:
             raise NotImplementedError
 
-        if not 'message' in self:
-            raise ValueError('This method is only valid when used for email threading')
-
+        if 'message' not in self:
+            raise ValueError("This method is only valid when used for "
+                             "email threading")
 
         if self['message'] is not None:
             # nothing to be done
@@ -212,37 +226,36 @@ class Container(dict):
 
         return new_root
 
-
     def to_dict(self, include=[]):
         """ Convert a Container tree to a nested dict
         """
         if 'message' not in self:
-            raise ValueError('This method is currently valid with email threading, '
-                             'please overwrite it for other applications')
+            raise ValueError('This method is currently valid with email'
+                             'threading, please overwrite it for '
+                             'other applications')
 
         if self['message'] is None:
-            raise ValueError('Containers with None messages are not supported:!\n'\
-                             '    this: {}'.format(self))
+            raise ValueError('Containers with None messages are not '
+                             'supported:!\n this: {}'.format(self))
 
-        res =  {'id': self['message'].message_idx}
+        res = {'id': self['message'].message_idx}
 
         for key in include:
-            res[key] =  getattr(self['message'], key)
+            res[key] = getattr(self['message'], key)
 
         if self.parent is not None:
             if self.parent['message'] is not None:
                 res['parent'] = self.parent['message'].message_idx
             else:
-                raise ValueError('Containers with None messages are not supported:!\n'\
-                                 '    this: {}\n    parent: {}'.format(self, self.parent))
+                raise ValueError('Containers with None messages are not '
+                                 'supported:!\n    this: {}\n    parent: {}'
+                                 .format(self, self.parent))
         else:
             res['parent'] = None
 
         res['children'] = [el.to_dict(include=include) for el in self.children]
 
         return res
-
-
 
 
 class Message(object):
@@ -415,7 +428,7 @@ def thread(messages, group_by_subject=True):
         if this_container is not None:
             this_container['message'] = msg
         else:
-            this_container = Container(message=None)
+            this_container = JwzContainer(message=None)
             this_container['message'] = msg
             id_table[msg.message_id] = this_container
 
@@ -425,7 +438,7 @@ def thread(messages, group_by_subject=True):
             ## print "Processing reference for "+repr(msg.message_id)+": "+repr(ref)
             container = id_table.get(ref, None)
             if container is None:
-                container = Container(message=None)
+                container = JwzContainer(message=None)
                 id_table[ref] = container
 
             if prev is not None:
@@ -513,11 +526,11 @@ def thread(messages, group_by_subject=True):
         if ctr is None or ctr is container:
             continue
 
-        if ctr.is_dummy() and container.is_dummy():
+        if ctr.is_dummy and container.is_dummy:
             for child in ctr.children:
                 container.add_child(child)
-        elif ctr.is_dummy() or container.is_dummy():
-            if ctr.is_dummy():
+        elif ctr.is_dummy or container.is_dummy:
+            if ctr.is_dummy:
                 ctr.add_child(container)
             else:
                 container.add_child(ctr)
@@ -528,7 +541,7 @@ def thread(messages, group_by_subject=True):
             # container has fewer levels of 're:' headers
             container.add_child(ctr)
         else:
-            new = Container(message=None)
+            new = JwzContainer(message=None)
             new.add_child(ctr)
             new.add_child(container)
             subject_table[subj] = new

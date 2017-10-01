@@ -50,12 +50,12 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
         row['document_similarity'] = S_sim
         row['cluster_similarity'] = inertia
 
-    assert htree.size == n_subclusters
+    assert htree.tree_size == n_subclusters
 
     doc_count = 0
     for el in htree.flatten():
         doc_count += len(el['document_id'])
-        el.depth
+        el.current_depth
         el._get_children_document_id()
     assert doc_count == X.shape[0]
     assert htree.document_count == X.shape[0]
