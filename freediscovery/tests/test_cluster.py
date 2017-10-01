@@ -12,6 +12,7 @@ from freediscovery.cluster.hierarchy import _check_birch_tree_consistency
 from freediscovery.cluster import compute_optimal_sampling, centroid_similarity
 from freediscovery.cluster import Birch, birch_hierarchy_wrapper
 from sklearn.preprocessing import normalize
+from sklearn.exceptions import NotFittedError
 
 
 NCLUSTERS = 2
@@ -38,8 +39,6 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
                 branching_factor=branching_factor, compute_labels=False,
                 compute_sample_indices=True)
     mod.fit(X)
-
-    _check_birch_tree_consistency(mod.root_)
 
     htree, n_subclusters = birch_hierarchy_wrapper(mod)
 
@@ -73,6 +72,18 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
 
         assert len(s_samples_1) > len(s_samples_2)
         assert len(s_samples_1) < len(s_samples_3)
+
+
+def test_birch_hierarchy_fitted():
+    model = Birch()
+
+    with pytest.raises(NotFittedError):
+        birch_hierarchy_wrapper(model)
+
+
+def test_birch_hierarchy_validation():
+    with pytest.raises(ValueError):
+        birch_hierarchy_wrapper("some other object")
 
 
 def test_denrogram_children():

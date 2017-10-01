@@ -358,7 +358,7 @@ class Birch(BaseEstimator, TransformerMixin, ClusterMixin):
     As a result this version does not allow online learning, however it,
 
       * allows to more easily explore the hierarchy of clusters
-      * can scale better with high dimensional data
+      * can scale better for high dimensional data
 
     See :ref:`user manual <birch_section>`.
 

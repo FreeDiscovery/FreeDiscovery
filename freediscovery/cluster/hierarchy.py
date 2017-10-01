@@ -3,15 +3,18 @@
 # License: BSD 3 clause
 
 from itertools import chain
+from textwrap import dedent
 
+from .birch import Birch
 from freediscovery.externals.jwzthreading import Container
+from sklearn.exceptions import NotFittedError
 
 
 class BirchSubcluster(Container):
     """A container class for BIRCH cluster hierarchy
 
-    This is a dict like container, that is used to store the cluster
-    hierarchy computed by :class:`freediscovery.cluster.Birch`. A
+    This is a dict like container, that is used to store each subcluster in
+    the cluster hierarchy computed by :class:`freediscovery.cluster.Birch`. A
     given subcluster links to the parent / children subclusters in the
     hierarchy with the following attributes,
 
@@ -24,13 +27,18 @@ class BirchSubcluster(Container):
 
      * `document_id` : ``list``, a list of document / sample ids contained
        in this subcluster (excluding its children).
-     * ``document_id_accumulated``:  a list of document / sample ids
+     * `document_id_accumulated`:  a list of document / sample ids
        contained in this subcluster and its children. Only available when
+       this class was build using :func:`birch_hierarchy_wrapper` with
+       the ``compute_document_id=True`` parameter.  It can be re-computed
+       with the ``document_id_accumulated`` class property.
+     * `cluster_size`: int, the number of samples contained in this
+       subcluster and its children. This corresponds to the length of
+       the ``document_id_accumulated`` property.  Only available when
+       this class was build using :func:`birch_hierarchy_wrapper` with
+       the ``compute_document_id=True`` parameter.
 
-       It can be re-computed with the ``document_id_accumulated`` class
-       property.
-
-
+    other keys may be user-computed as necessary.
 
     See :ref:`User Manual <exploring_hierarchical_tree_section>` for
     more details.
@@ -77,6 +85,33 @@ class BirchSubcluster(Container):
 
         for el in self.children:
             el.limit_depth(max_depth)
+
+    def display_tree(self, max_depth=None):
+        """Print the content of hierarchical tree below this subcluster
+        """
+        _print_container(self)
+
+    def __repr__(self):
+        content = super(BirchSubcluster, self).__repr__()
+        if self.parent:
+            parent_repr = 'BirchSubcluster[subcluster_id={}]'\
+                    .format(self.parent['cluster_id'])
+        else:
+            parent_repr = 'None'
+
+        if self.children:
+            child_repr = ', '.join([
+                  'BirchSubcluster[cluster_id={}]'
+                  .format(ctr['cluster_id'])
+                  for ctr in self.children])
+        else:
+            child_repr = ''
+
+        return dedent("""
+             {}
+               * parent: {}
+               * children: [{}]
+             """.format(content, parent_repr, child_repr))
 
 
 def _check_birch_tree_consistency(node):
@@ -126,7 +161,8 @@ def _birch_hierarchy_constructor(node, depth=0, cluster_id=0,
         if el.child_ is not None:
             cluster_id += 1
             subtree, cluster_id = _birch_hierarchy_constructor(
-                     el.child_, depth=depth+1, cluster_id=cluster_id)
+                     el.child_, depth=depth+1, cluster_id=cluster_id,
+                     container=container)
             htree.add_child(subtree)
         else:
             document_id_list += el.samples_id_
@@ -168,6 +204,14 @@ def birch_hierarchy_wrapper(birch, container=BirchSubcluster, validate=True,
     result the variables/methods containing the term "document"
     have the same meaning as "sample" in the general scikit-learn context.
     """
+    if not isinstance(birch, Birch):
+        raise ValueError('the birch object must be created with '
+                         'freediscovery.cluster.Birch')
+
+
+    if not hasattr(birch, "root_"):
+        raise NotFittedError("The Birch model must be fitted first!")
+
     if validate:
         _check_birch_tree_consistency(birch.root_)
 
@@ -189,16 +233,14 @@ def birch_hierarchy_wrapper(birch, container=BirchSubcluster, validate=True,
     return htree, n_subclusters
 
 
-def _print_container(ctr, depth=0, debug=0):
-    """Print summary of Thread to stdout."""
-    if debug:
-        message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject)
-    else:
-        message = str(ctr['cluster_id']) + ' N_children: ' \
-                       + str(len(ctr.children)) + ' N_docs: '\
-                       + str(len(ctr['document_id']))
+def _print_container(ctr, depth=0):
+    """Print summary clustering hierarchy to stdout."""
+    message = "[cluster_id={cluster_id}] N_children: {N_children} N_samples: {N_document}"\
+              .format(cluster_id=ctr['cluster_id'],
+                      N_children=len(ctr.children),
+                      N_document=len(ctr['document_id_accumulated']))
 
     print(''.join(['> ' * depth, message]))
 
     for child in ctr.children:
-        _print_container(child, depth + 1, debug)
+        _print_container(child, depth + 1)

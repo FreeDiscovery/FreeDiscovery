@@ -74,7 +74,7 @@ As a result, :class:`freediscovery.cluster.Birch` does not allow online learning
 
 .. _exploring_hierarchical_tree_section:
 
-Exploring hierarchical clustering
+Exploring BIRCH cluster hierarchy
 ---------------------------------
 
 
@@ -87,15 +87,24 @@ After computing the BIRCH clustering,
 
    from freediscovery.cluster import Birch
 
-   cl = Birch(compute_samples_indices=True)
+   cl = Birch(compute_sample_indices=True)
    cl.fit(X)
 
 we can explore the hierarchical tree via the ``cl.root_`` attribute. However,
-this is not 
+this is not very practical since following the original BIRCH paper, each subcluster
+is a combination of CFNode and CFSubcluster that are designed for efficiently
+clustering the dataset, but not so much for subsequent exploration of the resulting
+hierarchical tree. 
 
-Custom calculations on the hierarchical tree
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In FreeDiscovery, we thus wrap each subcluster with a
+:ref:`~freediscovery.cluster.BirchSubcluster` class designed to simplify the
+exploration of the BIRCH hierarchical tree. This can be acchieved with,
 
-sasa
+.. code:: python
 
-A more practical illustration of th 
+    from freediscovery.cluster import birch_hierarchy_wrapper
+
+    htree_new, _ = birch_hierarchy_wrapper(cluster_model)
+
+
+See the :ref:`exploring_birch_example` example for a more detailed illustration.
