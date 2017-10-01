@@ -55,10 +55,10 @@ htree.display_tree()
 # We have a hierarchy 2 levels deep, with 78 sub-clusters and a total
 # of 1000 samples.
 #
-# For instance, let's consider the subcluster with  ``cluster_id=12``.
+# For instance, let's consider the subcluster with  ``cluster_id=34``.
 # We can access it by id with the flattened representation of the hierarchy,
 
-sc = htree.flatten()[12]
+sc = htree.flatten()[34]
 print(sc)
 
 ###############################################################################
@@ -78,14 +78,14 @@ print(sc_centroid)
 ###############################################################################
 #
 # For instance, we can select only subclusters that are one level deep
-# (this includes ``cluster_id=12``) and compute their centroids,
+# (this includes ``cluster_id=34``) and compute their centroids,
 
 htree_depth_1 = [sc for sc in htree.flatten() if sc.current_depth == 1]
 
 for sc in htree_depth_1:
     sc['centroid'] = X[sc['document_id_accumulated'], :].mean(axis=0)
 
-print('Centroid for cluster_id=12:\n', htree.flatten()[12])
+print('Centroid for cluster_id=34:\n', htree.flatten()[34]['centroid'])
 
 
 ###############################################################################
@@ -123,4 +123,4 @@ htree_new, _ = birch_hierarchy_wrapper(cluster_model,
 
 print('Tree depth from the root node:', htree_new.max_tree_depth)
 
-print('Tree depth from cluster_id=12:', htree_new.flatten()[12].max_tree_depth)
+print('Tree depth from cluster_id=34:', htree_new.flatten()[34].max_tree_depth)

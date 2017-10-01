@@ -4,15 +4,18 @@ import os
 
 import numpy as np
 from unittest import SkipTest
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
+
+from sklearn.preprocessing import normalize
+from sklearn.exceptions import NotFittedError
+from sklearn.datasets import make_blobs
 
 from freediscovery.cluster import select_top_words
 from freediscovery.cluster.hierarchy import _check_birch_tree_consistency
 from freediscovery.cluster import compute_optimal_sampling, centroid_similarity
 from freediscovery.cluster import Birch, birch_hierarchy_wrapper
-from sklearn.preprocessing import normalize
-from sklearn.exceptions import NotFittedError
+
 
 
 NCLUSTERS = 2
@@ -84,6 +87,34 @@ def test_birch_hierarchy_fitted():
 def test_birch_hierarchy_validation():
     with pytest.raises(ValueError):
         birch_hierarchy_wrapper("some other object")
+
+
+@pytest.mark.parametrize('example_id', [12, 34])
+def test_birch_example_reproducibility(example_id):
+    # check reproducibility of the Birch example
+    rng = np.random.RandomState(42)
+
+    X, y = make_blobs(n_samples=1000, n_features=10, random_state=rng)
+
+    cluster_model = Birch(threshold=0.9, branching_factor=20,
+                          compute_sample_indices=True)
+    cluster_model.fit(X)
+    #assert len(cluster_model.root_.subclusters_[1].child_.subclusters_) == 3
+
+    htree, n_subclusters = birch_hierarchy_wrapper(cluster_model)
+
+    assert htree.tree_size == n_subclusters
+
+    # same random seed as in the birch hierarchy example
+    assert htree.tree_size == 78
+    sc = htree.flatten()[example_id]
+    if example_id == 34:
+        # this is true in both cases, but example_id fails on circle ci
+        assert sc.current_depth == 1
+        assert len(sc.children) == 3
+
+    assert_array_equal([sc['cluster_id'] for sc in htree.flatten()],
+                       np.arange(htree.tree_size))
 
 
 def test_denrogram_children():
