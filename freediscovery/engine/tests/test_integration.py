@@ -37,7 +37,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
 
     n_features = 20000
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(n_features=n_features, use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 

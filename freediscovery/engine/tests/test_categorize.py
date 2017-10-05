@@ -34,7 +34,7 @@ data_dir = basename / ".." / ".." / "data" / "ds_001" / "raw"
 ground_truth = parse_ground_truth_file(
                         str(data_dir / ".." / "ground_truth_file.txt"))
 
-fe = FeatureVectorizer(cache_dir=cache_dir)
+fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
 vect_uuid = fe.setup()
 fe.ingest(str(data_dir), file_pattern='.*\d.txt')
 

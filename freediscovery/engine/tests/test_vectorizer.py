@@ -16,7 +16,7 @@ from freediscovery.engine.vectorizer import (FeatureVectorizer,
 from freediscovery.engine.ingestion import DocumentIndex
 
 from freediscovery.tests.run_suite import check_cache
-from freediscovery.exceptions import (NotFound)
+from freediscovery.exceptions import (NotFound, WrongParameter)
 
 basename = os.path.dirname(__file__)
 data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
@@ -31,7 +31,7 @@ def test_feature_extraction_tokenization(analyzer, ngram_range, use_hashing):
     cache_dir = check_cache()
     use_hashing = (use_hashing == 'hashed')
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(analyzer=analyzer, ngram_range=ngram_range,
                     use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
@@ -49,7 +49,7 @@ def test_feature_extraction_tokenization(analyzer, ngram_range, use_hashing):
 def test_feature_extraction_storage():
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir, file_pattern='.*\d.txt')
     db = pd.read_pickle(os.path.join(cache_dir, 'ediscovery_cache',
@@ -66,7 +66,7 @@ def test_feature_extraction_weighting(weighting,
 
     use_hashing = (use_hashing == 'hashed')
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(weighting=weighting, use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
@@ -89,7 +89,7 @@ def test_feature_extraction_nfeatures(n_features, weighting, use_hashing):
 
     use_hashing = (use_hashing == 'hashed')
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(n_features=n_features, weighting=weighting, use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
@@ -108,7 +108,7 @@ def test_feature_extraction_nfeatures(n_features, weighting, use_hashing):
 def test_search_filenames(use_hashing):
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
@@ -139,13 +139,13 @@ def test_search_filenames(use_hashing):
 def test_df_filtering(use_hashing, min_df, max_df):
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(min_df=min_df, max_df=max_df, use_hashing=use_hashing)
     fe.ingest(data_dir)
 
     X = fe._load_features(uuid)
 
-    fe2 = FeatureVectorizer(cache_dir=cache_dir)
+    fe2 = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid2 = fe2.setup(use_hashing=use_hashing)
     fe2.ingest(data_dir)
 
@@ -164,7 +164,7 @@ def test_df_filtering(use_hashing, min_df, max_df):
 def test_append_documents():
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir)
 
@@ -200,7 +200,7 @@ def test_append_documents():
 def test_remove_documents():
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir)
 
@@ -235,7 +235,7 @@ def test_sampling_filenames():
 
     fe_pars = {'weighting': 'bnn'}
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     with pytest.warns(UserWarning):
         # there is a warning because we don't use norm='l2'
         uuid = fe.setup(use_hashing=True, **fe_pars)
@@ -311,7 +311,7 @@ def test_feature_extraction_cyrillic(use_hashing):
     cache_dir = check_cache()
     use_hashing = (use_hashing == 'hashed')
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
@@ -334,7 +334,7 @@ def test_email_parsing():
                             "fedora-devel-list-2008-October")
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir)
 
@@ -348,7 +348,7 @@ def test_ingestion_batches():
     data_dir = os.path.join(basename, "..", "..", "data", "ds_002", "raw")
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     with pytest.raises(ValueError):
         fe.ingest(vectorize=True)  # no ingested files
@@ -377,7 +377,7 @@ def test_ingestion_content():
                        'content': fh.read()})
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(dataset_definition=dd, vectorize=True)
     assert len(fe.filenames_) == 6
@@ -386,7 +386,7 @@ def test_ingestion_content():
     assert X.shape[0] == 6
     assert fe.db_.data.shape[0] == len(fe.filenames_)
 
-    fe2 = FeatureVectorizer(cache_dir=cache_dir)
+    fe2 = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     fe2.setup()
     fe2.ingest(data_dir=str(data_dir))
 
@@ -394,3 +394,25 @@ def test_ingestion_content():
     assert X.shape == X2.shape
     assert_array_equal(X.indices, X2.indices)
     assert_array_equal(X.data, X2.data)
+
+def test_non_random_dsid():
+    data_dir = os.path.join(basename, "..", "..", "data", "ds_002", "raw")
+    cache_dir = check_cache()
+
+    dsid = 'test-dataset'
+
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w', dsid=dsid)
+    uuid = fe.setup()
+    assert dsid == uuid
+    fe.ingest(data_dir, file_pattern='.*\d.txt', vectorize=False)
+    # writing with the same name fails
+    with pytest.raises(WrongParameter):
+        FeatureVectorizer(cache_dir=cache_dir, mode='w', dsid=dsid)
+
+    FeatureVectorizer(cache_dir=cache_dir, mode='r', dsid=dsid)
+
+    FeatureVectorizer(cache_dir=cache_dir, mode='fw', dsid=dsid)
+    # special characters are not allowed
+    with pytest.raises(WrongParameter):
+        fh = FeatureVectorizer(cache_dir=cache_dir, mode='fw', dsid='?+ds$$')
+        uuid = fh.setup()

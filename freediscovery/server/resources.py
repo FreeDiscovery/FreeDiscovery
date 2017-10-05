@@ -138,7 +138,7 @@ class FeaturesApi(Resource):
             if key in args and args[key] > 1. + EPSILON:  # + eps
                 args[key] = int(args[key])
 
-        fe = FeatureVectorizer(self._cache_dir)
+        fe = FeatureVectorizer(self._cache_dir, mode='w')
         dsid = fe.setup(**args)
         return {'id': dsid}
 
@@ -181,7 +181,7 @@ class FeaturesApiElement(Resource):
                "document_id_generator": wfields.Str(missing="indexed_file_path")})
     @marshal_with(IDSchema())
     def post(self, dsid, **args):
-        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid, mode='r')
         fe.ingest(**args)
         if fe.pars_['parse_email_headers']:
             fe.parse_email_headers()
@@ -267,7 +267,7 @@ class FeaturesApiRemove(Resource):
                                                     many=True, required=True)})
     @marshal_with(EmptySchema())
     def post(self, dsid, **args):
-        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid, mode='r')
         fe.remove(args['dataset_definition'])
         return {}
 

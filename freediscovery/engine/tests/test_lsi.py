@@ -20,7 +20,7 @@ def test_lsi():
     cache_dir = check_cache()
     n_components = 2
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
@@ -41,7 +41,7 @@ def test_lsi():
 def test_lsi_append_documents():
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir)
 
@@ -65,7 +65,7 @@ def test_lsi_append_documents():
 def test_lsi_remove_documents():
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir)
 

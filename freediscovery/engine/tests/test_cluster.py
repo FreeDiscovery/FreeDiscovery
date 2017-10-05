@@ -22,7 +22,7 @@ def fd_setup():
     data_dir = os.path.join(basename, "..", "..",
                             "data", "ds_001", "raw")
     n_features = 110000
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     dsid = fe.setup(n_features=n_features, use_hashing=False,
                     stop_words='english',
                     min_df=0.1, max_df=0.9)
