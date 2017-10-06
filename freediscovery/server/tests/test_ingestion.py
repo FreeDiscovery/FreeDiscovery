@@ -11,7 +11,7 @@ from numpy.testing import assert_equal, assert_array_equal
 from freediscovery.utils import dict2type, sdict_keys
 from .base import (parse_res, V01, app, get_features, data_dir,
                    get_features_cached, CACHE_DIR)
-from freediscovery.exceptions import (NotFound)
+from freediscovery.exceptions import (NotFound, WrongParameter)
 from sklearn.externals import joblib
 
 
@@ -266,3 +266,17 @@ def test_document_id_generation(app, document_id_generator):
         assert_array_equal(df.document_id.values,
                            [747101442, 747117435, 7628635,
                             7628636, 7628637, 7628638])
+
+def test_document_non_random_id(app):
+    method = V01 + "/feature-extraction/"
+
+    dsid_orig = 'test-dir'
+
+    data = app.post_check(method, json={'dsid': dsid_orig})
+    assert data['id'] == dsid_orig
+
+    with pytest.raises(WrongParameter):
+        data = app.post_check(method, json={'dsid': dsid_orig})
+
+    with pytest.raises(WrongParameter):
+        data = app.post_check(method, json={'dsid': 'dsjkdlsy8^$$$'})

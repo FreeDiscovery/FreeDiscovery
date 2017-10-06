@@ -125,6 +125,8 @@ class FeaturesApi(Resource):
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
              - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
              - `preprocess`: a list of pre-processing steps to apply before vectorization. A subset of ['emails_ignore_header'], default: [].
+             - `dsid`: a custom dataset id. Can only contain letters, numbers, "_" or "-". It must also be between 2 and 50 characters long.
+             - `overwrite`: if a custom dataset id (dsid) was provided, and it already exists, overwrite it. Default: false
             """))
     @use_args(FeaturesParsSchema(strict=True, exclude=('data_dir')))
     @marshal_with(IDSchema())
@@ -137,8 +139,17 @@ class FeaturesApi(Resource):
         for key in ['min_df', 'max_df']:
             if key in args and args[key] > 1. + EPSILON:  # + eps
                 args[key] = int(args[key])
+        dsid = args.pop('dsid', None)
+        overwrite = args.pop('overwrite', None)
 
-        fe = FeatureVectorizer(self._cache_dir, mode='w')
+        if dsid is None:
+            mode = 'w'
+        elif not overwrite:
+            mode = 'w'
+        else:
+            mode = 'fw'
+
+        fe = FeatureVectorizer(self._cache_dir, mode=mode, dsid=dsid)
         dsid = fe.setup(**args)
         return {'id': dsid}
 
