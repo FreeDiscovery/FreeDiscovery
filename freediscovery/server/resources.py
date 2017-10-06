@@ -125,6 +125,8 @@ class FeaturesApi(Resource):
              - `max_df`: When building the vocabulary ignore terms that have a document frequency strictly higher than the given threshold. This value is ignored when hashing is used.
              - `parse_email_headers`: when documents are emails, attempt to parse the information contained in the header (default: False)
              - `preprocess`: a list of pre-processing steps to apply before vectorization. A subset of ['emails_ignore_header'], default: [].
+             - `id`: (optional) custom dataset id. Can only contain letters, numbers, "_" or "-". It must also be between 2 and 50 characters long.
+             - `overwrite`: if a custom dataset id was provided, and it already exists, overwrite it. Default: false
             """))
     @use_args(FeaturesParsSchema(strict=True, exclude=('data_dir')))
     @marshal_with(IDSchema())
@@ -137,8 +139,17 @@ class FeaturesApi(Resource):
         for key in ['min_df', 'max_df']:
             if key in args and args[key] > 1. + EPSILON:  # + eps
                 args[key] = int(args[key])
+        dsid = args.pop('id', None)
+        overwrite = args.pop('overwrite', None)
 
-        fe = FeatureVectorizer(self._cache_dir)
+        if dsid is None:
+            mode = 'w'
+        elif not overwrite:
+            mode = 'w'
+        else:
+            mode = 'fw'
+
+        fe = FeatureVectorizer(self._cache_dir, mode=mode, dsid=dsid)
         dsid = fe.setup(**args)
         return {'id': dsid}
 
@@ -181,7 +192,7 @@ class FeaturesApiElement(Resource):
                "document_id_generator": wfields.Str(missing="indexed_file_path")})
     @marshal_with(IDSchema())
     def post(self, dsid, **args):
-        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid, mode='r')
         fe.ingest(**args)
         if fe.pars_['parse_email_headers']:
             fe.parse_email_headers()
@@ -197,7 +208,7 @@ class FeaturesApiElement(Resource):
 
 class FeaturesApiElementMappingNested(Resource):
     @doc(description=dedent("""
-         Compute correspondence between id fields for documents. 
+         Compute correspondence between id fields for documents.
          At least one of the fields used for indexing must be provided,
          and all the rest will be computed (if available).
          If the data parameter is not provided, return all the correspondence table
@@ -267,7 +278,7 @@ class FeaturesApiRemove(Resource):
                                                     many=True, required=True)})
     @marshal_with(EmptySchema())
     def post(self, dsid, **args):
-        fe = FeatureVectorizer(self._cache_dir, dsid=dsid)
+        fe = FeatureVectorizer(self._cache_dir, dsid=dsid, mode='r')
         fe.remove(args['dataset_definition'])
         return {}
 
@@ -300,16 +311,30 @@ class LsiApi(Resource):
              - `n_components`: Desired dimensionality of the output data. Must be strictly less than the number of features.
              - `parent_id`: parent dataset identified by `dataset_id`
              - `alpha`: floor on the number of components used with small datasets
+             - `id`: (optional) custom model id. Can only contain letters, numbers, "_" or "-". It must also be between 2 and 50 characters long.
+             - `overwrite`: if a custom model id was provided, and it already exists, overwrite it. Default: false
+
           """))
     @use_args({'parent_id': wfields.Str(required=True),
                'n_components': wfields.Int(missing=150),
-               'alpha': wfields.Number(missing=0.33)})
+               'alpha': wfields.Number(missing=0.33),
+               'id': wfields.Str(),
+               'overwrite': wfields.Boolean(missing=False)})
     @marshal_with(LsiPostSchema())
     def post(self, **args):
-        parent_id = args['parent_id']
-        del args['parent_id']
+        parent_id = args.pop('parent_id')
+
+        mid = args.pop('id', None)
+        overwrite = args.pop('overwrite', None)
+        if mid is None:
+            mode = 'w'
+        elif not overwrite:
+            mode = 'w'
+        else:
+            mode = 'fw'
+
         lsi = _LSIWrapper(cache_dir=self._cache_dir, parent_id=parent_id,
-                          random_state=self._random_seed)
+                          random_state=self._random_seed, mid=mid, mode=mode)
         _, explained_variance = lsi.fit_transform(**args)
         return {'id': lsi.mid, 'explained_variance': explained_variance}
 

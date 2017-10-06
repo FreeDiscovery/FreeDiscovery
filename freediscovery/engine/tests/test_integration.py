@@ -37,14 +37,14 @@ def test_features_hashing(use_hashing, use_lsi, method):
 
     n_features = 20000
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(n_features=n_features, use_hashing=use_hashing)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
     ground_truth = parse_ground_truth_file(os.path.join(data_dir,
                                            "..", "ground_truth_file.txt"))
 
-    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid, mode='w')
     lsi_res, exp_var = lsi.fit_transform(n_components=100)
     assert lsi._load_pars() is not None
     lsi._load_model()

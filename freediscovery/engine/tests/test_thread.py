@@ -15,7 +15,7 @@ data_dir = os.path.join(basename, "..", "..", "data",
 def test_threading():
     cache_dir = check_cache()
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
     fe.ingest(data_dir=data_dir)
     fe.parse_email_headers()

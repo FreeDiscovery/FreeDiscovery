@@ -14,7 +14,7 @@ def fd_setup(**fe_options):
     cache_dir = check_cache()
     data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
     n_features = 110000
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(n_features=n_features, use_hashing=True,
                     stop_words='english',
                     **fe_options)

@@ -10,6 +10,7 @@ import numpy as np
 import uuid
 from pkg_resources import parse_version
 import sklearn
+from .exceptions import WrongParameter
 
 # this is wrong, and should be eventually replaced
 INT_NAN = -99999
@@ -55,15 +56,27 @@ def generate_uuid(size=16):
     return uuid.uuid4().hex[sl]  # a new random id
 
 
-def setup_model(base_path):
+def setup_model(base_path, mid=None, mode='w'):
     """
     Generate a unique model id and create the corresponding folder
     for storing results
     """
-    mid = generate_uuid()
+    if mode not in ['w', 'fw']:
+        raise WrongParameter(('Cannot setup model {} in mode={} '
+                              'must be one of "w", "fw"!')
+                             .format(base_path, mode))
+    if mid is None:
+        mid = generate_uuid()
+
+    if not base_path.exists():
+        base_path.mkdir()
+
     mid_dir = base_path / mid
-    # hash collision; should not happen
     if mid_dir.exists():
+        if mode == 'w':
+            raise WrongParameter(('model mid={} already exists in {} .'
+                                  'Use mode="fw" to overwrite!')
+                                 .format(mid, base_path))
         shutil.rmtree(str(mid_dir))  # removing the old folder nevertheless
     mid_dir.mkdir()
     return mid, mid_dir

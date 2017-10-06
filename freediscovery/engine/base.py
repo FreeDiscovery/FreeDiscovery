@@ -6,6 +6,7 @@ from sklearn.externals import joblib
 
 from freediscovery.engine.vectorizer import FeatureVectorizer
 from freediscovery.engine.pipeline import PipelineFinder
+from freediscovery.engine.utils import validate_mid
 from freediscovery.exceptions import WrongParameter
 
 
@@ -25,18 +26,42 @@ class _BaseWrapper(object):
     load_model : bool
       whether the model should be loaded from disk on class
       initialization
+    mode : bool
+      read/write mode. One of 'r', 'w', 'fw' (write, overwrite if exists)
     """
     def __init__(self, cache_dir='/tmp/', parent_id=None, mid=None,
-                 load_model=False):
+                 load_model=False, mode='r'):
         if parent_id is None and mid is None:
-            raise WrongParameter('At least one of parent_id or mid should be provided!')
+            raise WrongParameter('At least one of parent_id or mid '
+                                 'should be provided!')
 
-        if parent_id is None and mid is not None:
-            self.pipeline = PipelineFinder.by_id(mid, cache_dir).parent
-            self.mid = mid
-        elif parent_id is not None:
-            self.pipeline = PipelineFinder.by_id(parent_id, cache_dir)
-            self.mid = None
+        if self._wrapper_type == 'lsi' and self.mode in ['w', 'fw']:
+            # lsi supports explicitly providing mid at creation
+            if parent_id is None:
+                raise WrongParameter(('parent_id={} must be provided for '
+                                      'model creation!')
+                                     .format(parent_id))
+            else:
+                validate_mid(parent_id)
+                self.pipeline = PipelineFinder.by_id(parent_id, cache_dir)
+                if mid is not None:
+                    validate_mid(mid)
+                self.mid = mid
+        else:
+            if parent_id is None and mid is not None:
+                validate_mid(mid)
+                self.pipeline = PipelineFinder.by_id(mid, cache_dir).parent
+                self.mid = mid
+            elif parent_id is not None:
+                validate_mid(parent_id)
+                self.pipeline = PipelineFinder.by_id(parent_id, cache_dir)
+                self.mid = None
+
+        # this only affects LSI
+        if mode not in ['r', 'w', 'fw']:
+            raise WrongParameter('mode={} must be one of "r", "w", "fw"'
+                                 .format(mode))
+        self.mode = mode
 
         # this is an alias that should be deprecated
         self.fe = FeatureVectorizer(cache_dir=cache_dir,
@@ -51,13 +76,13 @@ class _BaseWrapper(object):
         if not self.model_dir.exists():
             self.model_dir.mkdir()
 
-        if self.mid is not None:
+        if self.mid is not None and self.mode == 'r':
             self._pars = self._load_pars()
         else:
             self._pars = None
 
         if load_model:
-            if self.mid is not None:
+            if self.mid is not None and self.mode == 'r':
                 self.cmod = self._load_model()
             else:
                 self.cmod = None

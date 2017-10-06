@@ -21,6 +21,7 @@ from freediscovery.utils import generate_uuid, _rename_main_thread
 from freediscovery.feature_weighting import SmartTfidfTransformer, _validate_smart_notation
 from freediscovery.preprocessing import processing_filters
 from freediscovery.exceptions import (DatasetNotFound, InitException, WrongParameter)
+from freediscovery.engine.utils import validate_mid
 
 
 def _touch(filename):
@@ -81,7 +82,8 @@ class FeatureVectorizer(object):
         load an exising dataset
     verbose : bool
         pring progress messages
-
+    mode : str
+        write or read mode for the FeatureVectorizer
     """
 
     _PARS_SHORT = ['data_dir', 'n_samples', 'n_features',
@@ -92,7 +94,7 @@ class FeatureVectorizer(object):
 
     _wrapper_type = "vectorizer"
 
-    def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False):
+    def __init__(self, cache_dir='/tmp/', dsid=None, verbose=False, mode='r'):
         self.verbose = verbose
 
         self._filenames = None
@@ -105,12 +107,27 @@ class FeatureVectorizer(object):
         if not cache_dir.exists():
             cache_dir.mkdir()
         self.dsid = dsid
+        if mode not in ['r', 'w', 'fw']:
+            raise WrongParameter('mode={} must be one of "r", "w", "fw"'
+                                 .format(mode))
+        self.mode = mode
         if dsid is not None:
+            validate_mid(dsid)
             dsid_dir = self.cache_dir / dsid
-            if not dsid_dir.exists():
-                raise DatasetNotFound('Dataset '
-                                      '{} ({}) not found in {}!'.format(
-                                       dsid, type(self).__name__, cache_dir))
+            if mode == 'r':
+                if not dsid_dir.exists():
+                    raise DatasetNotFound('Dataset '
+                                          '{} ({}) not found in {}!'.format(
+                                           dsid, type(self).__name__, cache_dir))
+            else:
+                if dsid_dir.exists():
+                    if mode == 'w':
+                        raise WrongParameter(('dataset identified by dsid={} '
+                                              'already exists. Use mode="fw" '
+                                              'to overwrite.')
+                                             .format(dsid))
+                    elif mode == 'fw':
+                        shutil.rmtree(dsid_dir)
         else:
             dsid_dir = None
         self.dsid_dir = dsid_dir
@@ -237,6 +254,9 @@ class FeatureVectorizer(object):
         preprocess : list of strings, default: []
             A list of pre-processing steps, including 'emails_ingore_header'
         """
+        if self.mode not in ['w', 'fw']:
+            raise WrongParameter('The vectorizer can be setup only with '
+                                 'mode in ["w", "fw"]')
 
         if analyzer not in ['word', 'char', 'char_wb']:
             raise WrongParameter('analyzer={} not supported!'.format(analyzer))
@@ -277,12 +297,11 @@ class FeatureVectorizer(object):
         if n_features is None and use_hashing:
             n_features = 100001  # default size of the hashing table
 
-        self.dsid = dsid = generate_uuid()
+        if self.dsid is None:
+            self.dsid = dsid = generate_uuid()
+        else:
+            dsid = self.dsid
         self.dsid_dir = dsid_dir = self.cache_dir / dsid
-
-        # hash collision, should not happen
-        if dsid_dir.exists():
-            shutil.rmtree(str(dsid_dir))
 
         dsid_dir.mkdir()
 

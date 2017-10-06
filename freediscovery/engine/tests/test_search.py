@@ -19,12 +19,12 @@ data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
 def test_search_wrapper(kind):
     # check for syntax errors etc in the wrapper
 
-    fe = FeatureVectorizer(cache_dir=cache_dir)
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     vect_uuid = fe.setup()
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
     if kind == 'semantic':
-        lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
+        lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid, mode='w')
         lsi.fit_transform(n_components=20)
         parent_id = lsi.mid
     else:
