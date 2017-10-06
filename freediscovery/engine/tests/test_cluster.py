@@ -28,7 +28,7 @@ def fd_setup():
                     min_df=0.1, max_df=0.9)
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
-    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=dsid)
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=dsid, mode='w')
     lsi.fit_transform(n_components=6)
     return cache_dir, dsid, fe.filenames_, lsi.mid
 

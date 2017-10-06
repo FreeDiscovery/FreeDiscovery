@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
+import pytest
 
 from .base import (parse_res, V01, app, app_notest,
                    get_features_cached)
+from freediscovery.exceptions import WrongParameter
 
 # ============================================================================#
 #
@@ -37,3 +38,19 @@ def test_api_lsi(app):
 
     for key in data.keys():
         assert data[key] == lsi_pars[key]
+
+def test_api_lsi_custom_names(app):
+    dsid, pars, _ = get_features_cached(app)
+    mid_orig = 'tyds'
+    lsi_pars = dict(n_components=2, parent_id=dsid, id=mid_orig)
+    data = app.post_check(V01 + "/lsi/", json=lsi_pars)
+    assert data['id'] == mid_orig
+    method = V01 + "/lsi/{}".format(mid_orig)
+    data = app.get_check(method)
+
+    with pytest.raises(WrongParameter):
+        data = app.post_check(V01 + "/lsi/", json=lsi_pars)
+
+    with pytest.raises(WrongParameter):
+        lsi_pars['id'] = '?+d'
+        data = app.post_check(V01 + "/lsi/", json=lsi_pars)

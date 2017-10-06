@@ -24,7 +24,7 @@ def test_search_wrapper(kind):
     fe.ingest(data_dir, file_pattern='.*\d.txt')
 
     if kind == 'semantic':
-        lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid)
+        lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid, mode='w')
         lsi.fit_transform(n_components=20)
         parent_id = lsi.mid
     else:

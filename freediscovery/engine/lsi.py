@@ -6,6 +6,7 @@ from sklearn.externals import joblib
 from freediscovery.engine.base import _BaseWrapper
 from freediscovery.lsi import _compute_lsi_dimensionality, _TruncatedSVD_LSI
 from freediscovery.utils import setup_model
+from freediscovery.exceptions import WrongParameter
 
 
 class _LSIWrapper(_BaseWrapper):
@@ -26,10 +27,16 @@ class _LSIWrapper(_BaseWrapper):
     _wrapper_type = "lsi"
 
     def __init__(self, cache_dir='/tmp/', parent_id=None,
-                 mid=None, verbose=False, random_state=None):
+                 mid=None, verbose=False, random_state=None, mode='r'):
+
+        if mode not in ['r', 'w', 'fw']:
+            raise WrongParameter('mode={} must be one of "r", "w", "fw"'
+                                 .format(mode))
+        self.mode = mode
 
         super(_LSIWrapper, self).__init__(cache_dir=cache_dir,
-                                          parent_id=parent_id, mid=mid)
+                                          parent_id=parent_id, mid=mid,
+                                          mode=mode)
         self.random_state = random_state
 
     def _load_features(self):
@@ -56,7 +63,6 @@ class _LSIWrapper(_BaseWrapper):
         exp_var : float
            the explained variance of the SVD decomposition
         """
-
         parent_id = self.pipeline.mid
 
         dsid_dir = self.fe.dsid_dir
@@ -67,9 +73,7 @@ class _LSIWrapper(_BaseWrapper):
 
         mid_dir_base = dsid_dir / self._wrapper_type
 
-        if not mid_dir_base.exists():
-            mid_dir_base.mkdir()
-        mid, mid_dir = setup_model(mid_dir_base)
+        mid, mid_dir = setup_model(mid_dir_base, mid=self.mid, mode=self.mode)
 
         ds = self.pipeline.data
         n_components_opt = _compute_lsi_dimensionality(n_components, *ds.shape,

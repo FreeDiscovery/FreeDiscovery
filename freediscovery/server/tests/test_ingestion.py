@@ -272,11 +272,11 @@ def test_document_non_random_id(app):
 
     dsid_orig = 'test-dir'
 
-    data = app.post_check(method, json={'dsid': dsid_orig})
+    data = app.post_check(method, json={'id': dsid_orig})
     assert data['id'] == dsid_orig
 
     with pytest.raises(WrongParameter):
-        data = app.post_check(method, json={'dsid': dsid_orig})
+        data = app.post_check(method, json={'id': dsid_orig})
 
     with pytest.raises(WrongParameter):
-        data = app.post_check(method, json={'dsid': 'dsjkdlsy8^$$$'})
+        data = app.post_check(method, json={'id': 'dsjkdlsy8^$$$'})

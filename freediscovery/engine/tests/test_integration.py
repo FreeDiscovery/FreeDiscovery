@@ -44,7 +44,7 @@ def test_features_hashing(use_hashing, use_lsi, method):
     ground_truth = parse_ground_truth_file(os.path.join(data_dir,
                                            "..", "ground_truth_file.txt"))
 
-    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid)
+    lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid, mode='w')
     lsi_res, exp_var = lsi.fit_transform(n_components=100)
     assert lsi._load_pars() is not None
     lsi._load_model()
