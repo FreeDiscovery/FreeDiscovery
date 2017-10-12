@@ -9,6 +9,32 @@ Please feel free to open an issue in the GitHub issue tracker at [https://github
 
 Running the test suite (cf. below) may also help in diagnosing the source of the problem.
 
+## Installing the developpement version
+
+To install a the developpement version of FreeDiscovery,
+
+1. If you do not have [Miniconda](https://conda.io/miniconda.html) installed, follow [this tutorial](https://github.com/symerio/tutorials/blob/master/development-practices/install_miniconda.md).
+
+2. If you haven't done it before, add [conda-forge](https://conda-forge.org/) to the conda channels,
+
+   ```bash
+   conda config --append channels conda-forge
+   ```
+3. Download and install the developpement verision of FreeDiscovery,
+
+   ```bash
+   git clone https://github.com/FreeDiscovery/FreeDiscovery.git
+   cd FreeDiscovery
+   conda create -n fd-env --file requirements_engine.txt python=3.6
+   source activate fd-env
+   pip install -e .
+   ```
+   this will create a virtualenv called `fd-env` which you can activate with
+   `source activate fd-env` then start freediscovery with `freediscovery run`.
+
+   **Note:** if you already have the `fd-env` environement, you may need to delete
+   it first with `conda env remove -n fd-env`.
+
 ## Contributing
 
 This section describes the workflow for creating Pull Requests (PR). For more complex contributions, it may also be useful to create an associated issue. 

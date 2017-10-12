@@ -14,7 +14,8 @@ or alternatively with `conda <https://conda.io/>`_,
 
 .. code:: bash
 
-    conda install -c conda-forge freediscovery
+    conda config --append channels conda-forge
+    conda install freediscovery
 
 
 The server can be started with
