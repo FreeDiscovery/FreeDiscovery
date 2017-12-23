@@ -8,7 +8,7 @@ import itertools
 from numpy.testing import (assert_array_equal, assert_array_less,
                            assert_allclose)
 from sklearn.externals import joblib
-from sklearn.metrics import dcg_score
+from freediscovery.externals.sklearn.metrics import dcg_score
 
 from ...utils import dict2type
 
