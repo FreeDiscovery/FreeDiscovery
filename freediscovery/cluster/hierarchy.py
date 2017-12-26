@@ -113,6 +113,14 @@ class BirchSubcluster(Container):
                * children: [{}]
              """.format(content, parent_repr, child_repr))
 
+    def increment_cluster_id(self, value):
+        """ Increment the cluster_id of all children
+        by the given value
+        """
+        self['cluster_id'] += value
+        for child in self.children:
+            child.increment_cluster_id(value)
+
 
 def _check_birch_tree_consistency(node):
     """ Check that the _id we added is consistent """
@@ -130,7 +138,8 @@ def _check_birch_tree_consistency(node):
 
 
 def _birch_hierarchy_constructor(node, depth=0, cluster_id=0,
-                                 container=BirchSubcluster):
+                                 container=BirchSubcluster,
+                                 prune_single_clusters=True):
     """Wrap BIRCH cluster hierarchy with a container class
 
     Parameters
@@ -144,6 +153,10 @@ def _birch_hierarchy_constructor(node, depth=0, cluster_id=0,
     container : freediscovery.cluster.BirchSubcluster, default=BirchSubcluster
       a subclass of :class:`~freediscovery.cluster.BirchSubcluster`
       that will be used to wrap each BIRCH subcluster
+    prune_single_clusters : bool, default=True
+      if a cluster has a single child cluster, account only the child in the hierarchy
+      (not the parent). This removes identical clusters at different depth, however when
+      enabled the number of documents at a given depth d is no longer preserved. 
 
     Returns
     -------
@@ -156,14 +169,25 @@ def _birch_hierarchy_constructor(node, depth=0, cluster_id=0,
     htree = container()
     htree['document_id'] = document_id_list = []
     htree['cluster_id'] = cluster_id
+    htree.prune_single_clusters = prune_single_clusters
+    # detect if this subcluster has a single child
 
     for el in node.subclusters_:
         if el.child_ is not None:
             cluster_id += 1
             subtree, cluster_id = _birch_hierarchy_constructor(
                      el.child_, depth=depth+1, cluster_id=cluster_id,
-                     container=container)
-            htree.add_child(subtree)
+                     container=container,
+                     prune_single_clusters=prune_single_clusters)
+            if len(subtree.children) == 1 and prune_single_clusters:
+                # we are going to skip the single child subcluster,
+                # so don't need to increment the cluster_id
+                subtree.increment_cluster_id(-1)
+                cluster_id += -1
+                # skip the single child subcluster
+                htree.add_child(subtree.children[0])
+            else:
+                htree.add_child(subtree)
         else:
             document_id_list += el.samples_id_
     if depth == 0:
@@ -207,7 +231,6 @@ def birch_hierarchy_wrapper(birch, container=BirchSubcluster, validate=True,
     if not isinstance(birch, Birch):
         raise ValueError('the birch object must be created with '
                          'freediscovery.cluster.Birch')
-
 
     if not hasattr(birch, "root_"):
         raise NotFittedError("The Birch model must be fitted first!")

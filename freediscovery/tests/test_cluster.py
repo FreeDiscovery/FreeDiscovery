@@ -59,6 +59,7 @@ def test_birch_make_hierarchy(dataset, optimal_sampling):
         doc_count += len(el['document_id'])
         el.current_depth
         el.document_id_accumulated
+    assert doc_count == len(htree['document_id_accumulated'])
     assert doc_count == X.shape[0]
     assert htree.document_count == X.shape[0]
     if optimal_sampling:
@@ -99,7 +100,7 @@ def test_birch_example_reproducibility(example_id):
     cluster_model = Birch(threshold=0.9, branching_factor=20,
                           compute_sample_indices=True)
     cluster_model.fit(X)
-    #assert len(cluster_model.root_.subclusters_[1].child_.subclusters_) == 3
+    # assert len(cluster_model.root_.subclusters_[1].child_.subclusters_) == 3
 
     htree, n_subclusters = birch_hierarchy_wrapper(cluster_model)
 
@@ -210,3 +211,39 @@ def test_select_top_words():
     res = select_top_words(words_list, n=n_words)
     assert len(res) == n_words
     assert res == ['apple', 'test']
+
+
+def test_birch_clusterig_single_nodes():
+
+    basename = os.path.dirname(__file__)
+    X = np.load(os.path.join(basename, '..', 'data',
+                'ds_lsi_birch', 'data.npy'))
+    branching_factor = 5
+
+    mod = Birch(n_clusters=None, threshold=0.1,
+                branching_factor=branching_factor, compute_labels=False,
+                compute_sample_indices=True)
+    mod.fit(X)
+
+    htree, n_subclusters = birch_hierarchy_wrapper(mod)
+
+    # let's compute cluster similarity
+    for row in htree.flatten():
+        inertia, S_sim = centroid_similarity(X,
+                                             row['document_id_accumulated'])
+        row['document_similarity'] = S_sim
+        row['cluster_similarity'] = inertia
+
+    assert htree.tree_size == n_subclusters
+
+    doc_count = 0
+    for el in htree.flatten():
+        doc_count += len(el['document_id'])
+        el.current_depth
+        el.document_id_accumulated
+    assert doc_count == len(htree['document_id_accumulated'])
+    assert doc_count == X.shape[0]
+    assert htree.document_count == X.shape[0]
+
+    # make sure that we have no clusters with a single child
+    assert sum(len(el.children) == 1 for el in htree.flatten()) == 0

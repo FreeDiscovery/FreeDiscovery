@@ -32,7 +32,9 @@ def _check_htree_consistency(htree, dataset_size):
         for srow in filter(lambda row: row['cluster_depth'] == level, htree):
             out += [k['document_id'] for k in srow['documents']]
 
-        assert len(out) == dataset_size, "depth={}".format(level)
+        if False:
+            # this is disabled by default with prune_single_clusters=False
+            assert len(out) == dataset_size, "depth={}".format(level)
         # no duplicate ids at the same hierarchy level
         assert len(np.unique(out)) == len(out)
     if len(row1['documents']) > 1:
