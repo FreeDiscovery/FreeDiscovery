@@ -3,7 +3,7 @@
 import os
 import sys
 
-from freediscovery.externals.joblib_pool import _get_temp_dir
+from freediscovery.externals.joblib.pool import _get_temp_dir
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
 
