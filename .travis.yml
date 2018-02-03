@@ -10,6 +10,8 @@ env:
       REQUIREMENTS="requirements_engine.txt" EXTRA_DEPS="nose"
     - PYTHON_VERSION="3.6"
       REQUIREMENTS="requirements_engine.txt" EXTRA_DEPS="simhash-py gunicorn pytest nose"
+    - PYTHON_VERSION="3.6" SKLEARN_DEV=true
+      REQUIREMENTS="requirements_engine.txt" EXTRA_DEPS="simhash-py gunicorn pytest nose"
     - PYTHON_VERSION="3.6" 
       REQUIREMENTS="requirements.txt" EXTRA_DEPS="pytest nose"
       #- PYTHON_VERSION="3.5"
@@ -24,6 +26,10 @@ install:
         source activate test
         conda install --file ${REQUIREMENTS}
         conda install ${EXTRA_DEPS} pytest-cov codecov
+        if [ -z SKLEARN_DEV ]; then
+            conda uninstall -y scikit-learn
+            pip install git+https://github.com/scikit-learn/scikit-learn.git
+        fi
         pip install .
 
 script:
