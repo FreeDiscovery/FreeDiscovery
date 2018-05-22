@@ -1,5 +1,15 @@
 # Release history
 
+## Version 1.3.1
+
+**May 22, 2018**
+
+### Enhancements
+
+ * Added compatibility with scikit-learn 0.19.1
+ * Possibility to specify custom model ids ([#177](https://github.com/FreeDiscovery/FreeDiscovery/pull/177))
+ * Optionally prune identical cluster at different depth in BIRCH
+
 ## Version 1.3.0
 
 **Oct 1, 2017**
