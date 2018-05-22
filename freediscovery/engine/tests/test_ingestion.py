@@ -125,7 +125,8 @@ def test_ingestion_render(return_file_path):
     assert sorted(rd.keys()) == sorted(['internal_id', 'document_id', 'a'])
     assert_frame_equal(pd.DataFrame(rd),
                        pd.DataFrame([{'a': 2, 'internal_id': 3, 'document_id': 9},
-                                     {'a': 4, 'internal_id': 1, 'document_id': 1}]))
+                                     {'a': 4, 'internal_id': 1, 'document_id': 1}]),
+                       check_like=True)
 
     rd = dbi.render_list()
     assert sorted(rd.keys()) == sorted(['internal_id', 'document_id'])

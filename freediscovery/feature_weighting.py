@@ -135,7 +135,7 @@ class SmartTfidfTransformer(BaseEstimator, TransformerMixin):
     .. [Singhal1996] A. Singhal, C. Buckley, and M. Mitra.
        `"Pivoted document length normalization."
        <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ , 1996
-    """
+    """ # noqa
     def __init__(self, weighting='nsc', norm_alpha=0.75, norm_pivot=None,
                  compute_df=False, copy=True):
         _validate_smart_notation(weighting)
@@ -305,7 +305,7 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
     .. [Singhal1996] A. Singhal, C. Buckley, and M. Mitra.
        `"Pivoted document length normalization."
        <https://ecommons.cornell.edu/bitstream/handle/1813/7217/95-1560.pdf?sequence=1>`_ , 1996
-    """
+    """  # noqa
 
     tf = check_array(tf, ['csr'])
     if (df is None) != (df_n_samples is None):
@@ -376,7 +376,7 @@ def _smart_tfidf(tf, weighting, df=None, df_n_samples=None, norm_alpha=0.75,
         elif scheme_d == 'p':
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore",
-                                        message="divide by zero encountered in log",
+                                        message="divide by zero encountered in log",  # noqa
                                         category=RuntimeWarning)
                 idf = np.log((float(df_n_samples) - df)/df)
         elif scheme_d == 'd':

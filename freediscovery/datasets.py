@@ -10,7 +10,8 @@ import numpy as np
 import pandas as pd
 import pickle
 
-from freediscovery.externals.keras_data_utils import _get_file, INTERNAL_DATA_DIR
+from freediscovery.externals.keras_data_utils import _get_file
+from freediscovery.externals.keras_data_utils import INTERNAL_DATA_DIR
 
 
 def _normalize_cachedir(cache_dir):
@@ -22,28 +23,36 @@ def _normalize_cachedir(cache_dir):
         cache_dir = os.path.join(cache_dir, "ediscovery_cache")
     return cache_dir
 
-IR_DATASETS = {'treclegal09_2k_subset': {'md5': '8090cc55ac18fe5c4d5d53d82fc767a2',
-                                         'size': 2.8},
-               'treclegal09_20k_subset': {'md5': '43a711897ce724e873bdbc47a374a57e',
-                                          'size': 30},
-               'treclegal09_37k_subset': {'md5': '9fb6b7505871bbaee5a438de3b0f497c',
-                                          'size': 55},
+
+IR_DATASETS = {'treclegal09_2k_subset': {
+                         'md5': '8090cc55ac18fe5c4d5d53d82fc767a2',
+                         'size': 2.8},
+               'treclegal09_20k_subset': {
+                         'md5': '43a711897ce724e873bdbc47a374a57e',
+                         'size': 30},
+               'treclegal09_37k_subset': {
+                         'md5': '9fb6b7505871bbaee5a438de3b0f497c',
+                         'size': 55},
                'legal09int': {'md5': '929a675b981282c01c7212030323789f',
                               'size': 1500,
                               'url': "http://r0h.eu/d/legal09int.tar.gz"},
-               'fedora_ml_3k_subset': {'md5': '09dbb03d13b8e341bd615ce43f2d836b',
-                                       'size': 3},
-               '20_newsgroups_3categories': {'md5': '7e59e10cbd824190f3f1fa82285c7865',
-                                             'size': 3,
-                                             'url': os.path.join(INTERNAL_DATA_DIR, '20_newsgroups_3categories.pkl.xz')
+               'fedora_ml_3k_subset': {
+                          'md5': '09dbb03d13b8e341bd615ce43f2d836b',
+                          'size': 3},
+               '20_newsgroups_3categories': {
+                          'md5': '7e59e10cbd824190f3f1fa82285c7865',
+                          'size': 3,
+                          'url': os.path.join(INTERNAL_DATA_DIR, '20_newsgroups_3categories.pkl.xz')  # noqa
                                              },
-               '20_newsgroups_micro': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
-                                       'size': 3,
-                                       'url': os.path.join(INTERNAL_DATA_DIR, '20_newsgroups_micro.pkl')
+               '20_newsgroups_micro': {
+                          'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
+                          'size': 3,
+                          'url': os.path.join(INTERNAL_DATA_DIR, '20_newsgroups_micro.pkl')  # noqa
                                        },
-               '20_newsgroups': {'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
-                                     'size': 3,
-                                     'url': 'http://qwone.com/~jason/20Newsgroups/20news-19997.tar.gz'},
+               '20_newsgroups': {
+                          'md5': 'f6ec5e8669ebde1efa11148096c7cc0c',
+                          'size': 3,
+                          'url': 'http://qwone.com/~jason/20Newsgroups/20news-19997.tar.gz'},  # noqa
                }
 
 
@@ -63,7 +72,8 @@ def _load_erdm_ground_truth(outdir):
 
     if platform.system() == 'Windows':
         relevant_files = [el.replace('/', '\\') for el in relevant_files]
-        non_relevant_files = [el.replace('/', '\\') for el in non_relevant_files]
+        non_relevant_files = [el.replace('/', '\\')
+                              for el in non_relevant_files]
     return non_relevant_files, relevant_files
 
 
@@ -170,7 +180,7 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
         if '20_newsgroups_' in name:
             os.mkdir(outdir)
             for idx, doc in enumerate(twenty_news.data):
-                with open(os.path.join(outdir, '{:05}.txt'.format(idx)), 'wt') as fh:
+                with open(os.path.join(outdir, '{:05}.txt'.format(idx)), 'wt') as fh:  # noqa
                     fh.write(doc)
         else:
             outdir = _get_file(str(fname),
@@ -205,7 +215,7 @@ def load_dataset(name='20_newsgroups_3categories', cache_dir='/tmp',
                                           positive_files + negative_files}))
             di.data.loc[res.internal_id.values, 'is_train'] = True
     elif '20_newsgroups_' in name:
-        di.data['category'] = np.array(twenty_news.target_names)[twenty_news.target]
+        di.data['category'] = np.array(twenty_news.target_names)[twenty_news.target]  # noqa
         di.data['is_train'] = ['-train' in el for el in twenty_news.filenames]
 
     if categories is not None and has_categories:
