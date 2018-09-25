@@ -24,7 +24,6 @@ documents = ["Shipment of gold damaged in aa fire.",
                                            ['n', 'c', 'l', 'u',
                                             'cp', 'lp', 'up'])),
                         ['sparse']))
-@pytest.mark.filterwarnings('error')
 def test_feature_weighting_empty_document(scheme, array_type):
     documents_new = documents + ['']
     tf = CountVectorizer().fit_transform(documents_new)
