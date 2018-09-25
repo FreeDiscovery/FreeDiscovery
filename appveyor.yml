@@ -41,7 +41,7 @@ install:
 
 test_script:
   - pytest -sv %PYTEST_PATH%
-  - pip install matplotlib==1.5.3
+  - conda install -y matplotlib==2.2.3
   - ps: | 
           cd ".\\examples\\python"
           Get-ChildItem ".\\" -Filter *.py | 
