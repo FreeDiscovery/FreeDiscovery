@@ -34,6 +34,7 @@ install:
   # Add Library/bin directory to fix issue
   # https://github.com/conda/conda/issues/1753
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PATH%"
+  - conda config --append channels conda-forge
   - conda install -y --file %REQUIREMENTS_FILE%
   - pip install nose pytest
   - pip install -e .
