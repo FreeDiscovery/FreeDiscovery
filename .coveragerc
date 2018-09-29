@@ -1,6 +1,0 @@
-[run]
-omit = 
-   freediscovery/tests/*
-   freediscovery/server/tests/*
-   freediscovery/externals/*
-   freediscovery/__main__.py
