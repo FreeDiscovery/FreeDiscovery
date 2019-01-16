@@ -71,7 +71,7 @@ def _api_categorization_wrapper(app, solver, cv, n_categories,
     method = V01 + "/feature-extraction/{}".format(dsid)
     data = app.get_check(method)
 
-    categories_list = list(set([row['category'] for row in ds_input['dataset']]))
+    categories_list = list({row['category'] for row in ds_input['dataset']})
 
     if n_categories_train is None:
         training_set = ds_input['training_set']

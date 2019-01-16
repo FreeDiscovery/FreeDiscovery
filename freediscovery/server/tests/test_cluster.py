@@ -106,7 +106,7 @@ def test_api_clustering(app, model, use_lsi, n_clusters, optimal_sampling):
             ref_res['cluster_depth'] = 'int'
         if not optimal_sampling:
             ref_res['cluster_label'] = 'str'
-            assert re.match('[^\[]+', row['cluster_label'])
+            assert re.match(r'[^\[]+', row['cluster_label'])
         assert dict2type(row, max_depth=1) == ref_res
         # make sure we have space separated words, not a str(list)
         for irow in row['documents']:

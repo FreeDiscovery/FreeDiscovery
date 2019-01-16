@@ -34,7 +34,7 @@ def test_feature_extraction_tokenization(analyzer, ngram_range, use_hashing):
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(analyzer=analyzer, ngram_range=ngram_range,
                     use_hashing=use_hashing)
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
 
     res2 = fe._load_features(uuid)
     assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), "not an array {}".format(res2)
@@ -51,7 +51,7 @@ def test_feature_extraction_storage():
 
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
     db = pd.read_pickle(os.path.join(cache_dir, 'ediscovery_cache',
                                      uuid, 'db'))
     assert 'file_path' not in db.columns
@@ -68,7 +68,7 @@ def test_feature_extraction_weighting(weighting,
 
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(weighting=weighting, use_hashing=use_hashing)
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
 
     res2 = fe._load_features(uuid)
     assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), \
@@ -91,7 +91,7 @@ def test_feature_extraction_nfeatures(n_features, weighting, use_hashing):
 
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(n_features=n_features, weighting=weighting, use_hashing=use_hashing)
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
 
     res2 = fe._load_features(uuid)
     assert isinstance(res2,  np.ndarray) or scipy.sparse.issparse(res2), \
@@ -110,7 +110,7 @@ def test_search_filenames(use_hashing):
 
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(use_hashing=use_hashing)
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
 
     assert fe.db_ is not None
 
@@ -239,7 +239,7 @@ def test_sampling_filenames():
     with pytest.warns(UserWarning):
         # there is a warning because we don't use norm='l2'
         uuid = fe.setup(use_hashing=True, **fe_pars)
-        fe.ingest(data_dir, file_pattern='.*\d.txt')
+        fe.ingest(data_dir, file_pattern=r'.*\d.txt')
     X = fe._load_features(uuid)
 
     # don't use any sampling
@@ -313,7 +313,7 @@ def test_feature_extraction_cyrillic(use_hashing):
 
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup(use_hashing=use_hashing)
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
 
     res2 = fe._load_features(uuid)
 
@@ -352,9 +352,9 @@ def test_ingestion_batches():
     uuid = fe.setup()
     with pytest.raises(ValueError):
         fe.ingest(vectorize=True)  # no ingested files
-    fe.ingest(data_dir, file_pattern='.*\d.txt', vectorize=False)
-    fe.ingest(data_dir, file_pattern='.*\d.txt', vectorize=False)
-    fe.ingest(data_dir, file_pattern='.*\d.txt', vectorize=False)
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt', vectorize=False)
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt', vectorize=False)
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt', vectorize=False)
 
     fe.ingest(vectorize=True)
 
@@ -404,7 +404,7 @@ def test_non_random_dsid():
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w', dsid=dsid)
     uuid = fe.setup()
     assert dsid == uuid
-    fe.ingest(data_dir, file_pattern='.*\d.txt', vectorize=False)
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt', vectorize=False)
     # writing with the same name fails
     with pytest.raises(WrongParameter):
         FeatureVectorizer(cache_dir=cache_dir, mode='w', dsid=dsid)

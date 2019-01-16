@@ -22,7 +22,7 @@ def select_top_words(word_list, n=10):
     for word in word_list:
         word_st = st.stem(word)
         if len(word_st) <= 2 or\
-                re.match('\d+', word_st) or \
+                re.match(r'\d+', word_st) or \
                 re.match('[^a-zA-Z0-9]', word_st) or\
                 word in COMMON_FIRST_NAMES or \
                 word in CUSTOM_STOP_WORDS or\

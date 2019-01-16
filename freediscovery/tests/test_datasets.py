@@ -32,7 +32,7 @@ def test_load_20newsgoups_dataset(name):
     assert dict2type(dataset[0]) == response_ref
     assert dict2type(training_set[1]) == response_ref
 
-    categories = sorted(list(set([row['category'] for row in dataset])))
+    categories = sorted(list({row['category'] for row in dataset}))
     for categories_sel in \
             [[categories[0]],
              [categories[1]],
@@ -46,7 +46,7 @@ def test_load_20newsgoups_dataset(name):
         for resp in [training_set, dataset]:
 
             assert dict2type(resp[0]) == response_ref
-            result_fields = list(set([el['category'] for el in resp]))
+            result_fields = list({el['category'] for el in resp})
 
             # the opposite if not always true (e.g. for small training sets)
             for key in result_fields:

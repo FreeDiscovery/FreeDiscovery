@@ -8,7 +8,7 @@ import pandas as pd
 def parse_ground_truth_file(filename):
     """ Parse a ground truth file specified by a filename.
     Replace '/' by '\' when running in Windows """
-    df = pd.read_csv(filename, sep='[\s\t]+',
+    df = pd.read_csv(filename, sep='[\\s\t]+',
                      names=['file_path', 'is_relevant'], engine='python')
     if platform.system() == 'Windows':
         df.file_path = df.file_path.map(lambda path: path.replace('/', '\\'))
@@ -39,7 +39,7 @@ def parse_smart_tokens(text):
     data_key = None
 
     for line in text.splitlines():
-        key_match = re.match('^\.(?P<key>[A-Z])\s?(?P<val>.*)', line)
+        key_match = re.match(r'^\.(?P<key>[A-Z])\s?(?P<val>.*)', line)
         if key_match:
             data_key = key_match.group('key')
             if data_key == 'I':
