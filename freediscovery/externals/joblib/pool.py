@@ -8,7 +8,6 @@
 import os
 import tempfile
 
-from sklearn.externals.joblib.pool import SYSTEM_SHARED_MEM_FS
 
 def _get_temp_dir(pool_folder_name, temp_folder=None):
     """Get the full path to a subfolder inside the temporary folder.
@@ -47,18 +46,6 @@ def _get_temp_dir(pool_folder_name, temp_folder=None):
     use_shared_mem = False
     if temp_folder is None:
         temp_folder = os.environ.get('JOBLIB_TEMP_FOLDER', None)
-    if temp_folder is None:
-        if os.path.exists(SYSTEM_SHARED_MEM_FS):
-            try:
-                temp_folder = SYSTEM_SHARED_MEM_FS
-                pool_folder = os.path.join(temp_folder, pool_folder_name)
-                if not os.path.exists(pool_folder):
-                    os.makedirs(pool_folder)
-                use_shared_mem = True
-            except IOError:
-                # Missing rights in the the /dev/shm partition,
-                # fallback to regular temp folder.
-                temp_folder = None
     if temp_folder is None:
         # Fallback to the default tmp folder, typically /tmp
         temp_folder = tempfile.gettempdir()
