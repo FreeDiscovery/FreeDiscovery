@@ -306,7 +306,7 @@ class DocumentIndex(object):
             {
                 document_id: 1,
                 rendition_id: 4,
-                file_path: "c:\\dev\1.txt"
+                file_path: "c:\dev\1.txt"
             }
 
         Parmaters
