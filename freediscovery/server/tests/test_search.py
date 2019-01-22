@@ -63,7 +63,7 @@ def test_search(app, method, min_score, max_results):
 
     # check that relevant documents get returned first
     res = df.set_index('document_id').merge(id_mapping, left_index=True, right_index=True)
-    res['document_id_new'] = res.file_path.str.extract('(\d+)', expand=True).astype('int')
+    res['document_id_new'] = res.file_path.str.extract(r'(\d+)', expand=True).astype('int')
     res['rank_position'] = np.arange(len(res))
     res = res.set_index('document_id_new')
     res['ground_truth'] = np.in1d(res.index.values, [1190, 2256]).astype('int')

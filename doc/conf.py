@@ -97,7 +97,7 @@ sphinx_gallery_conf = {
 
     # Modules for which function level galleries are created.
     'doc_module'          : ('freediscovery'),
-    'filename_pattern': '.*\.py'
+    'filename_pattern': r'.*\.py'
 }
 
 # General information about the project.

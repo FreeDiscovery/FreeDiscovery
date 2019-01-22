@@ -40,13 +40,13 @@ def test_get_model_train_404(app_notest, method):
 @pytest.mark.parametrize("method", ['feature-extraction', 'categorization', 'lsi', 'clustering'])
 def test_get_model_predict_404(app_notest, method):
 
-    method = V01 + "/{0}/DOES_NOT_EXISTS/DOES_NOT_EXIST/predict".format(method)
+    method = V01 + "/{}/DOES_NOT_EXISTS/DOES_NOT_EXIST/predict".format(method)
     with _silent('stderr'):
         res = app_notest.get(method)
 
     assert res.status_code == 404
 
-    method = V01 + "/{0}/DOES_NOT_EXISTS/DOES_NOT_EXIST/test".format(method)
+    method = V01 + "/{}/DOES_NOT_EXISTS/DOES_NOT_EXIST/test".format(method)
     with _silent('stderr'):
         res = app_notest.post(method)
 

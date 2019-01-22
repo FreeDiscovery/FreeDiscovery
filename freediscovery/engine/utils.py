@@ -5,7 +5,7 @@ from ..exceptions import WrongParameter
 def validate_mid(mid):
     """Validate a user provided dataset id"""
 
-    if not re.match('^[a-zA-Z0-9_\-]+$', mid):
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', mid):
         raise WrongParameter(('id={} is not valid. '
                               'It can only contain letters, numbers '
                               'and "-", "_" characters. ')

@@ -18,7 +18,7 @@ def fd_setup(**fe_options):
     uuid = fe.setup(n_features=n_features, use_hashing=True,
                     stop_words='english',
                     **fe_options)
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
     return cache_dir, uuid, fe.filenames_, fe
 
 

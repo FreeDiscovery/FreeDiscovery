@@ -36,7 +36,7 @@ ground_truth = parse_ground_truth_file(
 
 fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
 vect_uuid = fe.setup()
-fe.ingest(str(data_dir), file_pattern='.*\d.txt')
+fe.ingest(str(data_dir), file_pattern=r'.*\d.txt')
 
 
 lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=vect_uuid, mode='w')

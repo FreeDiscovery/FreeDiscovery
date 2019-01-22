@@ -25,7 +25,7 @@ def test_lsi():
 
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
     uuid = fe.setup()
-    fe.ingest(data_dir, file_pattern='.*\d.txt')
+    fe.ingest(data_dir, file_pattern=r'.*\d.txt')
 
     lsi = _LSIWrapper(cache_dir=cache_dir, parent_id=uuid, mode='w')
     lsi_res, exp_var = lsi.fit_transform(n_components=n_components, alpha=1.0)

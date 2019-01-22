@@ -285,7 +285,7 @@ def _create_random_weights(text, perc_keywords=0.5):
 if __name__ == "__main__":
     fname = 'data/ds_001/raw/0.7.6.28635.txt'
     with open(fname) as in_file:  #, encoding='utf-8') as in_file:
-        document_text = in_file.read().replace(u'\ufeff','')
+        document_text = in_file.read().replace('\ufeff','')
     words_weights = _create_random_weights(document_text, 0.2)
 
     COLORMAP = _make_cmap()

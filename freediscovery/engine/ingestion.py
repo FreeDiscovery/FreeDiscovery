@@ -29,7 +29,7 @@ def _list_filenames(data_dir, dir_pattern=None, file_pattern=None):
 
 def _infer_document_id_from_path(file_path):
     basename = os.path.basename
-    document_id = [re.sub('\D', '', basename(el)) for el in file_path]
+    document_id = [re.sub(r'\D', '', basename(el)) for el in file_path]
     non_digits = [el for el in document_id if not el.isdigit()]
     failed_msg = ('Warning: Could not infer document_id from file_path ({}), '
                   'falling back '
