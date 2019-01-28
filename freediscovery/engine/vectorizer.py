@@ -323,7 +323,8 @@ class FeatureVectorizer(object):
 
     def ingest(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
                dataset_definition=None, vectorize=True,
-               document_id_generator='indexed_file_path'):
+               document_id_generator='indexed_file_path',
+               column_ids=None, column_separator=','):
         """Perform data ingestion
 
         Parameters
@@ -336,6 +337,11 @@ class FeatureVectorizer(object):
             ['file_path', 'document_id', 'rendition_id']
             describing the data ingestion (this overwrites data_dir)
         vectorize : bool (default: True)
+        column_ids: None or List[str]
+            when provided the ingested files are assumed to be CSV
+        column_separator: str, default=','
+            delimiter used for parsing CSV files. Only used when
+            ``column_ids`` is not None.
         """
         dsid_dir = self.cache_dir / self.dsid
         if (dsid_dir / 'db').exists():
@@ -347,7 +353,9 @@ class FeatureVectorizer(object):
         elif len(db_list) >= 1:
             internal_id_offset = int(db_list[-1].name[3:])
 
-        if dataset_definition is not None:
+        if column_ids is not None:
+            db = None
+        elif dataset_definition is not None:
             db = DocumentIndex.from_list(dataset_definition, data_dir,
                                          internal_id_offset + 1, dsid_dir,
                                          document_id_generator=document_id_generator)

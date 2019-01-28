@@ -20,6 +20,7 @@ from freediscovery.exceptions import (NotFound, WrongParameter)
 
 basename = os.path.dirname(__file__)
 data_dir = os.path.join(basename, "..", "..", "data", "ds_001", "raw")
+csv_data_dir = os.path.join(basename, "..", "..", "data", "ds_003")
 n_features = 1100000
 
 
@@ -395,6 +396,7 @@ def test_ingestion_content():
     assert_array_equal(X.indices, X2.indices)
     assert_array_equal(X.data, X2.data)
 
+
 def test_non_random_dsid():
     data_dir = os.path.join(basename, "..", "..", "data", "ds_002", "raw")
     cache_dir = check_cache()
@@ -416,3 +418,18 @@ def test_non_random_dsid():
     with pytest.raises(WrongParameter):
         fh = FeatureVectorizer(cache_dir=cache_dir, mode='fw', dsid='?+ds$$')
         uuid = fh.setup()
+
+
+def test_ingestion_csv():
+    cache_dir = check_cache()
+
+    fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
+    fe.setup()
+    fe.ingest(dataset_definition=[
+        {'file_path': os.path.join(csv_data_dir, 'example.csv'),
+         'document_id': 0}
+        ],
+        column_ids=[1, 3]
+    )
+    X = fe._load_features()
+    print(X.shape)
