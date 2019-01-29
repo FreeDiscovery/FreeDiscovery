@@ -354,15 +354,34 @@ class FeatureVectorizer(object):
             internal_id_offset = int(db_list[-1].name[3:])
 
         if column_ids is not None:
-            db = None
+            if dataset_definition is None:
+                raise ValueError("CSV files can only be privided using "
+                                 "`dataset_definition` parameter")
+            else:
+                if len(dataset_definition) > 1:
+                    raise ValueError(
+                            "Only one CSV can be provided at a time"
+                    )
+                file_path = dataset_definition[0]['file_path']
+                X = pd.read_csv(file_path, sep=column_separator, header=None)
+                dataset_definition = [
+                        {'file_path': f"{file_path}:{idx}", 'document_id': idx}
+                        for idx in range(len(X))]
+
+                db = DocumentIndex.from_list(
+                        dataset_definition, data_dir,
+                        internal_id_offset + 1, dsid_dir,
+                        document_id_generator=document_id_generator)
         elif dataset_definition is not None:
-            db = DocumentIndex.from_list(dataset_definition, data_dir,
-                                         internal_id_offset + 1, dsid_dir,
-                                         document_id_generator=document_id_generator)
+            db = DocumentIndex.from_list(
+                    dataset_definition, data_dir,
+                    internal_id_offset + 1, dsid_dir,
+                    document_id_generator=document_id_generator)
         elif data_dir is not None:
-            db = DocumentIndex.from_folder(data_dir, file_pattern, dir_pattern,
-                                           internal_id_offset + 1,
-                                           document_id_generator=document_id_generator)
+            db = DocumentIndex.from_folder(
+                    data_dir, file_pattern, dir_pattern,
+                    internal_id_offset + 1,
+                    document_id_generator=document_id_generator)
         else:
             db = None
 
@@ -436,6 +455,8 @@ class FeatureVectorizer(object):
             # save parameters
             self._pars['n_samples'] = len(self._filenames)
             self._pars['data_dir'] = data_dir
+            self._pars['column_ids'] = column_ids
+            self._pars['column_separator'] = column_separator
 
             with (dsid_dir / 'pars').open('wb') as fh:
                 pickle.dump(self._pars, fh)
@@ -530,8 +551,19 @@ class FeatureVectorizer(object):
                 vect = CountVectorizer(input='content',
                                        max_features=pars['n_features'],
                                        **opts_tfidf)
-                text_gen = (_preprocess_stream(_read_file(fname), pars['preprocess'])
-                            for fname in pars['filenames_abs'])
+                if pars['column_ids'] is not None:
+                    # joining again in case there are more than one `:` in the file name
+                    file_path = ':'.join(pars["filenames_abs"][0].split(':')[:-1])
+                    X = pd.read_csv(file_path, sep=pars['column_separator'],
+                                    header=None)
+                    X = X.iloc[:, pars['column_ids']]
+                    # contactenate all columns together
+                    text_gen = X.apply(lambda x: ''.join(str(el) for el in x), axis=1).values
+                else:
+                    text_gen = (
+                        _preprocess_stream(_read_file(fname), pars['preprocess'])
+                        for fname in pars['filenames_abs'])
+
                 res = vect.fit_transform(text_gen)
                 self._vect = vect
             fname = dsid_dir / 'vectorizer'
