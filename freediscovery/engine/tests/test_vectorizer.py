@@ -434,3 +434,4 @@ def test_ingestion_csv():
     X = fe._load_features()
     assert X.shape[0] == 4
     assert len(fe.filenames_) == X.shape[0]
+    assert X.shape[0] == fe.n_samples_
