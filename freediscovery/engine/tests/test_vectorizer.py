@@ -444,3 +444,13 @@ def test_ingestion_csv_wrong_params():
             match=".*can only be privided using `dataset_definition.*"
     ):
         fe.ingest(csv_data_dir)
+
+    with pytest.raises(
+            ValueError,
+            match=".*one CSV can be provided at a time.*"
+    ):
+        fe.ingest(dataset_definition=[
+            {'file_path': os.path.join(csv_data_dir, 'example.csv')},
+            {'file_path': os.path.join(csv_data_dir, 'example.csv')},
+            ],
+        )
