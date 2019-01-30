@@ -127,6 +127,8 @@ class FeaturesApi(Resource):
              - `preprocess`: a list of pre-processing steps to apply before vectorization. A subset of ['emails_ignore_header'], default: [].
              - `id`: (optional) custom dataset id. Can only contain letters, numbers, "_" or "-". It must also be between 2 and 50 characters long.
              - `overwrite`: if a custom dataset id was provided, and it already exists, overwrite it. Default: false
+             - `column_ids` : list of ints. If provided the input dataset is expected to be CSV, and the columns with the provided ids are selected. Documents can only be provided using `dataset_definition` parameter that must contain a single file path
+             - `column_separator`: str, character used to delimit columns. Only used if `column_ids` is provided. Default: ','
             """))
     @use_args(FeaturesParsSchema(strict=True, exclude=('data_dir')))
     @marshal_with(IDSchema())

@@ -84,6 +84,8 @@ class FeaturesParsSchema(Schema):
     preprocess = fields.List(fields.Str(), missing=[])
     id = fields.Str()
     overwrite = fields.Boolean(missing=False)
+    column_ids = fields.List(fields.Int(), missing=None)
+    column_separator = fields.Str(missing=',')
 
 
 class FeaturesSchema(FeaturesParsSchema):

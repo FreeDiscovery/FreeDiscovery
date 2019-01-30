@@ -70,7 +70,8 @@ def test_get_feature_extraction(app, hashed, weighting):
                      'norm_alpha': 'float', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int',
-                     'preprocess': []}
+                     'preprocess': [], 'column_ids': 'NoneType',
+                     'column_separator': 'str'}
 
     assert data['use_hashing'] == hashed
     assert data['weighting'] == weighting
@@ -280,3 +281,41 @@ def test_document_non_random_id(app):
 
     with pytest.raises(WrongParameter):
         data = app.post_check(method, json={'id': 'dsjkdlsy8^$$$'})
+
+
+def test_ingest_csv(app):
+    method = V01 + "/feature-extraction/"
+    data = app.post_check(method, json={'column_ids': [1, 3]})
+    dsid = data['id']
+    method += dsid
+    app.post_check(
+            method,
+            json={
+                'dataset_definition': [
+                    {'file_path': os.path.join(data_dir, '..', '..', 'ds_003', 'example.csv')}
+                    ]})
+    data = app.get_check(method)
+
+    # check that the file_path is correctly returned by the id-mapping
+    data = app.post_check(method + '/id-mapping',
+                          json={'return_file_path': True})
+    assert len(data.get('data', [])) == 4
+    assert data.get('data', [])[-1] == {
+            'document_id': 3, 'file_path': 'example.csv:3', 'internal_id': 3}
+
+    # check that classification works
+    pars = {
+        'parent_id': dsid,
+        'data': [{'document_id': 0, 'category': 'positive'},
+                 {'document_id': 1, 'category': 'negative'}],
+        'method': "NearestNeighbor",
+        'training_scores': True}
+
+    method = V01 + "/categorization/"
+    data = app.post_check(method, json=pars)
+    mid = data['id']
+
+    method = V01 + "/categorization/{}/predict".format(mid)
+
+    data = app.get_check(method)
+    assert data['pagination']['total_response_count'] == 2

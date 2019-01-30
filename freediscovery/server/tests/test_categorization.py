@@ -272,6 +272,8 @@ def test_api_categorization_sort(app, sort_by):
     data = app.get_check(method)
 
     training_set = ds_input['training_set']
+    print(training_set)
+
 
     pars = {
           'parent_id': lsi_id,
