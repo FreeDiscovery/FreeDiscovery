@@ -209,7 +209,8 @@ class FeatureVectorizer(object):
               use_hashing=False,
               weighting='nnc', norm_alpha=0.75, min_df=0.0, max_df=1.0,
               parse_email_headers=False,
-              preprocess=[]):
+              preprocess=[], column_ids=None, column_separator=','
+              ):
         """Initalize the features extraction.
 
         See sklearn.feature_extraction.text for a detailed description
@@ -253,6 +254,11 @@ class FeatureVectorizer(object):
             SMART weighting type
         preprocess : list of strings, default: []
             A list of pre-processing steps, including 'emails_ingore_header'
+        column_ids: None or List[str]
+            when provided the ingested files are assumed to be CSV
+        column_separator: str, default=','
+            delimiter used for parsing CSV files. Only used when
+            ``column_ids`` is not None.
         """
         if self.mode not in ['w', 'fw']:
             raise WrongParameter('The vectorizer can be setup only with '
@@ -294,6 +300,14 @@ class FeatureVectorizer(object):
         else:
             raise WrongParameter('stop_words = {}'.format(stop_words))
 
+        if not isinstance(column_separator, str):
+            raise ValueError('column_separator={} expected string'
+                             .format(column_separator))
+
+        if not (column_ids is None or isinstance(column_ids, (list, tuple))):
+            raise ValueError('column_ids={} expected None or sequence'
+                             .format(column_ids))
+
         if n_features is None and use_hashing:
             n_features = 100001  # default size of the hashing table
 
@@ -315,7 +329,9 @@ class FeatureVectorizer(object):
                 'parse_email_headers': parse_email_headers,
                 'type': type(self).__name__,
                 'preprocess': preprocess,
-                'freediscovery_version': __version__}
+                'freediscovery_version': __version__,
+                'column_ids': column_ids,
+                'column_separator': column_separator}
         self._pars = pars
         with (dsid_dir / 'pars').open('wb') as fh:
             pickle.dump(self._pars, fh)
@@ -324,7 +340,7 @@ class FeatureVectorizer(object):
     def ingest(self, data_dir=None, file_pattern='.*', dir_pattern='.*',
                dataset_definition=None, vectorize=True,
                document_id_generator='indexed_file_path',
-               column_ids=None, column_separator=','):
+               ):
         """Perform data ingestion
 
         Parameters
@@ -337,11 +353,6 @@ class FeatureVectorizer(object):
             ['file_path', 'document_id', 'rendition_id']
             describing the data ingestion (this overwrites data_dir)
         vectorize : bool (default: True)
-        column_ids: None or List[str]
-            when provided the ingested files are assumed to be CSV
-        column_separator: str, default=','
-            delimiter used for parsing CSV files. Only used when
-            ``column_ids`` is not None.
         """
         dsid_dir = self.cache_dir / self.dsid
         if (dsid_dir / 'db').exists():
@@ -353,7 +364,9 @@ class FeatureVectorizer(object):
         elif len(db_list) >= 1:
             internal_id_offset = int(db_list[-1].name[3:])
 
-        if column_ids is not None:
+        pars = self.pars_
+
+        if pars.get('column_ids', None) is not None:
             if dataset_definition is None:
                 raise ValueError("CSV files can only be privided using "
                                  "`dataset_definition` parameter")
@@ -363,7 +376,8 @@ class FeatureVectorizer(object):
                             "Only one CSV can be provided at a time"
                     )
                 file_path = dataset_definition[0]['file_path']
-                X = pd.read_csv(file_path, sep=column_separator, header=None)
+                X = pd.read_csv(
+                        file_path, sep=pars['column_separator'], header=None)
                 dataset_definition = [
                         {'file_path': f"{file_path}:{idx}", 'document_id': idx}
                         for idx in range(len(X))]
@@ -393,7 +407,6 @@ class FeatureVectorizer(object):
             self._filenames = db.data.file_path.values.tolist()
             del db.data['file_path']
 
-            pars = self.pars_
 
             if 'file_path' in db.data.columns:
                 del db.data['file_path']
@@ -455,8 +468,6 @@ class FeatureVectorizer(object):
             # save parameters
             self._pars['n_samples'] = len(self._filenames)
             self._pars['data_dir'] = data_dir
-            self._pars['column_ids'] = column_ids
-            self._pars['column_separator'] = column_separator
 
             with (dsid_dir / 'pars').open('wb') as fh:
                 pickle.dump(self._pars, fh)

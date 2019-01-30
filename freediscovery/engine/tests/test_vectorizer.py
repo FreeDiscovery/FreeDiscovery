@@ -424,12 +424,11 @@ def test_ingestion_csv():
     cache_dir = check_cache()
 
     fe = FeatureVectorizer(cache_dir=cache_dir, mode='w')
-    fe.setup()
+    fe.setup(column_ids=[1, 3])
     fe.ingest(dataset_definition=[
         {'file_path': os.path.join(csv_data_dir, 'example.csv'),
          'document_id': 0}
         ],
-        column_ids=[1, 3]
     )
     X = fe._load_features()
     assert X.shape[0] == 4

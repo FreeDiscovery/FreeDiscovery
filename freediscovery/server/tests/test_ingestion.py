@@ -70,7 +70,8 @@ def test_get_feature_extraction(app, hashed, weighting):
                      'norm_alpha': 'float', 'use_hashing': 'bool',
                      'filenames': ['str'], 'max_df': 'float', 'min_df': 'float',
                      'parse_email_headers': 'bool', 'n_samples_processed': 'int',
-                     'preprocess': []}
+                     'preprocess': [], 'column_ids': 'NoneType',
+                     'column_separator': 'str'}
 
     assert data['use_hashing'] == hashed
     assert data['weighting'] == weighting
